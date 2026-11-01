@@ -64,6 +64,32 @@ def _harvester():
     return m
 
 
+def _alternation_ordered(pattern: str) -> list[str]:
+    r"""The kind alternation IN ORDER, from the group that holds the kinds.
+
+    A set cannot pin an order and an index cannot find the group: `MARKER` has
+    3 parenthesised groups and the kinds are in the middle one, which is why a
+    `split("(")[-1]` read the trailing `(?:[:\]\)]...)` instead and this very
+    assertion fired on correct code at 2026-11-01 21:37.
+    """
+    for grp in re.findall(r"\(\??:?((?:[a-z]{2,4})(?:\|[a-z]{2,4})+)\)", pattern):
+        return grp.split("|")
+    return []
+
+
+def _alternation(pattern: str) -> set[str]:
+    """Every lowercase-alpha alternative appearing in a `(...|...)` group.
+
+    Deliberately shallow: it reads the kind vocabulary out of a pattern without
+    importing the harvester's private spelling of it, so the 2 declarations are
+    compared rather than one being trusted.
+    """
+    out: set[str] = set()
+    for grp in re.findall(r"\(\??:?((?:[a-z]{2,4})(?:\|[a-z]{2,4})+)\)", pattern):
+        out |= set(grp.split("|"))
+    return out
+
+
 class TestTheAssumptionIsCheckedNotTrusted:
 
     def test_no_transcript_escapes_an_ascii_letter(self):
@@ -93,11 +119,42 @@ class TestTheAssumptionIsCheckedNotTrusted:
             f"under no assumption, at roughly 9 times the decoding cost.")
 
     def test_the_live_prefilter_is_the_form_the_measurement_chose(self):
-        """A measurement that chose a form must be able to see it was applied."""
+        """A measurement that chose a form must be able to see it was applied.
+
+        ★ REWRITTEN 2026-11-01, BECAUSE THE LITERAL WAS RED ON A CORRECT CHANGE
+        AND GREEN ON THE REAL DEFECT. It pinned `(?:fr|pf|qs|wr)\b` exactly, and
+        when `stm` was admitted as his 6th kind the harvester updated BOTH its
+        `MARKER` and its `CANDIDATE_LINE` -- a correct, complete change -- and
+        this test went red anyway. Worse, the failure it exists to catch is a
+        kind added to `MARKER` while `CANDIDATE_LINE` is left behind, because
+        the prefilter then DROPS lines the marker would have matched; against
+        that mutation the literal stays GREEN, since `CANDIDATE_LINE` is
+        untouched. Measured both ways by
+        `scripts/the_prefilter_comparator_mutations_2026-11-01.py`.
+
+        What fable's measurement actually chose was a FORM -- alternation, a
+        right `\b`, and no left `\b` -- not a frozen kind list. So the form is
+        pinned here and the kind list is COMPARED against `MARKER`'s own
+        alternation. That is the defect the harvester's own line 92 names: 4
+        places spell this vocabulary out and nothing compared them.
+        """
         h = _harvester()
-        assert h.CANDIDATE_LINE.pattern == r"(?:fr|pf|qs|wr)\b", (
-            f"the live prefilter is {h.CANDIDATE_LINE.pattern!r}. The measured "
-            f"choice was fable's `(?:fr|pf|qs|wr)\\b`; if it has moved, say which "
+        marker_kinds = _alternation(h.MARKER.pattern)
+        prefilter_kinds = _alternation(h.CANDIDATE_LINE.pattern)
+        assert marker_kinds, (
+            f"no alternation readable from MARKER {h.MARKER.pattern!r}; the "
+            f"comparator cannot run and would pass vacuously")
+        assert prefilter_kinds == marker_kinds, (
+            f"the prefilter admits {sorted(prefilter_kinds)} but the marker "
+            f"reads {sorted(marker_kinds)}. A kind in only one of them is a "
+            f"kind whose annotations are dropped before the marker ever sees "
+            f"them (prefilter short) or scanned for nothing (marker short).")
+        # the FORM, which is the half fable's measurement actually chose
+        assert h.CANDIDATE_LINE.pattern == (
+            r"(?:" + "|".join(_alternation_ordered(h.MARKER.pattern)) + r")\b"), (
+            f"the live prefilter is {h.CANDIDATE_LINE.pattern!r}; the measured "
+            f"form is a bare alternation with a RIGHT \\b and no left \\b, in "
+            f"MARKER's own kind order. If the form has moved, say which "
             f"measurement moved it")
 
     def test_the_left_boundary_is_gone_which_is_the_actual_repair(self):

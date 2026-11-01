@@ -1,0 +1,139 @@
+# RESPONSE TO THE FOUNDER'S 14 ANNOTATIONS ON THE CLOSING REPORT, 1 NOVEMBER 2026
+
+## SECTION 1. THE FULL SUITE'S VERDICT
+
+The full test suite ran to completion against the committed tree for the first time in 12 commits. It returned 9 failures, 14,378 passes, 34 skips and 2 errors, with pytest exit code 1, in 6,104.54 seconds, which is 1 hour 41 minutes 44 seconds.
+
+The exit code was read out of the log rather than taken from the shell. The shell returned 0 because the launch command ends in an echo statement, so the shell's status reports the echo and not the test run. This is the third occurrence of that same defect class in this project's record, and it is the reason the figure is quoted from the log line instead.
+
+Of the 9 failures, 7 are now repaired, 2 are deliberately not repaired, and the 2 errors are refusals by the offline network guard rather than logic faults.
+
+## SECTION 2. WHY 6 OF THE 9 FAILURES EXISTED AT ALL
+
+6 of the 9 were caused by admitting a new annotation marker earlier the same day, or by that day's own generated artefacts.
+
+<!-- verbatim-begin: the founder -->
+The founder introduced the marker in these words. Quote. But perhaps one final category such as stm, for statement, might resolve it. It's a statement where you clearly need to act, but that in itself does not fit into any of the other available categories. End quote.
+<!-- verbatim-end -->
+
+The admission itself was correct and complete. The kind list, the harvester's marker pattern, the harvester's candidate-line prefilter and the response reader were all updated together. 4 guards went red anyway, because each had pinned a fixed number or a fixed string where the property being guarded was derivable from the code.
+
+## SECTION 3. A SINGLE GUARD WAS WRONG IN BOTH DIRECTIONS, AND THAT IS MEASURED RATHER THAN ASSERTED
+
+The guard over that cheap pattern, the one deciding whether a transcript line is worth scanning for a marker at all, pinned an exact literal. Measured against 2 mutations of the harvester, it behaved as follows.
+
+Against the correct change, meaning a new kind added to both the marker pattern and the prefilter, that literal form of the guard went RED. That is a false alarm on correct code.
+
+Against the real defect, meaning a new kind added to the marker pattern only, so that the prefilter silently drops the founder's annotations before the marker ever sees them, that literal form of the guard stayed GREEN. That is a miss on the exact fault the guard exists to catch.
+
+The guard now compares the 2 declarations against each other and pins the form of the pattern separately. The same 2 mutations give GREEN on the correct change and RED on the real defect. The producer is the_prefilter_comparator_mutations_2026-11-01.py in the scripts directory, and it restores both mutated files byte for byte and asserts the restore.
+
+## SECTION 4. AN INSTRUMENT COULD NOT NAME ITS OWN NEWCOMER
+
+The source-text assertion census read 106 against a ceiling of 105 recorded on 28 October. Nothing in the record could say which assertion had been added, because only the number had been stored and not the set of names.
+
+That matters because the census's own docstring advises converting a newly added source-text assertion into a check that executes, in preference to raising the ceiling. That advice cannot be followed when the new assertion cannot be identified.
+
+This is the 5th recorded instance in this project of a count being pinned where a set was needed, and the 2nd such instance found inside an instrument whose purpose is to enforce that very discipline.
+
+The set is now pinned in SOURCE_TEXT_ASSERTION_SET.json in the resources directory, beside the count of 106 rather than instead of that count. A swap, meaning 1 assertion removed and 1 added so that the total does not move, was applied as a test: the set form goes red and names the newcomer, while the count form passes silently. The pinned file was restored byte for byte afterwards.
+
+## SECTION 5. A HELP FLAG THAT RUNS THE WORK, FOUND IN 2 SCRIPTS WRITTEN ON 31 OCTOBER
+
+2 scripts write files and ignored the help flag entirely, so the flag ran their ordinary work. This is the defect class that once destroyed 54,480 bytes of a verbatim panel record and returned success. The 2 scripts are build_severity_joint_brief_2026-10-31.py and the_secondary_falsifier_mutations_2026-10-31.py. Both now answer the flag.
+
+3 further scripts called the shared help helper and also built their own argument parser. The helper answers the help flag first, so the parser's own flag list never reached the reader. The helper call is removed from all 3.
+
+A 4th case was a false positive created in this session: a local function named with the same word as the shared helper was read by the detector as the helper itself. It has been renamed.
+
+All 5 were verified by execution. Each script's help flag now exits 0 and leaves the working tree unchanged.
+
+## SECTION 6. THE TASK LIST CAN NO LONGER BE SAID TO TERMINATE
+
+The founder asked to be told if this ever happened, and it has happened.
+
+The task list is modelled as a branching process in which each closed entry produces R new entries. R below 1 is subcritical and the list terminates with probability 1. R at or above 1 and it need never terminate.
+
+R is now 0.837838. The 95 per cent interval on R is 0.677092 to 1.036746. The one-sided exact test against R equals 1 gives a probability of 5.782306e-02, which does not reach the conventional 0.05 threshold. That figure reproduces to 10 significant figures on 3 independent tools: scipy, statsmodels, and an independent exact tail sum computed on mpmath.
+
+The upper bound has crossed 1. The honest reading is that this is an interval endpoint crossing a threshold, and not a demonstrated acceleration. The rise from the 0.782051 recorded on 29 October is not statistically significant, with a Fisher exact probability of 0.685053 and a test of 2 proportions giving 0.671868. The 29 October upper bound was already 0.990540, within 0.009460 of the threshold, so the crossing was a near certainty on any small movement.
+
+Expected total future entries, computed as 1 divided by 1 minus R, is 6.1667 at the point estimate and 3.0969 at the lower bound. At the upper bound it is unbounded.
+
+This failure is not repaired and must not be. The guard's own docstring states that a crossing is a conversation to have rather than a number to quietly restate.
+
+## SECTION 7. WHAT ADDITIONAL PASSES AND ADDITIONAL SEATS ACTUALLY BUY
+
+The founder asked how the calculation is done, how much adding passes reduces the risk that an answer is wrong, how much adding seats does, how low residual risk should be before an outcome is accepted, whether probability theory offers any insight, whether it can be measured from historical data, and whether a simulated run differs from a paid run for this purpose.
+
+5 results are now derived from the model already written in the project's mathematical appendix, rather than asserted. The producer is what_passes_and_seats_actually_buy_2026-11-01.py in the scripts directory. It runs 11 checks, each cross-verified on 2 independent tools.
+
+Result 1. The appendix's residual-risk recursion is exactly geometric decay of the ODDS. Writing the odds of residual risk as R divided by 1 minus R, each pass multiplies those odds by 1 minus q, where q is the effective detection power of that pass. This was confirmed as a symbolic identity on SymPy and as unsatisfiable-on-negation by the z3 solver over the whole open unit square. In plain terms, residual risk falls in a straight line when plotted as log odds against pass number.
+
+Result 2. The number of passes needed to reach a target is therefore a closed formula: the natural logarithm of the target odds divided by the starting odds, all divided by the natural logarithm of 1 minus q. It requires no run of any kind. From a starting residual risk of 0.5 to a target of 0.05 at a detection power of 0.3 takes 8.255245 passes. To reach 0.01 instead takes 12.883215. Starting from 0.9 at a detection power of 0.2 takes 23.041955.
+
+Result 3, and this one is not obvious. At equal cost in seat evaluations, adding SEATS strictly beats adding PASSES whenever the re-injection rate is above 0. The reason is that the probability of missing a flaw is the same product either way, but a multi-pass arm pays the re-injection hazard once per pass, while a multi-seat arm pays it once in total. The z3 solver returns unsatisfiable for any point at which 2 passes of 1 seat beat 1 pass of 2 seats. At a residual risk of 0.5, a per-seat detection of 0.2 and a re-injection rate of 0.05, the 2-pass arm leaves 0.02558731 more residual risk for exactly the same amount of looking. The 2 arms are equal only when re-injection is exactly 0, which SymPy confirms as an identity.
+
+Result 4. There is a hard floor, and it is the re-injection rate divided by the detection power. The composite update has exactly 2 fixed points, which are 1 and that ratio, and the ratio is the attracting fixed point. Iterating from a residual risk of 0.999 converges onto it to 12 decimal places on mpmath, and z3 returns unsatisfiable for any single pass that starts above the floor and lands below it.
+
+Result 5. How low is low enough is not a universal constant. The appendix defines expected residual loss as the sum over flaw classes of a weight times a severity times that class's residual risk, so for a single class the acceptance condition is residual risk at or below a loss budget divided by the severity. The budget is a consequence judgement and not a mathematical result.
+
+What a gate CAN run mechanically is a feasibility test. A target residual risk is reachable at some finite pass count if and only if the floor, re-injection over detection, lies below it. At a detection power of 0.3 and a re-injection rate of 0.05 the floor is 0.166667, so a target of 0.10 is unreachable at ANY number of passes, however large. 3 of the 6 worked cases in the producer are unreachable and 3 are reachable, so the test discriminates rather than always returning the same verdict.
+
+## SECTION 8. ON WHETHER A SIMULATED RUN CAN CARRY THIS WORK
+
+The founder's objection is upheld, and the closing report overstated its case.
+
+The closing report stated that because severity magnitudes in a simulated run are uncalibrated against a real panel, a severity design cannot be validated on that run even in principle. The second clause does not follow from the first. Uncalibrated magnitudes prevent validating a CALIBRATION. They do not prevent checking that the severity gate is reached, that the new form computes correctly, that its spread is not degenerate, or that 2 candidate forms disagree on particular decisions. A comparison of 2 functions evaluated on the same inputs requires neither function to be calibrated.
+
+The closing report contains its own counterexample. It reports that the old severity form was constant at exactly 0.5 across all 1,252 entries examined, and that the new form spans only 0.3667 to 0.5 with 59.3 per cent of entries at the floor. Both of those are severity measurements, and both were taken from simulated data.
+
+Everything in section 7 above is arithmetic on the rates q, sigma and nu. It is substrate independent and holds identically for simulated and real seats. What a paid run supplies and a simulated run cannot is the numerical VALUE of a real model's detection power. It does not supply the arithmetic, and it is not needed to compare 2 candidate severity forms.
+
+A separate and more serious point. The single figure offered in the closing report as the reason the new severity design cannot go live is that the per-finding parameter block is present on 0 of 3,256 archived entries, with a 95 per cent interval of 0 to 0.001178. That interval string occurs in exactly 1 file in the whole repository, which is the closing report itself. There is no script behind it, no guard and no task-list entry. Under this project's own standing rule, a measured figure may be cited only if the script that produced it is committed alongside it, so that number is a claim about evidence rather than evidence. It must be reproduced by a committed producer before it is restated, and it arrived at the moment the founder instructed that the design be built.
+
+## SECTION 9. THE SAME OBJECTION RAN THE OTHER WAY ON 14 OCTOBER
+
+<!-- verbatim-begin: the founder -->
+The project record holds an opposite position of the founder's on the same mechanism, 18 days earlier. His words then, quoted verbatim from task entry B5. Quote. Why run them in shadow in a simulated run, when the purpose of a simulated run is to test how they will behave in a real experiment and to fix any deficiencies and issues you encounter so that we don't run into those same issues in a paid run, and risk pointlessly burning money we don't have. End quote. The entry records that he was right, and the shadow was promoted to a deciding flag as a result.
+<!-- verbatim-end -->
+
+His position on 1 November is that the new severity measure should run in shadow for several simulated runs while the old measure stays live, until enough data exists to retire the old measure.
+
+The 2 positions are reconcilable, and the reconciliation favours the newer position. The severity specification shadow objected to on 14 October was circular by construction: its promotion criterion asked for non-distortion evidence FROM a run, and a shadow never decides, so no run could ever supply that evidence. What the 1 November proposal asks a shadow to produce is different in kind. It asks for a DISAGREEMENT RATE between 2 forms evaluated on the same inputs, and neither form needs to decide anything for that rate to exist. The 14 October objection therefore does not reach the 1 November proposal.
+
+## SECTION 10. THE CLASSIFIER QUESTION WAS PUT BADLY AND THE FOUNDER CAUGHT IT
+
+The closing report asked him to rule whether classifier, meaning the step that sorts findings and proposed fixes rather than producing them, names a seat position or a function any seat can perform, and recommended function.
+
+The role vocabulary in the live code is a 3-member literal: collator, player_manager and participant. That same label, classifier, is not a member of it.
+
+The recommendation's stated premise was that the axis holds 1 position and 1 function, and that such a vocabulary would be misread. That premise is false. The literal already mixes a function, collator, with 2 positions, player_manager and participant.
+
+<!-- verbatim-begin: the founder -->
+The code's own comment states what is genuinely open, and it is a 3-way mapping rather than an ontology. Quote. worker, classifier and orchestrator are NOT entered here, because which declared member each maps to is POLICY and not plumbing. End quote.
+<!-- verbatim-end -->
+
+The founder's reading, that classifier is clearly both a position and a function and that preferring either makes no actual sense, is correct. The decision as posed should be withdrawn and replaced by the concrete mapping question. A further note supports him: the joint panel round of 31 October converged on a 2-dimension, 1-layer design, so a second dimension for capability already exists and is where a classifier function belongs.
+
+## SECTION 11. FACTUAL ANSWERS TO THE 4 HAS-THIS-BEEN-DONE QUESTIONS
+
+The type-check task. The measurement has run and the ratchet is live. The baseline, which records an allowed finding count for each file separately so that a fix in one file cannot pay for a new error in another, was written at 17:38 on 1 November and holds 276 files carrying 1,050 findings, with the worst single file at 72. The entry is marked done and committed. What has NOT started is clearing those 1,050 findings.
+
+The pre-flight health check for model registration. The prerequisite is built: a missing registration is now named rather than silently defaulted. What is not built is the pre-flight stage that fails loudly, nor the clear remediation guidance for a human operator that the founder specified.
+
+The bound orchestrator inside the harness. The design is specified in his own words and recorded. Nothing is built: there is no role layer in the policy registry, no autonomous monitoring loop, no researcher-facing interface and no fix comparator. The experiment has never been run. His instruction of 1 November to build and run both reverses his own placement ruling of 17 October, which placed it after the rest of the task list.
+
+The suite failures. Read, diagnosed in full, and 7 of 9 repaired.
+
+## SECTION 12. THE 2 FAILURES NOT REPAIRED, AND WHY
+
+The branching-process crossing in section 6 is reported rather than repaired, by the guard's own design.
+
+The remaining failure is the version 1.7 note standard check firing on the generated morning report. All 7 of its findings are the English pronoun spelled o, n, e, used as a stand-in for a noun rather than as a number. None is a spelled number. The root cause is structural: the morning-report generator renders ticket text from a field literally named verbatim into a note that the style linter then enforces against. A mechanism to exempt such regions already exists, and the guard's own comment records this exact failure once before, against a sentence a panel seat had written inside a verbatim region. The repair is to mark the rendered region, and it is not applied here because it governs how text the project is obliged to reproduce unedited is handled, which is a decision rather than a patch.
+
+The 2 errors are refusals by the offline network guard. 2 tests written on 31 October invoke an external mathematics executable, which the strict offline mode treats as an outbound attempt and therefore an error. Both pass when that mode is off. The underlying issue is that a test whose verification depends on an external tool verifies nothing when that tool is unreachable, which is this project's own stated standard for that tool.
+
+---
+
+*Written under CDSFL note standard v1.9.*

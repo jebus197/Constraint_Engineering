@@ -738,7 +738,7 @@ def _add_read_paths(turn: dict, paths) -> None:
 
 def new_turn(uuid: str = "", ts: str = "", prompt: str = "") -> dict:
     return {"id": uuid, "ts": ts, "prompt": (prompt or "")[:160], "n_tools": 0,
-            "mutations": [], "first_mut": None, "last_mut": None,
+            "mutations": [], "first_mut": None, "last_mut": None, "mut_first": {},
             "stem": [], "test_idx": [], "failable_idx": [],
             "searches": [], "scans": [], "read_paths": []}
 
@@ -755,6 +755,12 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
             turn["mutations"].append(p)
             turn["first_mut"] = idx if turn["first_mut"] is None else turn["first_mut"]
             turn["last_mut"] = idx
+            # ★ PER-CYCLE ANCHOR, 2026-11-01. BOTH declarations needed it: this
+            # one in `record_tool` and the one in the transcript scanner below.
+            # Patching only the scanner left `mut_first` EMPTY on every live turn,
+            # so the fallback silently restored the turn-global anchor and the
+            # repair reached nothing -- caught by its own guard, not by reading.
+            turn.setdefault("mut_first", {}).setdefault(p, idx)
         return
 
     if name in _READ_TOOLS:
@@ -806,6 +812,12 @@ def record_tool(turn: dict, name: str, inp: dict) -> None:
                 turn["mutations"].append(p)
                 turn["first_mut"] = idx if turn["first_mut"] is None else turn["first_mut"]
                 turn["last_mut"] = idx
+                # ★ PER-PATH ANCHOR (2026-11-01, his ruling "Anchor it per cycle
+                # as you suggest"). FOLLOW used the turn's FIRST mutation as its
+                # window end, which made every cycle after the first
+                # unsatisfiable by construction. A cycle's anchor is the edit to
+                # ITS OWN subject. `setdefault` keeps the FIRST edit per path.
+                turn.setdefault("mut_first", {}).setdefault(p, idx)
         return
 
 
@@ -827,18 +839,26 @@ def audit(turn: dict, prior_reads=None) -> dict:
 
     # FOLLOW. Graded, because "searched nothing at all" and "searched, but not for this"
     # are different failures and only the first is unambiguous.
+    def _bases_of(path: str) -> set:
+        """The names a FOLLOW scan could plausibly carry for one changed path.
+
+        A search for the MODULE name is the canonical FOLLOW trace -- "who
+        imports this". The floor of 4 characters stops stems like `run`, `cli`
+        or `x` from matching every unrelated search and making the signal
+        vacuous.
+        """
+        if path == "<in-place>":
+            return set()
+        base = os.path.basename(path)
+        out = {base}
+        stem = os.path.splitext(base)[0]
+        if len(stem) >= 4:
+            out.add(stem)
+        return out
+
     bases = set()
     for m in muts:
-        if m == "<in-place>":
-            continue
-        base = os.path.basename(m)
-        bases.add(base)
-        stem = os.path.splitext(base)[0]
-        # A search for the MODULE name is the canonical FOLLOW trace -- "who imports this".
-        # The floor of 4 characters stops stems like `run`, `cli` or `x` from matching
-        # every unrelated search and making the signal vacuous.
-        if len(stem) >= 4:
-            bases.add(stem)
+        bases |= _bases_of(m)
     searches = turn.get("searches") or []
     before_text = " ".join(t for i, t in searches if first is None or i < first)
     targeted = any(b and b in before_text for b in bases)
@@ -885,9 +905,37 @@ def audit(turn: dict, prior_reads=None) -> dict:
                                    and any(i < first for i in (turn.get("failable_idx") or [])))
 
     # FOLLOW. A TREE SCAN naming the changed file or its stem, before the edit.
+    #
+    # ★ ANCHORED PER CYCLE, 2026-11-01, ON HIS RULING: *"Anchor it per cycle as
+    # you suggest."* This read `i < first`, where `first` is the turn's FIRST
+    # mutation, so on any turn running more than 1 FFAFP cycle every later cycle
+    # was UNSATISFIABLE BY CONSTRUCTION -- cycle 2's scan necessarily sits after
+    # cycle 1's edit. It refused 4 times in a row on turns that had each done the
+    # tracing it asked for, and twice more in the turn that repaired it. A gate
+    # that cannot be satisfied stops carrying information, because the only way
+    # past it is to ignore it, and then a real refusal is ignored too.
+    #
+    # NOTHING IS RELAXED WITHIN A CYCLE. A scan still has to PRECEDE the edit to
+    # the file it names; what changes is that an earlier file's edit no longer
+    # closes the window on a later file's cycle. A turn that edits code and
+    # scans for none of it still reports FOLLOW missing, which is the property
+    # `test_a_turn_that_scans_for_nothing_still_fails` pins.
     scans = turn.get("scans") or []
-    scan_text = " ".join(t for i, t in scans if first is None or i < first)
-    followed = any(b and b in scan_text for b in bases) if bases else bool(scan_text)
+    mut_first = turn.get("mut_first") or {}
+
+    def _scanned_before_its_own_edit(path: str) -> bool:
+        own = _bases_of(path)
+        if not own:
+            return False
+        anchor = mut_first.get(path, first)       # legacy turns fall back
+        text = " ".join(s for i, s in scans if anchor is None or i < anchor)
+        return any(b and b in text for b in own)
+
+    if bases:
+        followed = any(_scanned_before_its_own_edit(m) for m in muts)
+    else:
+        followed = bool(" ".join(s for i, s in scans
+                                if first is None or i < first))
 
     # FIX. A change was actually made, and it was not confined to the tests.
     # "Only the test changed" is the shape this project guards hardest against:

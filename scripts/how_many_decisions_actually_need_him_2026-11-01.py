@@ -455,6 +455,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    from _cli_help import answer_help
-    answer_help(__doc__, __file__)
+    # NO `answer_help` HERE. This script has its own parser, and the helper
+    # answers --help FIRST, so argparse's flag list never reaches the reader
+    # (2026-11-01, caught by test_no_script_uses_both).
     sys.exit(main())

@@ -102,6 +102,18 @@ def parse(log_text: str) -> dict:
 
     d = DURATION.search(summary)
     counts["seconds"] = float(d.group(1)) if d else 0.0
+
+    # ★ THE IDENTITIES, NOT JUST THE COUNT (2026-11-01). This record stored
+    # `failed: 22` and nothing else, so a reader meeting `failed: 9` the next
+    # night could not tell whether the 9 were a subset of the 22, 9 new ones, or
+    # a swap -- and answering it took reading a prose report. That is the
+    # "pin a set, not a count" defect, met for the 3rd time in one evening and
+    # the 2nd time inside an instrument whose job is to report suite health.
+    # pytest's own `short test summary info` block names every one of them.
+    counts["failed_tests"] = sorted({
+        line.split(None, 1)[1].strip()
+        for line in log_text.splitlines()
+        if line.startswith(("FAILED ", "ERROR ")) and len(line.split(None, 1)) > 1})
     return counts
 
 

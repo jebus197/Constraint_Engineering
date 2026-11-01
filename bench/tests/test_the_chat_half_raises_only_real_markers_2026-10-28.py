@@ -104,14 +104,24 @@ def test_every_chat_raisable_kind_can_be_raised(hv):
     So the property is no longer "every declared kind" but "every
     CHAT-RAISABLE kind", and the exclusion is asserted below rather than
     assumed, so a kind cannot quietly leave the raisable set.
+
+    ★ 4 -> 5 ON 2026-11-01, AND THE TRIPWIRE DID ITS JOB. `stm` became his 6th
+    kind that day, on his own words: *"perhaps one final category such as 'stm'
+    (for 'statement') might resolve it? It's a statement where you clearly need
+    to act, but that in itself does not fit into any of the other available
+    categories?"* A statement where action is needed is exactly the thing he
+    says in CHAT, so `stm` belongs in the raisable set and not in the
+    exclusion, which is why the figure moved rather than the exclusion. The
+    count is kept as a tripwire, not as the property: the loop below is the
+    property, and it is the loop that proves `stm` is actually reachable.
     """
     raisable = [k for k in hv.KINDS if k not in hv.CHAT_EXCLUDED_KINDS]
-    assert len(raisable) == 4, (
+    assert len(raisable) == 5, (
         f"{len(raisable)} chat-raisable kinds; the exclusion set has changed "
         "and this test's own figure is stale")
     for kind in raisable:
         assert hv.raises_a_marker(kind) == kind, (
-            f"kind {kind!r} cannot be raised from chat, and 2 of the 4 could "
+            f"kind {kind!r} cannot be raised from chat, and 2 of the 5 could "
             f"not before 2026-10-28")
 
 

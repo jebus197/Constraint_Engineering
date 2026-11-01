@@ -186,8 +186,8 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
-    # `takes_no_arguments=False` because this script HAS a parser: the helper
-    # answers --help before argparse sees anything, and otherwise stands aside.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # NO `answer_help` HERE, and the comment that used to sit here had it
+    # backwards: answering --help BEFORE argparse sees anything is the defect,
+    # not the feature, because argparse's own flag list then never reaches the
+    # reader (2026-11-01, caught by test_no_script_uses_both).
     sys.exit(main(sys.argv))

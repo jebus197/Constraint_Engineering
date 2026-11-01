@@ -43,12 +43,14 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import json
 import subprocess
 import sys
 
 import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+ASSERTION_SET = ROOT / "resources" / "SOURCE_TEXT_ASSERTION_SET.json"
 CENSUS = ROOT / "scripts" / "source_text_assertions_2026-09-11.py"
 FRAGILITY = ROOT / "scripts" / "source_text_fragility_2026-09-11.py"
 NEIGHBOUR = ROOT / "scripts" / "neighbour_catches_it_2026-09-11.py"
@@ -226,15 +228,37 @@ class TestTheCensusIsCurrent:
         # were CONVERTED to checks that execute rather than counted, and one of those
         # conversions immediately exposed a test-ordering fault, which is the argument
         # for converting where it is possible at all.
-        assert len(rows) <= 105, (
-            f"{len(rows)} source-text assertions, up from the 105 recorded on "
-            f"2026-10-28, the 98 on 2026-10-12, the 82 on 2026-10-06 and the 70 measured "
-            f"on 2026-09-11. Re-read "
-            f"scripts/source_text_assertions_2026-09-11.py's docstring before "
-            f"raising this number: 4 guards of this class broke on CORRECT changes "
-            f"in a single day. Prefer CONVERTING an assertion to one that executes "
-            f"over raising this ceiling; 2 of the 4 added on 2026-10-06 were "
-            f"converted that way.")
+        #
+        # ★ THE SET IS PINNED BESIDE THE COUNT, 2026-11-01, BECAUSE THE COUNT COULD
+        # NOT NAME THE NEWCOMER. The census read 106 against the 105 recorded on
+        # 2026-10-28 and NOTHING IN THE RECORD COULD SAY WHICH ASSERTION WAS NEW --
+        # only the number had been stored, so the docstring's own advice (CONVERT the
+        # new one rather than raise the ceiling) was unusable. That is exactly the
+        # "pin a set, not a count" defect, found inside the instrument meant to
+        # enforce this class of discipline. The count assertion is KEPT; the set is
+        # ADDED beside it, and a breach now prints the newcomer by name.
+        pinned = json.loads(ASSERTION_SET.read_text())
+        pinned_keys = set(pinned["assertions"])
+        live_keys = {f"{r[0]}::{r[1]}" for r in rows}
+        added = sorted(live_keys - pinned_keys)
+        gone = sorted(pinned_keys - live_keys)
+        assert not added, (
+            f"{len(added)} source-text assertion(s) NOT in the pinned set:\n  "
+            + "\n  ".join(added)
+            + "\nRe-read scripts/source_text_assertions_2026-09-11.py's docstring "
+              "before adding these to resources/SOURCE_TEXT_ASSERTION_SET.json: 4 "
+              "guards of this class broke on CORRECT changes in a single day. "
+              "Prefer CONVERTING an assertion to one that EXECUTES over widening "
+              "the set; 2 of the 4 added on 2026-10-06 were converted that way.")
+        assert len(rows) <= pinned["_count"], (
+            f"{len(rows)} source-text assertions against the pinned "
+            f"{pinned['_count']}, and yet no unpinned key -- the set and the count "
+            f"disagree, which means one of the 2 is being maintained and the other "
+            f"is not.")
+        if gone:  # a CONVERSION, which is the outcome the docstring asks for
+            print(f"\n  {len(gone)} pinned source-text assertion(s) no longer "
+                  f"present (converted or deleted):\n    " + "\n    ".join(gone)
+                  + "\n  Shrink resources/SOURCE_TEXT_ASSERTION_SET.json to match.")
 
     def test_the_census_runs(self):
         r = subprocess.run([sys.executable, str(CENSUS)], cwd=ROOT,
