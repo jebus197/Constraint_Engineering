@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 31 October 2026 06:16 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 1 November 2026 12:16 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -39,7 +39,15 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-11-01 02:12 GMT
+## CURRENT STATE — 2026-11-01 12:05 GMT
+
+**THE BOARD.** `sim/shakedown-2026-09-29`, commit `619a7081`. **202 entries: 177 DONE, 11 OPEN, 9 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()`, which is the canonical counter. **The OPEN count fell and then rose overnight** — 7 at the previous save, 15 once the founder's annotations were read, 10 after 5 closures, 11 when the night's last finding was raised as B63. A single total cannot express that, so the trace is printed by `scripts/how_many_decisions_actually_need_him_2026-11-01.py` instead.
+
+**★ OF THOSE 11, EXACTLY 3 ARE DECISIONS THE FOUNDER OWES: B21, B60 and B61.** 4 more (C0001, C0036, C0037, C0054) state in their own text that they await B61 and are not rulings of their own, so 1 answer releases 4 entries. 2 ask a go-ahead for a free panel, which his standing rule already grants. 2 are the assistant's own work. **The report of 03:36 presented 10 items under a heading promising they were his to decide, omitted B61 from that list, and included 1 he had ruled on 2026-10-30** — and the generated half suppressed all 4 of B21's live questions because the entry carries a ruling date 14 days older than them. Both directions of the fault, the repetition and the suppression, are measured by the producer named above and recorded in `resources/RECOVERY.md`.
+
+**SAVING IS NOT COMPLETE UNTIL THE CAPTURE AND THE PUSH HAPPEN.** The save of 02:01 updated both documents and landed 4 commits while capturing no Open Brain session summary and pushing nothing, so the next session's recovery would have read a summary from the save before. The project's own `sv` definition names all 4 steps — documents, memory, commit, push — and the first 2 are the ones that look finished on their own.
+
+## CURRENT STATE — 2026-11-01 02:12 GMT (SUPERSEDED by the block above)
 
 **THE BOARD.** `sim/shakedown-2026-09-29`, commit `ea799770`. **200 entries: 171 DONE, 15 OPEN, 9 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()` with `effective_state()` against the deferral register, which is the canonical counter. **The OPEN count ROSE from 9 to 15 overnight, and that is the honest direction:** 9 entries were added and 0 closed. 5 of the 9 are directive-composition defects that previously had no position in the register at all, and giving them a position was the founder's own instruction.
 
