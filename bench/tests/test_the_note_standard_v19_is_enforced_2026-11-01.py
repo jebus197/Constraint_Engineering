@@ -196,3 +196,85 @@ class TestRule34IsStatedAndNotClaimedAsEnforced:
         assert "OVER-NARRATION" not in src.upper().replace("AVOID OVER-NARRATION", ""), (
             "a Rule 34 checker has appeared; if it is real, update the standard "
             "and this test rather than leaving the standard claiming it is unenforced")
+
+
+class TestRule33CannotPassOnAnEmptyWindow:
+    """★ THE CHECK THAT WOULD HAVE CAUGHT 2 DEFECTS IN RULE 33 ITSELF.
+
+    On 2026-11-01, the first real document judged by Rule 33 reported 0
+    findings while measuring NOTHING. Two faults, and both returned 0 rather
+    than failing:
+
+      * `_DECISION_SECTION` listed the decisions file's own TITLE, so the search
+        anchored on line 1 and the next `PART` heading closed the window 2 lines
+        later. The scan found 0 numbered items, and `if items and recs < items`
+        is False when items is 0.
+      * `_NUMBERED_ITEM` knew only a bare `3.` and not the `DECISION 3.` form
+        the file actually uses, so even a correctly anchored window scored 0.
+
+    EVERY FIXTURE-BASED TEST IN THIS FILE PASSED THROUGHOUT, because the
+    fixtures use the bare form and a 2-line document. A rule that returns 0 on
+    an empty window is indistinguishable from a rule that returns 0 on a
+    compliant document, and only driving it over a REAL delivered file told them
+    apart. So this class asserts NON-VACUITY against whatever decisions file the
+    checkout holds, and fails rather than skipping when there is none.
+    """
+
+    def _delivered(self):
+        cands = sorted((REPO / "experimental_notes").glob("Decisions_*.txt"))
+        return [c for c in cands if NVL._DECISION_SECTION.search(
+            c.read_text(errors="ignore"))]
+
+    def test_a_real_decisions_file_exists_to_test_against(self):
+        got = self._delivered()
+        assert got, (
+            "no delivered decisions file carries a section Rule 33 recognises, "
+            "so this class cannot establish non-vacuity — do not let it pass "
+            "on an absence")
+
+    def test_rule_33_finds_real_numbered_decisions_in_it(self):
+        """THE NON-VACUITY ASSERTION. If the window is empty this fails, where
+        the rule itself would silently report no findings."""
+        import re as _re
+        for f in self._delivered():
+            text = f.read_text(errors="ignore")
+            NVL._LOGICAL_PATH = str(f)
+            hits = list(NVL._DECISION_SECTION.finditer(text))
+            sect = text[hits[-1].end():]
+            nxt = _re.search(r"^(?:#+\s*)?(?:PART\s+\d+)[.:]", sect, _re.M)
+            if nxt:
+                sect = sect[:nxt.start()]
+            items = set(NVL._NUMBERED_ITEM.findall(sect))
+            assert items, (
+                f"{f.name}: Rule 33's window holds 0 numbered decisions, so its "
+                f"verdict on this file is vacuous. Either the section anchor is "
+                f"matching a title instead of the section, or the item pattern "
+                f"does not know the form this file uses.")
+
+    def test_the_anchor_prefers_the_section_over_an_earlier_mention(self):
+        """The specific repair: the LAST match, not the first. A document may
+        legitimately name itself after its subject."""
+        doc = ("DECISIONS AWAITING YOU, 1 November\n\nPART 1. SETTLED\n\n"
+               "Nothing here.\n\nPART 5. THE DECISIONS THAT ARE STILL YOURS\n\n"
+               "DECISION 1. A THING. My recommendation is to do it, as the "
+               "simplest sufficient fix.\n")
+        hits = list(NVL._DECISION_SECTION.finditer(doc))
+        assert hits, "neither the title nor the section matched"
+        assert "STILL YOURS" in doc[hits[-1].start():hits[-1].end()].upper(), (
+            "the last match is not the decisions section, so the window will "
+            "start in the wrong place")
+
+    def test_the_item_pattern_knows_both_forms_a_report_uses(self):
+        for form in ("1. A bare numbered item\n",
+                     "DECISION 1. A LABELLED ONE\n",
+                     "**2.** A bold one\n"):
+            assert NVL._NUMBERED_ITEM.findall(form), form
+
+    def test_the_recommendation_pattern_knows_the_label_this_project_uses(self):
+        """It was narrowed to 3 phrasings and accused a compliant file, which is
+        the guard-accusing-correct-material class."""
+        for phrasing in ("My recommendation is to wait.",
+                         "I recommend waiting.",
+                         "Recommendation, and why. Wait.",
+                         "Keep the inventory running, which is my recommendation."):
+            assert NVL._RECOMMENDS.search(phrasing), phrasing

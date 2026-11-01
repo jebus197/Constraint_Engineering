@@ -305,8 +305,14 @@ def test_the_severity_gate_provenance_question_is_struck_permanently():
             # with the same date-aware predicate the generator uses, so the 2
             # cannot disagree. The inverse arm is below, so an item ruled with
             # nothing newer still may not be live.
-            if d.get("ruled") and _gen().asks_newer_than_the_ruling(
-                    d.get("ident") or "", d.get("ruled")):
+            # ★ AMENDED AGAIN 2026-11-01: this called the DATE-ONLY predicate
+            # while the generator moved to `ruling_is_spent`, so this test became
+            # a THIRD declaration of the same rule and disagreed with the other 2
+            # the moment the carve-out for a same-day ruling landed. The comment
+            # above already asks for "the same date-aware predicate the generator
+            # uses"; it now genuinely is that predicate, state included.
+            if d.get("ruled") and _gen().ruling_is_spent(
+                    d.get("ident") or "", d.get("ruled"), d.get("state")):
                 continue
             assert not d.get("ruled"), (
             f"{d['key']} carries a ruling of {d.get('ruled')} yet is still a "

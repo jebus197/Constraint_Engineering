@@ -132,7 +132,24 @@ class TestTheForkIsRecordedAsARelationship:
         keep failing. Fixing a site shrinks the set and this test then names
         what changed, which a bare count cannot do.
         """
-        KNOWN_UNDECLARED = {"player", "reviewer"}
+        # ★ NARROWED TO EMPTY 2026-11-01, WHICH IS THIS PIN WORKING. It
+        # recorded {"player", "reviewer"} -- 9 and 4 occurrences found by the
+        # round-1 AST scan. Both are now normalised at their 4 live sites in
+        # `bench/tools/`, on his acceptance of the panel's recommendation, so
+        # the undeclared set is EMPTY and the fork is closed in the live tree.
+        #
+        # AN EMPTY PIN IS THE STRONGEST FORM: any new member is a regression,
+        # with nothing to argue about. The same shape as the empty
+        # `STILL_ASKING` pin in the ruled-entry guard.
+        #
+        # THE RESOLVER DOES NOT MAKE THIS REDUNDANT, which is why both halves
+        # were folded back. `canonical_role` normalises at CONSTRUCTION, so a
+        # stray literal still RUNS correctly -- and this scan is what notices
+        # the source said something nobody declared. The second seat measured
+        # exactly that: with the resolver alone an in-tree stray is silently
+        # missed, and with this scan alone a runtime spelling survives
+        # undeclared. Neither part does both.
+        KNOWN_UNDECLARED: set[str] = set()
         constructed = {v for _, _, v in _scan(_live_files(), handle_ifexp=True)}
         undeclared = constructed - DECLARED
         assert undeclared == KNOWN_UNDECLARED, (
@@ -144,14 +161,31 @@ class TestTheForkIsRecordedAsARelationship:
             f"If a site was fixed, narrow KNOWN_UNDECLARED. If a new spelling "
             f"appeared, the vocabulary has forked again.")
 
-    def test_the_literal_is_unenforced_at_runtime(self):
-        """The reason the fork was possible at all: a Literal is a static
-        annotation and nothing checks it when the object is built."""
-        mc = ModelConfig(label="x", model_id="s", api="sim",
-                         role="striker", system_prompt_path=None)
-        assert mc.role == "striker", (
-            "an out-of-vocabulary role was rejected at runtime, so the "
-            "premise of this whole finding has changed")
+    def test_the_literal_IS_NOW_ENFORCED_at_runtime(self):
+        """★ THE PREMISE CHANGED ON 2026-11-01, EXACTLY AS THIS TEST WARNED.
+
+        It used to assert that an out-of-vocabulary role SURVIVED, with the
+        message "so the premise of this whole finding has changed" -- and it
+        has: he accepted the panel's recommendation on role assignment and the
+        composed repair was folded back, so `ModelConfig.__post_init__` now
+        resolves every spelling through `canonical_role`.
+
+        A Literal is still only a static annotation. What changed is that the
+        constructor checks it, which is the whole of the repair.
+        """
+        import pytest as _pt
+        with _pt.raises(ValueError, match="unknown ModelConfig role"):
+            ModelConfig(label="x", model_id="s", api="sim",
+                        role="striker", system_prompt_path=None)
+
+    def test_an_aliased_spelling_normalises_rather_than_raising(self):
+        """ANTI-VACUITY FOR THE TEST ABOVE: a constructor that refused every
+        spelling would pass it and break every live run. The 2 measured
+        undeclared spellings resolve instead."""
+        for spelling in ("player", "reviewer"):
+            mc = ModelConfig(label="x", model_id="s", api="sim",
+                             role=spelling, system_prompt_path=None)
+            assert mc.role == "participant", (spelling, mc.role)
 
     def test_the_declared_selector_silently_excludes_a_forked_spelling(self):
         """THE CONCRETE FAILURE PATH, which is why the fork is not cosmetic.
@@ -169,8 +203,17 @@ class TestTheForkIsRecordedAsARelationship:
                         role="participant", system_prompt_path=None),
         ])
         got = [m.label for m in cfg.get_by_role("participant")]
-        assert got == ["spelled_as_declared"], got
-        assert "as_the_runner_builds_it" not in got
+        # ★ THE SILENT EXCLUSION IS GONE, 2026-11-01. This asserted that the
+        # runner-spelled seat was INVISIBLE to the declared selector, which was
+        # the concrete failure path and the reason the fork was not cosmetic.
+        # The folded-back resolver normalises the spelling at construction, so
+        # both seats are now found. The failure path is closed rather than
+        # documented, which is what his acceptance of the panel's
+        # recommendation was for.
+        assert got == ["as_the_runner_builds_it", "spelled_as_declared"], got
+        assert "as_the_runner_builds_it" in got, (
+            "the runner-spelled seat is invisible to the declared selector "
+            "again, so the fork has returned")
 
 
 class TestTheTypeCheckerReportsOkOnWhatItCannotType:
@@ -256,12 +299,22 @@ class TestTheSeatArtefactsAreAdjudicated:
             "the 2 files are now identical, so the collision is no longer a "
             "fold-back hazard")
 
-    def test_a_seat_test_for_an_unpreserved_fix_cannot_be_folded(self):
-        """cc2's `test_the_role_literal_is_enforced` imports `ROLE_ALIASES`,
-        which cc2 added to its SANDBOX copy of the orchestrator. Preservation
-        kept the test and not the implementation, so folding the test back
-        would add a permanently-red guard for code that does not exist."""
+    def test_the_seat_fix_IS_NOW_IN_THE_TREE_so_its_test_is_foldable(self):
+        """★ INVERTED 2026-11-01, AND THE OLD VERSION TOLD ME TO DO IT.
+
+        It asserted that `ROLE_ALIASES` did NOT exist, because preservation had
+        kept a seat's test and not its implementation, so folding that test back
+        would have added a permanently-red guard for absent code. Its own
+        message said "ROLE_ALIASES now exists in the tree, so cc2's test is
+        foldable and this test is stale".
+
+        It does exist, on his acceptance of the panel's recommendation, so the
+        condition the old test was protecting has been satisfied rather than
+        bypassed.
+        """
         import bench.experiment_11_orchestrator as orch
-        assert not hasattr(orch, "ROLE_ALIASES"), (
-            "ROLE_ALIASES now exists in the tree, so cc2's test is foldable "
-            "and this test is stale")
+        assert hasattr(orch, "ROLE_ALIASES"), (
+            "ROLE_ALIASES has gone from the tree, so the folded-back repair has "
+            "been reverted and the seat test it supports is red for real")
+        assert callable(getattr(orch, "canonical_role", None)), (
+            "the resolver is gone, so the aliases are data nothing reads")

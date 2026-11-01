@@ -255,9 +255,9 @@ def _make_configs(workdir: Path, ouroboros_block: Dict[str, Any] | None,
 
     models = [
         ModelConfig(label="Gemini", model_id="stub", api="openrouter",
-                    role="reviewer", system_prompt_path=None),
+                    role="participant", system_prompt_path=None),
         ModelConfig(label="Codex", model_id="stub", api="openrouter",
-                    role="reviewer", system_prompt_path=None),
+                    role="participant", system_prompt_path=None),
     ]
     exp_config = ExperimentConfig(models=models)
     return exp_config, "CDSFL DIRECTIVE (stub for the proof harness)\n", cfg

@@ -116,9 +116,30 @@ class TestTheProducerDoesNotMeasureItself:
         assert "verification_polarity" in own, (
             "fixture precondition: the producer must mention the term for this "
             "test to have teeth")
-        assert prod.live_hits("verification_polarity") == [], (
-            "live references to verification_polarity must be 0; any hit here "
-            "is the producer counting itself")
+        # ★ THE ONLY LEGITIMATE LIVE REFERENCE, ADDED 2026-11-01. This asserted
+        # ZERO live references, because the hazard was PROSPECTIVE: the field
+        # was read by nothing, and any hit was the producer counting its own
+        # text. On his ruling of 2026-11-01 the seat's proof verifier was fixed
+        # and folded back, and it reads that field in order to HANDLE the
+        # polarity correctly. So the hazard is now addressed rather than
+        # prospective, and `bench/proof_verify.py` is the module that addresses
+        # it -- the opposite of a hazard.
+        #
+        # THE TEST'S PURPOSE IS UNCHANGED: an instrument that counts its own
+        # text measures nothing. Anything OTHER than the module that implements
+        # the handling still fails here, so a future reader cannot quietly
+        # reintroduce an unhandled reference.
+        ADDRESSES_IT = "bench/proof_verify.py"
+        stray = [h for h in prod.live_hits("verification_polarity")
+                 if not h.startswith(ADDRESSES_IT)]
+        assert stray == [], (
+            f"live references to verification_polarity must come only from "
+            f"{ADDRESSES_IT}, which exists to handle the polarity. These do "
+            f"not: {stray}")
+        assert any(h.startswith(ADDRESSES_IT)
+                   for h in prod.live_hits("verification_polarity")), (
+            f"{ADDRESSES_IT} no longer reads verification_polarity, so either "
+            f"the fold-back was reverted or the handling has been removed")
 
     def test_the_filter_still_finds_a_term_that_IS_live(self, prod):
         # Control. Without this, the test above is satisfied by a grep that

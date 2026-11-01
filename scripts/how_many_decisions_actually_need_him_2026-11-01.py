@@ -78,7 +78,26 @@ ASKS = re.compile(
     r"|STILL NEEDS (?:HIS|YOUR)"
     r"|\[NEEDS YOUR RULING\]"
     r"|(?:is|are|remains) (?:his|yours) to (?:rule|authorise|decide|settle|release)"
-    r"|so it is (?:his|yours)", re.I)
+    r"|so it is (?:his|yours)"
+    # ★ THE 2 FORMS THIS PATTERN MISSED, ADDED 2026-11-01 AFTER IT SUPPRESSED A
+    # LIVE ENTRY. B71 asks a PERMISSION rather than a ruling -- its heading says
+    # "CANNOT BE INSTALLED WITHOUT HIS PERMISSION" and its body says "His
+    # confirmation of that reading is owed" -- and neither spelling was here, so
+    # `still_asks` returned False, the marker's ruling date was read as permanent
+    # absolution, and the entry was routed to the work section of the report it
+    # should have headed. Same suppression direction as the `ruled:` fault above,
+    # on an entry written the same day the fault was corrected.
+    #
+    # A STRUCTURAL ALTERNATIVE WAS MEASURED AND IS NOT BETTER. Treating state
+    # BLOCKED as his whenever the body names him returns the IDENTICAL set on the
+    # live corpus, {B71}, so per `composability-requires-a-measurement` the single
+    # simpler fix is preferred and NO composed fix is claimed. The structural form
+    # is also not universally sound: entry 7.3 was BLOCKED on Wolfram's written
+    # reply, a third party, so BLOCKED alone never meant "his".
+    r"|\bwithout (?:his|your) permission"
+    r"|\b(?:needs|need|requires|require|grant) (?:his|your) permission"
+    r"|\b(?:his|your) (?:confirmation|ruling|answer|authorisation|verdict|permission"
+    r"|go-ahead)[^.]{0,80}?\bis owed\b", re.I)
 
 #: The body naming ANOTHER entry as the holder of the decision. This is the
 #: predicate neither existing filter has, and the one this report needed.

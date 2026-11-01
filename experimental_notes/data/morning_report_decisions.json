@@ -468,7 +468,8 @@
       "**Define `classifier` as a FUNCTION — what the model does on a task — which is my recommendation.** It matches the other member of that axis, worker, which is plainly a function, and it leaves the topology axis free to say where a seat sits without competing for the same word. ADDITIVE: both vocabularies survive and neither loses a value. SIMPLEST SUFFICIENT: it is a definition plus the alias normalisation the seats already wrote and tested, not a new mechanism.",
       "**Define `classifier` as a seat POSITION.** Then the functional axis is left with worker alone, which makes it a single-valued dimension and raises the question of whether it is a dimension at all — the fork the first seat identified at configuration scope.",
       "**Defer the definition and build only the structural half**, reconciling the 2 declarations of the topology axis now and leaving the functional layer unbuilt. This is the smallest step, and its cost is that the thing you asked for — making model and role selection trivial — stays half done."
-    ]
+    ],
+    "spoken_heading": "WHETHER A CLASSIFIER NAMES A SEAT POSITION OR A FUNCTION"
   },
   "task:B22": {
     "title": "B22 — what a fix means outside code, and whether this is yet a general-purpose instrument",
@@ -675,7 +676,8 @@
     "evidence_line": "313 artefacts, 246 absent with a 95 per cent interval of 0.737179 to 0.827772. Guard coverage lost: 0 of 42 diverged guards carry a test the live tree lacks, interval 0.000000 to 0.083799. Live module files 45, new files 44, divergent edits to an existing module 1. The proof verifier passed 7 of 8 checks, interval 0.529112 to 0.977583. Producers: the unapplied fix store script and the proof verifier test script, both dated 1 November.",
     "ruled": null,
     "his_words": "I worry that we might build up a large store of fixes that are never applied to any of our runners in practice. This is a problem we have encountered several times in the past and that we need to stay on top of.",
-    "what_the_ruling_means": "MEASURED on his worry. 1 point needs him: whether the 44 unadopted designs are triaged or left as history."
+    "what_the_ruling_means": "MEASURED on his worry. 1 point needs him: whether the 44 unadopted designs are triaged or left as history.",
+    "spoken_heading": "WHETHER THE UNADOPTED MODEL DESIGNS ARE WORTH HARVESTING"
   },
   "task:C0037": {
     "title": "C0037 — the directive de-duplicator deleted a formula and kept its special case",
@@ -741,7 +743,8 @@
     "evidence_line": "4 defects, 5 codes, 1 raised twice. 5 of 8 entry codes named by live parked headings carried no register label before 1 November, interval 0.305742 to 0.863156, and 0 do now. Producer: the parked-file script dated 1 November.",
     "ruled": null,
     "his_words": "add those I have already genuinely ruled on to your master task list and to an appropriate section in your Bugzilla section of the registry",
-    "what_the_ruling_means": "1 decision, not 4. The individual entries carry the defects; this one carries the question."
+    "what_the_ruling_means": "1 decision, not 4. The individual entries carry the defects; this one carries the question.",
+    "spoken_heading": "THE SHARED SCOPE QUESTION BEHIND THE 4 DIRECTIVE COMPOSITION DEFECTS"
   },
   "task:B63": {
     "title": "B63 — the stop gate credits one of its own five steps only once per turn, so in a long unattended turn it cannot be satisfied after the first edit",
@@ -751,22 +754,25 @@
       "**Anchor the window per cycle rather than per turn**, which is my recommendation. It is the SIMPLEST SUFFICIENT fix because it changes one window boundary and nothing else, and it is ADDITIVE because the gate keeps every step it checks today and gains the ability to be satisfied more than once. No COMPOSABILITY claim is made: no second repair was measured to improve on it.",
       "**Leave it as it is.** The gate then prods on long turns regardless of what was done, which is the state that produced two wrong diagnoses of mine in twenty minutes before the proof settled it."
     ],
-    "evidence_line": "Proved on two tools: z3 returns unsat for the follow condition after the first edit and sat for the pass condition; SymPy gives the witness as last minus first plus one. The window size is not the cause: across 35,111 inter-turn gaps the largest is 1,605,379 bytes and 0 exceed the window.",
+    "evidence_line": "Proved on two tools: z3 returns unsat for the follow condition after the first edit and sat for the pass condition; SymPy gives the witness as last minus first plus one.",
     "ruled": null,
     "his_words": "",
-    "what_the_ruling_means": "Yours because it changes a gate that governs how this session is held to its own discipline, and loosening such a gate is not something to do unattended."
+    "what_the_ruling_means": "Yours because it changes a gate that governs how this session is held to its own discipline, and loosening such a gate is not something to do unattended.",
+    "spoken_heading": "WHETHER TO LOOSEN THE GATE THAT HOLDS ME TO MY OWN 5 STEP CYCLE"
   },
-  "task:B68": {
-    "title": "B68 — the type checker reports a clean pass on files it has not examined",
-    "what": "The static type checker is invoked with a flag that tells it to ignore imports it cannot resolve. The project's own package has no marker file, so a bare project import is exactly what it cannot resolve: the symbol becomes untyped, the constructor behind it is never checked, and the tool prints that it found no issues.",
-    "why": "You ruled this becomes its own task. It is not a one-line change, because some files really are clean and some are only reported clean: measured on 3 live files, one reports 1 finding with the flag and 6 without it, one reports 5 with the flag, and one reports none either way.",
+  "task:B71": {
+    "title": "B71 — permission to modify the one Stop hook that would make the automatic save refresh local resources",
+    "what": "You ruled on 1 November that the automatic form of the save should refresh local reference resources without pushing, while the manual form commits and pushes. The design is written and it could not be installed. The automatic half lives in a Stop hook under your Claude configuration directory, and the harness refused the edit as self modification. The repository copy is not a second file: both paths are hard links to a single inode, which a test asserts deliberately, so writing the repository path would be the same write under another name. That route was not taken.",
+    "why": "Yours because it is a permission over a file that governs how this session is stopped, and because the refusal is a safety boundary rather than a bug. Nothing else about saving is affected: the manual command commits and pushes, and the gate that notices a long gap without a save is live and correctly quiet.",
     "options": [
-      "**Clear it in batches as its own task, which is your ruling and my recommendation.** ADDITIVE: nothing is disabled meanwhile and the tool stays readable. SIMPLEST SUFFICIENT: it admits the check to the commit gate only once a clean run exists to hold, so the gate never goes red for reasons unrelated to the change being made.",
-      "**Add it to the commit gate now.** Every commit then fails on findings that have nothing to do with it, and a check red for unrelated reasons is a check that gets bypassed."
+      "**Grant permission for that one file**, which is my recommendation. The change only adds: it regenerates the generated state file, the memory exclusions ledger and a session summary, and it commits nothing, so nothing half finished can reach the permanent record, which was your stated reason for splitting the 2 forms.",
+      "**Apply the change yourself from the written description.** The design is 23 lines and the file is 5,068 bytes; this keeps the boundary intact at the cost of your time.",
+      "**Leave the gate as it is.** The local reference resources then refresh only when a full manual save runs, which is the state that lost detail last night."
     ],
-    "evidence_line": "110 of 155 live files under the package import in the way the tool cannot resolve. On bench/routing.py: 1 finding with the flag, 6 without it.",
-    "ruled": "2026-11-01",
-    "his_words": "Enable it as its own task, as you suggest.",
-    "what_the_ruling_means": "Work, not a decision. It is enabled as a task, cleared in batches, and admitted to the commit gate when clear."
+    "evidence_line": "Both hooks are single inodes with a link count of 2: the save gate is inode 710170112 and the cycle gate is inode 583025500, each appearing at both paths. So a repository-side write is the same write, and no workaround exists that respects the refusal.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "Yours because it is permission over a file that governs how this session is stopped, and a model granting itself that permission is the thing the refusal exists to prevent.",
+    "spoken_heading": "PERMISSION TO MODIFY MY OWN STOP HOOK"
   }
 }

@@ -169,6 +169,12 @@ The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B21 role layer: the functional layer cannot be built until he defines whether classifier names a seat position or a function
+
+*Parked 2026-11-01T17:07:39+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

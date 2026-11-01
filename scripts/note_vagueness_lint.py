@@ -296,12 +296,42 @@ def rule_32_applies(path: pathlib.Path) -> bool:
 #: The file he rejected on 2026-10-29 carried 0 recommendations across 6 open
 #: decisions and used the words additive, composability and simplest sufficient
 #: 0 times. Both halves are counted rather than hoped for.
+#: ★ THE SECTION, NOT THE TITLE — corrected 2026-11-01, and the defect was in
+#: this rule's FIRST USE on the first file it judged. The pattern listed
+#: `DECISIONS AWAITING YOU`, which is the TITLE of the decisions file, so the
+#: search anchored on line 1, the next `PART` heading closed the window 2 lines
+#: later, and the scan found 0 numbered items. `if items and recs < items` is
+#: then False and the rule PASSED — reporting 0 findings while measuring
+#: nothing. A rule built to stop vacuous decision reporting was itself vacuous.
+#:
+#: SO THE ANCHOR IS THE LAST MATCH, NOT THE FIRST, and a title-only phrase is
+#: excluded: a document may legitimately name itself after its subject, and the
+#: section that holds the decisions is the one to scan. The same "last mention,
+#: not first" correction the note-standard stamp rule already carries, for the
+#: same reason.
 _DECISION_SECTION = re.compile(
     r"^(?:#+\s*)?(?:PART\s+\d+[.:]\s*)?(?:\*\*)?\s*"
     r"(?:WHAT NEEDS YOUR VERDICT|DECISIONS? THAT NEED|WHAT I NEED FROM YOU"
-    r"|DECISIONS AWAITING YOU)", re.I | re.M)
-_NUMBERED_ITEM = re.compile(r"^\s*(?:\*\*)?(\d{1,2})\.\s+\S", re.M)
-_RECOMMENDS = re.compile(r"my recommendation|I recommend|RECOMMENDATION:", re.I)
+    r"|THE DECISIONS? THAT (?:ARE|IS) STILL YOURS|DECISIONS? STILL YOURS)",
+    re.I | re.M)
+
+#: A NUMBERED DECISION, in either form a report actually uses: a bare `3.` or a
+#: labelled `DECISION 3.`. The first version knew only the bare form, so the
+#: file written under this very standard scored 0 items.
+_NUMBERED_ITEM = re.compile(
+    r"^\s*(?:#+\s*)?(?:\*\*)?(?:DECISION\s+)?(\d{1,2})\.(?:\*\*)?\s+\S",
+    re.I | re.M)
+#: ★ THE FORMS A REPORT ACTUALLY USES — widened 2026-11-01. The first version
+#: knew only `my recommendation`, `I recommend` and `RECOMMENDATION:`, and the
+#: decisions file written under this very standard labels each one
+#: `Recommendation, and why.` So the rule found 4 decisions, 0 recommendations
+#: and would have accused a compliant file. That is the
+#: guard-accusing-correct-material class, caught here by driving the rule over
+#: the first real document rather than over a fixture.
+_RECOMMENDS = re.compile(
+    r"my recommendation|I recommend|^\s*(?:\*\*)?recommendation\b"
+    r"|recommendation,? and why|recommendation is\b|is my recommendation",
+    re.I | re.M)
 _THE_3_STANDARDS = re.compile(r"additive|composab|simplest sufficient", re.I)
 
 
@@ -562,9 +592,10 @@ def decisions_without_recommendations(path, text: str) -> list:
     """
     if not rule_32_applies(pathlib.Path(_LOGICAL_PATH or path)):
         return []
-    m = _DECISION_SECTION.search(text)
-    if not m:
+    hits = list(_DECISION_SECTION.finditer(text))
+    if not hits:
         return []
+    m = hits[-1]                 # the section, not an earlier mention of it
     section = text[m.end():]
     nxt = re.search(r"^(?:#+\s*)?(?:PART\s+\d+)[.:]", section, re.M)
     if nxt:

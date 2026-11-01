@@ -69,7 +69,7 @@ def main() -> int:
 
     mc = ModelConfig(
         label="Gemini", model_id="gemini-3.1-pro-preview", api="google",
-        role="player", system_prompt_path=None, max_tokens=2048, timeout=180,
+        role="participant", system_prompt_path=None, max_tokens=2048, timeout=180,
         max_retries=1,
     )
     print("  dispatching ONE paid Gemini call on the google route, tools ON ...")

@@ -635,7 +635,7 @@ def main() -> int:
 
 
     models = [R.ModelConfig(label=v, model_id="sim", api="sim",
-                            role="player_manager" if i == 0 else "player",
+                            role="player_manager" if i == 0 else "participant",
                             system_prompt_path=str(cdsfl_path),
                             timeout=args.timeout, max_retries=1)
               for i, v in enumerate(seats)]

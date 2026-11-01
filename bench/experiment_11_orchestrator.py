@@ -22,7 +22,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Literal, Optional, get_args
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +58,55 @@ CLAUDE_CLI: Optional[str] = _find_claude_cli()
 
 Role = Literal["collator", "player_manager", "participant"]
 
+#: ★ FOLDED BACK 2026-11-01 ON HIS ACCEPTANCE of the panel's recommendation,
+#: verbatim: *"I accept the panel's recommendation on role assignment."* Both
+#: seats of the joint round of 2026-10-31 converged on TWO DIMENSIONS ONE LAYER,
+#: and the second seat applied the first seat's repair verbatim, so this is the
+#: composed form rather than one seat's.
+#:
+#: THE COMPOSITION ADVANTAGE WAS MEASURED, which is what his composability
+#: standard requires and what 10 of 10 earlier uses of the word failed to
+#: supply. With the structural-fork guard alone, a runtime `ModelConfig(
+#: role="player")` SURVIVES UNDECLARED -- executed, declared? False. Composed
+#: with this resolver it normalises to `participant`. And the mirror holds: with
+#: this resolver alone, an in-tree stray literal is silently missed, which is
+#: what the guard catches. Neither part does both.
+#:
+#: THE UNDECLARED SPELLINGS ARE THE MEASURED ONES: `player` 9 times and
+#: `reviewer` 4 times, found in the live tree by the round-1 AST scan.
+#:
+#: HIS PROPOSED VOCABULARY IS DELIBERATELY ABSENT. `worker`, `classifier` and
+#: `orchestrator` are NOT entered here, because which declared member each maps
+#: to is POLICY and not plumbing -- and that policy is the definition still owed
+#: by him, which both seats said independently the code cannot settle. Folding
+#: this back therefore does not pre-empt his ruling.
+#:
+#: ON `collator`, reported rather than changed: 0 `ModelConfig` construction
+#: sites set it while about 35 live predicates read it, because the
+#: orchestrator-level collator is the harness caller and not a constructed seat.
+#: Its dm-level counterpart IS a live seat role, assigned and demoted by the
+#: role assignment and failure-handling path, which is the second declaration of
+#: the structural axis the second seat found.
+ROLE_ALIASES: dict[str, str] = {"player": "participant", "reviewer": "participant"}
+
+
+def canonical_role(value: str) -> str:
+    """Resolve a role spelling to a declared `Role` member, or raise.
+
+    `get_args(Role)` is the single source of truth, so the `Literal` above
+    cannot drift from a second member list written beside it -- which is the
+    2-declarations-of-1-vocabulary shape this project keeps meeting.
+    """
+    declared = get_args(Role)
+    if value in declared:
+        return value
+    target = ROLE_ALIASES.get(value)
+    if target is not None and target in declared:
+        return target
+    raise ValueError(
+        f"unknown ModelConfig role {value!r}; declared: {list(declared)}, "
+        f"aliases: {sorted(ROLE_ALIASES)}")
+
 
 @dataclass
 class ModelConfig:
@@ -83,6 +132,12 @@ class ModelConfig:
     extra_body: dict | None = None  # Model-specific API params (e.g. reasoning.effort)
     secondary_api: str | None = None  # Fallback route on primary empty
     secondary_model_id: str | None = None  # Fallback model id (route-specific)
+
+    def __post_init__(self) -> None:
+        # Every reader compares against a canonical member, never a spelling,
+        # and an unknown spelling fails LOUDLY at construction rather than
+        # flowing through as a seat nothing matches.
+        self.role = canonical_role(self.role)  # type: ignore[assignment]
 
 
 @dataclass

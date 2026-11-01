@@ -60,8 +60,25 @@ def _dispatch_with(monkeypatch, payload: str, **kw):
     import multiprocessing as mp
     monkeypatch.setattr(mp, "Queue", lambda *a, **k: _FakeQueue(payload), raising=False)
     monkeypatch.setattr(mp, "Process", _FakeProc, raising=False)
+    # ★ A DECLARED ROLE, NOT None. Corrected 2026-11-01.
+    #
+    # This read `role=list(rc.Role)[0] if hasattr(rc, "Role") else None`, and
+    # `runner_core` has no `Role` attribute, so every call here constructed a
+    # seat with role None. Nothing enforced the annotation -- `role: Role` is
+    # required and not Optional -- so it ran, and the seat would have matched
+    # NO role-keyed predicate at all. Latent only because the substance test
+    # never reads the role.
+    #
+    # THAT IS THE SILENT-DEFAULTING CLASS B13 IS ABOUT, found by folding back
+    # the role repair on 2026-11-01: `ModelConfig.__post_init__` now resolves
+    # through `canonical_role`, which raised here and made the defect visible.
+    # The defensive `hasattr` is kept, resolving against the module that really
+    # declares the vocabulary rather than the one that re-exports the class.
+    from bench.experiment_11_orchestrator import Role as _Role
+    from typing import get_args as _ga
+    _role = _ga(_Role)[-1]          # "participant", the ordinary seat role
     mc = rc.ModelConfig(label="CC2", model_id="x", api="claude_cli",
-                        role=list(rc.Role)[0] if hasattr(rc, "Role") else None,
+                        role=_role,
                         system_prompt_path=None, max_tokens=1000, timeout=30)
     return rc.dispatch_to_model(mc, "prompt", "system", **kw)
 

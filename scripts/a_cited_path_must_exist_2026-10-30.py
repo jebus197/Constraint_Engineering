@@ -38,7 +38,7 @@ region is a record, not a claim this project is making.
 
 PLACEHOLDERS ARE ALLOWLISTED BY NAME, NOT BY PATTERN. A pattern matching `x.json`
 or `thing.py` would quietly exempt a real file that happened to be named that
-way. The allowlist is 6 entries long and each is listed with its reason. The
+way. The allowlist is listed with a reason per entry; its length is not stated here, because a count in prose beside a list is 2 declarations of 1 fact and the earlier one went stale at 3 while the list held 5. The
 count in this sentence was stale at 3 while the list held 5, and was corrected
 on 2026-10-31 when the 6th was added.
 """
@@ -79,16 +79,6 @@ PLACEHOLDERS = {
         "this is not lost work -- but correcting the path would destroy the "
         "lesson, which is the whole point of the sentence. Allowlisted rather "
         "than repaired, on that reasoning and not for convenience.",
-    "bench/proof_verify.py":
-        "DELIBERATELY ABSENT, added 2026-10-31. B54 cites it in order to state "
-        "that it does NOT exist: it is a module seat 'fable' PROPOSED during "
-        "the proof-polarity joint round, and it lives only inside the unapplied "
-        "bench/logs/joint_what_is_a_proof_outside_code_2026-10-31/"
-        "seat_proposals.diff. Its absence is the EVIDENCE for that entry's "
-        "conclusion, which is that the polarity hazard is prospective rather "
-        "than live, so correcting the citation would delete the finding. "
-        "Verified absent by scripts/is_the_polarity_hazard_reachable_2026-10-31.py, "
-        "which reports 0 live references to the 3 names the proposal adds.",
     "bench/__init__.py":
         "DELIBERATELY ABSENT, and its absence IS the finding, recorded "
         "2026-11-01. `bench` is a namespace package with no marker file, and "

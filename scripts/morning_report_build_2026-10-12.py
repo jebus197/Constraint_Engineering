@@ -646,6 +646,30 @@ def still_asks(ident: str) -> bool:
         return True                          # cannot tell: fail open
 
 
+def ruling_is_spent(ident: str, ruled: str | None, state: str | None) -> bool:
+    """Has the recorded ruling stopped settling this entry? 1 predicate, 2 callers.
+
+    ★ WRITTEN 2026-11-01 BECAUSE THE RULE WAS DECLARED TWICE AND REPAIRED ONCE.
+    `decisions()` and `main()` each decided independently whether a ruling date
+    still absolves an entry, by the same date comparison written out twice. Both
+    were individually correct, so no test could see them disagree -- the shape
+    `execute-do-not-grep` names, and the 5th time this project has met it. The
+    BLOCKED carve-out was added to the first site and the second site silently
+    undid it, which is how B71 stayed out of the list after the first repair.
+
+    2 ways a ruling stops settling an entry:
+      1. the entry carries a DATED addition later than the ruling, so the ask
+         postdates the answer;
+      2. the entry is BLOCKED and still asking, which no date can detect when
+         the ruling and the new question fall on ONE DAY, as B71's did.
+    """
+    if not ruled:
+        return False
+    if asks_newer_than_the_ruling(ident, ruled):
+        return True
+    return (state or "").upper() == "BLOCKED" and bool(still_asks(ident))
+
+
 def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
     """Attach authored detail. Returns (attached, missing_detail, orphan_detail)."""
     detail = json.loads(DETAIL.read_text(encoding="utf-8")) if DETAIL.is_file() else {}
@@ -689,7 +713,7 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
         # same night. A question raised AFTER a ruling cannot have been answered
         # by it, so the ruling only settles the entry when the entry has stopped
         # asking. `still_asks` is the same predicate the 2 filters below use.
-        if ruled and asks_newer_than_the_ruling(it.get("ident") or "", ruled):
+        if ruling_is_spent(it.get("ident") or "", ruled, it.get("state")):
             attached.append({**it, **d, "ruled": ruled})
             continue
         if d.get("struck_permanently") or ruled:
@@ -1177,8 +1201,8 @@ def main(argv: list[str]) -> int:
 
     ruled_now = [d for d in decs
                  if d.get("ruled")
-                 and not asks_newer_than_the_ruling(d.get("ident") or "",
-                                                    d.get("ruled"))]
+                 and not ruling_is_spent(d.get("ident") or "", d.get("ruled"),
+                                         d.get("state"))]
     outstanding += ruled_now
     decs = [d for d in decs if d not in ruled_now]
 
