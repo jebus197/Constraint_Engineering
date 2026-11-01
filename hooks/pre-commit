@@ -178,6 +178,14 @@ cd "$REPO" || exit 1
 #     1-in-50 false-alarm rate so it cannot drift back to the 2026-10-08
 #     panel's 1-in-20 COMPARISON SIZE, and fails loudly if the demotion rule is
 #     ever wired without his authorisation.
+#   - test_recovery_session_state_is_current_2026-09-11.py (the A23 guard) is
+#     added 2026-11-01 because it was RED and nothing reported it. It requires
+#     every suite figure in the newest SESSION STATE block to name a producer,
+#     and on 2026-11-01 the block claimed the gate "passed at 2,155 tests" --
+#     a number with NO producer, carried by 0 stored logs, describing a run
+#     that predates every log still held. A fabricated figure survived in the
+#     one document a post-compaction reader trusts most, precisely because the
+#     guard that would catch it ran only when someone remembered to run it.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
 bench/tests/test_an_identity_can_be_walked_back_2026-10-29.py
@@ -287,7 +295,8 @@ bench/tests/test_the_secondary_falsifier_rule_2026-10-31.py
 bench/tests/test_the_role_vocabulary_has_forked_2026-10-31.py
 bench/tests/test_r1_has_a_position_on_the_runway_2026-11-01.py
 bench/tests/test_the_parked_presentation_is_described_not_coded_2026-11-01.py
-bench/tests/test_his_demotion_operating_point_is_pinned_2026-11-01.py"
+bench/tests/test_his_demotion_operating_point_is_pinned_2026-11-01.py
+bench/tests/test_recovery_session_state_is_current_2026-09-11.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite

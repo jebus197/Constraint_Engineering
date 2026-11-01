@@ -1,6 +1,6 @@
 # MORNING REPORT, 1 November 2026
 
-**2026-11-01 00:48 GMT.** Commit ea799770, branch sim shakedown dated 29 September. The night's work is committed: 91 files, and the check that runs before every commit passed at 2155 tests after refusing 4 times for faults of mine, each named in part 6.
+**2026-11-01 00:48 GMT.** Commit ea799770, branch sim shakedown dated 29 September. The night's work is committed: 91 files, and the check that runs before every commit accepted it after refusing 4 times for faults of mine, each named in part 6. I had written here that it passed at 2155 tests. That number has no source. No stored log carries it, and the run it described happened before every log I still hold, so it is withdrawn rather than repaired. The figure I can actually show you is 2170 passed, 9 skipped and 5 failed, from the 02:51 run of this morning, which is the first and refused attempt at the second commit.
 
 **This is the hand written half.** The generated half is the file named Morning Report 1 November GENERATED, which is built from the project's own markers and now presents each item in the agreed format rather than by its code, because that was your proposed fix of tonight and it is done.
 
