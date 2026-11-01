@@ -564,8 +564,10 @@ def settled_in_the_register(ident: str) -> tuple[bool, str]:
     unsettled = [t for t in rows if str(t.status).upper() not in _SETTLED_STATUSES]
     if unsettled:
         return False, f"{len(unsettled)} of {len(rows)} ticket(s) still open"
+    shown = rows[:3]
+    tail = (f", + {len(rows) - len(shown)} more" if len(rows) > len(shown) else "")
     return True, (f"all {len(rows)} register ticket(s) settled: "
-                  + ", ".join(f"{t.tid[:8]} {t.status}" for t in rows[:3]))
+                  + ", ".join(f"{t.tid[:8]} {t.status}" for t in shown) + tail)
 
 
 #: ★ AN ENTRY WAITING ON ANOTHER ENTRY'S DECISION IS NOT A DECISION OF ITS OWN

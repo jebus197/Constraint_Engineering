@@ -1442,7 +1442,23 @@ class TestUsageTextAdvertisesOnlyImplementedFlags:
         )
 
         assert proc.returncode != 0
-        assert "unrecognized arguments" in proc.stderr
+        # ★ THE PROPERTY, NOT ARGPARSE'S WORDING. This asserted the literal
+        # American "unrecognized arguments", which only argparse emits. A script
+        # routed through `scripts/_cli_help.py::answer_help` refuses just as
+        # loudly and says "unrecognised argument(s)", in the British spelling
+        # this project writes everywhere else -- so the test failed a script
+        # that was behaving exactly as required. What matters is that the
+        # refusal is LOUD and NAMES the offending flag, which is what is now
+        # asserted.
+        loud = ("unrecognized arguments" in proc.stderr
+                or "unrecognised argument" in proc.stderr
+                or "unrecognized argument" in proc.stderr)
+        assert loud, (
+            f"{script.name} exited non-zero but said nothing a reader can act "
+            f"on:\n{proc.stderr[:600]}")
+        assert "--this-flag-does-not-exist" in proc.stderr, (
+            f"{script.name} refused without naming the flag it refused:\n"
+            f"{proc.stderr[:600]}")
 
 
 # ═════════════════════════════════════════════════════════════════════════════

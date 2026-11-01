@@ -165,8 +165,14 @@ def main(argv: list[str]) -> int:
 
     if improved:
         print(f"\nIMPROVED, {len(improved)} file(s) — run --update to lock it in:")
-        for f, (now, was) in sorted(improved.items())[:12]:
+        shown = sorted(improved.items())[:12]
+        for f, (now, was) in shown:
             print(f"    {was:4} -> {now:<4} {f}")
+        # A list cut to N under a heading that reads as complete is a silent
+        # falsehood, so the remainder is stated rather than left to inference.
+        if len(improved) > len(shown):
+            print(f"    + {len(improved) - len(shown)} more improved file(s) "
+                  f"not shown; all of them are in the ledger after --update")
     for f, (now, was) in sorted(risen.items()):
         print(f"\n★ RISEN: {f} was {was}, now {now}")
     for f, n in sorted(unbaselined.items()):
