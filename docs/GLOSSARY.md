@@ -924,3 +924,48 @@ installation, and the host returns the result into the seat's context. Nothing i
 installed remotely and no credential leaves the machine. It is how the Wolfram
 kernel became reachable by all 6 seats rather than by the single seat running
 locally.
+
+### Falsifier
+
+A self-contained Python snippet a model attaches to a critical finding, which
+raises `AssertionError` or prints `FALSIFIED` **if and only if the claimed
+defect is real**. It must import the real target module, so it exercises
+repository code rather than a model-retyped copy. The runner then re-runs it
+independently and the runner's result is the verdict — never the model's prose
+claim. The independence is load-bearing rather than decorative: the smoke tests
+of 3 June 2026 proved a model can attach a *correct* falsifier while making zero
+tool calls of its own, so the independent re-run is the only trustworthy
+decision point. Implemented in `bench/falsifier_verify.py`.
+
+### Proof
+
+A printed derivation offered as the reason a claim holds. It is the same kind of
+artefact as a falsifier — a model-authored thing the harness re-runs — and it
+differs in exactly one respect, which is **polarity**.
+
+**A falsifier succeeds by failing. A proof succeeds by holding.** A falsifier
+that raises has demonstrated the defect; a proof that raises has demonstrated
+nothing. So the raw verdict convention, under which a run that does not fail
+means the defect is absent, reads a correct proof as a refutation. That is why a
+proof needs its own step rather than reuse of the falsifier path, and it is the
+single substantive thing the definition settles.
+
+Two things about the existing machinery are measured rather than assumed, both
+by execution. **The re-verification already works on prose**: run against all 5
+prose fixtures under `bench/tests/fixtures/stem/` it returns `CONFIRMED` on 5 of
+5 pristine documents across structural engineering, statistics, metrology,
+algorithms and numerical analysis, so the finding side is not missing a step on
+prose in 5 fields. **What is missing is the input**: the specialist dispatch
+reads a regex-scraped substring of a finding's description and never reads the
+model's derivation, so the tools run against a fragment of the claim rather than
+against the argument offered for it.
+
+**What the definition therefore requires of a proof**, all of it following from
+the code rather than added to it: it is re-run by the harness, not believed; its
+polarity is declared, so a holding proof is recorded as a proof held and never
+as a refutation; an empty proof is refused rather than scored zero, because a
+model could otherwise print one harmless line and have its repair admitted; and
+a crash escalates rather than deciding, since a failed measurement is not a
+result. Written 2026-11-01 on the founder's ruling that the definition follows
+from the code, is the assistant's to write and his to ratify, and needs no
+panel.

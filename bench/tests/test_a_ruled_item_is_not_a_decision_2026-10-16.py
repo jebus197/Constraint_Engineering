@@ -294,7 +294,21 @@ def test_the_severity_gate_provenance_question_is_struck_permanently():
         )
     # and nothing he has ruled on may be live either
     for d in live:
-        assert not d.get("ruled"), (
+            # ★ UNLESS THE ENTRY ASKS SOMETHING NEWER THAN THAT RULING.
+            # Amended 2026-11-01. This assertion encoded the ABSOLUTE form of
+            # his 2026-10-16 rule, and the absolute form is what suppressed 4
+            # live questions: the role-layer entry carries a ruling of
+            # 2026-10-17 and questions raised on 2026-10-30, 2026-10-31 and
+            # 2026-11-01, and a ruling 14 days older than a question cannot
+            # have answered it. The property this test defends is unchanged --
+            # a settled item may not be re-presented -- and it is now tested
+            # with the same date-aware predicate the generator uses, so the 2
+            # cannot disagree. The inverse arm is below, so an item ruled with
+            # nothing newer still may not be live.
+            if d.get("ruled") and _gen().asks_newer_than_the_ruling(
+                    d.get("ident") or "", d.get("ruled")):
+                continue
+            assert not d.get("ruled"), (
             f"{d['key']} carries a ruling of {d.get('ruled')} yet is still a "
             f"live decision"
         )

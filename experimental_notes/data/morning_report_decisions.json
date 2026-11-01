@@ -456,14 +456,19 @@
     "no_ruling_needed": true
   },
   "task:B21": {
-    "title": "B21 — model and role selection is NOT a large rewrite",
-    "what": "The 4-layer policy engine that would make model and role selection declarative already exists. The premise that this needs a major refactor was disproved before any code was written.",
-    "why": "You asked that researchers be able to add, remove and reassign models without major code changes, and designed a selection surface for the coming interface build. The backend for that is largely present; what is missing is wiring the policy engine into the current runner.",
-    "evidence_line": "The merged policy holds 46 values and exactly 1 shares a name with a runner setting, and that 1 conflicts: the runner defaults to 21 rounds and the policy says 5.",
+    "title": "B21 — the role layer: you have settled its shape, and one definition is still yours because the code cannot settle it",
+    "what": "Two separate things in this project are both called a role. One is what a model DOES — worker, classifier. The other is where a seat SITS in the dispatch topology. The work is to express both in one place instead of scattered through the code, so adding or changing a model stops being a dozen edits.",
+    "why": "You accepted the panel's recommendation of 2 dimensions and 1 layer, which settles the shape and authorises the build. What it does not settle is whether `classifier` names a seat POSITION or a FUNCTION, and both panel seats said independently that this cannot be decided from the code — it is a definition, not a measurement. The second seat also found the structural axis is DECLARED TWICE, with a live three-valued declaration carrying role-keyed demotion that the first seat's instrument could not see.",
+    "evidence_line": "Both seats converged on 2 dimensions and 1 layer. The second seat measured a COMPOSITION ADVANTAGE for the 2 repairs over either alone, which is what the composability standard requires and what 10 of 10 earlier uses of the word failed to supply: with its own fix alone a runtime role of player survives undeclared, and composed with the first seat's it normalises to participant, while the mirror case shows the first seat's fix alone misses an in-tree stray literal.",
     "ruled": "2026-10-17",
     "his_words": "Ahh, I see this is already an issue you intend to deal with. Yes you should do exactly this!",
-    "what_the_ruling_means": "RULED. Work, not a decision. In the panel brief dispatched 2026-10-19.",
-    "no_ruling_needed": true
+    "what_the_ruling_means": "The shape is settled and the build is authorised. One definition is owed, and the 4 role spellings that appear in live code while declared nowhere are fixed by whichever answer you give.",
+    "_why_the_flag_was_removed": "Removed 2026-11-01. The flag was set when his ruling of 2026-10-17 was recorded and never revisited, while the entry went on collecting 4 NEW questions dated 2026-10-30, 2026-10-31 and 2026-11-01: whether a role is 1 dimension or 2, the go-ahead to build the single functional layer, the 2 declarations of the structural axis, and the type-checker configuration. A ruling 14 days older than the questions cannot have answered them. He has since accepted the panel's recommendation of 2 dimensions and 1 layer, which settles the first and authorises the second; the definition of whether `classifier` names a seat position or a function is still his, and both panel seats said independently that it cannot be settled from the code.",
+    "options": [
+      "**Define `classifier` as a FUNCTION — what the model does on a task — which is my recommendation.** It matches the other member of that axis, worker, which is plainly a function, and it leaves the topology axis free to say where a seat sits without competing for the same word. ADDITIVE: both vocabularies survive and neither loses a value. SIMPLEST SUFFICIENT: it is a definition plus the alias normalisation the seats already wrote and tested, not a new mechanism.",
+      "**Define `classifier` as a seat POSITION.** Then the functional axis is left with worker alone, which makes it a single-valued dimension and raises the question of whether it is a dimension at all — the fork the first seat identified at configuration scope.",
+      "**Defer the definition and build only the structural half**, reconciling the 2 declarations of the topology axis now and leaving the functional layer unbuilt. This is the smallest step, and its cost is that the thing you asked for — making model and role selection trivial — stays half done."
+    ]
   },
   "task:B22": {
     "title": "B22 — what a fix means outside code, and whether this is yet a general-purpose instrument",
@@ -737,5 +742,31 @@
     "ruled": null,
     "his_words": "add those I have already genuinely ruled on to your master task list and to an appropriate section in your Bugzilla section of the registry",
     "what_the_ruling_means": "1 decision, not 4. The individual entries carry the defects; this one carries the question."
+  },
+  "task:B63": {
+    "title": "B63 — the stop gate credits one of its own five steps only once per turn, so in a long unattended turn it cannot be satisfied after the first edit",
+    "what": "The gate that holds every piece of work to the five-step cycle looks for evidence that the consequences of a change were traced BEFORE anything was touched. It searches a window that is anchored at the first edit of the turn. On a short turn that is right. On a long unattended turn, every cycle after the first one can never satisfy it, because the evidence for cycle two necessarily sits after cycle one's edit.",
+    "why": "It refused four times in a row on the night of 1 November, always naming the same files, on turns that had each done the tracing it was asking for. A gate that cannot be satisfied stops carrying information: the only way past it is to ignore it, which is how a real refusal gets ignored too. It is proved rather than observed — z3 returns unsatisfiable for the condition after the first edit, and SymPy gives the witness.",
+    "options": [
+      "**Anchor the window per cycle rather than per turn**, which is my recommendation. It is the SIMPLEST SUFFICIENT fix because it changes one window boundary and nothing else, and it is ADDITIVE because the gate keeps every step it checks today and gains the ability to be satisfied more than once. No COMPOSABILITY claim is made: no second repair was measured to improve on it.",
+      "**Leave it as it is.** The gate then prods on long turns regardless of what was done, which is the state that produced two wrong diagnoses of mine in twenty minutes before the proof settled it."
+    ],
+    "evidence_line": "Proved on two tools: z3 returns unsat for the follow condition after the first edit and sat for the pass condition; SymPy gives the witness as last minus first plus one. The window size is not the cause: across 35,111 inter-turn gaps the largest is 1,605,379 bytes and 0 exceed the window.",
+    "ruled": null,
+    "his_words": "",
+    "what_the_ruling_means": "Yours because it changes a gate that governs how this session is held to its own discipline, and loosening such a gate is not something to do unattended."
+  },
+  "task:B68": {
+    "title": "B68 — the type checker reports a clean pass on files it has not examined",
+    "what": "The static type checker is invoked with a flag that tells it to ignore imports it cannot resolve. The project's own package has no marker file, so a bare project import is exactly what it cannot resolve: the symbol becomes untyped, the constructor behind it is never checked, and the tool prints that it found no issues.",
+    "why": "You ruled this becomes its own task. It is not a one-line change, because some files really are clean and some are only reported clean: measured on 3 live files, one reports 1 finding with the flag and 6 without it, one reports 5 with the flag, and one reports none either way.",
+    "options": [
+      "**Clear it in batches as its own task, which is your ruling and my recommendation.** ADDITIVE: nothing is disabled meanwhile and the tool stays readable. SIMPLEST SUFFICIENT: it admits the check to the commit gate only once a clean run exists to hold, so the gate never goes red for reasons unrelated to the change being made.",
+      "**Add it to the commit gate now.** Every commit then fails on findings that have nothing to do with it, and a check red for unrelated reasons is a check that gets bypassed."
+    ],
+    "evidence_line": "110 of 155 live files under the package import in the way the tool cannot resolve. On bench/routing.py: 1 finding with the flag, 6 without it.",
+    "ruled": "2026-11-01",
+    "his_words": "Enable it as its own task, as you suggest.",
+    "what_the_ruling_means": "Work, not a decision. It is enabled as a task, cleared in batches, and admitted to the commit gate when clear."
   }
 }

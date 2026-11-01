@@ -254,10 +254,16 @@ class TestChatRefusesDs:
         dispatch prompt and a ticket.
         """
         import re
+        # ★ WIDEN BY INSERTION, NOT BY REPLACING A HARDCODED LITERAL.
+        # Corrected 2026-11-01. This read `.replace("(fr|pf|qs|wr)", ...)`, so
+        # adding his `stm` to the alternation made the replace a NO-OP and the
+        # test failed on a correct change -- while silently ceasing to widen,
+        # which would have made the rest of it vacuous rather than red. It is
+        # red here only because the next line asserts the widening happened.
         widened = re.compile(
-            harv.MARKER.pattern.replace("(fr|pf|qs|wr)", "(fr|pf|qs|wr|ds)"),
+            re.sub(r"\((fr\|[^)]*)\)", r"(\1|ds)", harv.MARKER.pattern, count=1),
             harv.MARKER.flags)
-        assert "|ds)" in widened.pattern
+        assert "|ds)" in widened.pattern, widened.pattern
         monkeypatch.setattr(harv, "MARKER", widened)
         # The widening must really reach `ds`, or this test is hollow too.
         assert harv.marked_kind("we should talk about this\nds") == "ds"

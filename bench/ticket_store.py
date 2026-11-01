@@ -299,7 +299,27 @@ STORE_EPOCH = "2026-10-17"
 #: `test_the_alias_map_only_ever_points_at_live_kinds`.
 LEGACY_KIND_ALIASES = {"ds": "disc", "dis": "disc"}
 
-KINDS = ("fr", "pf", "qs", "wr", "disc", "dis", "ds")
+#: ★ `stm` ADDED 2026-11-01 ON HIS PROPOSAL, and he had already used it twice
+#: before it existed. His words: *"Not every statement I make is a question
+#: (qs), or a feature request (qs), or fits neatly into any of the other
+#: available categories? But perhaps one final category such as 'stm' (for
+#: 'statement') might resolve it? It's a statement where you clearly need to
+#: act, but that in itself does not fit into any of the other available
+#: categories?"* (His second `(qs)` is `fr`.)
+#:
+#: WHAT IT COST TO NOT HAVE IT: both of his `stm`-marked annotations of
+#: 2026-11-01 were filed as `disc`, because an unknown marker falls to the
+#: unmarked default and neither ends in a question mark. A statement that
+#: needs ACTION filed as something to be talked through misroutes the work,
+#: which is the same fault as the 72 annotations once filed as proposed fixes.
+#:
+#: COLLISION CHECKED AS HIS OWN `ds`/`dis`/`disc` PRECEDENT REQUIRES: `stm`
+#: collides with no dispatch seat, no tool in the constraint box and no
+#: existing kind; it appears in 3 of his 826 annotations and ALL 3 are his own
+#: uses of the marker, 0.003632 Wilson [0.001236, 0.010623], so 0 colliding
+#: senses; 0 user-role transcript entries contain it; and the word boundary
+#: keeps it out of system, stem, statement, custom, stemming and STM32.
+KINDS = ("fr", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not

@@ -410,10 +410,24 @@ def explanations_owed() -> tuple[list[dict], list[dict]]:
     recs = []
     if SUPERSEDED.is_file():
         recs = json.loads(SUPERSEDED.read_text(encoding="utf-8")).get("superseded", [])
+    # ★ RETIRED IS HIS RULING; SUPERSEDED IS A DERIVATION. Added 2026-11-01 on
+    # his ruling "Retire them. stm". They are kept as separate lists because
+    # they are different claims: superseded says the record answered the
+    # question after he asked it, retired says he struck it. Reporting a
+    # retirement as a supersession would tell a reader the record overtook a
+    # question when in fact he decided it needed no answer.
+    retired = []
+    if SUPERSEDED.is_file():
+        retired = json.loads(SUPERSEDED.read_text(encoding="utf-8")).get("retired", [])
     live, dead = [], []
     for q in owed:
         hit = next((r for r in recs
                     if r["date"] == q["date"] and r["match"] in q["text"]), None)
+        if hit is None:
+            hit = next((r for r in retired
+                        if r["date"] == q["date"] and r["match"] in q["text"]), None)
+            if hit is not None:
+                hit = {**hit, "retired_by_his_ruling": True}
         if hit:
             dead.append({**q, **hit})
         else:
@@ -506,6 +520,132 @@ def _first_sentence(text: str) -> str:
 
 # ───────────────────────── the authored half ─────────────────────────
 
+#: ★ A SETTLED TICKET IS NOT A DECISION -- HIS INSTRUCTION, 2026-11-01:
+#: *"Please fix it so issues that are genuinely closed don't keep being
+#: represented."*
+#:
+#: HOW CLOSED WORK REACHED HIM ANYWAY. This generator carried 2 filters, both
+#: keyed on the TASK LIST: `no_ruling_needed` from the authored detail, and the
+#: `ruled:` marker date. Neither consults the REGISTER, which is the only record
+#: where CLOSED is tool-only and requires a verification. So an item whose ticket
+#: was closed with evidence could still be presented as a question, and on
+#: 2026-11-01 he asked of 2 such items *"So if it is closed, why did it come up
+#: again?"*. The nearest thing to a check was `_PARKED_SELF_CLOSED`, which reads
+#: PROSE for a self-declared closure -- a text heuristic, and the same shape as
+#: the case-insensitive match that suppressed live work hours earlier.
+#:
+#: AND THE OPPOSITE FAULT IS DESIGNED OUT RATHER THAN RISKED. Dropping on a
+#: settled ticket ALONE would recreate the suppression measured this morning,
+#: where a ruling 14 days older than its entry's newest questions silenced 4 of
+#: them. So an item leaves the decision list only when its tickets are ALL
+#: settled AND the entry carries NO LIVE ASKING SENTENCE, the second half being
+#: the predicate already built and mutation-tested in
+#: `scripts/how_many_decisions_actually_need_him_2026-11-01.py`. 1 predicate, 2
+#: callers -- never 2 implementations asserted to agree.
+#:
+#: IT FAILS OPEN. An item with no ticket, an unreadable register, or any live
+#: ask is KEPT. A filter that hides an item when its own input is missing is the
+#: false-zero shape this project has met repeatedly.
+_SETTLED_STATUSES = frozenset({"CLOSED", "MERGED", "WITHDRAWN", "REJECTED",
+                               "DUPLICATE", "DEPRECATED"})
+
+
+def settled_in_the_register(ident: str) -> tuple[bool, str]:
+    """(is it settled, why) for one task entry, read from the register."""
+    try:
+        sys.path.insert(0, str(REPO))
+        from bench.ticket_store import TicketStore        # noqa: PLC0415
+        rows = [t for t in TicketStore().all()
+                if getattr(t, "task_ref", None) == ident]
+    except Exception as exc:                               # noqa: BLE001
+        return False, f"register unreadable ({type(exc).__name__}), kept"
+    if not rows:
+        return False, "no ticket, kept"
+    unsettled = [t for t in rows if str(t.status).upper() not in _SETTLED_STATUSES]
+    if unsettled:
+        return False, f"{len(unsettled)} of {len(rows)} ticket(s) still open"
+    return True, (f"all {len(rows)} register ticket(s) settled: "
+                  + ", ".join(f"{t.tid[:8]} {t.status}" for t in rows[:3]))
+
+
+#: ★ AN ENTRY WAITING ON ANOTHER ENTRY'S DECISION IS NOT A DECISION OF ITS OWN
+#: -- the fault he challenged on 2026-11-01: *"The first seemed like a
+#: suspiciously high number, as you have a habit of repeating issues to me to
+#: rule on that I have already ruled on, or that have already been settled."*
+#:
+#: THE 2 FILTERS THIS GENERATOR ALREADY CARRIED ARE BOTH KEYED ON ONE ENTRY'S
+#: STATE -- `no_ruling_needed` added 2026-10-16 and the `ruled:` marker added
+#: 2026-10-19, each after he asked this same question. Neither can see a
+#: DECISION GRAPH, so 4 entries that each say in their own text that they await
+#: a 5th were presented to him as 4 decisions. Measured 2026-11-01: of the 10
+#: items presented under a heading promising they were his to decide, 3 were
+#: genuinely his, 1 he had ruled on 2026-10-30, and 6 were mine.
+def depends_on_another_entry(ident: str) -> str | None:
+    """The entry whose decision this one waits on, or None."""
+    try:
+        mod = _load(REPO / "scripts"
+                    / "how_many_decisions_actually_need_him_2026-11-01.py",
+                    "decide_probe")
+        bodies = mod.bodies()
+        import task_list_markers as _T                   # noqa: PLC0415
+        e = {x.ident: x for x in _T.parse_entries()}.get(ident)
+        if e is None:
+            return None                                   # unknown: fail open
+        d = mod.classify_text((e.state or ""), e.ruled, bodies.get(ident, ""))
+        return d["parent"] if d["kind"] == "DEPENDENT" else None
+    except Exception:                                     # noqa: BLE001
+        return None                                       # cannot tell: fail open
+
+
+#: ★ THE PREDICATE HAS TO BE DATE-AWARE, AND MY FIRST ATTEMPT WAS NOT.
+#: Using "does it still ask" alone took the decision list from 3 to 12 and put
+#: back the zero-plant control, which he ruled DEFERRED on 2026-10-30 with the
+#: words *"You keep asking me about this and I keep giving you the same
+#: answer"*, plus items whose only remaining question was whether the work was
+#: done. That is the inflation he challenged, recreated by over-correcting the
+#: suppression -- and it is why the ruling filter existed: measured 2026-10-17,
+#: 11 of 45 ruled entries still carried an asking sentence their ruling had
+#: already answered.
+#:
+#: SO THE TEST IS NOT "does it ask" BUT "does it ask something NEWER than the
+#: ruling". A question raised after a ruling cannot have been answered by it; a
+#: question raised before it probably was.
+_DATED = re.compile(r"\b(2026-\d{2}-\d{2})")
+
+
+def asks_newer_than_the_ruling(ident: str, ruled: str | None) -> bool:
+    """A live ask PLUS a dated addition later than the ruling that silences it."""
+    if not ruled:
+        return bool(still_asks(ident))
+    if not still_asks(ident):
+        return False
+    try:
+        mod = _load(REPO / "scripts"
+                    / "how_many_decisions_actually_need_him_2026-11-01.py",
+                    "decide_probe")
+        body = mod.bodies().get(ident, "")
+    except Exception:                                    # noqa: BLE001
+        return False                                     # cannot tell: stay quiet
+    return any(d > ruled for d in _DATED.findall(body))
+
+
+def still_asks(ident: str) -> bool:
+    """Does this entry carry a LIVE asking sentence? 1 predicate, 2 callers."""
+    try:
+        mod = _load(REPO / "scripts"
+                    / "how_many_decisions_actually_need_him_2026-11-01.py",
+                    "decide_probe")
+        bodies = mod.bodies()
+        rows = {e.ident: e for e in __import__("task_list_markers").parse_entries()}
+        e = rows.get(ident)
+        if e is None:
+            return True                     # unknown entry: fail open
+        d = mod.classify_text((e.state or ""), e.ruled, bodies.get(ident, ""))
+        return bool(d["live_asks"])
+    except Exception:                        # noqa: BLE001
+        return True                          # cannot tell: fail open
+
+
 def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
     """Attach authored detail. Returns (attached, missing_detail, orphan_detail)."""
     detail = json.loads(DETAIL.read_text(encoding="utf-8")) if DETAIL.is_file() else {}
@@ -533,6 +673,25 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
         # state. Measured safe: 0 of 29 authored-detail entries set `ruled` to
         # a falsy value, so reading `d` first cannot mask a marker's date.
         ruled = d.get("ruled") or it.get("ruled")
+        # ★ A RULING DATE IS A POINT EVENT, NOT PERMANENT ABSOLUTION.
+        # Corrected 2026-11-01, and this is the INVERSE of the fault above and
+        # the worse direction of it. This branch removed an entry from the
+        # decision list the moment it carried ANY ruling date. The role-layer
+        # entry carries a ruling of 2026-10-17 and has since collected 4 NEW
+        # questions, dated 2026-10-30, 2026-10-31 and 2026-11-01 in its own
+        # body: whether a role is 1 dimension or 2, the go-ahead to build the
+        # single functional layer, the 2 declarations of the structural axis,
+        # and the type-checker configuration. A ruling 14 days older than the
+        # questions silenced all 4.
+        #
+        # REPETITION IS VISIBLE; SUPPRESSION IS NOT -- the identical argument
+        # that forced the reversal of the parked-file fix 9 hours earlier the
+        # same night. A question raised AFTER a ruling cannot have been answered
+        # by it, so the ruling only settles the entry when the entry has stopped
+        # asking. `still_asks` is the same predicate the 2 filters below use.
+        if ruled and asks_newer_than_the_ruling(it.get("ident") or "", ruled):
+            attached.append({**it, **d, "ruled": ruled})
+            continue
         if d.get("struck_permanently") or ruled:
             attached.append({**it, **d, "ruled": ruled,
                              "no_ruling_needed": ruled or "struck permanently"})
@@ -938,6 +1097,37 @@ def main(argv: list[str]) -> int:
     outstanding += [d for d in decs if d.get("no_ruling_needed")]
     decs = [d for d in decs if not d.get("no_ruling_needed")]
 
+    # ★ A SETTLED TICKET IS NOT A DECISION -- his instruction of 2026-11-01.
+    # Both halves are required: the register says settled AND the entry asks
+    # nothing live. See the long note on `settled_in_the_register` above for why
+    # the second half is not optional.
+    _closed = []
+    for d in list(decs):
+        ident = d.get("ident")
+        if not ident:
+            continue
+        is_settled, why = settled_in_the_register(ident)
+        if is_settled and not still_asks(ident):
+            d["no_ruling_needed"] = f"settled in the register — {why}"
+            _closed.append(d)
+    if _closed:
+        decs = [d for d in decs if d not in _closed]
+        outstanding += _closed
+
+    # ★ AND A DEPENDANT IS NOT A DECISION. Answering the parent releases it, so
+    # it is WORK WAITING ON AN ANSWER rather than a question of its own.
+    _dependent = []
+    for d in list(decs):
+        parent = depends_on_another_entry(d.get("ident") or "")
+        if parent and parent in {x.get("ident") for x in decs}:
+            d["no_ruling_needed"] = (
+                f"waits on {parent}'s decision by its own text — answering "
+                f"{parent} releases it")
+            _dependent.append(d)
+    if _dependent:
+        decs = [d for d in decs if d not in _dependent]
+        outstanding += _dependent
+
     # ★ AN ENTRY HE HAS ALREADY RULED ON IS NOT A DECISION (2026-10-16).
     #
     # HIS QUESTION: *"are you certain none of these are items I have previously
@@ -956,9 +1146,41 @@ def main(argv: list[str]) -> int:
     # DATE he ruled, so he reads "you ruled this on X, the work is outstanding"
     # rather than losing sight of it. Silently dropping it would replace a queue
     # that over-asks with a queue that under-reports, which is worse.
-    ruled_now = [d for d in decs if d.get("ruled")]
+    # ★ AND ONLY WHILE THE ENTRY HAS STOPPED ASKING. Corrected 2026-11-01.
+    # This was the OPERATIVE suppression of the 3 that existed, and it moved an
+    # item out on ANY ruling date. The role-layer entry carries a ruling of
+    # 2026-10-17 and 4 questions raised on 2026-10-30, 2026-10-31 and
+    # 2026-11-01; all 4 left the decision list here. A question raised AFTER a
+    # ruling cannot have been answered by it.
+    #
+    # 3 PLACES SUPPRESSED ON A RULING DATE and 1 of them was DATA: this filter,
+    # the `ruled` branch in `decisions()`, and a hardcoded `no_ruling_needed:
+    # true` in the authored detail written when the ruling was recorded and
+    # never revisited. Fixing 1 would have left the other 2 biting, which is why
+    # all 3 are named here.
+    # ★ AN ENTRY HE DEFERRED HIMSELF IS NEVER A DECISION. Added 2026-11-01.
+    # DEFERRED is the state this list uses for an item HE took off the queue,
+    # and the zero-plant control is the case: he deferred it on 2026-10-30 with
+    # *"You keep asking me about this and I keep giving you the same answer"*
+    # and it is TO STOP SURFACING. The date-aware test alone put it back,
+    # because the entry has dated additions from 2026-11-01 — the stage it was
+    # finally given on the runway. Work done on a deferred item is not a new
+    # question about it.
+    _deferred = [d for d in decs if (d.get("state") or "").upper() == "DEFERRED"]
+    for d in _deferred:
+        d["no_ruling_needed"] = (
+            f"you deferred this on {d.get('ruled') or 'an earlier date'}; it is "
+            f"off the queue by your own ruling")
+    if _deferred:
+        outstanding += _deferred
+        decs = [d for d in decs if d not in _deferred]
+
+    ruled_now = [d for d in decs
+                 if d.get("ruled")
+                 and not asks_newer_than_the_ruling(d.get("ident") or "",
+                                                    d.get("ruled"))]
     outstanding += ruled_now
-    decs = [d for d in decs if not d.get("ruled")]
+    decs = [d for d in decs if d not in ruled_now]
 
     owed, superseded = explanations_owed()
     parked = parked_items()

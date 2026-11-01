@@ -145,6 +145,16 @@ def test_every_one_of_his_sections_exists_and_separates(store):
     store.propose("disc", "a discussion, current spelling",
                   "disc is clean on both sides", "chat",
                   subjects=["m.dc"], ruled="2026-10-31")
+    # EXTENDED A SIXTH TIME 2026-11-01, when `stm` became the 6th kind on his
+    # proposal: "perhaps one final category such as 'stm' (for 'statement')
+    # might resolve it? It's a statement where you clearly need to act, but
+    # that in itself does not fit into any of the other available categories?"
+    # GROWN, NOT RELAXED, for the sixth time -- and this test going red is the
+    # mechanism working: it asserts against KINDS, so a kind added without a
+    # section to hold it cannot reach a commit.
+    store.propose("stm", "a statement that needs acting on",
+                  "Retire them.", "chat",
+                  subjects=["m.st"], ruled="2026-11-01")
     assert {t.kind for t in store.all()} == set(KINDS)
     for k in KINDS:
         assert len(store.by_kind(k)) == 1, (

@@ -296,8 +296,14 @@ def file_shape(path: Path) -> dict:
 #: is exactly what was happening: the harvester reported "explicitly marked: 0"
 #: while his files carried 30, because a marker line has no leading hash and was
 #: therefore never part of any annotation's text.
+#: ★ `stm` ADDED 2026-11-01, HIS 6th KIND. This reader is the 5th place the
+#: marker vocabulary is spelled out -- after `KINDS` and the harvester's 3
+#: patterns -- and the guard that the 2 readers here agree on EVERY live kind
+#: is what found the omission, by iterating `KINDS` rather than a list of its
+#: own. Without it, `stm` would have been readable by the harvester and
+#: invisible to the reader that actually parses his annotations.
 _MARKER_LINE = re.compile(
-    r"^\s*(fr|pf|qs|wr|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|disc|dis|ds))*\s*$", re.I)
+    r"^\s*(fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|stm|disc|dis|ds))*\s*$", re.I)
 
 
 #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
@@ -328,7 +334,7 @@ _MARKER_LINE = re.compile(
 #: ticket's verbatim, so stripping the marker out of the annotation would move
 #: every identity derived from it -- a far larger change than the defect.
 _MARKER_TRAILING = re.compile(
-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|disc|dis|ds))*)"
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|stm|disc|dis|ds))*)"
     r"[\s.!?]*$", re.I)
 
 

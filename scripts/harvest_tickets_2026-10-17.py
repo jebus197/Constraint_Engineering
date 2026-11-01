@@ -85,7 +85,14 @@ TRANSCRIPTS = (pathlib.Path.home() /
 #: ordinary words and inside "panel review", so a bare substring match would
 #: harvest noise. Requires a boundary and one of the marker punctuations, or the
 #: token alone on its own line.
-MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr)(?:[:\]\)]|\s*[-—]\s|$)",
+#: ★ `stm` ADMITTED 2026-11-01. 4 PLACES SPELL THIS VOCABULARY OUT -- this
+#: pattern, CANDIDATE_LINE, CITATION and `KINDS` in bench/ticket_store.py --
+#: and they already disagreed: `disc` is a live kind present in NONE of the 3
+#: regexes, working only because it is the unmarked DEFAULT. That is 4
+#: declarations of 1 vocabulary with no comparator, which is why his `stm`
+#: markers were silently read as discussions. A guard now asserts every kind is
+#: either readable here or listed as default-only.
+MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr|stm)(?:[:\]\)]|\s*[-—]\s|$)",
                     re.IGNORECASE | re.MULTILINE)
 
 #: A SUPERSET OF `MARKER`, for cheap rejection on RAW JSON lines only -- see the
@@ -125,7 +132,7 @@ MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr)(?:[:\]\)]|\s*[-—]\s
 #: the moment an ASCII-letter escape appears in a transcript, and names cc2's
 #: bare form as the fallback. That is neither seat's answer and it is better
 #: than both: fable's cost with cc2's safety property turned into a check.
-CANDIDATE_LINE = re.compile(r"(?:fr|pf|qs|wr)\b", re.IGNORECASE)
+CANDIDATE_LINE = re.compile(r"(?:fr|pf|qs|wr|stm)\b", re.IGNORECASE)
 
 #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
 #:
@@ -198,7 +205,7 @@ def marked_kind(text: str) -> str | None:
 #: usage is unambiguous and was already measured -- 30 of 30 of his markers sit
 #: on their OWN LINE as a bare token, 0 inline -- so a marker followed by a hex
 #: id is a citation by construction, not by preference.
-CITATION = re.compile(r"\b(?:fr|pf|qs|wr):[0-9a-f]{6,}\b", re.IGNORECASE)
+CITATION = re.compile(r"\b(?:fr|pf|qs|wr|stm):[0-9a-f]{6,}\b", re.IGNORECASE)
 
 #: HARNESS TEXT IS NOT A PROPOSAL, and it is the bulk of what chat contains.
 #: Measured 2026-10-28: of 31 marker-bearing chat messages since 2026-10-01, 24

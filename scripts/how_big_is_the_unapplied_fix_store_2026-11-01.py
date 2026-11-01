@@ -171,7 +171,15 @@ def main(argv=None) -> int:
     # design while an edit to a live runner module is the thing he fears.
     def _kind(sp: pathlib.Path) -> str:
         n = sp.name
-        if "falsifier" in n:
+        # ★ `falsify_` AS WELL AS `falsifier`, corrected 2026-11-01. The seats
+        # named their files `falsify_capability_ledger_2026-10-07.py` and so on,
+        # and each says FALSIFIER in its own docstring, but this test matched
+        # only the longer spelling -- so 5 of the 41 distinct absent module
+        # paths, 12.2 per cent with a 95 per cent interval of 0.053233 to
+        # 0.255442, were counted as live-module designs when they are evidence
+        # by design. That inflated the figure put to him as "44 unadopted
+        # designs", which he was then asked to rule on.
+        if "falsifier" in n or n.startswith("falsify_"):
             return "falsifier (evidence)"
         if sp.parts[:2] == ("bench", "tests"):
             return "guard/test"

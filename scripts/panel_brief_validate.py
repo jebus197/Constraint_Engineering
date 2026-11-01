@@ -49,6 +49,16 @@ TEMPLATE = REPO / "bench" / "directives" / "universal" / "panel_brief_template.m
 INSTRUMENTS = (r"\bgamma\b", r"\brho\b", r"\bS_k\b", r"\bsigma\b", r"\bnu\b",
                r"two-sided gate", r"\bseverity\b", r"\bDuane\b", r"\bWilson\b")
 
+#: THE WEAK FORM, NAMED SO IT CAN BE REFUSED. This is the exact wording the
+#: 2026-10-18 brief used, and the shape of it generalises: asking only whether
+#: repairs coexist. It is matched on the QUESTION, not on the words composable
+#: or independent alone, which appear legitimately in a brief that goes on to
+#: require the measurement.
+_WEAK_COMPOSABILITY = re.compile(
+    r"(?:say |state |report )?whether (?:the )?(?:\d+ |these )?"
+    r"(?:repairs?|fixes?|solutions?|changes?)\s+"
+    r"compose,?\s*(?:conflict|or conflict)[^.\n]{0,40}", re.I)
+
 CHECKS = (
     ("names the artefact under review",
      (r"\b[\w./-]+\.(?:py|md|json|toml|sh)\b",),
@@ -63,6 +73,27 @@ CHECKS = (
     ("requires a fix, not only a finding",
      (r"\bfix\b", r"\brepair\b", r"\bremedy\b"),
      "require a fix; a finding on its own is half an answer"),
+    # ★ COMPOSABILITY IN HIS DEMONSTRATED FORM — his ruling of 2026-11-01,
+    # *"I remember this. Yes do it as instructed."* The half he had already
+    # instructed was done: his definition of 2026-10-02 is in both instruction
+    # files verbatim and in the dispatcher's SYSTEM prompt, held by a guard.
+    # THE TEMPLATE WAS THE OTHER HALF AND IT DISAGREED WITH ALL OF THEM: a brief
+    # author is prompted by what this list requires, and this list required
+    # nothing about composability at all, so the one brief that addressed it
+    # stated the standard as, in full, "say whether the repairs compose,
+    # conflict, or are independent" -- the weak non-interference form his
+    # definition explicitly excludes. Measured 2026-10-31: 10 of 10 uses of the
+    # word across the decisions file and the morning report took that weak
+    # sense, Wilson [0.722467, 1.000000].
+    ("states composability as a DEMONSTRATED advantage, not mere coexistence",
+     (r"demonstrabl\w*\s+(?:provide|better)", r"better than either",
+      r"dominates? either", r"advantage over each", r"advantage over either",
+      r"measurement\b[^.]{0,80}\bcomposab", r"composab[^.]{0,120}\bmeasurement"),
+     "state composability as he defines it: compose ONLY on a demonstrated "
+     "advantage over each fix alone, where the demonstration is a MEASUREMENT "
+     "and not a judgement, and prefer the single fix where it performs as well. "
+     "Asking only whether the repairs compose, conflict or are independent is "
+     "the weak form he explicitly excludes"),
     ("requires the fix to be TESTED",
      (r"falsifier", r"\btest\b\w*\s+(?:the|your|that)\s+fix", r"\bexecuted?\b.*\bfalsifier\b"),
      "require a runnable falsifier that the seat has EXECUTED, and its output"),
@@ -629,6 +660,17 @@ def validate(text: str) -> list[str]:
     for label, patterns, remedy in CHECKS:
         if not any(re.search(p, low, re.M | re.I) for p in patterns):
             problems.append(f"{label}: NOT FOUND — {remedy}")
+
+    # ★ AND THE WEAK FORM IS REFUSED OUTRIGHT, not merely unrequired. A brief
+    # can satisfy the positive check above and ALSO carry the weak sentence, and
+    # the weak one is the one a seat acts on. His definition excludes it by
+    # name, so it is a defect rather than an omission.
+    for _m in _WEAK_COMPOSABILITY.finditer(text):
+        problems.append(
+            f"states composability in the weak form he excludes: "
+            f"{_m.group(0).strip()!r} — his definition of 2026-10-02 is that a "
+            f"composed fix must demonstrably beat either part alone, measured; "
+            f"mere non-interference is not composability")
 
     # ★ A PATH A SEAT CANNOT FOLLOW IS A DEFECTIVE BRIEF. See
     # `named_paths_that_do_not_exist` for the 2026-10-14 measurement.
