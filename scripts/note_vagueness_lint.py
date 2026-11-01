@@ -179,6 +179,131 @@ BARE_WORD_NUMBER_OK = re.compile(
 #: cleaner exists and the figure is known.
 RULE_27_FULL_FROM = "2026-10-29"
 
+#: ─────────────────────────── v1.9, 2026-11-01 ───────────────────────────
+#:
+#: HIS INSTRUCTION, verbatim: *"We already discussed that you should not simply
+#: print issue IDs like B21, B20 etc. without offering any clear explanation of
+#: what they are? These identifiers are meaningless to me? I don't carry a store
+#: of what these issues are in my head, and I can't easily look them up. But you
+#: do. ... If your v1.8 notes standard need formally updating to reflect this
+#: previously agreed notes standard, then you should do it, and perhaps make a
+#: version bump to 1.9, so there is no future confusion, and no temptation to
+#: again revert."*
+#:
+#: IT WAS ALREADY AGREED AND ALREADY WRITTEN DOWN, WHICH IS THE POINT. The format
+#: he endorsed on 2026-10-30 -- *"this format of tts is easier for me to deal
+#: with. Please lean and use it going forward"* -- already states *"Never an
+#: identifier without its subject named in the same breath."* v1.9 does not
+#: invent a rule; it gives that one a CHECKER, because a rule restated for the
+#: 3rd time and enforced by nothing is the thing this project's record says
+#: fails.
+RULE_32_FROM = "2026-11-01"
+
+#: THE SUBJECT DICTIONARY IS THE TASK LIST'S OWN HEADINGS, not a word list of
+#: mine. An identifier's subject is what its entry calls itself, so the check
+#: cannot be satisfied by waffle: "Entry B21 carries a ruling of yours dated 17
+#: October" has prose and names no subject, and that is the exact sentence he
+#: objected to.
+_ENTRY_IDENT = re.compile(r"\b((?:[A-Z]\d{1,4}|C00\d{2}|\d{1,2}\.\d{1,2}[a-z]?))\b")
+
+_SUBJ_STOP = frozenset("""the a an and or but if then of for to in on at by with
+from that this those these is are was were be been being it its their his her
+not no cannot may must should would could will can has have had do does did as
+into than when where which who whom what why how all any both each few more
+most other some such only own same so too very just now also still yet about
+above after again against because before below between during further here once
+through under over while without within across among toward upon needs need
+asks ask rule ruling decision entry task list project""".split())
+
+
+def _subject_words(s: str) -> set[str]:
+    """Content words of a heading or a sentence, for subject matching."""
+    return {w for w in re.findall(r"[A-Za-z][A-Za-z_-]{4,}", s.lower())
+            if w not in _SUBJ_STOP}
+
+
+_ENTRY_SUBJECTS: dict[str, frozenset[str]] | None = None
+
+
+def entry_subjects() -> dict[str, frozenset[str]]:
+    """{identifier: content words of its own task-list heading}, read once."""
+    global _ENTRY_SUBJECTS
+    if _ENTRY_SUBJECTS is not None:
+        return _ENTRY_SUBJECTS
+    out: dict[str, frozenset[str]] = {}
+    try:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        import task_list_markers as _TLM            # noqa: PLC0415
+        for e in _TLM.parse_entries():
+            #: THE TITLE, NOT THE BODY. `Entry.text` is the heading LINE, and
+            #: several entries have had paragraphs APPENDED to that same line on
+            #: purpose, because `parse_entries` requires the marker to sit at
+            #: `lines[i + 1]` and inserting a paragraph between them would
+            #: orphan the marker. So `e.text` can run to thousands of
+            #: characters of history, and taking all of it made B21's subject
+            #: set include "added", "absent" and "accepted" -- words that
+            #: appear near any identifier, so the rule would have passed on
+            #: anything. The subject is the entry's TITLE: the first sentence,
+            #: after the leading identifier.
+            title = re.sub(r"^\**\s*[A-Z]?\d*[\w.]*\.\s*", "", e.text.lstrip("*").strip())
+            title = re.split(r"(?<=[a-z0-9])\.\s|\.\*\*", title)[0][:220]
+            words = frozenset(_subject_words(title))
+            if words:
+                out[e.ident] = words
+    except Exception:                                # noqa: BLE001
+        #: FAILS OPEN. If the task list cannot be read the rule reports nothing
+        #: rather than accusing every identifier in the document, because a
+        #: checker that fires hardest when its own input is missing is the
+        #: false-zero shape this project has met repeatedly.
+        out = {}
+    _ENTRY_SUBJECTS = out
+    return out
+
+
+#: WHICH DOCUMENTS, and the scope is HIS: *"scoped to the documents you read and
+#: binding going forward only"*.
+#:
+#: MEASURED BEFORE SHIPPING, which is what kept the rule narrow. Unscoped, it
+#: fires on 412 of 1,187 notes for 2,328 findings, the worst offenders being the
+#: master task list itself at 119 -- where the rule is CIRCULAR, since that file
+#: IS the dictionary -- and verbatim panel transcripts at 49, 45, 44 and 40,
+#: which may not be edited at all. That is the guard-accuses-correct-material
+#: class measured at 9 of 36 on 2026-10-28, and it is avoided here by scope
+#: rather than discovered later by a red board.
+_DELIVERED = re.compile(r"^(Morning_Report|Decisions_|Answers_|Board_"
+                        r"|Progress_Report|Outstanding_Rulings|Overnight_)")
+
+
+def _is_delivered_doc(path: pathlib.Path) -> bool:
+    logical = pathlib.Path(_LOGICAL_PATH or path)
+    name = logical.name
+    if "FULL_RECORD" in name or name.startswith("CDSFL_MASTER_TASK_LIST"):
+        return False
+    if any(q.endswith("_tts") for q in logical.parts):
+        return True
+    return bool(_DELIVERED.match(name))
+
+
+def rule_32_applies(path: pathlib.Path) -> bool:
+    """Rule 32 binds a DELIVERED document first seen from his ruling onward."""
+    if not _is_delivered_doc(path):
+        return False
+    seen = note_first_seen(pathlib.Path(_LOGICAL_PATH or path))
+    return seen is None or seen >= RULE_32_FROM
+
+
+#: RULE 33 -- A DECISION CARRIES A RECOMMENDATION, AND IT NAMES A STANDARD.
+#: The file he rejected on 2026-10-29 carried 0 recommendations across 6 open
+#: decisions and used the words additive, composability and simplest sufficient
+#: 0 times. Both halves are counted rather than hoped for.
+_DECISION_SECTION = re.compile(
+    r"^(?:#+\s*)?(?:PART\s+\d+[.:]\s*)?(?:\*\*)?\s*"
+    r"(?:WHAT NEEDS YOUR VERDICT|DECISIONS? THAT NEED|WHAT I NEED FROM YOU"
+    r"|DECISIONS AWAITING YOU)", re.I | re.M)
+_NUMBERED_ITEM = re.compile(r"^\s*(?:\*\*)?(\d{1,2})\.\s+\S", re.M)
+_RECOMMENDS = re.compile(r"my recommendation|I recommend|RECOMMENDATION:", re.I)
+_THE_3_STANDARDS = re.compile(r"additive|composab|simplest sufficient", re.I)
+
 
 def note_first_seen(path: pathlib.Path) -> str | None:
     """The date a note ENTERED the repository, or None when it cannot be dated.
@@ -426,6 +551,43 @@ def sentences(text: str):
 #: verbatim region are still printed, under their own heading, with their own
 #: count. Prose OUTSIDE the markers is linted normally, so a note cannot buy
 #: amnesty for its own writing by quoting someone.
+def decisions_without_recommendations(path, text: str) -> list:
+    """Rule 33: a delivered document presenting decisions must recommend on each.
+
+    THE FILE HE REJECTED on 2026-10-29 carried **0** recommendations across 6
+    open decisions, and used the words additive, composability and simplest
+    sufficient **0** times. Both halves are counted here rather than hoped for,
+    because the format he endorsed the next day requires every decision to carry
+    "a recommendation argued against the 3 standards".
+    """
+    if not rule_32_applies(pathlib.Path(_LOGICAL_PATH or path)):
+        return []
+    m = _DECISION_SECTION.search(text)
+    if not m:
+        return []
+    section = text[m.end():]
+    nxt = re.search(r"^(?:#+\s*)?(?:PART\s+\d+)[.:]", section, re.M)
+    if nxt:
+        section = section[:nxt.start()]
+    items = len(set(_NUMBERED_ITEM.findall(section)))
+    recs = len(_RECOMMENDS.findall(section))
+    out = []
+    if items and recs < items:
+        out.append((0, f"DECISIONS WITHOUT RECOMMENDATIONS (Rule 33: {items} "
+                    f"numbered decision(s), {recs} recommendation(s))",
+                    "recommendation",
+                    "the format he endorsed 2026-10-30 gives every decision what "
+                    "it is, what it affects, what he decides, and a recommendation "
+                    "argued against the 3 standards"))
+    if items and not _THE_3_STANDARDS.search(section):
+        out.append((0, "RECOMMENDATIONS NAME NO PROJECT STANDARD (Rule 33)",
+                    "standards",
+                    "name additive, simplest sufficient or composability where a "
+                    "recommendation is made; the rejected file of 2026-10-29 used "
+                    "all 3 words 0 times"))
+    return out
+
+
 def partition(path) -> tuple[list, list]:
     """(counted, exempted) for one note: everything `lint` reports plus the
     structural findings, split on whether it sits inside a verbatim region.
@@ -461,6 +623,12 @@ def partition(path) -> tuple[list, list]:
     # test_no_script_discards_a_verdict_by_testing_the_tuple exists to catch,
     # and that guard flagged this line within twenty minutes of it being
     # written. Being right is not the same as being readable.
+    #: RULE 33 (v1.9) IS WHOLE-DOCUMENT, so it is added after the split and is
+    #: region-immune: a document that presents decisions without recommending on
+    #: them is a fault of the document, not of a quoted passage inside it.
+    for r33 in decisions_without_recommendations(path, text):
+        counted.insert(0, r33)
+
     fs = future_stamp(path)
     if fs is not None:
         counted.insert(0, (1, "FUTURE TIMESTAMP (Rule 1: read the clock, do not "
@@ -501,12 +669,17 @@ def partition(path) -> tuple[list, list]:
 
 
 #: The note standard a delivered note or TTS file must name. Bumped WITH the standard.
-CURRENT_NOTE_STANDARD = "v1.8"
+CURRENT_NOTE_STANDARD = "v1.9"
 
 #: Standards this project has genuinely used. A note stamped with one of these
 #: is correctly stamped, whatever the current standard is. Bumped WHEN a standard
 #: is superseded, never when one is invented.
 ARCHIVAL_NOTE_STANDARDS = frozenset({
+    # SUPERSEDED BY v1.9 ON 2026-11-01, on his instruction that the format he
+    # endorsed on 2026-10-30 be written into the standard so it cannot be
+    # abandoned again. Moving v1.8 here is what keeps every note correctly
+    # stamped v1.8 compliant rather than retrospectively wrong.
+    "v1.8",
     "v1", "v1.0", "v1.1", "v1.2", "v1.3", "v1.4", "v1.5", "v1.6",
     # SUPERSEDED BY v1.8 ON 2026-10-17, which adds Rule 31 (name the subject,
     # name the quantity) on his instruction of 2026-10-04 that the standard
@@ -1231,6 +1404,13 @@ def lint(path: pathlib.Path) -> list:
     # declarations of one fact must not disagree, so this reads the same
     # `_LOGICAL_PATH or path` the rest of the module does.
     _full_27 = rule_27_in_full(pathlib.Path(_LOGICAL_PATH or path))
+    #: RULE 32 (v1.9) binds only a DELIVERED document first seen from his ruling
+    #: onward, and it is evaluated INSIDE this loop so that `partition()` can
+    #: exempt a finding sitting in a verbatim region. His words and a seat's
+    #: words reach these files unedited; accusing them would be the one thing
+    #: task V8 exists to prevent.
+    _full_32 = rule_32_applies(pathlib.Path(_LOGICAL_PATH or path))
+    _subjects = entry_subjects() if _full_32 else {}
     for para_no, s in sentences(path.read_text()):
         # Quote-stripping applies to EVERY rule, not only 27 and 28. A note that
         # quotes someone else's vagueness in order to name it is not being vague.
@@ -1288,6 +1468,20 @@ def lint(path: pathlib.Path) -> list:
             if CATEGORY_NOUN_RE[phrase].search(low):
                 out.append((para_no, f"CATEGORY NOUN (Rule 28: say {name!r})",
                             phrase, s)); break
+        if _full_32:
+            #: THE ASYMMETRY IS DELIBERATE. The IDENTIFIER is searched in the
+            #: quote-stripped sentence, so quoting his words or a seat's reply
+            #: is never accused; the SUBJECT is searched in the FULL sentence,
+            #: because naming the subject inside a quotation still names it.
+            for im in _ENTRY_IDENT.finditer(unquoted):
+                subj = _subjects.get(im.group(1))
+                if subj and not (subj & _subject_words(s)):
+                    out.append((
+                        para_no,
+                        "BARE ENTRY CODE (Rule 32: name its subject in the "
+                        "same breath)", im.group(1),
+                        s))
+                    break
         if _tts:
             for what, rx in PHONETIC_PUNCT.items():
                 m = rx.search(unquoted)

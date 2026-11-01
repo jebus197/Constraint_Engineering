@@ -40,9 +40,28 @@ MEM = (pathlib.Path.home() / ".claude" / "projects"
 
 
 def test_the_current_standard_is_v18():
-    assert L.CURRENT_NOTE_STANDARD == "v1.8", (
-        "his instruction of 2026-10-04 was that the standard itself needed "
-        "tweaking to cover vagueness by omission; v1.8 is that tweak")
+    """NEVER BELOW v1.8, rather than exactly v1.8 — amended 2026-11-01.
+
+    WHAT THIS GUARD IS FOR, unchanged: his instruction of 2026-10-04 was that
+    the standard itself needed tweaking to cover vagueness by omission, v1.8 is
+    that tweak, and the risk is the tweak being LOST. A literal equality also
+    fails on every legitimate bump, which is a treadmill that protects nothing:
+    v1.9 was locked on 2026-11-01 on his instruction and this assertion went
+    red for a correct change. That is the guard-accusing-correct-code class
+    measured at 9 of 36 on 2026-10-28.
+
+    A COMPARISON PRESERVES EXACTLY WHAT THE EQUALITY PROTECTED. Regression
+    below v1.8 still fails here; `test_the_two_patterns_still_fire` below holds
+    Rule 31's checks by execution; `test_the_note_standard_v19_is_enforced_2026-11-01.py`
+    pins the CURRENT version and v1.8's place in the archival set. Nothing this
+    test was defending is now undefended.
+    """
+    cur = L.CURRENT_NOTE_STANDARD
+    as_tuple = tuple(int(x) for x in cur.lstrip("v").split("."))
+    assert as_tuple >= (1, 8), (
+        f"the standard has regressed to {cur}. His instruction of 2026-10-04 "
+        f"was that the standard itself needed tweaking to cover vagueness by "
+        f"omission; v1.8 is that tweak and it may not be dropped.")
 
 
 def test_v17_is_archival_so_191_notes_stay_correctly_stamped():

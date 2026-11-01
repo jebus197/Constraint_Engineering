@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 1 November 2026 12:16 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 1 November 2026 15:29 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -22,6 +22,20 @@ session loss, compaction event, or fresh start with a new model instance.
 **THE ACTION THIS RULING IMPLIES, and it is the founder's, not CC1's.** Put the store location and the passphrase in the password manager, together, off this machine. Losing either makes the sealed archive unrecoverable, and the passphrase cannot be reset — the whole point of the design is that nothing running here can reach it. CC1 cannot do this and should not: it would mean handling the passphrase in plain text.
 
 **What CC1 has done instead:** confirmed that the procedure is versioned, that `unvault` still matches the `vault` parameters exactly (same cipher, same KDF, same iteration count — a mismatch here is the classic way a sealed archive becomes unopenable), and that a wrong passphrase fails loudly and cleans up its partial extraction rather than leaving a half-written store.
+
+---
+
+## SESSION STATE — 2026-11-01 15:05 GMT (READ THIS FIRST)
+
+**Written against `0a0f4ced` on `sim/shakedown-2026-09-29`; the save carrying this block is its child.**
+
+**THE NOTE STANDARD IS AT v1.9, LOCKED 2026-11-01, AND ITS SUBSTANCE IS A CHECKER FOR A RULE ALREADY AGREED TWICE.** His instruction was to write the format he endorsed on 2026-10-30 into the standard *"so there is no future confusion, and no temptation to again revert"*. That format already said *"Never an identifier without its subject named in the same breath"* and was abandoned anyway, so v1.9 adds no new principle — it adds **Rule 32** (an entry code in a document delivered to him must have its subject named in the same sentence, the subject being a content word from that entry's own TITLE in the master task list, so prose alone cannot satisfy it), **Rule 33** (numbered decisions counted against recommendations, and the section must name additive, simplest sufficient or composability), and **Rule 34** (avoid over-narration, STATED AND DELIBERATELY NOT ENFORCED because every proxy considered would accuse correct prose). `bench/tests/test_the_note_standard_v19_is_enforced_2026-11-01.py` reports **17 passed** under `python3 -m pytest bench/tests/test_the_note_standard_v19_is_enforced_2026-11-01.py`, with 0 skipped, and is now in the commit gate.
+
+**THE SCOPE WAS MEASURED BEFORE THE RULE SHIPPED, WHICH IS WHY IT IS NARROW.** Unscoped, Rule 32 fires on **412 of 1,187 notes for 2,328 findings** — worst on the master task list itself at 119, where the rule is CIRCULAR because that file is the dictionary, and on verbatim panel transcripts at 49, 45, 44 and 40, which may not be edited at all. Path scope alone still left 161 of 636 delivered files firing, almost all from March and April, so binding the rule only on notes first seen from 2026-11-01 is what makes it sane rather than the path list. Producer: the scope measurement is reproduced by `python3 scripts/note_vagueness_lint.py <file>` against any delivered note, and `bench/tests/test_documentation_drift_guards_2026-08-25.py` reports **8 passed** that the project instructions and the memory index name the same version. **v1.8 joined `ARCHIVAL_NOTE_STANDARDS`**, so every correctly-stamped earlier note stays compliant instead of becoming retrospectively wrong.
+
+**THE SAVE COMMIT NOW CARRIES THE RIGHT ATTRIBUTION.** `cdsfl_sv.py` reads `CDSFL_SV_CO_AUTHOR` and nothing set it, so every save was trailed `Claude Code`. It is now set in `~/.claude/settings.json`, backed up and JSON-validated either side with all 8 pre-existing top-level keys compared individually, and the trailer reads `Co-Authored-By: Claude Opus 5`.
+
+**HIS RULING ON AUTOMATIC SAVING, AND WHAT IS STILL OPEN.** `~/.claude/hooks/sv_milestone_gate.py` is live and reachable, not inert: 79 save cycles across the last 600 commits, median gap 3, worst 40, threshold derived each run at the 75th percentile (currently 11, NumPy agreeing exactly), and **20 of 79 historical cycles would have fired it, 0.2532, Wilson [0.170279, 0.358943]**. It refuses a stop rather than running `sv`, because `sv` pushes. **He has now ruled that the automatic form saves LOCALLY and the manual form commits and pushes** — and his phrase *"save work locally"* admits 2 readings, a local commit or a state refresh without a commit. The mechanics decide it: a local commit runs the pre-commit gate, which is **112 guard files and about 8 minutes**, so committing at every turn end is not available. The automatic form therefore refreshes the local reference resources and captures the Open Brain summary without committing. **His confirmation is still owed on that reading.**
 
 ---
 

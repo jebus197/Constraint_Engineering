@@ -200,9 +200,18 @@ def test_every_item_survives_a_real_apply(tmp_path):
     # full -- a guard accusing correct content, and the same boundary defect
     # repaired in `end_of_entries` earlier the same day. Verified by diffing
     # the one failing body: the only difference was the swallowed header.
+    # ★ AND IT MUST STOP BEFORE THE DOCUMENT'S FOOT-LINE TOO. Corrected
+    # 2026-11-01, and it is the SAME boundary defect as the one above rather
+    # than a new one: the note-standard stamp is document-level prose at the
+    # end of the file, so the LAST item's body swallowed it. When the standard
+    # was bumped to v1.9 the regenerated stamp read v1.9 while the stored body
+    # carried v1.8, and the guard reported "body lost" for an item that was
+    # present in full -- a guard accusing a correct re-stamp. The stamp is not
+    # part of any item, so the boundary now names it.
     for p in re.split(r"^## ", before, flags=re.M)[1:]:
         tail = "\n".join(p.splitlines()[1:])
-        body = re.split(r"^(?:---\s*$|# )", tail, flags=re.M)[0].strip()
+        body = re.split(r"^(?:---\s*$|# |Written under CDSFL note standard)",
+                        tail, flags=re.M)[0].strip()
         if body:
             assert body in after_text, f"body lost: {p.splitlines()[0][:70]}"
 
