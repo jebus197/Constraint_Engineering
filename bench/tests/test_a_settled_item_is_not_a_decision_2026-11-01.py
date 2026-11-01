@@ -180,3 +180,60 @@ class TestTheTwoInstrumentsAgree:
         assert sorted(decided) == owed, (
             f"the generator renders {sorted(decided)} and the producer derives "
             f"{owed}. One of them is wrong; a count would have hidden a swap.")
+
+class TestTheCoarseSplitterHidesNoLiveAsk:
+    """★ THE SENTENCE SCOPING IS COARSER THAN IT LOOKS, AND MEASURED SAFE.
+
+    `_SENT` splits on sentence punctuation followed by WHITESPACE, so a heading
+    ending `.**` does not split from the paragraph after it: measured over every
+    entry, 152 of 5,802 blobs span a paragraph break and 222 span a marker
+    comment. That matters because the free-panel test is scoped to the BLOB, and
+    a free-panel mention anywhere in a blob suppresses every ask inside it --
+    the dangerous direction this probe already failed in once, when a
+    body-scoped test hid the role-layer question from him.
+
+    MEASURED 2026-11-01: exactly 1 ask is affected, and it is B22's own sentence
+    declaring an EARLIER ask stale, so suppressing it is correct and a finer
+    split would put a stale question back on his queue. The splitter was
+    therefore NOT changed, and `p-pass-anti-nitpick` applies. This pins that
+    result: if a future entry puts a genuinely live ask in the same blob as a
+    free-panel mention, it goes red and the scoping has to be revisited.
+    """
+
+    def test_no_live_ask_is_hidden_by_blob_scoping(self, prod):
+        import re
+        import task_list_markers as T
+        bodies = prod.bodies()
+        hidden = []
+        for e in T.parse_entries():
+            for blob in prod._SENT.split(bodies.get(e.ident, "")):
+                if not (prod.ASKS.search(blob) and prod.FREE.search(blob)):
+                    continue
+                for part in re.split(r"(?<=[.!?])\s+|\.\*\*\s*|\n\s*\n", blob):
+                    if not prod.ASKS.search(part) or prod.FREE.search(part):
+                        continue
+                    if prod.STALE.search(part):
+                        continue          # the part declares an earlier ask stale
+                    hidden.append((e.ident, " ".join(part.split())[:160]))
+        assert not hidden, (
+            "a LIVE ask is hidden because a free-panel mention shares its blob, "
+            "so he is never asked it; tighten the scoping:\n"
+            + "\n".join(f"  {i}: {t}" for i, t in hidden))
+
+    def test_the_span_rates_behind_it_are_reproducible(self, prod):
+        """The 2 rates are cited in the record, so they are recomputed here
+        rather than trusted: a figure with no live producer is a claim."""
+        import task_list_markers as T
+        bodies = prod.bodies()
+        total = para = marker = 0
+        for e in T.parse_entries():
+            for blob in prod._SENT.split(bodies.get(e.ident, "")):
+                total += 1
+                para += "\n\n" in blob
+                marker += "<!--" in blob
+        assert total > 1000, f"only {total} blobs; the corpus cannot be right"
+        # Non-zero is the POINT: the scoping is genuinely coarse, which is what
+        # the test above exists to bound. Asserting 0 would be asserting the
+        # opposite of the measurement.
+        assert 0 < para < total * 0.2, (para, total)
+        assert 0 < marker < total * 0.2, (marker, total)

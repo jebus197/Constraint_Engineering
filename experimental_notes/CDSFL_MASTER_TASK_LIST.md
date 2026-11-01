@@ -1651,6 +1651,8 @@ Added 2026-11-01T16:40. **HIS RULING, verbatim:** *"Enable it as its own task, a
 
 **THE RATCHET IS PER FILE, NOT A TOTAL**, so one file improving cannot pay for another getting worse, and a test drives exactly that case. **FALSIFIED END-TO-END AGAINST THE REAL CHECKER:** appending a function returning a string where `int` is declared to `bench/counting.py` takes it from its baseline of 1 to 2 and the task REFUSES; the file was restored byte-identically and the check passes again. **GUARD:** `bench/tests/test_the_type_check_task_is_its_own_task_2026-11-01.py`, 11 tests, including that the task is absent from `hooks/pre-commit`, that `--help` costs nothing, and 7 ratchet cases driven through `main()`.
 
+**AND THEY ARE CONCENTRATED, WHICH MAKES THE PROGRAMME MUCH SMALLER THAN 1,050 SUGGESTS.** Measured from the ledger: **44 of the 276 affected files hold HALF of all findings**, 0.159420 of them, Wilson 95% [0.120952, 0.207239]; the worst 10 files hold **272 of 1,050 = 0.259048**, Wilson [0.233460, 0.286392]. Gini 0.496115 with NumPy and mpmath agreeing to 0.0e+00, median 2.5 findings per affected file against a mean of 3.804348, and a worst single file of 72. So the first half of the work is a few dozen files rather than 276.
+
 **NOT FIXED HERE, DELIBERATELY.** 1,050 findings are a batch programme, which is exactly what his ruling asked for — a task of its own, fixed in batches. `--worst 20` names where to start. The real defect already visible in the first 3 files examined is `bench/build_acceptance.py:202`, which returns `None` where `frozenset[Any]` is declared.
 
 **B69. `bench/proof_verify.py` IS FOLDED BACK, AND THE HOLE THAT A CLEAN EXIT ADMITS A PROOF ASSERTING NOTHING IS CLOSED.**
