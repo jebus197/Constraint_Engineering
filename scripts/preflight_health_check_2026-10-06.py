@@ -365,7 +365,7 @@ def check_every_seat_is_fully_registered(seats, expect_uniform=False,
     #: wrong.
     # ★ A SILENT DEFAULT INSIDE THE SILENT-DEFAULT DETECTOR, found 2026-11-02.
     # This read `base = getattr(rc, "base_model_label", lambda s: s)`.
-    # `base_model_label` is defined in `bench/reference_runner_v3.py:714` and NOT
+    # `base_model_label` is defined in `bench/reference_runner_v3.py:751` and NOT
     # in `runner_core`, so the getattr ALWAYS took its default -- the identity
     # function -- and no seat label was ever resolved. The visible cost: all 6
     # simulated seats were reported absent from all 4 tables, when

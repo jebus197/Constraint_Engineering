@@ -139,6 +139,43 @@ def declared_models() -> dict[str, dict[str, Any]]:
     return out
 
 
+def registration_targets(model: str, ckey: str) -> list[tuple]:
+    """The 5 per-model tables and WHICH KEY each one is keyed on.
+
+    ★ EXTRACTED 2026-11-02 SO THERE IS ONE DECLARATION OF THE KEYING, NOT TWO.
+    `bench/seat_readiness.py` has to know the same thing in order to report which
+    tables a seat is missing from, and a second copy got it WRONG on its first
+    attempt: it keyed all 5 on the composer key, where `INITIAL_FINGERPRINTS` and
+    `MODEL_SPECS` are keyed on the LABEL. The symptom was 6 of 6 seats reported as
+    gapped -- a uniform result, which is the cheapest signal that a predicate is
+    wrong rather than a finding about the world.
+
+    Returning the live mappings themselves (not their names) is deliberate: a
+    caller cannot then look up a table this function did not hand it.
+
+    Each entry is (table, key, declaration field, decoder, human name).
+    """
+    from bench import runner_core as rc
+    from bench.cdsfl_registry import composer as co
+
+    return [
+        (co.COMPOSER_MODEL_MAP, model, "composer_key",
+         lambda v, _c=ckey: str(v), "composer.COMPOSER_MODEL_MAP"),
+        (co.COMPOSER_MODEL_MAP, ckey, "composer_key",
+         lambda v, _c=ckey: _c, "composer.COMPOSER_MODEL_MAP (self)"),
+        (co.MODEL_COHERENCE_BUDGETS, ckey, "coherence_budget",
+         float, "composer.MODEL_COHERENCE_BUDGETS"),
+        (co.PHENOTYPE_TRANSFORMS, ckey, "phenotype",
+         lambda v: co.PhenotypeTransform(**dict(v)),
+         "composer.PHENOTYPE_TRANSFORMS"),
+        (rc.INITIAL_FINGERPRINTS, model, "fingerprint",
+         lambda v: rc.CapabilityFingerprint(**dict(v)),
+         "runner_core.INITIAL_FINGERPRINTS"),
+        (rc.MODEL_SPECS, model, "spec",
+         lambda v: dict(v), "runner_core.MODEL_SPECS"),
+    ]
+
+
 def admit_declared_models(*, dry_run: bool = False) -> dict[str, Any]:
     """Fill the 5 per-model tables from every declaration. GAPS ONLY.
 
@@ -161,23 +198,7 @@ def admit_declared_models(*, dry_run: bool = False) -> dict[str, Any]:
             continue
         ckey = str(decl.get("composer_key") or "").strip() or model
 
-        targets = [
-            # (table, key, declaration field, decoder, human name)
-            (co.COMPOSER_MODEL_MAP, model, "composer_key",
-             lambda v, _c=ckey: str(v), "composer.COMPOSER_MODEL_MAP"),
-            (co.COMPOSER_MODEL_MAP, ckey, "composer_key",
-             lambda v, _c=ckey: _c, "composer.COMPOSER_MODEL_MAP (self)"),
-            (co.MODEL_COHERENCE_BUDGETS, ckey, "coherence_budget",
-             float, "composer.MODEL_COHERENCE_BUDGETS"),
-            (co.PHENOTYPE_TRANSFORMS, ckey, "phenotype",
-             lambda v: co.PhenotypeTransform(**dict(v)),
-             "composer.PHENOTYPE_TRANSFORMS"),
-            (rc.INITIAL_FINGERPRINTS, model, "fingerprint",
-             lambda v: rc.CapabilityFingerprint(**dict(v)),
-             "runner_core.INITIAL_FINGERPRINTS"),
-            (rc.MODEL_SPECS, model, "spec",
-             lambda v: dict(v), "runner_core.MODEL_SPECS"),
-        ]
+        targets = registration_targets(model, ckey)
 
         for table, key, field, decode, name in targets:
             if field not in decl:

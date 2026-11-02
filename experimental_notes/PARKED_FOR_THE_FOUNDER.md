@@ -187,6 +187,18 @@ The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B21 role vocabulary: the 1-or-2 dimension ruling and the mypy config decision are his
+
+*Parked 2026-11-02T15:03:28+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## B20 orchestrator build is ordered after B21, whose residual is his ruling
+
+*Parked 2026-11-02T15:03:28+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

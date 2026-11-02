@@ -305,6 +305,47 @@ def hil(run: str) -> dict:
     }
 
 
+def seats(models=None) -> dict:
+    """What each seat is missing before it can be dispatched. Reads only.
+
+    HIS ASK, 2026-11-02: *"researchers should be able to search for/add models
+    trivially from a search box in the UX, enter all their API keys, and logins
+    for OpenRouter, and for the various model vendors they might have access to,
+    and from any local models they have on their machines. They shouldn't need to
+    think, or concern themselves with the underlying mechanics of how this works
+    in reality."*
+
+    This is the BACKEND half only, which is the half he authorised on 2026-10-20:
+    *"I am not asking you to build the UX now. [...] you can build the UX backend,
+    so that the eventual UX can map cleanly on to it"*.
+
+    ★ 2 THINGS IT DELIBERATELY DOES NOT DO.
+      * It does not add a TAB. `TABS` came from his own instruction about where
+        the Discourse resource belongs, so where a seats surface sits in the
+        chrome is his decision and not a side effect of wiring a function.
+      * It does not contact any route, and it never reads a credential's value --
+        only whether one is declared, and on which surface. A probe is a
+        dispatch, and no paid dispatch happens without his express
+        authorisation.
+
+    `models` is an optional iterable of a run's ModelConfig objects. Omit it and
+    the ROUTE half comes back as unknown rather than as absent, because routes are
+    declared per run and there is no module-level roster to read.
+    """
+    from bench.seat_readiness import readiness
+    r = readiness(models)
+    return {
+        "name": "Seats",
+        "in_shell": True,
+        "placement_is_his_decision": True,
+        "counts": r["counts"],
+        "seats": r["seats"],
+        "routes": r["routes"],
+        "caveat": r["caveat"],
+        "rule": "configuration is reported; liveness costs money and is separately authorised",
+    }
+
+
 def shell() -> dict:
     """What the interface chrome is, so a front end need not hard-code it."""
     return {"tabs": list(TABS), "default_theme": "light",

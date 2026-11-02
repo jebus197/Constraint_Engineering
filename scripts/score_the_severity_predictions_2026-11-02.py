@@ -141,7 +141,7 @@ def main() -> int:
     # ★ THE PREDICATE IS THE LIVE ONE, NOT A PROXY FOR IT. A first version tested
     # `not (e.get("verdicts") or [])` as a stand-in for `severity_is_proven`, and
     # those are DIFFERENT CLAIMS: the pre-registration's falsifier names
-    # `severity_is_proven`, which `bench/reference_runner_v3.py:10391` computes by
+    # `severity_is_proven`, which `bench/reference_runner_v3.py:10428` computes by
     # checking that the model's stated R_k reproduces from its own stated inputs.
     # Scoring a proxy would have scored a different prediction than the one
     # committed before the run, which is the whole value of pre-registering.

@@ -572,12 +572,49 @@ def _decomposition_is_futile(model_label: str, mgr, fixed_chars: int) -> bool:
 # Configuration dataclass
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: What each panel label IS, in prose, for reports. `describe_model` reads it and
+#: the result reaches a report line (see the roster block printed per run).
+#:
+#: ★ 2 CORRECTIONS, 2026-11-02, BOTH FOUND BY COMPARING THIS TABLE WITH THE LIVE
+#: DISPATCH RATHER THAN BY READING IT.
+#:
+#: 1. `Codex` SAID "GPT-5.5 (OpenAI)", WHICH IS THE STATE HIS 2026-09-20 RULING
+#:    CORRECTED. That ruling made `cx` a DISTINCT model from `cgpt`; before it,
+#:    both pointed at `openai/gpt-5.5`, "so the panel had 4 architectures and
+#:    reported 5". The live dispatch HONOURS the ruling --
+#:    `bench/experiment_11_orchestrator.py:232` and
+#:    `bench/confer_maths_panel_2026-09-05.py:475` both send
+#:    `openai/gpt-5.3-codex`, the latter commented "a distinct model" -- so only
+#:    this DESCRIPTION was stale, and it was reproducing in prose exactly the
+#:    confusion the ruling removed. `bench/build_experiment_run.py` still carries
+#:    both seats on `openai/gpt-5.5` and is NOT touched: it is the 2026-08-22
+#:    build experiment, last changed 2026-09-17, so it predates the ruling and is
+#:    a historical artefact rather than a live path.
+#:
+#: 2. `Fable` WAS ABSENT. `describe_model` then returned the bare label and
+#:    `resolve_or_alarm` announced the miss -- so the gap was DETECTED and simply
+#:    never filled, and a report described the seat as "Fable". Its phenotype key
+#:    is `fable_5_1` and the dispatch table runs it on the CLI, which is what the
+#:    description now says. This is the 6th table Fable was missing from; the
+#:    other 5 were filled earlier the same day, and this one is not among the 5
+#:    that `bench/model_admission.py` writes, which is why that repair did not
+#:    reach it.
+#:
+#: NOT CHANGED HERE, AND IT IS HIS: the phenotype KEYS themselves. 4 of 6 name a
+#: superseded version (`opus_4_6` for Opus 4.7, `chatgpt_5_4` for GPT-5.5,
+#: `codex_5_3` for the codex model, `deepseek_v3` for V4 Pro), measured by
+#: `scripts/how_many_seats_are_keyed_to_a_stale_version_2026-11-02.py`. A key
+#: indexes a FINGERPRINT, which is a prior a future run reads back as what that
+#: model is believed capable of, and the archive's entries are keyed on the
+#: current spellings -- so renaming one changes what a model is told about itself
+#: and is a decision rather than a correction.
 MODEL_ROSTER = {
     "CC2": "Claude Opus 4.7 (Anthropic)",
-    "Codex": "GPT-5.5 (OpenAI)",
+    "Codex": "GPT-5.3-codex (OpenAI)",
     "Gemini": "Gemini 3.1 Pro Preview (Google)",
     "DeepSeek": "DeepSeek V4 Pro (DeepSeek)",
     "ChatGPT": "GPT-5.5 (OpenAI)",
+    "Fable": "Fable 5.1 (Anthropic)",
 }
 
 def fix_efficacy_decision(entry: dict, calls_this_round: int,

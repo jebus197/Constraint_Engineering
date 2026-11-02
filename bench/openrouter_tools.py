@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import os
+import pathlib
 import subprocess
 import sys
 import time
@@ -415,8 +416,65 @@ def _run_ruff(file_path: str) -> Dict[str, Any]:
         return {"status": "timeout", "elapsed_s": DEFAULT_TOOL_TIMEOUT_S}
 
 
+#: mypy's own codes for "I could not find or type this import". Used to tell a
+#: genuinely clean file from one that only looks clean because its imports became
+#: `Any`.
+_UNRESOLVED_IMPORT_CODES = ("import-not-found", "import-untyped")
+
+
+def _mypy_imports_were_unresolved(path: pathlib.Path) -> tuple[bool, int]:
+    """Did mypy fail to resolve this file's imports? (unresolved, how many)
+
+    ★ WHY THIS EXISTS, MEASURED 2026-11-02 BY EXECUTION. `--ignore-missing-imports`
+    does not merely silence a warning: it substitutes `Any` for the module, and
+    every attribute of `Any` type-checks trivially. So a file importing a module
+    mypy cannot FIND exits 0 and was reported as "ok" -- a silent pass on a file
+    nothing was checked in. Demonstrated: a file in `bench/` importing an absent
+    module returns returncode 0 with no output.
+
+    ★ AND THE SCOPE IS NARROWER THAN ENTRY B21 CLAIMS, which is why that claim is
+    withdrawn rather than cited here. B21 says 110 of 155 bench files import a
+    project module by bare name and that mypy therefore cannot see project types.
+    It CAN: because there is no `bench/__init__.py`, mypy treats each file as a
+    top-level module and puts `bench/` on its own search path, so a sibling
+    bare-name import RESOLVES. Checked by planting
+    `season_strength_order(12345)` -- a missing required argument -- in a file
+    inside `bench/`: mypy reports it. An earlier version of this comment claimed
+    the opposite, from a probe placed in a TEMPORARY DIRECTORY, where the failure
+    was created by the probe's own location rather than by the project's
+    configuration.
+
+    So what this catches is an import mypy cannot find at all -- a typo, a
+    deleted module, a dependency that is not installed -- not the bare-name
+    imports. Producer: `scripts/does_mypy_check_anything_2026-11-02.py`.
+
+    THIS IS THE STANDING WOLFRAM RULE APPLIED TO A DIFFERENT TOOL: a call that
+    verified nothing must never be recorded as confirming anything. A seat told
+    `status: "ok"` treats it as evidence, and downstream nothing distinguishes it
+    from a real pass.
+
+    IT DOES NOT CHANGE ANY CONFIGURATION. The probe runs in a subprocess with
+    `--follow-imports=silent` and no `--ignore-missing-imports`, so unresolved
+    imports surface as errors to be COUNTED. Nothing is written to the tree, no
+    config is installed, and the board is untouched -- installing a config is a
+    separate decision recorded as his in entry B21.
+    """
+    try:
+        probe = subprocess.run(
+            ["python3", "-m", "mypy", str(path), "--no-error-summary",
+             "--follow-imports=silent"],
+            capture_output=True, text=True, timeout=DEFAULT_TOOL_TIMEOUT_S,
+            cwd=str(REPO_ROOT),
+        )
+    except subprocess.TimeoutExpired:
+        return (False, 0)        # unknown is reported as not-unresolved, never as a fact
+    text = (probe.stdout or "") + (probe.stderr or "")
+    n = sum(text.count(f"[{code}]") for code in _UNRESOLVED_IMPORT_CODES)
+    return (n > 0, n)
+
+
 def _run_mypy(file_path: str) -> Dict[str, Any]:
-    """Run mypy on a single file."""
+    """Run mypy on a single file, and say so when the run checked nothing."""
     path = _resolve_repo_path(file_path)
     if not path.exists():
         return {"status": "error", "detail": f"path not found: {file_path}"}
@@ -429,12 +487,33 @@ def _run_mypy(file_path: str) -> Dict[str, Any]:
             cwd=str(REPO_ROOT),
         )
         elapsed = time.monotonic() - t0
-        return {
+        out = {
             "status": "ok" if result.returncode == 0 else "errors",
             "returncode": result.returncode,
             "output": result.stdout.strip()[:1500],
             "elapsed_s": round(elapsed, 2),
         }
+        # ★ A CLEAN RESULT IS QUALIFIED, NEVER REPLACED. The probe runs only when
+        # the lenient check PASSED, because that is the only case in which a
+        # caller could mistake silence for a verified file. An "errors" result is
+        # already loud and is left exactly as it was, so no existing status
+        # changes meaning and nothing a seat already relies on is removed.
+        if out["status"] == "ok":
+            unresolved, n = _mypy_imports_were_unresolved(path)
+            if unresolved:
+                out["status"] = "ok_but_nothing_was_checked"
+                out["unresolved_imports"] = n
+                out["caveat"] = (
+                    f"mypy exited 0, but {n} import(s) could not be FOUND and "
+                    f"--ignore-missing-imports substituted Any for them, so "
+                    f"anything reached through those imports was not checked. "
+                    f"This is not evidence that the file is type-correct. The "
+                    f"usual causes are a typo, a deleted module, or a dependency "
+                    f"that is not installed. Sibling imports inside bench/ are "
+                    f"NOT affected: they resolve, so this is not a report about "
+                    f"the tree's missing mypy configuration.")
+                out["elapsed_s"] = round(time.monotonic() - t0, 2)
+        return out
     except subprocess.TimeoutExpired:
         return {"status": "timeout", "elapsed_s": DEFAULT_TOOL_TIMEOUT_S * 2}
 

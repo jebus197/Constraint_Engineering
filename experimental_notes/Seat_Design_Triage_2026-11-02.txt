@@ -67,3 +67,101 @@ TRIAGE OF THE UNADOPTED SEAT DESIGNS
   NOTHING WAS APPLIED. This records a verdict against each, which is
   what his ruling asked for. The 23 marked NEEDS A
   READ are the only ones a judgement is owed on, and each is 1 line.
+
+==============================================================================
+APPENDIX, HAND-WRITTEN AND DATED: VERDICTS RECORDED AGAINST THE 23
+==============================================================================
+  appended 2026-11-02T14:44:03+00:00
+
+  The body above is generated output and is a snapshot. This appendix is not
+  generated. It exists so that a later reader does not re-triage designs that
+  have already been judged, and so the outstanding count, 22, stays honest.
+
+  Each judgement's durable home is its own entry in the master task list, not
+  this file, because a verdict carries evidence and a snapshot does not.
+
+  JUDGED SO FAR: 7 of 23. OUTSTANDING: 16.
+
+  1. degraded_convergence_2026-10-07.py, 288 lines, roster-aware convergence.
+     VERDICT: VERIFIED AND ADOPTABLE; the adoption decision is the founder's.
+     Its claim about the live code is accurate 26 days on, its mathematics
+     holds in 4 independently executed steps, and the degraded-roster case it
+     addresses has occurred in 3 of 53 archived runs. It is the complement of
+     entry C13 rather than a rediscovery of it, on the founder's own wording
+     of 2026-10-08. 1 precondition the design omits was found during the
+     verification and is recorded with it. Nothing was wired, because adopting
+     it changes how a pre-registered convergence threshold is computed.
+     Recorded as entry B77; register pf:4f09b9135a60.
+     Producer: scripts/does_the_roster_window_bound_hold_2026-11-02.py
+     Guard: bench/tests/test_the_roster_window_bound_is_sound_2026-11-02.py
+
+  2. the_gate_fires_once_per_run_2026-10-25.py, 323 lines, the quiet arm.
+     VERDICT: ITS CONCLUSION IS ALREADY ADOPTED, and it corroborates the live
+     value by a third route rather than changing it. The quiet arm fires once
+     per run and then the run closes, so a per-window rate cannot price it.
+     Re-run against the archive: 7 consecutive quiet rounds occur 0 times in 66
+     reports, the longest run anywhere is 6, and 22 reports are long enough to
+     hold a 7-window while 0 reach such a window. The required quiet run was reverted
+     from 7 to 3 on the founder's ruling of 2026-10-27, 2 days after this
+     design was written. Its contribution corrected entry C13, which still
+     asserted 7 against a live value of 3 and against entry C12, 20 lines
+     above it. No action owed.
+
+  3. seat_circuit_breaker.py, 113 lines, the third state between available and
+     benched. VERDICT: 2 OF ITS 3 NO-BENCHING ARGUMENTS VERIFY; THE THIRD IS
+     INACCURATE AS WRITTEN. The state set holds only CLOSED, OPEN and
+     HALF_OPEN, with no terminal value and no removal method, and every mention
+     of capability or fingerprint is confined to its docstring with no code
+     reaching the estimator. Its claim that the aliveness probe constants are
+     reused rather than duplicated does not hold: the module imports nothing
+     from the aliveness module at all and takes a probe callable instead, which
+     is the better design but makes the reuse a property of a call site that
+     does not exist. Not adopted; no decision owed.
+
+  4. degradation_aware_convergence.py, 143 lines, the Fable seat's answer to
+     the same defect as item 1. VERDICT: IT DOMINATES ITEM 1 AND IS NOW WHAT
+     ENTRY B77 RECOMMENDS. The 2 rules are identical at a constant roster,
+     confirmed symbolically and over every roster size from 1 to 6 with 0
+     disagreements. On a roster that varies between rounds, which is the only
+     shape the archive holds, item 1 needs a convention it does not state and
+     the 2 available readings differ by as much as 6 rounds, while the seat-rounds rule is
+     defined. It also targets the hardened convergence gate's fallback path, where closure
+     rests on the quiet requirement alone. Recorded in entry B77.
+
+  5. capability_identity.py, 352 lines, stable identity and a measured order.
+     VERDICT: ITS CENTRAL CLAIM IS TRUE AND UNDERSTATED. It names 2 seats
+     mapped onto a stale phenotype; the measured count is 4 of 6. 0 of its 6
+     exported names are live. Recorded as entry B79, where the renaming is the
+     founder's decision and the roster descriptions, a separate and smaller
+     fault, were fixed.
+
+  6. model_identity.py, 117 lines, identity as a content address.
+     VERDICT: SAME FINDING AS ITEM 5, by a different route, and covered by the
+     same entry. It argues the identifier must be a hash over the
+     dispatch-determining configuration so that 2 identical configurations are
+     not split and 1 is not merged. Nothing is adopted and the decision is the
+     same decision.
+
+  7. rule_amendments.py, 343 lines, the rule-amendments register.
+     VERDICT: ADOPTED IN SUBSTANCE, BY A SIMPLER ROUTE, AND NOTHING IS OWED.
+     The live brief validator carries the mechanism inline, with its register
+     at bench/directives/universal/figure_amendments.json holding exactly the
+     amendment this design was written for, and it enforces every
+     anti-laundering property the design argued for: the register must name the
+     figure and the brief, the superseded and replacement values must differ,
+     the producer must actually print the replacement, and a missing or
+     malformed register accepts nothing. The design's 343 lines are superseded
+     by roughly 55 inside the validator, which the simplest sufficient standard
+     prefers. A side finding is recorded separately: the historical-figure
+     fallback those checks sit beside is available for only 4 of 192 declared
+     figures, because 48 of 49 producers cannot be asked what they printed as
+     of a past date.
+
+  WHY THEY ARE BEING TAKEN SINGLY RATHER THAN BATCHED. The judgement a
+  design needs is whether its claim about live code still holds, whether its
+  reasoning survives being checked, and whether the case it addresses can
+  actually arise. The first of those went stale for none of this design and
+  the third very nearly refuted it, so a batched verdict would have been a
+  guess wearing a verdict's clothes.
+
+Written under CDSFL note standard v1.9 (1 November 2026).
