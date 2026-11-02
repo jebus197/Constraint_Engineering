@@ -47,6 +47,14 @@ ASKS_FOR_A_RULING = (
     "NEEDS HIS RULING", "NEEDS YOUR RULING", "needs his ruling",
     "awaiting his ruling", "THE CHOICE IS HIS", "the choice is his",
     "is the founder's call", "STILL HIS",
+    #: ★ ADDED 2026-11-02, AND THE OMISSION COST A REAL MISS. B22 carried the
+    #: wording "1 DECISION OWED: fold it back with the vacuity hole fixed", a
+    #: decision he HAD already taken -- "Fix it and fold it back as you suggest" --
+    #: and which was carried out on 2026-11-01. None of the 8 phrases above
+    #: matches that wording, so the instrument built to find a ruling already
+    #: given was blind to one, and it was found by reading the entry instead,
+    #: which is the route this list exists to replace.
+    "DECISION OWED", "decision owed", "DECISION IS OWED", "A RULING IS OWED",
 )
 
 #: Phrases by which an entry RECORDS what he ruled, as opposed to its date.
