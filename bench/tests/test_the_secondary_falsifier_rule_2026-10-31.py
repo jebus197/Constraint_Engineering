@@ -51,6 +51,34 @@ def _ort():
     return m
 
 
+#: ★ THE OFFLINE SEAM, 2026-11-02. 2 tests in this file ERRORED under
+#: `--netguard-strict` with `subprocess:wolframscript x2`, in the full-suite run
+#: of 2026-11-01 and in the 2026-10-31 run before it.
+#:
+#: WHY A SEAM AND NOT AN EXEMPTION. `bench/tests/conftest.py`'s own
+#: `KNOWN_OUTBOUND` list says "Shrink this list; never grow it without writing
+#: down why here", so adding these 2 would be the wrong direction. And the
+#: deeper reason is in this file already: the Wolfram version of the dispatch
+#: test "stayed GREEN under the mutation for an accidental reason -- with the
+#: suite offline the kernel cannot launch, so `wolfram` returns UNCERTAIN ...
+#: Kernel availability was silently deciding the test." A test whose verdict
+#: depends on whether a kernel happens to be installed is not a test.
+#:
+#: WHAT THIS PATCHES. `wolfram_standard.run_local` is the single subprocess
+#: site: `_verify_wolfram` reaches the wire at exactly 1 line,
+#: `r = _ws.run_local(code, ...)`. Returning a NOT-EVIDENCE result there drives
+#: the code's OWN failure branch rather than a stub of it, so each test keeps
+#: its property: a Wolfram call that did not answer must never be read as an
+#: answer, and the dispatch must fall through to the primary tools.
+@pytest.fixture
+def no_wolfram_wire(monkeypatch):
+    def _no_wire(code, *a, **k):
+        return {"evidence": False, "reason": "offline seam: no kernel was asked",
+                "stdout": "", "stderr": "", "attribution": ""}
+    monkeypatch.setattr(ws, "run_local", _no_wire, raising=True)
+    return _no_wire
+
+
 class TestTheManifestCarriesTheAxis:
     def test_every_entry_declares_an_independence_class(self, man):
         missing = [k for k, v in man.items() if not v.get("independence_class")]
@@ -343,7 +371,7 @@ class TestTheDispatchActuallyRunsIt:
             f"{out[0].evidence}")
         assert "[specialist:fake_sec_only]" not in out[0].evidence
 
-    def test_the_dispatch_itself_refuses_a_secondary_only_primary(self):
+    def test_the_dispatch_itself_refuses_a_secondary_only_primary(self, no_wolfram_wire):
         """HIS RULING OF 2026-09-28, ENFORCED AT THE DISPATCH AND NOT MERELY
         IN THE SELECTOR.
 
@@ -508,7 +536,7 @@ class TestTheRemoteSeatsCanReachIt:
             "a remote seat has no shell, so without this tool his 2026-09-28 "
             "secondary-falsifier ruling is unreachable for 4 of 6 seats")
 
-    def test_a_failure_cannot_be_read_as_an_answer(self):
+    def test_a_failure_cannot_be_read_as_an_answer(self, no_wolfram_wire):
         m = _ort()
         import json
         out = json.loads(m.dispatch_tool_call(
