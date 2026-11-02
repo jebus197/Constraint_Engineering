@@ -101,9 +101,17 @@ Tonight's own additions were not exempt. Wiring the role through the second comp
 Twice earlier I ran a generator without its write flag and reported that nothing had changed. And the worst of the night was earlier still: chasing a prose-style lint I ran a bulk replacement of spelled numbers across an authored file and it DAMAGED text, turning the name of an experiment, the zero-plant control, into 0-plant, turning pronouns into digits, and mangling a quoted example of the very violation it was fixing. I reverted it and made 4 surgical fixes instead.
 
 
-## PART 7. 1 thing parked, not blocking, but you should know it
+## PART 7. The run found 2 defects in the severity mechanics it was checking. 1 is fixed, 1 is parked
 
-Not one proposed fix was applied during the run: 0 applied and 14 refused. The cause is measured and it is not what it looked like.
+This is the strongest argument for having run it at all, and neither defect was the one it set out to look for.
+
+The first is fixed. The severity specification's distinguishing claim is that a DISPROVED finding is annihilated rather than merely reduced, and the run report carries a field that is supposed to witness that. It had never once computed. The code walked the findings catalogue the wrong way, asking each finding id for its contents as though the id were the finding, so it failed on the very first entry of every run. The failure was caught, written into the report as an error message, and the run carried on, exactly as a telemetry failure should. So the defect sat PRESERVED IN THE EVIDENCE and was read by nobody.
+
+The measurement is blunt: of the archived reports that carry this field, 2 of 2 hold the error and 0 hold a count. The field was added on 28 October, so it has been unobservable for every run of its existence. That is the pattern your additive standard names, an addition that reaches nothing, and this time it was inside the severity design itself.
+
+It is repaired and guarded by 11 tests, with 4 of 4 deliberate reversions turning them red. 2 things make the repair safe to make now rather than after the arc: the field is pure telemetry, written after the rounds finish and read by nothing that decides anything during a run, so it cannot alter an experiment; and the consumer that reads it is honest, returning UNDECIDABLE when a run produced no disproved findings, so a run like this one still reports the check as not made rather than inventing a disagreement. The 6 lines had to be lifted out of a 3,400-line function before any test could call them, which is why they survived so long.
+
+The second is parked. Not one proposed fix was applied during the run: 0 applied and 14 refused. The cause is measured and it is not what it looked like.
 
 The seats quote code inconsistently. Of 66 search anchors quoting a line that requires a power operator, 39 were written WITHOUT it and 27 with it, an interval of 0.470492 to 0.701326 on 2 agreeing tools. An anchor that does not match the file cannot be applied, so the majority could never land. The harness alters nothing: the parser returns the operator intact when the seat wrote it, which I verified by running the real parser on the run's own stored text rather than by reading it.
 
