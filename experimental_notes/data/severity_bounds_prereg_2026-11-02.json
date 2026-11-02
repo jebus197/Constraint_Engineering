@@ -1,0 +1,30 @@
+{
+ "_what_this_is": "PRE-REGISTERED predictions for the simulated validation run of 2026-11-02, written BEFORE the run launched so they can fail. His ruling 2026-11-01: 'I think you should do at least one simulated run once these bounds are set to check that the new severity mechanics work as expected and matches expectations.' This file IS 'expectations', fixed in advance.",
+ "_written": "2026-11-02T00:38:05+00:00",
+ "_bounds_from": "scripts/the_severity_bounds_from_the_archive_2026-11-01.py, over 28 real-seat runs",
+ "_what_is_NOT_predicted": "MAGNITUDES. A simulated run's severity magnitudes are uncalibrated against a real panel, which is the one thing the archive genuinely cannot transfer. Every prediction below is about ORDERING and SPREAD, which are calibration-free.",
+ "_severity_spec_flag": "NOT PASSED. Both seats of the 2026-10-30 panel refused --severity-spec independently: it makes the severity half of the A4 release conjunction constant-true, releasing a proven unresolved critical finding. He has not overruled that, so this run measures the gate as it stands.",
+ "predictions": [
+  {"id": "P1", "claim": "Severity is NOT constant across findings in this run.",
+   "falsified_if": "the realised severity values have standard deviation 0, i.e. a single value for every finding",
+   "why_it_matters": "the panel measured the OLD form at exactly 0.5 for all 1,252 entries it examined. A constant is not a decision, so if this run reproduces a constant the bounds cannot be exercised here at all."},
+  {"id": "P2", "claim": "Among findings whose FALSIFIER decided, confirmed severities exceed refuted ones: AUC > 0.5.",
+   "falsified_if": "AUC <= 0.5, or the Hanley-McNeil 95% lower bound falls at or below 0.5",
+   "archive_value": 0.800922,
+   "archive_interval_bootstrap": [0.634391, 0.938563],
+   "why_it_matters": "this is the ordering property the bounds rest on. It is calibration-free, so a simulated run CAN refute it."},
+  {"id": "P3", "claim": "At the live 0.7 cut, sensitivity over confirmed findings is above 0.5.",
+   "falsified_if": "sensitivity <= 0.5 at severity >= 0.7",
+   "archive_value": 0.7316,
+   "why_it_matters": "the archive found 0.7 Youden-optimal. If a fresh run puts sensitivity at chance the cut is not transferring."},
+  {"id": "P4", "claim": "No finding is released by the A4 door while unresolved and proven critical.",
+   "falsified_if": "any entry exits with status released, severity >= 0.7 and severity_is_proven true",
+   "why_it_matters": "this is the fail-safe both panel seats said --severity-spec would collapse. The flag is NOT passed here, so this must hold; if it fails WITHOUT the flag, the collapse is not the flag's fault."}
+ ],
+ "run": {"launcher": "bench/tools/run_simulated_experiment.py",
+         "seats": ["CC2-SIM", "ChatGPT-SIM", "Codex-SIM", "DeepSeek-SIM", "Gemini-SIM"],
+         "seats_excluded": ["Fable-SIM"],
+         "why_fable_excluded": "Fable is present in runner_core.MODEL_SPECS and ABSENT from INITIAL_FINGERPRINTS, COMPOSER_MODEL_MAP, PHENOTYPE_TRANSFORMS and MODEL_COHERENCE_BUDGETS, so a Fable seat silently loses its fingerprint, phenotype transform and coherence budget. Live ticket 5c099c217f11, found 2026-10-29. The values are calibration data and are not mine to invent.",
+         "paid": false,
+         "why_not_paid": "run_simulated_experiment.py dispatches simulated agents; the 2026-10-28 run's own log records the simulated seats as 'not probeable (no route to test)'."}
+}
