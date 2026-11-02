@@ -161,6 +161,43 @@ def main() -> int:
         _proven = None
         _why_unavailable = f"{type(exc).__name__}: {exc}"
 
+    # ★ WIRED 2026-11-02, AND IT WAS DEAD BEFORE. `proven_available` and
+    # `_why_unavailable` were SET and never READ -- 3 writes, 0 reads -- so the
+    # import failure was detected and then silently discarded. That is the
+    # symmetric half of the additive standard, an addition nothing reaches, and
+    # `bench/tests/test_the_severity_predictions_can_fail_2026-11-02.py::
+    # TestP4UsesTheLivePredicate::test_a_missing_predicate_is_NOT_TESTABLE_not_held`
+    # was right to fail on it: a scorer that cannot import the predicate its own
+    # pre-registration names must SAY SO rather than report a verdict anyway.
+    #
+    # The guard and the defect were written the same day, which is the argument
+    # for writing the guard: nothing else would have noticed 3 writes and 0 reads
+    # in a file that ran cleanly and printed a plausible answer.
+    if not proven_available:
+        # The phrase below is kept CONTIGUOUS in one literal deliberately. A
+        # first version split it across 2 adjacent literals -- "could not be "
+        # and "imported, so any" -- and the guard that checks for it reads the
+        # SOURCE TEXT, which cannot see across a line break. That is the
+        # weakness `execute-do-not-grep` names: a test asserting on source text
+        # asserts only that the text describes itself. The guard has since been
+        # given an executing test as well, and this literal stays whole so the
+        # cheap check keeps working too.
+        print("  ★ THE LIVE PREDICATE `severity_is_proven` could not be imported,")
+        print("    so any prediction resting on it is NOT TESTABLE on this run "
+              "rather than held:")
+        print(f"      {_why_unavailable}")
+        print("    No proxy is substituted. The 2026-11-02 correction recorded "
+              "in this")
+        print("    file is that scoring a proxy scores a different prediction "
+              "than the")
+        print("    one committed before the run, which is the whole value of "
+              "pre-registering.")
+    else:
+        print("  the live predicate `severity_is_proven` imported cleanly, so a "
+              "prediction")
+        print("  resting on it is scored against the live rule and not a proxy.")
+        print()
+
     # ★ P4 WAS MIS-SPECIFIED IN THE PRE-REGISTRATION, found 2026-11-02 while
     # scoring. Its falsifier reads "any entry exits with status released,
     # severity >= 0.7 and severity_is_proven true". That embeds a rule the

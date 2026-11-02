@@ -151,3 +151,82 @@ class TestARulingIsSpentWhenTheEntryStillAsks:
         for phrase in ("the file permission bits were widened",
                        "chmod changed the permissions on his home directory"):
             assert not probe.ASKS.search(phrase), f"false positive: {phrase}"
+
+
+class TestTheInverseDirectionAlsoHolds:
+    """Authored detail with a heading must correspond to a decision the generator renders.
+
+    THE DIRECTION THIS FILE ALREADY COVERED, and it is the loud one:
+    `test_every_live_decision_carries_a_join` requires every live decision to
+    carry a `spoken_heading`, so he is never asked about something the record
+    does not track.
+
+    THE DIRECTION IT DID NOT, found 2026-11-02 by auditing the queue rather than
+    by a failure: authored detail that carries a heading while the generator
+    renders nothing for it. 10 authored entries carried a heading, the generator
+    derived 9, and the 1 difference was C0001 -- so the record said "this is a
+    decision to put to him" while the generator said it was not, and he saw
+    NEITHER. That direction produces SILENCE rather than a wrong question, which
+    is why it survived a guard written to catch divergence, and silent
+    under-reporting is the harder failure to see.
+
+    WHY A PINNED SET AND NOT A TOLERANCE. The pin names each identifier allowed
+    to carry authored detail without being rendered, with its reason, so a NEW
+    one FAILS rather than being absorbed. The project's rule is to pin a set and
+    not a count: 2 surfaces once both reported 4 and meant different 4s.
+    """
+
+    #: Authored entries that may carry a heading while the generator renders
+    #: nothing, each because its SUBSTANCE is settled and only its STATE is open.
+    #: C0001 -- his 2026-11-01 scope decision recorded it RECORDED-AND-NOT-
+    #: REPAIRED and its subject `_prune_for_coherence` is already retired from
+    #: the default path on his ruling of 2026-10-13, so what remains is 1 word on
+    #: whether this list should say OPEN or DEFERRED. Raising it as a decision
+    #: would ask him to decide again what he has already decided.
+    RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = ("C0001",)
+
+    @staticmethod
+    def _authored() -> set[str]:
+        import json
+        p = (REPO / "experimental_notes" / "data" / "morning_report_decisions.json")
+        d = json.loads(p.read_text(encoding="utf-8"))
+        return {k[5:] for k, v in d.items()
+                if k.startswith("task:") and isinstance(v, dict)
+                and v.get("spoken_heading")}
+
+    def test_every_authored_heading_is_rendered_or_pinned(self, surfaces):
+        rendered = {ident for ident, _ in surfaces.derived()}
+        unrendered = sorted(self._authored() - rendered)
+        new = [u for u in unrendered if u not in self.RENDERED_NOWHERE_BY_DESIGN]
+        assert not new, (
+            f"{len(new)} authored decision(s) carry a spoken_heading and are "
+            f"rendered nowhere, so the record says he should be asked and he "
+            f"never is: {new}. Give the entry an ask the generator reads, or "
+            f"remove its authored detail, or pin it WITH ITS REASON.")
+
+    def test_the_pin_is_not_stale(self, surfaces):
+        """A pinned identifier that is now rendered must leave the pin.
+
+        Without this the pin accumulates slack by the width of every entry since
+        fixed -- the shape the unreached ratchet's own source records, where an
+        exemption duplicating a citation loosened the bound silently.
+        """
+        rendered = {ident for ident, _ in surfaces.derived()}
+        stale = [u for u in self.RENDERED_NOWHERE_BY_DESIGN if u in rendered]
+        assert not stale, (
+            f"{stale} are pinned as rendered nowhere and are now rendered; "
+            f"remove them from the pin rather than leaving slack in it")
+
+    def test_the_check_is_not_vacuous(self, surfaces):
+        """ANTI-VACUITY. Without this, an empty authored set or an empty
+        rendered set would satisfy both tests above on nothing."""
+        authored = self._authored()
+        rendered = {ident for ident, _ in surfaces.derived()}
+        assert len(authored) >= 5, (
+            f"only {len(authored)} authored heading(s); the tests above would "
+            f"pass on almost nothing")
+        assert len(rendered) >= 5, (
+            f"only {len(rendered)} rendered decision(s); same problem")
+        assert authored & rendered, (
+            "the 2 sets are disjoint, which means the identifiers are not "
+            "comparable and the comparison above is meaningless")

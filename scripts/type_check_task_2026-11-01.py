@@ -120,6 +120,22 @@ def load_ledger() -> dict:
     return json.loads(LEDGER.read_text(encoding="utf-8"))
 
 
+def _was_checked(rel: str, paths) -> bool:
+    """Did this run actually open `rel`?
+
+    A path argument may name a file or a directory, so membership is by prefix
+    as well as by equality. Used to CONFINE every baseline comparison to the
+    files the run opened -- see the note in `main`.
+    """
+    import os
+    r = str(rel).replace(os.sep, "/").lstrip("./")
+    for p in paths or ():
+        q = str(p).replace(os.sep, "/").lstrip("./")
+        if r == q or r.startswith(q.rstrip("/") + "/"):
+            return True
+    return False
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--update", action="store_true",
@@ -150,18 +166,53 @@ def main(argv: list[str]) -> int:
         for f, n in sorted(proj.items(), key=lambda kv: -kv[1])[:args.worst]:
             print(f"    {n:4}  {f}   (baseline {base.get(f, 'none')})")
 
+    # ★ A NARROWED RUN MUST NOT SPEAK FOR THE FILES IT DID NOT OPEN.
+    # Found 2026-11-02 by running the task both ways. `--paths` restricts the
+    # check, an unchecked file returns 0, and 0 against a non-zero baseline read
+    # as a complete improvement: with `--paths` on 1 file the task reported 296
+    # improvements of which 296 were false, 1.000000, Wilson 95% [0.987188,
+    # 1.000000], against 0 on a full run. The report's own next instruction is to
+    # run `--update`, and that was the worse half: `led["files"] = proj` REPLACED
+    # the whole baseline, so a narrowed update DELETED every unchecked file's
+    # entry and they would all have returned as unbaselined the next run.
+    #
+    # This is the project's own rule -- compare lint counts like with like --
+    # recorded 2026-10-15 after a path-sensitive linter produced a spurious +1
+    # that led to good prose being deleted to satisfy it. Same shape, different
+    # instrument, 18 days later.
+    #
+    # THE REPAIR IS CONFINEMENT, NOT A NEW FEATURE: every comparison below is
+    # computed over `checked` -- the files this run actually opened -- and an
+    # update MERGES into the existing baseline instead of replacing it. A full
+    # run behaves exactly as before, because then `checked` is every file.
+    checked = set(proj) | {f for f in base if _was_checked(f, paths)}
+    narrowed = args.paths is not None
+
     if args.update:
-        led["files"] = dict(sorted(proj.items()))
+        merged = dict(base)
+        for f in checked:
+            if f in proj:
+                merged[f] = proj[f]
+            else:
+                # checked and now clean: 0 is a MEASUREMENT here, not an absence
+                merged[f] = 0
+        led["files"] = dict(sorted(merged.items()))
         LEDGER.write_text(json.dumps(led, indent=2, ensure_ascii=False) + "\n",
                           encoding="utf-8")
-        print(f"\nBASELINE WRITTEN: {len(proj)} file(s), {total_p} finding(s).")
+        kept = len(merged) - len(checked)
+        print(f"\nBASELINE WRITTEN: {len(merged)} file(s) in the ledger, "
+              f"{sum(merged.values())} finding(s).")
+        print(f"  {len(checked)} file(s) updated from this run"
+              + (f", {kept} left untouched because this run did not check them"
+                 if narrowed and kept > 0 else ""))
         return 0
 
     risen = {f: (n, base.get(f)) for f, n in proj.items()
              if f in base and n > int(base[f])}
     unbaselined = {f: n for f, n in proj.items() if f not in base}
+    # CONFINED TO `checked`: an unchecked file is silent, not improved.
     improved = {f: (proj.get(f, 0), int(n)) for f, n in base.items()
-                if proj.get(f, 0) < int(n)}
+                if f in checked and proj.get(f, 0) < int(n)}
 
     if improved:
         print(f"\nIMPROVED, {len(improved)} file(s) — run --update to lock it in:")

@@ -45,7 +45,30 @@ REPO = pathlib.Path(__file__).resolve().parents[1]
 #: on a date is what makes it impossible for this change to alter the 2026-10-30
 #: output: that file carries 11 SECTION lines and 0 PART lines.
 DEFAULT_DATE = "2026-10-30"
-FOOT_PREFIX = "Written under CDSFL note standard v1.8"
+# ★ THE VERSION IS NO LONGER TYPED INTO THE MATCHER, 2026-11-02, and the defect
+# was live rather than hypothetical. This read
+# `FOOT_PREFIX = "Written under CDSFL note standard v1.8"` and line 206 RAISES
+# when no line starts with it. The standard was bumped to v1.9 on 2026-11-01, so
+# the current morning report is stamped v1.9 -- VERIFIED by execution: the v1.8
+# prefix matches 1 foot line in Morning_Report_2026-11-01.txt and 0 in
+# Morning_Report_2026-11-02_GENERATED.txt, meaning this script would have raised
+# on today's report while working on yesterday's.
+#
+# A version typed into a matcher goes stale the next time the standard moves,
+# which is the same shape as the stale counts this project keeps finding. The
+# prefix now matches ANY declared version, which is strictly MORE permissive --
+# every archival stamp from v1.3 onward still matches, so no historical report
+# stops being readable.
+#
+# THE PROJECT'S CANONICAL FOOT-LINE RULE IS NARROWER THAN THIS and is deliberately
+# not reimplemented here: `declared_version` in
+# bench/tests/test_note_standard_v17_enforced_2026-08-26.py holds the HIGHEST
+# version on any foot-line-shaped line and ignores prose mentions. That rule
+# exists to decide which RULES a note is held to. This script only needs to LOCATE
+# the foot line so it can be preserved, so a prefix match is the simplest
+# sufficient predicate and copying the stricter rule here would create a second
+# place for it to drift.
+FOOT_PREFIX = "Written under CDSFL note standard v"
 
 
 APPENDIX_2026_10_30 = """

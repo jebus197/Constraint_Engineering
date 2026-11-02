@@ -125,3 +125,105 @@ class TestTheScorerIsInert:
         src = SCORER.read_text()
         assert "write_text(" not in src and "open(" not in src, (
             "the scorer writes; it must only read the run's own record")
+
+class TestTheMissingPredicateBranchIS_EXECUTED:
+    """The source check above is weak, so the branch is EXECUTED here.
+
+    WHY BOTH. `test_a_missing_predicate_is_NOT_TESTABLE_not_held` reads the
+    scorer's SOURCE TEXT. On 2026-11-02 the handling was written with the phrase
+    split across 2 adjacent string literals -- "could not be " and "imported,
+    so any" -- and the source check could not see across the line break, so it
+    failed against a scorer that handled the case correctly. The project's own
+    rule names this: a test that asserts on source text asserts only that the
+    text describes itself, and where both forms exist as live code the test must
+    CALL them and compare outputs.
+
+    THE DEFECT THAT PRECEDED BOTH, and it is why this class exists at all:
+    `proven_available` and `_why_unavailable` were SET by the import handler and
+    never READ -- 3 writes, 0 reads -- so an import failure was detected and
+    silently discarded. The scorer still ran and still printed a plausible
+    answer, which is exactly the shape nothing but a guard would notice.
+    """
+
+    def _run_with_import_broken(self):
+        """Execute the scorer with `severity_is_proven` made unimportable."""
+        import builtins
+        import importlib.util
+        import io
+        import contextlib
+
+        spec = importlib.util.spec_from_file_location("_scorer_probe", SCORER)
+        mod = importlib.util.module_from_spec(spec)
+        real_import = builtins.__import__
+
+        def broken(name, *a, **k):
+            if name == "bench.reference_runner_v3" or name.endswith(
+                    "reference_runner_v3"):
+                raise ImportError("broken on purpose by the guard")
+            return real_import(name, *a, **k)
+
+        buf = io.StringIO()
+        sys.modules["_scorer_probe"] = mod
+        builtins.__import__ = broken
+        # ★ `main()` reads `sys.argv` through argparse, so an in-process call
+        # inherits PYTEST's arguments and argparse exits with "unrecognized
+        # arguments". Found by this test failing on its first run, which is the
+        # right way round. argv is replaced for the call and restored after.
+        saved_argv = sys.argv
+        sys.argv = ["score_the_severity_predictions_2026-11-02.py"]
+        try:
+            spec.loader.exec_module(mod)
+            with contextlib.redirect_stdout(buf):
+                try:
+                    mod.main()
+                except SystemExit:
+                    pass
+        finally:
+            sys.argv = saved_argv
+            builtins.__import__ = real_import
+            sys.modules.pop("_scorer_probe", None)
+        return buf.getvalue()
+
+    def test_the_scorer_SAYS_the_predicate_was_unavailable(self):
+        out = self._run_with_import_broken()
+        assert "could not be imported" in out, (
+            "with the live predicate unimportable the scorer printed no notice; "
+            "the import result is detected and discarded again. Its output "
+            f"began: {out[:200]!r}")
+
+    def test_it_says_NOT_TESTABLE_rather_than_reporting_a_verdict(self):
+        out = self._run_with_import_broken()
+        assert "NOT TESTABLE" in out, (
+            "the scorer must say a prediction resting on the missing predicate "
+            "is NOT TESTABLE rather than scoring a proxy")
+
+    def test_the_HEALTHY_path_says_the_opposite_so_this_is_not_vacuous(self):
+        """ANTI-VACUITY. Without this, a scorer that printed the unavailable
+        notice unconditionally would satisfy both tests above."""
+        import importlib.util
+        import io
+        import contextlib
+
+        spec = importlib.util.spec_from_file_location("_scorer_ok", SCORER)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["_scorer_ok"] = mod
+        buf = io.StringIO()
+        saved_argv = sys.argv
+        sys.argv = ["score_the_severity_predictions_2026-11-02.py"]
+        try:
+            spec.loader.exec_module(mod)
+            with contextlib.redirect_stdout(buf):
+                try:
+                    mod.main()
+                except SystemExit:
+                    pass
+        finally:
+            sys.argv = saved_argv
+            sys.modules.pop("_scorer_ok", None)
+        out = buf.getvalue()
+        assert "imported cleanly" in out, (
+            "on the healthy path the scorer must say the predicate imported, "
+            "so the unavailable notice is conditional rather than constant")
+        assert "could not be imported" not in out, (
+            "the scorer printed the unavailable notice on a healthy import, so "
+            "the 2 tests above would pass on a constant")

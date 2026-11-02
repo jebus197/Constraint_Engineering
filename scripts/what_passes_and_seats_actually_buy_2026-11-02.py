@@ -86,7 +86,20 @@ def main() -> int:
     print(f"   mpmath at q={qv}, nu={nuv}, floor={nuv/qv}:")
     for Rv in ("0.90", "0.50", "0.30", "0.2500000001", "0.25"):
         print(f"      R={Rv:14s} improvement = {mp.nstr(f(mp.mpf(Rv), qv, mp.mpf(1), nuv), 10)}")
-    print("   -> PASSES BUY GEOMETRICALLY LESS AND STOP PAYING AT THE FLOOR.")
+    # ★ CORRECTED 2026-11-02. The headline read "STOP PAYING AT THE FLOOR",
+    # which contradicted this script's own line 7 rows above it: "SymPy says
+    # that is exactly zero : False". At the floor one more pass still buys
+    # nu**2 (1 - q) / q -- 0.01 at q=0.2, nu=0.05 -- and that vanishes only as
+    # q -> 1 or nu -> 0. SymPy, mpmath and NumPy agree on the value to 10
+    # decimal places. The floor is an ATTRACTOR, not a point where improvement
+    # stops, and the distinction decides the stopping rule: "stop when
+    # improvement is 0" would never fire, while "stop when R is within epsilon
+    # of nu/q" does, which is what section 5 recommends. So only the headline
+    # was wrong. 1 of this script's 4 headlines contradicted its own check,
+    # Wilson 95% [0.045587, 0.699358]; the 2 z3-backed headlines and the
+    # independence derivation all match theirs.
+    print("   -> PASSES BUY GEOMETRICALLY LESS AND APPROACH A SMALL RESIDUAL,")
+    print(f"      exactly nu**2 (1 - q) / q at the floor, not 0.")
     print("      That decay IS gamma. It is why gamma is the convergence measure.")
 
     # ---- 3. what a SEAT buys: it moves the floor -------------------------
@@ -129,13 +142,34 @@ def main() -> int:
     g = float(gap.subs({d_i: sp.Rational(9, 10), p_i: sp.Rational(1, 2)}))
     print(f"   at d=0.9 p=0.5 the 2nd INDEPENDENT seat adds {g:.6f} to q;")
     print(f"   a 2nd copy of the SAME model adds 0.")
+    # ★ CORRECTED 2026-11-02, AND THIS MATTERS MORE THAN THE WORDING ABOVE.
+    # It read "q and nu are estimable from the archive, but the INDEPENDENCE of
+    # architectures is not". BOTH halves of that estimability claim are false,
+    # in the direction that makes the answer tidier, and it was the
+    # consequential sentence because it is the one that tells him what a paid
+    # seat buys.
+    #   nu : `scripts/estimate_nu_from_archive_2026-09-21.py`, 42 days older and
+    #        it DID the work rather than asserting, concludes "THIS IS NOT nu,
+    #        AND THE ARCHIVE CANNOT GIVE nu" -- the effect regression records
+    #        passed/total with no BASELINE, so a value below 1 conflates real
+    #        re-injection with a suite that was already red.
+    #   q   : 0 producers estimate `d_i` or `p_i` from archived runs, and the
+    #        shipped constants are, in this project's own words at
+    #        `scripts/sk_verdict_never_fired_2026-09-20.py:8`, values "that no
+    #        measurement supplied".
+    # So 0 of the 2 inputs to the floor are archive-derived today. Measured in
+    # full, with the 2 further instances that share the cause, by
+    # `scripts/the_archive_records_outcomes_not_reference_points_2026-11-02.py`.
     print("   -> the product form ASSUMES independent misses. That assumption is")
     print("      exactly what a different vendor buys and a second instance of")
     print("      the same model does not. This is the biodiversity hypothesis")
-    print("      written as an equation, and it is the ONLY part of his question")
-    print("      that genuinely needs paid seats: q and nu are estimable from the")
-    print("      archive, but the INDEPENDENCE of architectures is not, because")
-    print("      every simulated seat shares one architecture by construction.")
+    print("      written as an equation, and the INDEPENDENCE of architectures")
+    print("      is the part of his question that genuinely needs a different")
+    print("      vendor, because every simulated seat shares one architecture")
+    print("      by construction.")
+    print("      NEITHER nu NOR q IS ARCHIVE-DERIVED TODAY, which an earlier")
+    print("      version of this line wrongly asserted they were. See")
+    print("      the_archive_records_outcomes_not_reference_points_2026-11-02.py.")
 
     # ---- 5. how low should low be -----------------------------------------
     print("\n5. HOW LOW SHOULD 'LOW' BE BEFORE AN OUTCOME IS ACCEPTED?")

@@ -199,6 +199,14 @@ The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## The board is 12 founder decisions, not 12 pieces of work
+
+*Parked 2026-11-02T18:06:01+00:00.*
+
+Classified 2026-11-02 after B85 closed. Each of the 12 remaining OPEN entries was read individually and every one resolves by a ruling of his rather than by a build of mine. B20 is deferred by his own priority ruling of 2026-10-17. B21 needs his 3-way mapping of his functional words onto the role literal, which the code records as POLICY and not plumbing. B22 is his own panel question. B56 waits on B21. B76 needs his ruling on whether a run may stop on one convergence test. B77 needs his ruling on adopting the roster-aware quiescence repair. B79 needs his ruling on 3 stale model keys. C0001 is recorded-and-not-repaired under his own scope decision. B81 through B84 were raised today and each changes harness behaviour rather than repairing an instrument of mine. The instrument repairs in the same set were BUILT today rather than proposed: the orchestrator status producer, suite_record.py's 2 type confusions, and the type-check task's confinement, which is B85 and is closed.
+
+**This is YOUR DECISION, by the entry's own words — "needs his ruling".** Not blocking, and not work to be done meanwhile.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

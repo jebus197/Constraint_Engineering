@@ -1,4 +1,6 @@
-# Six measurements that answer his questions and were never delivered to him
+# Measurements that answer his questions and were never delivered to him
+
+**The title carried the count "Six" until 2026-11-02T19:19:19+00:00 and the count is removed rather than incremented.** A 7th measurement was added on 2026-11-02 by the same ratchet that found the first 6, and a number in a title goes stale the next time the set grows — the lesson this project has recorded against stale counts in the pre-commit header, the task list and a seat roster. The 6 found on 2026-10-19 remain 6 and are described as such below.
 
 **Written 2026-10-19T10:46:55+01:00.** Found by the project's own orphan ratchet rather than by looking: `bench/tests/test_scripts_are_reached_2026-09-11.py` reported 8 scripts reached by nothing — no caller, no note citing them as a figure's producer, no document naming them as a command. 6 of the 8 are MEASUREMENTS that answer questions he asked, and their answers sat unquoted. 2 are one-off migrations and are recorded as deliberately unreached.
 
@@ -37,5 +39,23 @@ Producer: `scripts/which_open_items_can_the_panel_resolve_2026-10-18.py`. It is 
 ## The 2 that are genuinely unreached, with the reason
 
 `scripts/correct_the_brief_tickets_source_2026-10-17.py` corrected 5 tickets that claimed to be his annotations when they were not. `scripts/migrate_ticket_identity_to_the_reference_2026-10-17.py` moved every task-list ticket onto its reference-keyed identity. **Both are one-off migrations.** A migration that runs twice is a defect, so neither should acquire a caller, and both are recorded in the ratchet's own `UNREACHED` list with that reason rather than left to read as orphans.
+
+## 7. For how many declared figures is the historical fallback actually available? Found 2026-11-02
+
+**HOW IT SURFACED, which is the same way as the first 6.** `bench/tests/test_scripts_are_reached_2026-09-11.py`, which refuses to let the count of scripts reached by nothing grow, turned red on 2026-11-02 after a day of work added 45 scripts, and exactly 1 of the 45 was reached by nothing: `scripts/how_many_declared_figures_can_be_checked_2026-11-02.py`. Its figures had never been quoted anywhere. The ratchet's own `UNREACHED` exemption list stood at 0 entries and is left at 0, because the convention recorded above is that an exemption duplicating a citation loosens the bound by its own width, and the reasons belong in a note where a reader will find them.
+
+**WHAT IT ASKED, AND IT CORRECTED ITSELF FIRST.** Its own first version counted producers lacking an `--as-of` flag and called their declared figures *"uncheckable"*. That was false, and the script records the correction in its own docstring rather than quietly rewriting the question: it is the same overstatement that had been criticised in another entry within the hour.
+
+**WHAT THE VALIDATOR ACTUALLY DOES, read from its control flow rather than from its comments.** `scripts/panel_brief_validate.py` runs a declared figure's producer PLAIN first, and if the declared value appears in the output the figure is ACCEPTED with the flag never consulted. Only on a plain miss does it retry with `--as-of` set to the brief's latest date, accepting a match LOUDLY as a historical figure. Only if that also fails does it consult the amendments register for a recorded rule change, which must name both the figure and the brief and whose replacement value the producer must actually print. Otherwise it refuses.
+
+**SO THE MISSING FLAG DOES NOT MEASURE A SHARE OF WRONG FIGURES, and saying it did would have been the flattering reading in the wrong direction — it would have invented a defect.** What the missing flag costs is the SECOND step only: a figure that was true at the brief's date and has since drifted is refused where it could have been accepted as historical, loudly and with its date attached.
+
+**WHAT IS STILL NOT MEASURED, stated rather than left implied.** The number that would matter is how many declared figures fail the PLAIN re-execution today, because only those ever reach step 2. That was not measured, and the reason is a resource bound rather than a judgement: 49 producers would have to run on a machine with 8 GiB and a derived budget of 2 heavy processes. The 1 instance found by hand is 4 figures in 1 brief.
+
+**WHY NOTHING IS FIXED, which is the script's own conclusion and not a deferral.** The remedy follows the scope: a shared helper if many producers lack the flag, a single patch if few do, and the scope is exactly the unmeasured number above. Fixing before measuring would pick one of those two at random.
+
+Producer: `scripts/how_many_declared_figures_can_be_checked_2026-11-02.py`, which reads the validator and the briefs and writes nothing.
+
+Section 7 written under CDSFL note standard v1.9.
 
 Written under CDSFL note standard v1.8.
