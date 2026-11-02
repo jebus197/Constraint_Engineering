@@ -342,6 +342,26 @@ def test_a_real_disagreement_is_still_detected_and_named():
 KNOWN_ARCHIVE_DISAGREEMENTS = {
     "free_run3_no_spec_20261028T235529Z_20261028T235530Z":
         "hierarchical_novelty_convergence DECLARED_NOT_OPERATING",
+    # ★ 2026-11-02, AND THE REASON IS A SUPERSESSION RATHER THAN A FAULT.
+    # This run declared BOTH critical-counting rules and the hierarchical one
+    # won, which is the designed relationship: the runner's own round lines say
+    # the hierarchical rule "supersed[es] the location-keyed rule which it
+    # refines". Read from the report rather than inferred:
+    #     hierarchical_novelty_convergence  substituted [0, 1, 2, 3, 4, 5]
+    #     location_keyed_convergence        substituted []
+    # So the count side of the two-sided gate WAS fed, in all 6 rounds, by the
+    # refinement; the location-keyed series was computed as telemetry and never
+    # substituted, which is exactly what `_location_operating` reports as NOT
+    # OPERATING. Recording it here states the supersession instead of hiding it.
+    #
+    # WHAT THIS EXEMPTION DOES NOT COVER, so it cannot be read as clearing the
+    # run: the series the hierarchical rule DID feed was [2, 1, 0, 0, 1, 0] and
+    # never held the 3 consecutive zeros the gate's count side requires, while
+    # the run stopped at round 5 on the state gate. That is entry B76 and
+    # `qs:e85f3d2e1c13`, awaiting the founder's ruling, and it is a separate
+    # fact from this mode comparison.
+    "severity_bounds_validation_20261102T004713Z_20261102T004713Z":
+        "location_keyed_convergence DECLARED_NOT_OPERATING",
 }
 
 
@@ -581,11 +601,51 @@ def test_the_severity_effect_must_be_computed_by_calling_not_by_reading():
         for node in ast.walk(tree):
             for child in ast.iter_child_nodes(node):
                 parents[child] = node
-        for node in ast.walk(tree):
+        def _names_the_target(node) -> bool:
+            """Does this statement record `target`, in either shape?
+
+            ★ EXTENDED 2026-11-02, AND THE GUARD WAS ACCUSING CORRECT CODE. It
+            matched ONLY an `Assign` to a subscript, i.e.
+            `mode_effects[...]["refuted_scored_zero"] = n`. On 2026-11-02 those 6
+            inline lines were extracted into `_severity_spec_effect` BECAUSE THEY
+            HAD NEVER COMPUTED: they iterated `registry.entries`, a dict, so
+            `.get` was called on a key STRING and raised on every run since the
+            field appeared on 2026-10-28 -- 2 of 2 archived reports carry the
+            AttributeError and 0 carry a count. The repaired helper RETURNS a
+            dict literal rather than assigning a subscript, so this matcher found
+            nothing and reported that the effect "is not recorded at all", of
+            correct repaired code.
+
+            THE PROPERTY IS UNCHANGED and still worth enforcing: the call to
+            `effective_severity` must sit in the same enclosing block as the
+            scored-zero computation, so swapping it for a read of
+            `entry["severity"]` is caught. Only the ANCHOR moves, from an
+            assignment target to any statement naming the key, which covers both
+            shapes. The same property now also has behavioural cover in
+            `bench/tests/test_the_severity_spec_effect_computes_2026-11-02.py`,
+            whose mutation 3 makes exactly that swap and turns it red.
+            """
             if (isinstance(node, ast.Assign)
                     and any(isinstance(x, ast.Subscript)
                             and isinstance(x.slice, ast.Constant)
                             and x.slice.value == target for x in node.targets)):
+                return True
+            # ★ A COMPUTED VALUE, NOT A LITERAL. The runner also holds the
+            # DEFAULT initialisation `{"refuted_findings": 0,
+            # "refuted_scored_zero": 0}`, which names the key and correctly
+            # calls nothing. A first version of this extension matched it, so
+            # `blocks` gained a block with no call and the check failed again --
+            # on the defaults this time. A statement that RECORDS the effect
+            # binds a computed expression; an initialisation binds a constant.
+            if not isinstance(node, ast.Dict):
+                return False
+            for k, v in zip(node.keys, node.values):
+                if isinstance(k, ast.Constant) and k.value == target:
+                    return not isinstance(v, ast.Constant)
+            return False
+
+        for node in ast.walk(tree):
+            if _names_the_target(node):
                 cur, chain = node, []
                 while cur in parents:
                     cur = parents[cur]

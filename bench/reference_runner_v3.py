@@ -18068,6 +18068,55 @@ def _refuse_if_a_route_is_dead(exp_config, cfg):
     return None
 
 
+def _severity_spec_effect(entries) -> dict:
+    """The EFFECT of the severity specification: did a disproved finding score 0?
+
+    EXTRACTED AND REPAIRED 2026-11-02. This was 6 inline lines inside
+    `run_experiment` and it had NEVER ONCE COMPUTED. It iterated
+    `registry.entries`, which is a dict keyed by finding id, so the loop variable
+    was the id STRING and `_e.get(...)` raised
+    `AttributeError: 'str' object has no attribute 'get'` on the first entry of
+    every run. The surrounding `except` wrote that message into
+    `mode_effects["severity_spec_enabled"]["error"]` and the run carried on, so
+    the failure was recorded in the report and never read.
+
+    MEASURED BEFORE THE FIX: of the archived reports carrying this field, 2 of 2
+    hold the AttributeError and 0 hold a computed count, Wilson 95%
+    [0.342380, 1.000000]. The field was introduced on 2026-10-28 and errored on
+    both occasions since, so the severity specification's mode effect has been
+    unobservable for every run of its existence -- the `additive-standard`
+    unwired-addition shape, in the mechanics of the severity design itself.
+
+    IT IS EXTRACTED BECAUSE A TEST MUST CALL IT. `execute-do-not-grep`: a guard
+    asserting on the source text of an inline block cannot detect that the block
+    disagrees with the shape it is handed. 6 lines buried in a 3,400-line
+    function cannot be called, so they could not be guarded.
+
+    IT ACCEPTS EITHER SHAPE ON PURPOSE, because an assumption about the shape is
+    precisely what failed. A dict is read by `.values()`, a sequence as itself.
+
+    WHAT THE FIX DOES NOT CHANGE: this is pure telemetry, written after the
+    rounds finish and read only by `bench/runner_mode_detection.py`. It decides
+    nothing during a run, so repairing it cannot alter any experiment's outcome.
+    The detector it feeds is honest and returns UNDECIDABLE when a run produced
+    0 refuted findings, so a run with no refutations still reports "could not be
+    checked" rather than a manufactured disagreement.
+    """
+    if isinstance(entries, dict):
+        vals = list(entries.values())
+    else:
+        vals = list(entries or [])
+    refuted = scored_zero = 0
+    for e in vals:
+        if not hasattr(e, "get"):
+            continue
+        if str(e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
+            refuted += 1
+            if effective_severity(e) == 0.0:
+                scored_zero += 1
+    return {"refuted_findings": refuted, "refuted_scored_zero": scored_zero}
+
+
 def run_experiment(
     exp_config: ExperimentConfig,
     cdsfl_text: str,
@@ -21451,14 +21500,8 @@ def run_experiment(
     # a disproved finding annihilated rather than reduced. Reading the stored
     # field would have reported the specification as broken when it was working.
     try:
-        _ref = _spec_zero = 0
-        for _e in (registry.entries or []):
-            if str(_e.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
-                _ref += 1
-                if effective_severity(_e) == 0.0:
-                    _spec_zero += 1
-        mode_effects["severity_spec_enabled"]["refuted_findings"] = _ref
-        mode_effects["severity_spec_enabled"]["refuted_scored_zero"] = _spec_zero
+        mode_effects["severity_spec_enabled"].update(
+            _severity_spec_effect(registry.entries))
     except Exception as _sx:                                       # noqa: BLE001
         mode_effects["severity_spec_enabled"]["error"] = f"{type(_sx).__name__}: {_sx}"
     try:

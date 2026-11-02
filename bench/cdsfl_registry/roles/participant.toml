@@ -1,0 +1,28 @@
+# Layer 5 — ROLE. Added 2026-11-02 for task B21.
+#
+# WHY THIS FILE IS NEARLY EMPTY, AND DELIBERATELY SO. The role layer's MECHANISM
+# is mine to build; the role files' CONTENT is POLICY and is the founder's. B21
+# records that, and inventing soft keys for a role here would be inventing policy
+# under cover of plumbing. Each file therefore carries only its own identity,
+# which is a restatement of the settled `Role` literal at
+# bench/experiment_11_orchestrator.py:59 and not a new decision.
+#
+# THE NAMESPACE IS `role.*` AND THAT IS LOAD-BEARING.
+# scripts/what_does_layer_order_actually_decide_2026-10-30.py measures that layer
+# ORDER decides 0 keys today, because no 2 layers share a leaf -- 0 of 60
+# (domain, model) pairs, Wilson 95% [0.000000, 0.060172]. But it also records
+# that the layers are disjoint "by convention, not by any enforced rule --
+# nothing in the merge engine requires it". So the disjointness is ENFORCED by
+# bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py: if a role file
+# ever sets a key another layer owns, that guard fails and the precedence
+# question B21 puts to the panel becomes live again.
+#
+# THE STRUCTURAL AXIS ONLY. The 2026-10-31 panel converged on 2 DIMENSIONS, 1
+# LAYER, which the founder accepted. The FUNCTIONAL vocabulary -- his "worker",
+# "classifier", "orchestrator" -- is absent on purpose: which declared member
+# each maps to is the definition still owed by him, and
+# bench/cdsfl_registry/composer.py records that it is "POLICY and not plumbing".
+
+[role]
+name = "participant"
+axis = "structural"

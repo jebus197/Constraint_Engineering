@@ -1,0 +1,162 @@
+# Decisions awaiting you — 2 November 2026
+
+2026-11-02 02:25 GMT. Written under note standard v1.9. Every item says what it is, what it affects, what you decide, and what is recommended and why against the 3 formal standards. No item is named by its code alone. Items 1 to 5 are done, the simulated run has completed and been scored, and there are 3 decisions rather than the 2 you were told to expect. The third is new and it is the most interesting thing in this report.
+
+
+## PART 1. The answer to your severity question is none, and it is none for every part of it
+
+You asked why spending money was needed before sane default values could be decided, and what difference a live run makes to that measurement against a simulated run. The answer is that it makes no difference, and the connection I implied does not exist. I had run 3 different questions together under 1 phrase, and only 1 of them ever needed a real model at all. That 1 is already paid for.
+
+The archive holds 28 real-seat runs: 1,372 registry entries and 1,070 seat-rounds of per-seat, per-round counts across all 5 real models, CC2, ChatGPT, Codex, DeepSeek and Gemini. That money was spent between May and July 2026. Estimating the parameters the severity recursion needs reads that archive, not a new run.
+
+How many simulated runs are needed? None at all, if the existing archive is used. Pinning the disagreement rate between the old and new severity forms to plus or minus 0.05 at 95 per cent confidence needs 289 findings. The simulated archive already holds more than that: counting only the runs whose seats carry the simulation suffix, 736 entries, which is 2.55 times the requirement. If you would rather have fresh runs than the archive, 9 would do it and 14 covers the pessimistic bound. You were right that 9 to 14 runs would take days: at the blocked run's 342.1 minutes each, that is 51 to 80 hours.
+
+The only thing a paid run buys that a simulated run cannot is the numerical value of a CURRENT model's detection power. Money buys a fresh figure for a model whose behaviour may have drifted. It does not buy the ability to make the measurement.
+
+
+## PART 2. Your 0.7 critical cut is vindicated by the archive
+
+Setting the severity bounds from 28 real-seat runs produced 545 findings whose falsifier actually decided: 529 confirmed and 16 refuted, spanning the full severity range from 0.00 to 1.00.
+
+Severity discriminates. Confirmed findings carry a mean severity of 0.752495 against 0.396875 for refuted ones. The Mann-Whitney one-sided probability is 1.956205e-05 and the Welch test gives 9.195622e-04. The area under the curve, which is the probability that a confirmed finding outranks a refuted finding, is 0.800922.
+
+And the cut you pre-registered is the best cut the archive can find. Scanning every cut from 0.05 to 0.95, the Youden-optimal point is exactly 0.70, with sensitivity 0.7316 and specificity 0.8125. The loss from keeping 0.7 instead of the optimum is 0.0000, because they are the same number.
+
+This settles what the blind audit of 2 September could not. That audit's severities lay in a window only 0.09 wide, from 0.65 to 0.74, and the standing correction of 28 October records its power against even a strong relationship as 0.144250. It could not settle the question either way. Real runs span the whole range and can.
+
+A finding that flatters an existing design is the one most in need of a falsifier, so the guard shuffles the confirmed and refuted labels 400 times. The shuffled area under the curve averages about 0.5 and the real value sits above the shuffled distribution's 97.5th percentile.
+
+
+## PART 3. The simulated run completed and the severity mechanics work
+
+This is what you asked for: 1 simulated run with the new bounds in force, to check the mechanics behave as expected, under full monitoring. It ran for 85.5 minutes, took 6 rounds, converged at round 5 and produced 25 findings. Your 0.7 cut was live throughout, read back from the run's own recorded configuration rather than assumed.
+
+4 predictions were written and committed BEFORE the run launched, each with the result that would falsify it. That order matters and it is the only thing that makes the exercise worth anything.
+
+Prediction 1 held. Severity is not constant across findings: standard deviation 0.175692 over 25 findings, spanning 0.3500 to 0.9000. This is the central check. The old severity form was a constant 0.5 on every entry, so a severity spanning 0.3500 to 0.9000 is the severity recursion actually doing something.
+
+Prediction 3 held. At your 0.7 cut, sensitivity over the 20 confirmed findings is 0.600000, above the 0.5 that would have falsified it.
+
+That 0.600000 looks like a shortfall against the archive's 0.7316 and it is NOT one, which I checked before writing it down rather than after. The exact binomial probability is 0.207053, agreed to 1 part in 1,000,000,000 by 2 independent tools, and 0.7316 sits comfortably inside the run's own interval of 0.386582 to 0.781193. The run's power against the difference it appears to show is 0.241200, so it could not have detected that difference even if it were real. Reaching 80 per cent power needs about 95 confirmed findings, which is roughly 5 runs of this size. So the honest statement is that this run neither supports nor undermines the transfer of your cut to simulated severities, and the cut's claim rests where it always did, on the real-seat archive.
+
+Prediction 2 was not testable. It needed at least 2 refuted findings and the run produced 20 confirmed and 0 refuted. That is a result and not a pass, and reporting it as held would be the flattering reading. It is also exactly what I calculated BEFORE the run: the simulated refutation rate is 1.7730 per cent, so a run this size had a 26 per cent chance of producing no refutations at all. The pre-registration predicted its own untestability.
+
+Prediction 4 was mis-specified, by me, and that is in part 6.
+
+
+## PART 4. What was built, in the order you set it
+
+Item 1, the severity bounds from the archive. Done, with its producer and an 11-test guard.
+
+Item 2, the 2 directive-composition defects you ruled should be repaired. Both done. The de-duplicator decided which of 2 near-duplicate lines survived by POSITION rather than content, so a special case appearing before its own general formula evicted the formula. It is proved by execution rather than asserted: on the harmful order the old rule keeps the special case and the new rule keeps the general formula, the reverse order is unchanged, and the number of lines collapsed is identical, so nothing was weakened. The conflict detector's defect was 1 comment, which read no detectable conflict dimension, always keep, and then behaved as though there were NO conflict. On a real composition: 154 directive blocks, of which only 13 could be classified and 141 could not. So a report of 0 conflicts was a 0 of 13, not a 0 of 154. That count of 13 classifiable blocks against 154 total now reaches the caller. The topic vocabulary was deliberately NOT grown, because adding a 5th topic leaves the resolver blind to the 6th.
+
+Item 3, the pre-flight registration check. It now FAILS on an unregistered seat and names every missing table and how to fix it, which is what you ruled. The reason it had only reported before was its own false positive, described in part 6. It earned its keep within hours: a wrong model key in my own measurement grid was named and fixed in a single step because the error listed the 6 keys that do exist.
+
+Item 4, the triage of the unadopted seat designs. Done, applying none of them, with every verdict derived from the tree and recomputable: 28 reached by nothing, 8 candidates, 3 divergent and 1 scratch file. The set is 40 and not the 44 you were asked to rule on; 5 falsifiers had been counted as designs.
+
+Item 5, the per-cycle anchoring of the reasoning window. Done and guarded.
+
+Also done, and it is the part that was still open when you went to sleep: the role layer. The policy engine now has a 5th layer. A role file merges after the model layer, both composer entry points accept and forward a role, and an unknown role fails loudly and names the roles that exist, matching your ruling that a failed registration must be loud and trivial to repair. The 3 role names are the ones the code already declared, so nothing was invented. What the layer does NOT have is any caller passing a role, and that is deliberate rather than unfinished, for the reason in decision 1.
+
+The guard is the part worth your attention. An earlier measurement had already answered the merge-order question for this entry, finding that the order decides 0 keys because no 2 layers share a setting, but it warned in its own words that this held by convention with nothing enforcing it. That warning is now a rule: 10 tests, and 6 of 6 deliberate reversions turn them red, each one restoring the files it touched byte for byte and checking the restore by hash rather than trusting version control to do it. The layer was also shown to be inert until asked, by watching which files the merge actually opens rather than by reasoning about the code: with no role, 0 role files are read, and the composed text is identical to the byte whether the role argument is absent or explicitly empty.
+
+Also closed earlier: all 11 failures from the full-suite run of 1 November. 10 are fixed and 1 is deliberately not, which is part 5.
+
+
+## PART 5. The 1 failure deliberately not fixed
+
+The task list can no longer be said to terminate, and you asked to be told if that happened. Treating each closed entry as producing new entries, the rate is 0.833333 with a 95 per cent interval of 0.673627 to 1.030903, and a 1-sided exact probability against the critical value of 5.205546e-02, which agrees to 10 significant figures across 3 independent tools. The upper bound has crossed 1.
+
+The honest reading is that this is an interval endpoint crossing a threshold, not a demonstrated acceleration. The rise from 0.782051 on 29 October is not statistically significant, and that day's upper bound was already 0.990540. It would take 7 further closures with no new entries to bring the bound back under 1, and closing all the open items would bring it to 0.981128. So the list is recoverable, if working it does not spawn replacements, and whether it does is exactly what the 0.833333 figure measures. Tonight added 1 new entry, which is the third decision below, so tonight is a data point on the wrong side of that question.
+
+Its guard says a crossing is a conversation to have rather than a number to quietly restate, so it is reported here and not repaired.
+
+
+## PART 6. Where I was wrong, which is the longest part and the useful part
+
+My claim that a severity design cannot be validated on a simulated run was wrong, and the closing report contained its own counterexample 2 paragraphs later: it reported the old severity form as constant at 0.5 across 1,252 entries and the new form's spread, both measured on simulated data.
+
+The single figure I offered as the reason the design could not go live has no producer. The interval string appears in exactly 1 file in the repository, which is the closing report itself. Under this project's own rule that is a claim about evidence rather than evidence.
+
+My first interval on the area-under-curve figure was 17.9 times too narrow. I used a method whose denominator was 8,464 pairwise comparisons, and those pairs are generated by 545 findings and are not independent. Bootstrapped over findings the interval is 0.634391 to 0.938563. The conclusion survives; the interval width of 0.017012 I claimed did not, against a true width of 0.304172.
+
+The simulated-archive headroom I quoted was 2.6 times too kind: 6.52 times the requirement, when the defensible figure is 2.55. The difference is that 1,148 of 1,884 entries came from runs I classified as simulated because a field was MISSING rather than because a seat was named.
+
+I told you that your instruction to build the orchestrator reversed your own placement ruling of 17 October. That was wrong and I withdraw it. The register holds a ticket from 20 October in your words: I already ruled on the orchestrator build. It was the 3rd time you had ruled it, not a reversal of the 1st.
+
+That same ticket carries a separate instruction of yours that has gone nowhere. You said you were not asking for the user interface to be built yet, but that its backend could be, so the eventual interface could map cleanly onto it. That instruction was merged into another entry on a matching reference alone, without checking that the subjects matched. It exists in 1 place in the whole project, as a settled ticket, and reaches no work item. It has been invisible for 12 days.
+
+A guard caught me silencing 2 of your questions. You ruled 5 decisions, so I marked 7 entries settled, and a guard that exists to stop a ruling date silencing a question raised after it refused. It was right about 2 of the 7, and I caught neither.
+
+And the same class recurred tonight in the rendered output rather than in a marker. The role layer entry's own record already said you had withdrawn the position-versus-function framing as malformed, and the text that would have been READ OUT to you went on asking it anyway. The record and the rendering disagreed while each was individually correct, which is the exact shape this project names most often. The rendering now asks the question you have not answered, and the withdrawn wording is kept beside it rather than deleted, so the change is auditable.
+
+A silent default sat inside the silent-default detector. The pre-flight check resolved seat labels through a lookup whose fallback was the identity function, and the function it looked for lives in a different module, so the fallback was ALWAYS taken and no simulation suffix was ever stripped. All 6 simulated seats were reported as unregistered. That false positive was the stated reason the check reported instead of refusing, so your ruling cost nothing once the check stopped accusing correct code.
+
+Removing that false positive exposed a true positive. Fable is present in 1 of 5 per-model tables and absent from the other 4, while the other 5 vendors are in all 5, and a Fable seat has been RUNNING that way, losing its fingerprint, its phenotype transform and its coherence budget silently. It was already tracked from 29 October, and the register refused my duplicate, which is what it is for. It is not fixed: those are calibration values and inventing them would be the error class this project records most.
+
+3 predicate errors sat in my own scorer for the run, and each would have put a wrong line in this report. I scored a PROXY for 1 pre-registered predicate instead of the predicate, and the 2 disagree on the control archive, 8 entries against 10. I used the wrong population for another, testing released and closed entries when the A4 fail-safe door explicitly does not count those. And the pre-registration itself contains a fault: prediction 4's falsifier is built on a release rule this project retired between 6 September and 12 October, so I pre-registered a test of a rule that no longer exists. The first scoring run reported prediction 4 as falsified and named 9 findings, which would have reached you as a breach of a fail-safe. It is not one. Prediction 4 is reported as mis-specified, with the property it was trying to express measured beside it and labelled a later observation. The pre-registration is NOT rewritten, because a prediction edited after the run is worth nothing.
+
+Tonight's own additions were not exempt. Wiring the role through the second composer entry point, I added the parameter and did not forward it, which is precisely the do-nothing addition the additive standard forbids and which I was in the middle of building a guard against. A structural check over both entry points caught it within the minute. And raising the first of tonight's 2 register items, I supplied a task reference and the store correctly absorbed my new finding into that task's existing row, because a reference IS the whole identity by design. The store said the row already existed and I nearly accepted that as success. Reading the rule rather than retrying produced the right form.
+
+Twice earlier I ran a generator without its write flag and reported that nothing had changed. And the worst of the night was earlier still: chasing a prose-style lint I ran a bulk replacement of spelled numbers across an authored file and it DAMAGED text, turning the name of an experiment, the zero-plant control, into 0-plant, turning pronouns into digits, and mangling a quoted example of the very violation it was fixing. I reverted it and made 4 surgical fixes instead.
+
+
+## PART 7. 1 thing parked, not blocking, but you should know it
+
+Not one proposed fix was applied during the run: 0 applied and 14 refused. The cause is measured and it is not what it looked like.
+
+The seats quote code inconsistently. Of 66 search anchors quoting a line that requires a power operator, 39 were written WITHOUT it and 27 with it, an interval of 0.470492 to 0.701326 on 2 agreeing tools. An anchor that does not match the file cannot be applied, so the majority could never land. The harness alters nothing: the parser returns the operator intact when the seat wrote it, which I verified by running the real parser on the run's own stored text rather than by reading it.
+
+What makes this a defect rather than a curiosity is that the project already solved this exact behaviour for prose, and recorded the gain, taking locatable anchors from 14 per cent to 80 per cent. The repair was wired to the prose path and not to the code path. So a markdown file containing a code listing still fails the way prose used to.
+
+It is parked rather than fixed because changing what gets applied to an artefact changes the experiment, and fixes reach you rather than being applied on my own judgement. By your own test, does it prevent further progress, it does not: the run converged regardless.
+
+
+## PART 8. The 3 decisions
+
+
+### Decision 1 — Whether model registration consolidates to a single point
+
+**What it is.** Adding a model to the harness touches 12 per-model tables across 6 files. The measured behaviour is much better than the entry's own headline says: of 10 steps in the live resolution chain, 0 now default silently, 8 announce their default and 1 refuses outright on your ruling of 1 November. The role layer half of this entry is now BUILT, so what remains is only whether those 10 steps become 1.
+
+**What it affects.** How every seat is configured. It also affects the role layer that was built tonight, because that layer currently has no caller passing a role: making it live would change the directive text every seat receives, and that text is the independent variable of the experimental arc.
+
+**What you decide.** Whether registration consolidates to 1 point now, and separately whether a role should be passed at dispatch yet.
+
+**Recommendation, and why.** Leave registration as 10 announced steps and revisit after Bench Run 2, and do not switch the role through yet. Simplest sufficient: the defect you named, silent defaulting, is already closed by the refusing pre-flight, and that check cannot change what a passing run does. Additive: nothing is removed by waiting, and the layer is built, guarded and provably inert until asked, so switching it on later costs 1 line. Consolidation changes every seat's configuration path and is safer between experiments than during them.
+
+**Note on what is NOT being asked.** You withdrew the position-versus-function framing on 1 November as a matter of semantics and you were right. It is recorded as withdrawn and is not put to you again.
+
+
+### Decision 2 — Whether the automatic save should commit locally or only refresh
+
+**What it is.** You ruled on 1 November that the automatic form of the save should refresh local reference resources without pushing, while the manual form commits and pushes. The design is written. The automatic half lives in a hook under your configuration directory, and the harness refused the edit as self modification. The repository copy is not a second file: both paths are hard links to a single inode, which a test asserts deliberately, so writing the repository path would be the same write under another name. That route was not taken.
+
+**What it affects.** Only how this session is stopped and what gets refreshed when it is. The manual command is unaffected and the gate that notices a long gap without a save is live and correctly quiet.
+
+**What you decide.** Whether the automatic form refreshes only, which is how the design reads your ruling, or whether you meant it to commit locally as well.
+
+**Recommendation, and why.** Refresh only, and grant permission for that one file. Additive: it regenerates the generated state file, the memory ledger and a session summary, and commits nothing, so nothing half finished can reach the permanent record, which was your stated reason for splitting the 2 forms. If you meant a local commit, the design changes and I will say what by.
+
+
+### Decision 3 — Whether both convergence gates must agree before a run stops
+
+**What it is.** The harness carries 2 convergence criteria and they did not agree on tonight's run. The state gate stopped it at round 5. Your two-sided gate, which requires the decay curve to have flattened AND 3 consecutive rounds with no new critical finding, would not have stopped it at ANY round of the 6, because the series of new critical findings was 2, 1, 0, 0, 1, 0 and never held 3 zeros in a row.
+
+The decay curve is not the problem and was not demoted. It reached 0.905 against a threshold of 0.41, and the telemetry figure was 0.585, so the half of your gate that watches diminishing returns held comfortably. It is the half that requires 3 consecutive quiet rounds that never closed. The gate was enabled, not switched off, which I read back from the run's own recorded settings. The state gate stopped the run because its tolerance allows up to 2 new findings in the final round and there was 1.
+
+**What it affects.** Every run's stopping point, and therefore every convergence figure the project has published. If the state gate can stop a run on its own, then the two-sided guarantee your directive describes is not the one the code provides.
+
+**What you decide.** Whether termination requires both gates to agree, as your directive says in your own words, or whether the state gate may stop a run independently.
+
+**Recommendation, and why.** Require both, which is what your directive already says. Additive: nothing is removed, the state gate keeps every condition it has, and the quiet-round count becomes a further requirement rather than a replacement. The cost is real and I will not soften it: tonight's run would not have converged in 6 rounds, and the series gives no reason to think round 7 or 8 would have closed it either, so runs get longer. If you would rather see more evidence first, the third option is to leave both gates independent but make a disagreement loud and recorded, which turns tonight's single observation into a disagreement rate counted across future runs, needing about 5 runs of this size before it carries a usable interval, and costs nothing in run length.
+
+I have changed nothing here. Your standing directive forbids me from proposing that the decay curve be demoted, and this is the decision sitting immediately next to it, so it is measured and brought to you rather than acted on.
+
+
+## PART 9. What is not outstanding
+
+The goal you set was no outstanding work before the runway resumes. Items 1 to 5 are done, the role layer is built and guarded, the simulated run has completed and been scored against predictions committed before it launched, and the blocked re-run is authorised and ready. What remains is the 3 decisions above, which are yours and not work, and 1 parked finding which does not block anything. The orchestrator entry is next on the list and its only dependency, the role layer, is discharged as of tonight.
+
+Written under CDSFL note standard v1.9 (1 November 2026).
+

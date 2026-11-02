@@ -171,9 +171,39 @@ class TestTheAbsenceBehaviourQuestionThreeRestsOn:
             f"framing as a 3-way choice no longer matches the code")
 
 
-def test_the_role_layer_still_does_not_exist():
-    """The premise of the whole question. If a `roles/` directory appears, this
-    entry has been acted on and the questions need re-reading, not re-asking."""
-    assert not (R.REGISTRY_DIR / "roles").is_dir(), (
-        "a roles/ directory now exists, so the role layer has been built; "
-        "re-read entry B21 rather than treating its questions as open")
+def test_the_role_layer_now_exists_and_carries_its_own_guard():
+    """THE TRIPWIRE FIRED AND IT WAS RIGHT, 2026-11-02. RE-AIMED, NOT DELETED.
+
+    This was `test_the_role_layer_still_does_not_exist`, asserting that no
+    `roles/` directory existed, on the stated premise that *"if a roles/
+    directory appears, this entry has been acted on and the questions need
+    re-reading, not re-asking"*. The layer was built on 2026-11-02 and the
+    assertion went red in the commit gate, which is exactly the service it was
+    written to perform: it forced B21 to be re-read before its questions were
+    put to the founder again, and the re-read found the rendered decision still
+    asking the position-versus-function question he had already withdrawn.
+
+    IT IS NOT REMOVED, because `additive-standard` permits removal only where a
+    committed measurement shows a replacement dominates on a named property.
+    The named property is *does a change to the role layer force a re-read*, and
+    the replacement that dominates it is
+    `bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py`, which asserts
+    the layer EXISTS, that it cannot collide with any other layer, that an
+    unknown role raises, and that the founder's functional vocabulary stays
+    absent -- 10 tests against this file's 1, with 6 of 6 reversions red.
+
+    So this test now asserts the POST-BUILD premise and names its successor. If
+    the successor ever disappears, this fails and the question becomes live
+    again, which is the same tripwire pointed the other way.
+    """
+    roles = R.REGISTRY_DIR / "roles"
+    assert roles.is_dir(), (
+        "the roles/ directory has gone, so the role layer built on 2026-11-02 "
+        "has been removed; B21's precedence questions are live again")
+    successor = (pathlib.Path(__file__).parent
+                 / "test_the_role_layer_cannot_collide_2026-11-02.py")
+    assert successor.is_file(), (
+        f"{successor.name} is the guard that replaced this one's tripwire role. "
+        f"Without it nothing enforces the namespace disjointness that "
+        f"`what_does_layer_order_actually_decide_2026-10-30.py` measured but "
+        f"explicitly warned was convention only.")

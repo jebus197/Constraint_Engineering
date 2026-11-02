@@ -7,6 +7,7 @@ Four-layer configuration hierarchy with monotonicity enforcement:
     Layer 2: domains/<domain>.toml — domain-specific additions/overrides
     Layer 3: tasks/<task_id>.toml  — task-specific additions/overrides
     Layer 4: models/<model>.toml   — model-specific tuning
+    Layer 5: roles/<role>.toml     — role-specific tuning (B21, 2026-11-02)
 
 Merge rule: each layer deep-merges into the accumulated policy. If any layer
 attempts to weaken a universal HARD constraint (set a boolean HARD to False,
@@ -217,6 +218,7 @@ def load_effective_policy(
     domain: str,
     task_id: str | None = None,
     model: str | None = None,
+    role: str | None = None,
 ) -> dict[str, Any]:
     """Build the effective policy by merging all applicable layers.
 
@@ -278,6 +280,51 @@ def load_effective_policy(
             raise FileNotFoundError(
                 f"Model config not found: {model_path}\n"
                 f"Available models: {available}"
+            )
+
+    # Layer 5: Role-specific
+    #
+    # ★ ADDED 2026-11-02 for task B21. The engine had layers for universal
+    # constraints, domain, task and model, and NO LAYER FOR ROLE, which B21
+    # records as the one part of his design with no home in the 4.
+    #
+    # WHY IT RAISES ON AN UNKNOWN ROLE rather than skipping silently. B21 puts
+    # that choice to the panel and names 2 precedents; there are 3, measured by
+    # execution in `scripts/what_does_layer_order_actually_decide_2026-10-30.py`
+    # -- a missing MODEL file RAISES, a missing TASK file is SILENT, an unknown
+    # DOMAIN WARNS. RAISE is chosen because it matches the model layer, which is
+    # the layer a role most resembles (a named selection a researcher makes), and
+    # because his ruling of 2026-11-01 on model registration is explicit: *"it
+    # should cause the pre-flight checks to fail and the issue should be raised
+    # loudly for the researcher/HIL to investigate and to fix."* A role the
+    # researcher names and misspells is the same failure as a model they name and
+    # misspell.
+    #
+    # WHY PRECEDENCE DOES NOT MATTER HERE, MEASURED NOT ASSUMED. That same
+    # producer reports "Keys the ORDER actually decides: 0" -- 0 of 60 (domain,
+    # model) pairs share any leaf dotpath, Wilson 95% [0.000000, 0.060172] -- and
+    # notes that monotonicity compares against MODULE CONSTANTS rather than the
+    # previous layer, so the protected set is order-independent BY CONSTRUCTION.
+    # It also warns that the disjointness holds "by convention, not by any
+    # enforced rule". So `bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py`
+    # ENFORCES it: if a role file ever writes a key another layer owns, that guard
+    # fails and B21's precedence question becomes live again.
+    #
+    # THE ROLE FILES' CONTENT IS NOT MINE. Each carries only its own identity,
+    # restating the settled `Role` literal. The functional vocabulary is absent
+    # on purpose: composer.py records that which declared member `worker`,
+    # `classifier` and `orchestrator` map to is "POLICY and not plumbing".
+    if role:
+        role_path = REGISTRY_DIR / "roles" / f"{role}.toml"
+        if role_path.exists():
+            role_config = _load_toml(role_path)
+            policy = _deep_merge(policy, role_config)
+            _check_monotonicity(policy, f"role/{role}")
+        else:
+            available = [p.stem for p in (REGISTRY_DIR / "roles").glob("*.toml")]
+            raise FileNotFoundError(
+                f"Role config not found: {role_path}\n"
+                f"Available roles: {available}"
             )
 
     return policy

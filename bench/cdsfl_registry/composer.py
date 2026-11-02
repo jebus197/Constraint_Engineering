@@ -1883,6 +1883,7 @@ def compose(
     adversarial_brief: str = "",
     interaction_surface: str = "",
     coherence_pruning: bool = False,
+    role: str | None = None,
 ) -> ComposedDirectiveSet:
     """Compose a per-dispatch directive set from all applicable layers.
 
@@ -1966,7 +1967,20 @@ def compose(
 
     # --- Build merged TOML policy ---
     from .registry import load_effective_policy, DOMAIN_MAP
-    policy = load_effective_policy(domain=task_domain, model=model)
+    # B21, 2026-11-02: `role` reaches the policy engine's 5th layer. WITH role
+    # None -- which is every product call site today -- this merges the same 4
+    # layers as before and the output is byte-identical, verified by
+    # `scripts/the_role_layer_changes_nothing_until_asked_2026-11-02.py`.
+    #
+    # NO PRODUCT SITE PASSES A NON-None ROLE YET, AND THAT IS DELIBERATE RATHER
+    # THAN UNFINISHED. The role is available at dispatch (`ModelConfig.role`, a
+    # required field whose `canonical_role` raises on an unknown spelling), so
+    # threading it is 1 line. But the composed directive text is the INDEPENDENT
+    # VARIABLE of the Exp 40-54 arc: varying it by seat role changes what every
+    # model is told, which is a policy decision and his, not a mechanism gap.
+    # B21 is what puts that decision to him. The mechanism is proven without it
+    # by `bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py`.
+    policy = load_effective_policy(domain=task_domain, model=model, role=role)
 
     # --- Coherence enforcement (with intra-packet pruning) ---
     # ABLATION SWITCH (2026-10-13 free panel, Item 5).
@@ -2253,6 +2267,7 @@ def compose_for_dispatch(
     explicit_unknowns: str = "",
     adversarial_brief: str = "",
     interaction_surface: str = "",
+    role: str | None = None,
 ) -> ComposedDirectiveSet:
     """Convenience wrapper for orchestrator integration.
 
@@ -2277,6 +2292,7 @@ def compose_for_dispatch(
         explicit_unknowns=explicit_unknowns,
         adversarial_brief=adversarial_brief,
         interaction_surface=interaction_surface,
+        role=role,
     )
 
 
