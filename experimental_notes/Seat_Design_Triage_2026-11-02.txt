@@ -80,7 +80,7 @@ APPENDIX, HAND-WRITTEN AND DATED: VERDICTS RECORDED AGAINST THE 23
   Each judgement's durable home is its own entry in the master task list, not
   this file, because a verdict carries evidence and a snapshot does not.
 
-  JUDGED SO FAR: 11 of 23. OUTSTANDING: 12.
+  JUDGED: 23 of 23. OUTSTANDING: 0. Completed 2026-11-02T16:52:40+00:00.
 
   1. degraded_convergence_2026-10-07.py, 288 lines, roster-aware convergence.
      VERDICT: VERIFIED AND ADOPTABLE; the adoption decision is the founder's.
@@ -205,6 +205,93 @@ APPENDIX, HAND-WRITTEN AND DATED: VERDICTS RECORDED AGAINST THE 23
      at 0 violations across all 65 catalogues. That run is the same one entry
      B76 is about, so 2 independent instruments now say it closed too
      permissively.
+
+ 12. stream_idle_timeout.py and idle_timeout_needs_a_backstop_2026-10-08.py,
+     both seats, on harvesting output when a model is done rather than at an
+     arbitrary wall clock. VERDICT: BOTH CORRECT, AND THE LIVE CODE TOOK A
+     BETTER ROUTE. Each names the same 2 adversaries independently and the
+     fable design demonstrates them on real subprocesses with a positive control:
+     a heartbeat stopped only by the total cap at 6.0 seconds, a buffered
+     worker killed at 2.0 seconds having emitted 0 bytes, and the SAME worker
+     completing at 3.1 seconds once unbuffered. Its composability argument is
+     measured rather than judged. But the live orchestrator already preserves
+     partial output through a timeout and tracks how many tool calls a seat
+     has made, which separates working from churning from dead, which an
+     idle byte timer cannot, and it
+     explicitly sequences per-call timestamps first and the derived bound
+     second. Those timestamps exist in the streaming path and 0 of 11,601
+     archived call rows carry such a stamp, so the bound is still not
+     derivable. The
+     next step is a tool-log sink on a run that is already happening, not a
+     design adoption.
+
+ 13. promotion_gate.py, both seats, 263 and 128 lines. VERDICT: EVERY FIGURE
+     VERIFIES AND THE FOUNDER'S RULE NEEDS A THRESHOLD, NOT MORE ATTEMPTS.
+     Promote-on-1-success is broken under both readings: absorbing keeps a
+     0.90 model below the top 40.951% of the time, and with retries the limit
+     is 1 for every positive rate, so it excludes nothing. The Wilson repair
+     at 9 of 10 is worse on true positives at 0.21611302, and the comparison
+     that made bound gates look weaker was taken at error rates differing by
+     8.3 orders of magnitude. 138 parameterisations beat it on both rates and
+     the cheapest needs 3 of 4. His own figure of 2 or 3 attempts was close;
+     what was missing is the acceptance threshold.
+
+ 14. capability_estimator_2026-10-07.py and capability_estimator.py, both
+     seats. VERDICT: THE RIGHT IDEA IN THE WRONG ORDER. Gating a capability
+     success on whether the falsifier read its target is well motivated, and
+     the checker it would be built on classifies reading by source-text regex:
+     a decoy open of a null device, or the word open inside a comment, both
+     pass. Its own producer still reports that every demonstration holds, and
+     its conclusion is that provenance strong enough to gate must be
+     execution-derived. Wiring it today would automate a known-foolable check
+     into the ranking mechanics. Fix the classifier first.
+
+ 15. roster_registry_2026-10-07.py. VERDICT: ITS SECOND PARAGRAPH IS A LIVE
+     DEFECT AND IT CLOSED A GAP IN THE SEATS SURFACE. Adding a model takes 1
+     edit to be dispatched, and the roster is declared twice, so a researcher
+     editing only the first gets a run that dispatches 1 roster and scores another.
+     The runner records this class as hit 7 times. Recorded in entry B78 and
+     now reported by the readiness surface in both directions.
+
+ 16. derived_ladder_2026-10-07.py. VERDICT: A WELL-DEFINEDNESS FINDING THAT
+     BEARS ON THE PANEL ACTUALLY RUN. Ordering seats by capability per unit of
+     cost is uninformative wherever cost is 0, and the 2 free seats are the 2
+     every free panel uses, confirmed by its producer. The fix follows from
+     the arithmetic rather than from preference: at least 1 strictly positive
+     cost component, with wall time and subscription headroom proposed. Its
+     prose says undefined where its own producer says uninformative, and the
+     producer is the exact word.
+
+ 17. capability_ledger_2026-10-07.py. VERDICT: BOTH FIGURES EXACT, AND THE KEY
+     FIGURE IS ALREADY LIVE. A single success gives a Wilson lower bound of
+     0.206549 against a point estimate of 1.0, so 1 success cannot promote a
+     seat, and 12 consecutive successes is the smallest run that passes a seat
+     at 60 of 70. That 12 already appears in the live routing module.
+
+ 18. seat_breaker_2026-10-07.py, seat_circuit_breaker_2026-10-07.py and
+     seat_circuit_breaker.py: 3 designs on 1 question. VERDICT: THE PREMISE IS
+     QUOTED EXACTLY AND THE ARGUMENT STANDS. The live refusal helper documents
+     itself as returning a refusal rather than a filtered roster because
+     dropping a seat is benching it, which the designs read as treating 1
+     condition as 2 conditions' worth of consequence. Requirement 9 separates
+     a transient outage from benching. The richest of the 3 carries a
+     refuse-to-start concept the others lack.
+
+ 19. capability_identity.py and model_identity.py, fable. VERDICT: A REASONED
+     PUSHBACK ON HIS OWN PROPOSAL, WITH VERIFIED EVIDENCE. He proposed a
+     randomly assigned model identifier; these argue the need is real and the
+     derivation wrong, because a random identifier per roster entry splits 1
+     configuration listed twice, and 1 keyed on the vendor name merges 2
+     different configurations of the same model. The evidence verifies exactly: 12 occurrences of the dispatch
+     identifier across 10 distinct values, with 2 of them each naming 2
+     different things, unchanged between 2026-10-08 and today.
+
+  WHAT THE COMPLETED TRIAGE SHOWS, now that all 23 are judged. NOT ONE needed
+  adopting as proposed. 2 were already adopted in substance by simpler routes,
+  3 were superseded by a sibling design from the same seat, 1 had its
+  conclusion adopted 2 days after it was written, and 4 produced findings that
+  reached the master task list. The 23 files are roughly 10 questions: both
+  seats answered most briefs, and 1 seat answered several questions twice.
 
   WHY THEY ARE BEING TAKEN SINGLY RATHER THAN BATCHED. The judgement a
   design needs is whether its claim about live code still holds, whether its
