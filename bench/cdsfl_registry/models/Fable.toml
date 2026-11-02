@@ -22,3 +22,51 @@ reasoning_effort = "xhigh"
 [protocol]
 # Same vendor family as opus: structured output is handled natively.
 structured_output_native = true
+
+# ───────────────────────────────────────────────────────────────────────────
+# ADMISSION, added 2026-11-02. THIS BLOCK IS THE SINGLE REGISTRATION POINT.
+#
+# HIS INSTRUCTION, 2026-11-02: researchers "should be able to search for/add
+# models trivially from a search box in the UX ... They shouldn't need to think,
+# or concern themselves with the underlying mechanics of how this works in
+# reality. Which is what I mean by making the process trivial."
+#
+# WHAT THIS BLOCK REPLACES. Before it, admitting a model meant editing 12
+# per-model tables across 6 live harness files. Fable's absence from just 1 of
+# them -- the composer key map -- silently cost it a third of its directive
+# budget (8,000 characters against its sibling's 12,000) on every run it ever
+# joined, because that lookup is `.get(label, label)` and a miss is not an error.
+# `bench/model_admission_2026-11-02.py` reads this block and fills the tables.
+#
+# EVERY VALUE HERE IS INHERITED FROM opus_4_6 AND NONE IS MEASURED, which is the
+# same statement the header of this file has carried since 2026-08-30 and the
+# same convention `runner_core.MODEL_SPECS['Fable']` uses. Fable 5.1 reaches the
+# harness by the identical route as CC2: Claude, CLI piped mode, the same Max
+# subscription. Inheriting from a sibling is this project's convention for an
+# unprofiled model; inventing numbers would not be. Replace when measured.
+[admission]
+composer_key = "fable_5_1"
+coherence_budget = 0.020
+
+[admission.phenotype]
+# The WORK bound only. `spec_chars` is deliberately absent so it stays None,
+# which is his ruling of 2026-10-14: the SPECIFICATION is not work, so it is
+# delivered whole to every model and only the work bound is ever reduced. All
+# 6 declared phenotypes carry it unset.
+max_directive_chars = 12000
+format_style = "full"
+
+[admission.fingerprint]
+# A fingerprint is a PRIOR the run updates from observed behaviour, so an
+# inherited prior is corrected by evidence. A MISSING one substitutes silently.
+D_decay = 0.10
+v_bar = 0.90
+A = 0.85
+C = 0.80
+
+[admission.spec]
+tau = 400.0
+L = 168000.0
+c = 0.015
+L_std = 0.0
+_provenance = "inherited from CC2/opus_4_6; not measured (declaration, 2026-11-02)"

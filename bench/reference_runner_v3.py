@@ -18588,6 +18588,31 @@ def run_experiment(
     # statuses on executed evidence, those moved nothing.
     round_falsifier_reattachments: List[Dict[str, Any]] = []
     gate_history: List[bool] = []
+    #: ★ WHEN EACH ROUND LANDED. Added 2026-11-02 and it exists to make a
+    #: comparison DECIDABLE that is currently impossible.
+    #:
+    #: WHY. `scripts/would_a_round_predicate_catch_what_the_detectors_miss_2026-11-02.py`
+    #: asks whether a per-round predicate would report a divergence the cy
+    #: watchdog misses -- which is the open design question on B20's monitoring
+    #: arm and on the founder's definition of "screwy" ("not functioning as
+    #: expected", 2026-11-02). It CANNOT be answered: the watchdog log carries
+    #: wall-clock times and every round series here carries none, so the 2
+    #: cannot be aligned and the measurement had to be reported as NOT TESTABLE.
+    #: Measured over the 8 runs holding both: 5 of 8 diverged on a round-keyed
+    #: quantity and 0 of 5 were alarm-silent, but that comparison is RUN-level
+    #: and cannot distinguish "the divergence was reported" from "something
+    #: unrelated was reported".
+    #:
+    #: IT IS A PARALLEL SERIES AND CHANGES NOTHING ELSE. No existing key is
+    #: touched, so every consumer of `gamma_history`, `gate_history` and the
+    #: rest sees exactly what it saw before. It decides nothing during a run.
+    #:
+    #: AND IT IS NOT CLEARED WHEN `gate_history` IS. The gate's history is reset
+    #: on a churn event (`gate_history.clear()` below, 2 sites) because
+    #: consecutive passes must restart; WHEN a round happened is a fact that a
+    #: reset does not undo, so clearing this would destroy the alignment it
+    #: exists to provide.
+    round_wall_clock: List[str] = []
     open_ch_history: List[int] = []
     # ── B32: the EFFECT of a declared mode, recorded where it happens ────────
     # His ruling, 2026-10-07 and 2026-10-11: state should be DETECTED rather
@@ -18695,6 +18720,7 @@ def run_experiment(
             rho_history = ckpt_data.get("rho_history", [])
             gamma_history = ckpt_data.get("gamma_history", [])
             gate_history = ckpt_data.get("gate_history", [])
+            round_wall_clock = ckpt_data.get("round_wall_clock", [])
             open_ch_history = ckpt_data.get("open_ch_history", [])
             stall_history = ckpt_data.get("stall_history", [])
             novel_critical_history = ckpt_data.get("novel_critical_history", [])
@@ -20774,6 +20800,22 @@ def run_experiment(
 
         # Checkpoint — atomic write to prevent corruption on interrupt
         ckpt_path = brain.logs_dir / "runner_state.json"
+        # ★ STAMPED BEFORE THE CHECKPOINT IS SERIALISED, and the first draft of
+        # this got it wrong in a way worth recording. The stamp was placed just
+        # above the atomic rename, which is AFTER `json.dumps` has already read
+        # the list -- so every checkpoint would have persisted one round short,
+        # and round 0's time would not have appeared until round 1. The key
+        # would have been present and quietly lagging, which is the hardest
+        # kind of defect to notice. Caught by grepping the line numbers of the
+        # patch rather than by trusting it.
+        #
+        # STAMPED HERE, not where the gate appends, so a round is recorded
+        # whether or not the gate ran on it. UTC with an EXPLICIT offset,
+        # because `compaction_watch.py` already cost this project an inverted
+        # ordering by reading a naive UTC stamp as local time.
+        if len(round_wall_clock) <= round_idx:
+            round_wall_clock.append(
+                datetime.now(timezone.utc).isoformat(timespec="seconds"))
         _ckpt_data = json.dumps({
             # Stamped here as well as in the report: the state file is what the
             # archive guards walk, and a run that cannot say which runner wrote
@@ -20819,6 +20861,7 @@ def run_experiment(
             "round_withdrawals": round_withdrawals,
             "round_falsifier_reattachments": round_falsifier_reattachments,
             "gate_history": gate_history,
+            "round_wall_clock": round_wall_clock,
             "open_ch_history": open_ch_history,
             "stall_history": stall_history,
             "novel_critical_history": novel_critical_history,

@@ -90,6 +90,94 @@ MARKERS = REPO / "scripts"
 PARKED = pathlib.Path.home() / ".claude" / "hooks" / ".work_not_narrate_PARKED"
 
 
+#: HOW MUCH OF THE TRANSCRIPT IS READ. THIS IS THE FIX OF 2026-11-02 AND IT IS
+#: THE REASON THE GATE HAD SILENTLY STOPPED WORKING.
+#:
+#: Claude Code runs Stop hooks under `timeoutMs: 15000` and KILLS whatever has
+#: not returned. A killed hook's exit code 2 never arrives, so the stop it meant
+#: to refuse proceeds. This hook used to read the ENTIRE transcript three times
+#: -- once in `_turn_key`, once in `turn_signals`, once for the blocker probe --
+#: and a session transcript grows monotonically all session long. Measured
+#: 2026-11-02: the live transcript was 685,001,703 bytes (653.3 MiB),
+#: `turn_signals` alone took 9.743 s, and across 360 recorded invocations the
+#: hook TIMED OUT 153 times (0.425000, Wilson 95% [0.374991, 0.476593]) --
+#: 0 of 17 in September at a 962 ms median, then 0.4245 to 0.4894 per day from
+#: 2026-10-29 at a ~15,400 ms median.
+#:
+#: SO THE GATE WAS NOT WRONG; IT WAS OUTGROWN. Executed directly it refuses
+#: correctly on every input that should refuse. It never got to say so. The
+#: founder reported exactly this shape -- "a couple of times recently that has
+#: worked out quite well ... even more recently, that automated process no
+#: longer seems to be working" -- and the date split confirms it.
+#:
+#: THE TECHNIQUE IS NOT NEW HERE. `hooks/compaction_watch.py` scans the same
+#: transcript in 0.055 s against 41 MB by seeking to a stored byte offset. That
+#: was never applied to this hook. Only the CURRENT turn is ever needed, so the
+#: trailing bytes suffice and the cost stops depending on session length.
+#:
+#: IT FAILS TOWARD REFUSING, which is the safe direction for this hook. If a
+#: turn is somehow larger than the cap, no founder message is found in the tail,
+#: `had_d` comes back False and the stop is refused rather than allowed.
+TAIL_BYTES = 48 * 1024 * 1024
+_TAIL_CHUNK = 4 * 1024 * 1024
+
+
+def _tail_lines(transcript: pathlib.Path) -> list[str]:
+    """The transcript's trailing lines, enough to hold the current turn.
+
+    Reads BACKWARDS in chunks until a genuine founder message is present or
+    `TAIL_BYTES` is reached, whichever comes first. A backwards chunk read can
+    begin mid-line, so the first fragment is discarded unless the start of the
+    file was actually reached -- otherwise a half line would be handed to
+    `json.loads` and silently skipped, which is how a reader loses the very
+    entry it is looking for.
+    """
+    try:
+        size = transcript.stat().st_size
+    except OSError:
+        return []
+    want = _TAIL_CHUNK
+    while True:
+        want = min(want, TAIL_BYTES, size)
+        try:
+            with transcript.open("rb") as fh:
+                fh.seek(size - want)
+                raw = fh.read(want)
+        except OSError:
+            return []
+        text = raw.decode("utf-8", errors="replace")
+        lines = text.splitlines()
+        if want < size and lines:
+            lines = lines[1:]           # the partial first line
+        if any(_looks_like_founder_line(ln) for ln in lines):
+            return lines
+        if want >= TAIL_BYTES or want >= size:
+            return lines                # bounded; fails toward refusing
+        want *= 2
+
+
+def _looks_like_founder_line(line: str) -> bool:
+    """Cheap pre-test for `is_founder_message` without parsing every line.
+
+    A PROVABLE SUPERSET of the real predicate: every genuine founder entry is a
+    `"type":"user"` line, so a line failing this cannot be one. Parsing 653 MiB
+    of JSON is what cost the hook its life, and a superset prefilter is the same
+    device `TicketStore`'s chat harvester uses for the same reason.
+    """
+    if '"type":"user"' not in line and '"type": "user"' not in line:
+        return False
+    try:
+        d = json.loads(line)
+    except Exception:
+        return False
+    if not is_founder_message(d):
+        return False
+    c = d.get("message", {}).get("content")
+    if isinstance(c, list):
+        c = " ".join(x.get("text", "") for x in c if isinstance(x, dict))
+    return isinstance(c, str) and "<system-reminder>" not in c
+
+
 def is_parked() -> bool:
     """True when the founder has parked this hook.
 
@@ -166,9 +254,8 @@ def is_founder_message(d: dict) -> bool:
 
 def _turn_key(transcript: pathlib.Path) -> str:
     """The timestamp of the turn's own user message. A new message, a new budget."""
-    try:
-        lines = transcript.read_text(encoding="utf-8", errors="replace").splitlines()
-    except OSError:
+    lines = _tail_lines(transcript)
+    if not lines:
         return ""
     for line in reversed(lines):
         if '"type":"user"' not in line and '"type": "user"' not in line:
@@ -222,7 +309,7 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
     """
     if not transcript.is_file():
         return 0, 0, False, False
-    lines = transcript.read_text(encoding="utf-8", errors="replace").splitlines()
+    lines = _tail_lines(transcript)
     start = 0
     had_d = False
     for i, line in enumerate(lines):
@@ -350,8 +437,11 @@ def main() -> int:
     # actually have been run and returned BLOCK.
     raised = False
     try:
-        text = pathlib.Path(os.path.expanduser(t)).read_text(
-            encoding="utf-8", errors="replace")
+        # THE SAME TAIL, not a third full read of the transcript. Before
+        # 2026-11-02 this was a `read_text()` over the whole file -- the third
+        # of three, and together they are what pushed the hook past its 15 s
+        # budget 153 times in 360 invocations.
+        text = "\n".join(_tail_lines(pathlib.Path(os.path.expanduser(t))))
         raised = "blocker_triage" in text.rsplit('"type":"user"', 1)[-1] and \
                  "BLOCK:" in text.rsplit('"type":"user"', 1)[-1]
     except Exception:

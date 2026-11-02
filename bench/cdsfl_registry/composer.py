@@ -72,6 +72,17 @@ except ImportError:                                # pragma: no cover
     import routing as _cap_identity
 
 MODEL_COHERENCE_BUDGETS: dict[str, float] = {
+    # ★ Fable ADDED 2026-11-02 on his ruling of 2026-11-01, annotation 11 of
+    # Closing_Report_2026-11-01.txt: a seat that fails registration "should
+    # cause the pre-flight checks to fail and the issue should be raised
+    # loudly ... Is all of this implemented? If not you should implement it
+    # and test that it works as expected."
+    # PROVENANCE: inherited from CC2/opus_4_6 2026-11-02;
+    # NOT MEASURED.
+    # Fable 5.1 reaches the harness by the same route as CC2 -- Claude, CLI piped mode, the same Max subscription -- and MODEL_SPECS['Fable'] already inherits from CC2 on the same grounds with its own _provenance field.
+    # Inheriting is this project's existing convention for an unmeasured sibling;
+    # inventing values would not be.
+    "fable_5_1": 0.020,      # as opus_4_6; see PROVENANCE above
     "opus_4_6": 0.020,       # handles dense instructions well
     "chatgpt_5_4": 0.015,    # moderate
     "codex_5_3": 0.012,      # needs tighter, simpler prompts
@@ -127,6 +138,21 @@ class PhenotypeTransform:
 
 
 PHENOTYPE_TRANSFORMS: dict[str, PhenotypeTransform] = {
+    # ★ Fable ADDED 2026-11-02. THE MEASURED CONSEQUENCE OF ITS ABSENCE is
+    # named by this module's own comment at the `resolve_or_alarm` call site:
+    # "a model with NO phenotype entry silently inherits the dataclass
+    # default, whose max_directive_chars is 8000 against the 12000 that
+    # opus_4_6 is given ... Fable -> no entry, silently inheriting the 8,000
+    # default". So Fable has been served a directive budget a third smaller
+    # than its sibling on every run it has ever joined, and the alarm (C18)
+    # recorded that without closing it. `spec_chars` stays unset, which is
+    # deliberate and is his ruling of 2026-10-14: the SPECIFICATION is not
+    # work, so it is delivered whole to every model and only the WORK bound
+    # is reduced. All 5 prior phenotypes carry it unset for the same reason.
+    "fable_5_1": PhenotypeTransform(
+        max_directive_chars=12000,
+        format_style="full",
+    ),
     "opus_4_6": PhenotypeTransform(
         max_directive_chars=12000,
         format_style="full",
@@ -2241,6 +2267,13 @@ def compose(
 
 # Model name mapping: orchestrator labels → composer model keys
 COMPOSER_MODEL_MAP: dict[str, str] = {
+    # ★ THIS MAP IS THE ONE THAT MATTERED. Fable was in MODEL_SPECS and absent
+    # here, and because the lookup below is `.get(model_label, model_label)`
+    # the miss was not an error -- "Fable" resolved to "Fable", which is a key
+    # in neither phenotype table, so BOTH silently defaulted. 1 missing line
+    # here produced 3 reported absences, which is why the preflight's count of
+    # 3 tables overstates the size of the repair.
+    "Fable": "fable_5_1",
     "CC2": "opus_4_6",
     "Codex": "codex_5_3",
     "CX": "codex_5_3",
@@ -2253,6 +2286,7 @@ COMPOSER_MODEL_MAP: dict[str, str] = {
     "chatgpt_5_4": "chatgpt_5_4",
     "gemini_3_1_pro": "gemini_3_1_pro",
     "deepseek_v3": "deepseek_v3",
+    "fable_5_1": "fable_5_1",
 }
 
 

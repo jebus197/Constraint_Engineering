@@ -735,6 +735,57 @@ def _annotations_inside_archive(p: Path) -> int:
         return 1
 
 
+def context_for(ann: dict, before: int = 6, after: int = 1) -> list[str]:
+    """The report lines an annotation ATTACHES TO. Added 2026-11-02.
+
+    HIS COMPLAINT, 2026-11-02, verbatim: *"And this thing about you not fully
+    reading my annotations, or the subjects they attach to remains both
+    frustrating and weird. Why are you not doing this?"*
+
+    THE ANSWER IS MECHANICAL AND IT IS THIS FUNCTION'S ABSENCE. Every annotation
+    record has carried `line_index` since this reader was written on 2026-10-11 --
+    the exact line of the report it was written against -- and nothing ever read
+    the lines around it. The JSON mode emitted the annotation TEXT with no
+    surroundings, and the plain mode emitted only COUNTS BY FILE, so neither
+    output could answer "what is he talking about". An annotation reading "Has
+    this now been done?" is unresolvable without the line above it, and 4 such
+    were reported to him as needing their context before this existed.
+
+    SO THE DEFECT WAS NOT INATTENTION. The subject was one field away and no
+    code path fetched it. That is the same shape as the other 2 failures found
+    this session: the decision was available and the delivery was absent.
+
+    CONTEXT IS THE DEFAULT, NOT A FLAG. A flag that must be remembered is the
+    same failure mode as a notification channel that must be armed by hand --
+    which is precisely what cost 4 h 31 min on 2026-11-02. `--context 0` turns
+    it off for callers that genuinely want the old output.
+    """
+    f = RESPONSES / str(ann.get("file") or "")
+    i = ann.get("line_index")
+    if not f.is_file() or not isinstance(i, int):
+        return []
+    try:
+        # `read_any`, NOT a plain read_text. These files include .docx and
+        # .zip-backed formats that grep treats as binary -- 908 of 1,174 of his
+        # annotations live in files a naive reader cannot see, which is the
+        # whole reason this script exists. A first draft of this function
+        # called a `_read_any` that DOES NOT EXIST in this module; it parsed
+        # fine and would have returned [] for every annotation, i.e. silently
+        # restored the exact defect it was written to fix.
+        lines = read_any(f).splitlines()
+    except Exception:                                        # noqa: BLE001
+        return []
+    if not lines:
+        return []
+    lo = max(0, i - before)
+    hi = min(len(lines), i + 1 + after)
+    out = []
+    for j in range(lo, hi):
+        mark = ">>" if j == i else "  "
+        out.append(f"{mark} {j:>5}  {str(lines[j]).rstrip()}")
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--since", metavar="YYYY-MM-DD")
@@ -742,6 +793,13 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--verify", action="store_true",
                     help="exit 3 if a file looks annotated but cannot be read")
+    ap.add_argument("--context", type=int, default=6, metavar="N",
+                    help="report lines of CONTEXT to show above each annotation, "
+                         "so the subject it attaches to is visible (default 6; "
+                         "0 restores the old counts-only output)")
+    ap.add_argument("--text", action="store_true",
+                    help="print every annotation in full with its context, "
+                         "rather than a per-file tally")
     args = ap.parse_args()
 
     if not RESPONSES.is_dir():
@@ -755,6 +813,9 @@ def main() -> int:
     gaps = unreadable_but_annotated()
 
     if args.json:
+        if args.context > 0:
+            for a in anns:
+                a["context"] = context_for(a, before=args.context)
         print(json.dumps({"annotations": anns, "coverage": shape, "reader_gaps": gaps},
                          indent=1))
     else:
@@ -767,6 +828,14 @@ def main() -> int:
             by_file[(a["date"], a["file"])] += 1
         for (d, f), n in sorted(by_file.items()):
             print(f"     {d}  {n:>3}  {f}")
+        if args.text:
+            print("\n== every annotation, with the report lines it attaches to ==")
+            for k, a in enumerate(anns, 1):
+                print(f"\n--- [{k}] {a['file']} line {a.get('line_index')} "
+                      f"marker={a.get('marker') or '(none)'} ---")
+                for ln in context_for(a, before=args.context):
+                    print(f"   {ln}")
+                print(f"   HIS WORDS: {a['text']}")
         print("\n== why a naive grep is not enough ==")
         for k, v in shape.items():
             print(f"   {k}: {v}")

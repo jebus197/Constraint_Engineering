@@ -85,6 +85,16 @@ from field_envelope import (
 # These are estimates based on output characteristics — the management
 # layer will update them from actual performance in each round.
 INITIAL_FINGERPRINTS = {
+    # ★ Fable ADDED 2026-11-02. PROVENANCE: inherited from CC2/opus_4_6 2026-11-02;
+    # NOT MEASURED.
+    # Fable 5.1 reaches the harness by the same route as CC2 -- Claude, CLI piped mode, the same Max subscription -- and MODEL_SPECS['Fable'] already inherits from CC2 on the same grounds with its own _provenance field.
+    # Inheriting is this project's existing convention for an unmeasured sibling;
+    # inventing values would not be.
+    # These are CC2's 4 values exactly. A fingerprint is a PRIOR that the run
+    # updates from observed behaviour, so an inherited prior is corrected by
+    # evidence; a MISSING one substituted silently, which this file's own
+    # comment at line 385 already records as a defect of that shape.
+    "Fable": CapabilityFingerprint(D_decay=0.10, v_bar=0.90, A=0.85, C=0.80),
     "CC2": CapabilityFingerprint(D_decay=0.10, v_bar=0.90, A=0.85, C=0.80),
     "ChatGPT": CapabilityFingerprint(D_decay=0.15, v_bar=0.85, A=0.80, C=0.75),
     "Gemini": CapabilityFingerprint(D_decay=0.20, v_bar=0.80, A=0.75, C=0.70),

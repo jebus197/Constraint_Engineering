@@ -158,19 +158,91 @@ class TestHisRulingIsInEffect:
 
 
 class TestTheTruePositiveItExposed:
+    """REWRITTEN 2026-11-02, AND THE PREVIOUS FORM WAS RIGHT TO FAIL.
 
-    def test_fable_is_still_under_registered_and_the_check_sees_it(self, post):
-        """If this ever passes, ticket 5c099c217f11 is fixed -- verify and close
-        it rather than deleting this test."""
-        status, _, notes = _verdict(post, ["Fable-SIM"])
+    This class used to assert `Fable-SIM` FAILS registration. That was true when
+    it was written and it stopped being true the moment the gap was closed, so
+    the test began accusing correct code -- the shape recorded in
+    `feedback_a_guard_can_accuse_correct_code_2026-10-28`, where 9 of 36 failures
+    in the 2026-10-28 baseline were guards pinning a defect rather than a
+    property, and fixing the subject to satisfy them would have made it worse.
+
+    ITS OWN DOCSTRING SAID WHAT TO DO, and it is followed rather than ignored:
+    "If this ever passes, ticket 5c099c217f11 is fixed -- verify and close it
+    rather than deleting this test", on the condition that the calibration
+    values be "MEASURED, not invented".
+
+    THAT CONDITION IS NOT MET AND IS NOT CLAIMED TO BE. The 4 added entries are
+    INHERITED from CC2/opus_4_6 with their provenance recorded in the source,
+    on the same grounds and by the same convention as `MODEL_SPECS['Fable']`,
+    which has carried "inherited from CC2 2026-08-30; not measured" since August.
+    So the REGISTRATION half of ticket 5c099c217f11 is discharged and the
+    MEASUREMENT half is not, and `test_fables_values_declare_that_they_are_inherited`
+    below is what stops the inherited values from later passing as measured.
+
+    What is guarded now is the PROPERTY -- that an unregistered seat is refused --
+    tested against a name that is genuinely absent, so it cannot go stale when
+    the next vendor is added.
+    """
+
+    def test_an_unregistered_seat_is_still_refused(self, post):
+        """The property the old test guarded, pinned to a name that is absent.
+
+        `Kimi` is in none of the 5 per-model tables. If it is ever added, this
+        test must be re-pointed at another absent name rather than deleted --
+        the refusal is the capability, and it must never go unexercised.
+        """
+        status, _, notes = _verdict(post, ["Kimi-SIM"])
         assert status == post.FAIL, (
-            "Fable now registers fully. Confirm ticket 5c099c217f11 is resolved "
-            "with its calibration values MEASURED, not invented, then retire "
-            "this test.")
-        line = next(n for n in notes if "Fable" in n)
-        assert "INITIAL_FINGERPRINTS" in line, line
+            "an unregistered seat must FAIL the preflight. His ruling of "
+            "2026-11-01: it 'should cause the pre-flight checks to fail and "
+            "the issue should be raised loudly'.")
+        line = next(n for n in notes if "Kimi" in n)
+        assert "table" in line.lower(), line
 
-    def test_the_other_five_vendors_are_complete_so_fable_is_the_outlier(self, post):
-        for m in REAL:
+    def test_the_refusal_names_what_to_add_and_where(self, post):
+        """His ruling has a second half: the fix must be made trivial for a HIL.
+
+        Verbatim, 2026-11-01: "fixing a failing registration should also
+        preferably be made as trivial for a HIL to fix as possible. So clear
+        indications should be offered in the pre-flight check for any such
+        failures." A refusal that does not say which table and which key is
+        loud but unactionable.
+        """
+        # THE GUIDANCE IS IN THE DETAIL, NOT THE PER-SEAT NOTES. A first version
+        # joined only `notes` and failed -- correctly, because it was reading
+        # the wrong half of the check's output. The per-seat notes name WHICH
+        # tables; the detail names HOW to fix them. His ruling asks for both.
+        _status, detail, notes = _verdict(post, ["Kimi-SIM"])
+        blob = " ".join([str(detail)] + list(notes))
+        assert "TO FIX" in blob, "the refusal must say how to fix it"
+        assert "COMPOSER_MODEL_MAP" in blob, (
+            "it must name the resolver, because 1 missing entry there produces "
+            "3 reported absences and a reader who adds 3 rows does the wrong work")
+
+    def test_all_six_vendors_including_fable_are_now_complete(self, post):
+        for m in list(REAL) + ["Fable"]:
             status, _, _ = _verdict(post, [m])
-            assert status == post.PASS, f"{m} is also under-registered"
+            assert status == post.PASS, f"{m} is under-registered"
+
+    def test_fables_values_declare_that_they_are_inherited(self):
+        """An inherited value must never pass as a measured one.
+
+        This is the guard that keeps ticket 5c099c217f11 honestly half-open.
+        `MODEL_SPECS['Fable']` carries an explicit `_provenance`; the 3 entries
+        added on 2026-11-02 record theirs in source comments at their own table.
+        If someone later calibrates Fable for real, these assertions are what
+        tell them which values were standing in.
+        """
+        import pathlib as _p
+        from bench import runner_core as _rc
+        root = _p.Path(__file__).resolve().parents[2]
+        spec = _rc.MODEL_SPECS.get("Fable") or {}
+        assert "not measured" in str(spec.get("_provenance", "")).lower(), (
+            "MODEL_SPECS['Fable'] must keep saying its values are unmeasured")
+        comp = (root / "bench" / "cdsfl_registry" / "composer.py").read_text()
+        core = (root / "bench" / "runner_core.py").read_text()
+        assert "NOT MEASURED" in comp, (
+            "composer.py must record that Fable's phenotype is inherited")
+        assert "NOT MEASURED" in core, (
+            "runner_core.py must record that Fable's fingerprint is inherited")

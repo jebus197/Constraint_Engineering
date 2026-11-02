@@ -362,6 +362,32 @@ KNOWN_ARCHIVE_DISAGREEMENTS = {
     # fact from this mode comparison.
     "severity_bounds_validation_20261102T004713Z_20261102T004713Z":
         "location_keyed_convergence DECLARED_NOT_OPERATING",
+    # ★ 2026-11-02, THE RE-RUN, AND IT IS THE SAME SUPERSESSION WITH ITS OWN
+    # FIGURES, read from the report rather than carried over from the entry
+    # above. An exemption copied on the strength of a resemblance would be the
+    # defect this registry exists to prevent, so both modes were re-read:
+    #     hierarchical_novelty_convergence  declared None (default on),
+    #                                       substituted [0, 1, 2, 3, 4, 5]
+    #     location_keyed_convergence        declared True, substituted []
+    # So the count side of the two-sided gate was fed in ALL 6 rounds by the
+    # refinement, and the location-keyed series was computed as telemetry and
+    # never substituted, which is exactly what `_location_operating` reports as
+    # NOT OPERATING. Same designed relationship, separately evidenced.
+    #
+    # AND THIS RUN CARRIES NEW EVIDENCE ON B76, THE CONVERGENCE-GATE
+    # DISAGREEMENT, which is the opposite of what the entry above records:
+    #     hierarchical_crit_series  [5, 0, 0, 0, 0, 0]   <- this run
+    #     location_crit_series      [5, 1, 0, 0, 0, 0]
+    # The hierarchical series holds 3 consecutive zeros from round 3, so the
+    # count side WAS satisfiable here, where the validation run's [2, 1, 0, 0,
+    # 1, 0] never held them. The run converged at round 5 on the state gate
+    # with the count side also met, so on THIS run the 2 gates AGREED. That
+    # moves B76's observed disagreement rate to 1 of 2 and nothing stronger:
+    # Wilson 95% [0.094531, 0.905469], an interval spanning almost the whole
+    # range, so it supports no conclusion either way yet and the entry stays
+    # open for his ruling rather than being closed on 2 runs.
+    "study_run1b_rerun_20261102T033919Z_20261102T033920Z":
+        "location_keyed_convergence DECLARED_NOT_OPERATING",
 }
 
 

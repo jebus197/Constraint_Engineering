@@ -567,6 +567,85 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
     return offset, last_size, last_change, rounds, False, _cpu_seconds(pid)
 
 
+#: THE PULSE FILE, ADDED 2026-11-02, AND IT EXISTS FOR A GATE TO READ.
+#:
+#: WHAT WENT WRONG ON 2026-11-02 and why stdout was not enough. This watchdog
+#: worked perfectly: it detected the run's end 49 seconds after it happened and
+#: recorded `OUTCOME CLEAN` with the convergence reason. It wrote that into
+#: `cy_watchdog.log`, a file NOTHING WAS READING, and the result sat unseen for
+#: 4 h 31 min. Detection was never the failure; DELIVERY was.
+#:
+#: A delivery channel can only be made non-optional by something that refuses to
+#: let the session go idle while a run is live, and a refusal needs a FACT to
+#: test. `cy_watchdog.log` cannot supply it: by design this script "speaks only
+#: on an event", so each line is one Monitor wake -- which means the file's mtime
+#: can be 30 minutes stale while everything is healthy. Making it chatty would
+#: destroy the property that makes it useful as a wake source.
+#:
+#: SO THE LIVENESS SIGNAL IS SEPARATE AND MACHINE-READABLE. It is rewritten every
+#: `--interval` seconds, so its own freshness distinguishes a live watch from a
+#: dead one, and it carries `ended` plus the recorded verdict so a reader never
+#: has to parse prose to learn whether a run is still going. This is additive: it
+#: adds a channel and changes nothing about the stdout contract.
+PULSE_NAME = "cy_pulse.json"
+
+
+def write_pulse(path, *, log, pid, rounds, last_size, ended, verdict=None,
+                detail=None, interval=60) -> None:
+    """Record the watch's liveness, atomically. NEVER raises.
+
+    Atomic because a Stop gate may read this at any moment and a half-written
+    JSON file would make a live run look like a crashed watch -- the gate would
+    then refuse every stop for a reason that was not true. Written to a sibling
+    temp name and renamed, which is atomic within a directory on macOS.
+    """
+    if path is None:
+        return
+    try:
+        path = pathlib.Path(path)
+        body = {
+            "schema": 1,
+            "written_at": time.time(),
+            "written_at_iso": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "log": str(log),
+            "pid": pid,
+            "pid_alive": _pid_alive(pid),
+            "rounds": rounds,
+            "log_bytes": last_size,
+            "interval_seconds": interval,
+            "ended": bool(ended),
+            "verdict": verdict,
+            "detail": (detail or "")[:400],
+            "watchdog_pid": os.getpid(),
+        }
+        tmp = path.with_suffix(path.suffix + ".tmp")
+        tmp.write_text(json.dumps(body, indent=1), encoding="utf-8")
+        tmp.replace(path)
+    except Exception:                                        # noqa: BLE001
+        pass            # telemetry must never kill a watch
+
+
+def _pid_alive(pid) -> bool:
+    """True when the watched process still exists. Unknown pid counts as alive.
+
+    AN UNKNOWN PID MUST NOT READ AS DEAD. A gate that treats "I could not tell"
+    as "the run is over" would let the session go idle on exactly the case it
+    exists to catch, which is the `feedback_a_signal_is_not_a_measurement`
+    shape -- ask what a 0 is a 0 OF.
+    """
+    if not pid:
+        return True
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except Exception:                                        # noqa: BLE001
+        return True
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description=(__doc__ or "").strip().split("\n")[0] or None)
@@ -591,6 +670,9 @@ def main() -> int:
     ap.add_argument("--outcome-dir", default=None,
                     help="where the run writes completion_signal.json and its "
                          "report, when that is not the log's own directory")
+    ap.add_argument("--pulse-file", default=None,
+                    help="machine-readable liveness file a Stop gate "
+                         "can read (default: <outcome dir>/" + PULSE_NAME + ")")
     ap.add_argument("--once", action="store_true", help="single probe, then exit")
     args = ap.parse_args()
     if not args.log:
@@ -598,6 +680,8 @@ def main() -> int:
 
     log = pathlib.Path(args.log)
     outcome_dir = pathlib.Path(args.outcome_dir) if args.outcome_dir else None
+    pulse = (pathlib.Path(args.pulse_file) if args.pulse_file
+             else (outcome_dir or log.parent) / PULSE_NAME)
     pid = args.pid or _read_pid(pathlib.Path(args.pid_file) if args.pid_file else None)
 
     say("ARMED", f"log={log} pid={pid or 'unknown'} interval={args.interval}s "
@@ -636,6 +720,8 @@ def main() -> int:
             log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
             last_cpu, outcome_dir, first=first)
         first = False
+        write_pulse(pulse, log=log, pid=pid, rounds=rounds,
+                    last_size=last_size, ended=ended, interval=args.interval)
         if ended or args.once:
             break
         if (time.time() - last_beat) > args.heartbeat_minutes * 60:
@@ -653,6 +739,11 @@ def main() -> int:
     # Monitor wake, which is exactly what a halt deserves and what it did not
     # get before.
     verdict, detail = read_outcome(log, outcome_dir)
+    # THE LAST WORD GOES IN THE PULSE TOO, so a gate reading only this
+    # file learns the outcome without parsing the event log.
+    write_pulse(pulse, log=log, pid=pid, rounds=rounds,
+                last_size=last_size, ended=True, verdict=verdict,
+                detail=detail, interval=args.interval)
     say(f"OUTCOME {verdict}", detail)
     say("CLOSED", f"watchdog exiting; {rounds} round(s) landed; "
                   f"run_ended={ended}; outcome={verdict}")
