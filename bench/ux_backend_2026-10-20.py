@@ -305,7 +305,7 @@ def hil(run: str) -> dict:
     }
 
 
-def seats(models=None) -> dict:
+def seats(models=None, counted_roster=None) -> dict:
     """What each seat is missing before it can be dispatched. Reads only.
 
     HIS ASK, 2026-11-02: *"researchers should be able to search for/add models
@@ -332,13 +332,22 @@ def seats(models=None) -> dict:
     the ROUTE half comes back as unknown rather than as absent, because routes are
     declared per run and there is no module-level roster to read.
     """
-    from bench.seat_readiness import readiness
+    from bench.seat_readiness import readiness, roster_declarations_agree
     r = readiness(models)
+    # ★ THE 2-ROSTER CHECK, asked only when the caller supplies both lists. The
+    # roster is declared twice -- the ModelConfigs dispatched, and a separate
+    # label list every per-model denominator reads -- and a run whose 2 lists
+    # disagree reports one panel while dispatching another. The runner detects
+    # this mid-run, logs it and proceeds; asking here catches a config slip
+    # BEFORE anything is spent, which is where it belongs.
+    rosters = (roster_declarations_agree(models, counted_roster)
+               if counted_roster is not None else r["roster_declarations"])
     return {
         "name": "Seats",
         "in_shell": True,
         "placement_is_his_decision": True,
         "counts": r["counts"],
+        "rosters": rosters,
         "seats": r["seats"],
         "routes": r["routes"],
         "caveat": r["caveat"],

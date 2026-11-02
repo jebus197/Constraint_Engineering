@@ -256,6 +256,62 @@ def seat_rows(models: Any = None) -> list[dict]:
     return rows
 
 
+def roster_declarations_agree(dispatched: Any, counted: Any) -> dict:
+    """Do the 2 roster declarations agree? Report the difference BOTH ways.
+
+    ★ WHY THIS BELONGS ON A PRE-RUN SURFACE. The roster is declared TWICE:
+    `exp_config.models` holds the ModelConfigs actually dispatched, and
+    `cfg.models` is a separate list of labels whose default is a hardcoded 5 --
+    the panel from before Fable joined. The runner's own comment states the
+    consequence: "Every count, every per-model denominator and every
+    `set(cfg.models) - {source}` in this file reads the second list."
+
+    FOUND 2026-08-30 BY THE FIRST SIMULATED RUN TO DRIVE `run_experiment`: 6
+    ModelConfigs were supplied, `cfg.models` was left at its default, and the run
+    REPORTED A 5-MODEL PANEL WHILE DISPATCHING A SIXTH, with nothing warning at
+    all. The runner now logs `** PANEL MISMATCH **` and PROCEEDS, noting that
+    every per-model denominator uses the counted list. That is defensible as
+    fail-loud-rather-than-block, and it still leaves a run whose per-model
+    figures are computed over the wrong roster.
+
+    ★ SO THIS IS NOT A SECOND WARNING, IT IS AN EARLIER ONE. A config slip should
+    be caught before a run spends anything, which is the same reasoning the seat
+    designs give for refusing to START on a dead route rather than mid-run. This
+    function only REPORTS; it refuses nothing and changes no run behaviour.
+
+    The runner's comment records this as the launcher config-drop class the
+    project "has now hit seven times", which is why detecting it early is worth a
+    surface rather than a log line.
+    """
+    def _labels(xs: Any) -> list[str]:
+        out: list[str] = []
+        for x in (xs or ()):
+            lbl = getattr(x, "label", None)
+            out.append(str(lbl) if lbl is not None else str(x))
+        return out
+
+    d = _labels(dispatched)
+    c = _labels(counted)
+    ds, cs = set(d), set(c)
+    # ★ BOTH DIRECTIONS, because they mean different things. A seat dispatched and
+    # not counted is work paid for and discarded from every denominator; a seat
+    # counted and not dispatched inflates a denominator with a seat that never
+    # answered. Reporting only the total would say neither.
+    return {
+        "dispatched": sorted(ds),
+        "counted": sorted(cs),
+        "agree": bool(ds) and ds == cs,
+        "dispatched_not_counted": sorted(ds - cs),
+        "counted_not_dispatched": sorted(cs - ds),
+        "either_list_empty": not ds or not cs,
+        "why": ("the 2 roster declarations agree" if ds and ds == cs else
+                "the dispatched and counted rosters differ; every per-model "
+                "denominator in the run will use the COUNTED list, so a seat "
+                "dispatched but not counted is paid for and discarded, and a "
+                "seat counted but not dispatched inflates a denominator"),
+    }
+
+
 def readiness(models: Any = None) -> dict:
     """The whole picture, as plain data a UX can render without interpreting it."""
     rows = seat_rows(models)
@@ -278,6 +334,12 @@ def readiness(models: Any = None) -> dict:
             }
             for api, names in sorted(API_CREDENTIALS.items())
         },
+        # ★ THE 2-ROSTER CHECK IS PRESENT BUT NOT RUN HERE, because this function
+        # is given no config. A caller with both lists passes them to
+        # `roster_declarations_agree`; the key below says so rather than leaving
+        # a UX to assume the question was asked and answered.
+        "roster_declarations": ("not checked: pass the dispatched and counted "
+                                "rosters to roster_declarations_agree"),
         # Stated in the payload rather than only in this docstring, so a UX built
         # against it cannot present readiness as liveness.
         "caveat": ("configuration only; no route was contacted. Whether a route "

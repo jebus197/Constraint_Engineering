@@ -53,6 +53,17 @@ MUTATIONS = [
      '    "deepseek": ("DEEPSEEK_API_KEY",),',
      '    "deepseek": ("DEEPSEEK_API_KEY", "DEEPSEEK_SECRET_TOKEN_XYZ"),',
      "a UX would report a configured seat as unconfigured"),
+    ("the 2-roster check stops reporting BOTH directions", SR,
+     '        "dispatched_not_counted": sorted(ds - cs),\n'
+     '        "counted_not_dispatched": sorted(cs - ds),',
+     '        "dispatched_not_counted": sorted(ds - cs),\n'
+     '        "counted_not_dispatched": [],',
+     "a seat counted but never dispatched would inflate a denominator "
+     "unreported"),
+    ("2 empty rosters are read as agreement", SR,
+     '        "agree": bool(ds) and ds == cs,',
+     '        "agree": ds == cs,',
+     "the vacuity trap: 2 empty lists are equal and prove nothing"),
     ("a Seats tab is added to his interface", UX,
      'TABS = ("Orchestrator", "Findings", "Evidence", "Explorer",',
      'TABS = ("Seats", "Orchestrator", "Findings", "Evidence", "Explorer",',

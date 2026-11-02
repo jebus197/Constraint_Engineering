@@ -259,3 +259,86 @@ class TestItIsReachable:
         assert "Seats" not in m.TABS, (
             "a Seats tab was added to TABS; where it sits in the chrome is his "
             "decision, taken from his own instruction about the Discourse tab")
+
+
+class TestTheTwoRosterDeclarations:
+    """The check that was MISSING from this surface when it was first built.
+
+    ★ WHY IT WAS A GAP WORTH NAMING. The surface reported calibration gaps and a
+    route, and said nothing about the roster being declared TWICE --
+    `exp_config.models` for what is dispatched and a separate label list that
+    every per-model denominator reads. The runner's own comment records what that
+    costs: found 2026-08-30 when 6 ModelConfigs were supplied, the second list was
+    left at its hardcoded 5, and the run REPORTED A 5-MODEL PANEL WHILE
+    DISPATCHING A SIXTH with nothing warning at all. The runner now logs
+    `** PANEL MISMATCH **` and PROCEEDS. Asking before a run spends anything is
+    the point of a readiness surface, and it was the one question it did not ask.
+
+    Found by reading an unadopted seat design, `roster_registry_2026-10-07.py`,
+    whose answer to "what must a researcher edit to add a model" is ONE thing --
+    and whose next paragraph is that the roster is declared twice.
+    """
+
+    def _m(self, label):
+        class _C:
+            def __init__(s, l):
+                s.label = l
+        return _C(label)
+
+    def test_agreement_is_reported_when_the_lists_match(self):
+        r = SR.roster_declarations_agree(
+            [self._m("CC2"), self._m("Fable")], ["CC2", "Fable"])
+        assert r["agree"] is True
+        assert r["dispatched_not_counted"] == []
+        assert r["counted_not_dispatched"] == []
+
+    def test_a_seat_dispatched_but_not_counted_is_named(self):
+        """Work paid for and dropped from every denominator -- the Fable case."""
+        r = SR.roster_declarations_agree(
+            [self._m("CC2"), self._m("Fable")], ["CC2"])
+        assert r["agree"] is False
+        assert r["dispatched_not_counted"] == ["Fable"]
+        assert r["counted_not_dispatched"] == []
+
+    def test_a_seat_counted_but_not_dispatched_is_named(self):
+        """A denominator inflated by a seat that never answered."""
+        r = SR.roster_declarations_agree([self._m("CC2")], ["CC2", "Gemini"])
+        assert r["agree"] is False
+        assert r["counted_not_dispatched"] == ["Gemini"]
+        assert r["dispatched_not_counted"] == []
+
+    def test_both_directions_are_reported_separately(self):
+        """A total would say neither. The 2 differences mean different things."""
+        r = SR.roster_declarations_agree(
+            [self._m("CC2"), self._m("Fable")], ["CC2", "Gemini"])
+        assert r["dispatched_not_counted"] == ["Fable"]
+        assert r["counted_not_dispatched"] == ["Gemini"]
+
+    def test_an_empty_list_is_not_agreement(self):
+        """The vacuity trap: 2 empty lists are equal and prove nothing."""
+        r = SR.roster_declarations_agree([], [])
+        assert r["agree"] is False
+        assert r["either_list_empty"] is True
+
+    def test_the_surface_says_the_question_was_not_asked_without_both_lists(self):
+        """Silence is worse than a stated gap: a UX must not assume it was asked."""
+        r = SR.readiness()
+        assert "not checked" in str(r["roster_declarations"])
+
+    def test_the_ux_backend_reports_it_when_given_both(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "uxb3", REPO / "bench" / "ux_backend_2026-10-20.py")
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        got = m.seats([self._m("CC2"), self._m("Fable")], counted_roster=["CC2"])
+        assert got["rosters"]["agree"] is False
+        assert got["rosters"]["dispatched_not_counted"] == ["Fable"]
+
+    def test_the_runner_still_carries_the_comment_this_rests_on(self):
+        """If the runner stops declaring the roster twice, re-measure rather than
+        keeping a check for a shape that no longer exists."""
+        runner = (REPO / "bench" / "reference_runner_v3.py").read_text()
+        assert "THE TWO PANEL LISTS MUST AGREE" in runner, (
+            "the runner no longer states the 2-list hazard; this check's premise "
+            "may have been repaired at source, so re-measure before keeping it")
