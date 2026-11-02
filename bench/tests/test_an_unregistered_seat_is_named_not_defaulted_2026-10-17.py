@@ -81,11 +81,38 @@ def test_a_registered_seat_is_not_reported_absent(post):
 
 
 def test_an_unregistered_seat_is_named_with_every_absent_table(post):
-    """A researcher who misses a table must be told WHICH, not just that."""
+    """A researcher who misses a table must be told WHICH, not just that.
+
+    ★ THE VERDICT CHANGED FROM PASS TO FAIL ON 2026-11-01, ON HIS RULING, and
+    this test asserted the behaviour he overruled. His words: *"If a model a
+    researcher wishes to add fails registration ... it should cause the
+    pre-flight checks to fail and the issue should be raised loudly for the
+    researcher/HIL to investigate and to fix."*
+
+    THE OLD DESIGN'S OBJECTION IS RECORDED AND WAS ANSWERED BY MEASUREMENT, not
+    waved away. It held that refusing would get the screen switched off, because
+    a run with an unregistered stand-in would always be blocked. That rested on
+    the check's own FALSE POSITIVE: it resolved seat labels through
+    `getattr(rc, "base_model_label", lambda s: s)`, and `base_model_label` is
+    not in `runner_core`, so the identity default was always taken and all 6
+    simulated seats were reported absent from all 4 tables. With the resolver
+    wired, the real 5-seat roster passes, the 5-seat simulated roster passes,
+    and only a genuinely unregistered seat fails. So refusing costs nothing a
+    researcher has not caused.
+
+    WHAT IS UNCHANGED, AND IS STILL THE POINT OF THIS TEST: every absent table
+    is NAMED. A refusal that says only "registration incomplete" would be worse
+    than the report it replaced.
+    """
     status, headline, notes = post.check_every_seat_is_fully_registered(
         ["CC2", "Kimi"])
-    assert status == post.PASS, "the screen must stay 2-state and not refuse"
+    assert status == post.FAIL, (
+        "an unregistered seat must now FAIL the screen, on his ruling of "
+        "2026-11-01; it used to PASS with the absences named")
     assert "MISSING" in headline and "SILENT default" in headline, headline
+    assert "TO FIX" in headline, (
+        "the refusal must tell the operator how to fix it -- his words: "
+        "\"clear indications should be offered in the pre-flight check\"")
     line = next(n for n in notes if n.startswith("Kimi:"))
     assert "absent from" in line
     for table in ("runner_core.MODEL_SPECS", "runner_core.INITIAL_FINGERPRINTS",

@@ -363,7 +363,28 @@ def check_every_seat_is_fully_registered(seats, expect_uniform=False,
     #: already uses -- a reminder that the instrument for this existed and the
     #: first version of this check reinvented its key derivation and got it
     #: wrong.
-    base = getattr(rc, "base_model_label", lambda s: s)
+    # ★ A SILENT DEFAULT INSIDE THE SILENT-DEFAULT DETECTOR, found 2026-11-02.
+    # This read `base = getattr(rc, "base_model_label", lambda s: s)`.
+    # `base_model_label` is defined in `bench/reference_runner_v3.py:714` and NOT
+    # in `runner_core`, so the getattr ALWAYS took its default -- the identity
+    # function -- and no seat label was ever resolved. The visible cost: all 6
+    # simulated seats were reported absent from all 4 tables, when
+    # `runner_core._spec_key` resolves `CC2-SIM` to `CC2`, which IS present. The
+    # check was accusing correct code, and that false positive was the stated
+    # reason this check reported instead of refusing.
+    #
+    # `_spec_key` is the right resolver and its own docstring says why it exists:
+    # a simulated panellist carries the mandatory `-SIM` suffix, so an exact
+    # lookup returns {} and the model silently gets default params.
+    #
+    # NO IDENTITY FALLBACK. If the resolver is gone, this check FAILS rather than
+    # quietly comparing raw labels -- which is the whole lesson above.
+    base = getattr(rc, "_spec_key", None)
+    if base is None:
+        return FAIL, ("runner_core._spec_key is gone, so a seat label cannot be "
+                      "resolved to its table key. Refusing rather than comparing "
+                      "raw labels, which reported 6 of 6 simulated seats as "
+                      "unregistered on 2026-11-02."), notes
     cmap = getattr(comp, "COMPOSER_MODEL_MAP", {}) or {}
 
     def composer_key(label):
@@ -401,11 +422,37 @@ def check_every_seat_is_fully_registered(seats, expect_uniform=False,
     if not seats:
         return FAIL, "no seats declared, so registration cannot be checked", notes
     if missing_total:
-        return PASS, (
+        # ★ REFUSES AS OF 2026-11-02, ON HIS RULING of 2026-11-01, verbatim: *"If
+        # a model a researcher wishes to add fails registration, then that is a
+        # failure of both the intent to make adding a model trivial and of the
+        # mechanics I asked you to build to make this the case. So it should
+        # cause the pre-flight checks to fail and the issue should be raised
+        # loudly for the researcher/HIL to investigate and to fix. But fixing a
+        # failing registration should also preferably be made as trivial for a
+        # HIL to fix as possible. So clear indications should be offered in the
+        # pre-flight check for any such failures."*
+        #
+        # THIS CHECK USED TO REPORT RATHER THAN REFUSE, and the reason given was
+        # that refusing every run with an unregistered stand-in would get the
+        # screen switched off. THAT REASON RESTED ON THIS CHECK'S OWN FALSE
+        # POSITIVE: the identity-fallback defect above reported all 6 simulated
+        # seats as unregistered, so refusing really would have blocked every
+        # simulated run. With the resolver wired, MEASURED 2026-11-02: the real
+        # 5-seat roster is present in all 4 tables and so is the 6-seat
+        # simulated roster, while the unregistered `Kimi` is correctly absent
+        # from all 4. So refusing now costs nothing a researcher has not caused.
+        bad = [n for n in notes if "absent from" in n]
+        return FAIL, (
             f"{missing_total} per-model table entr(ies) MISSING across "
-            f"{len([n for n in notes if 'absent from' in n])} of {len(seats)} "
-            f"seat(s); each absence is a SILENT default at run time — named "
-            f"below rather than discovered afterwards"), notes
+            f"{len(bad)} of {len(seats)} seat(s). Each absence is a SILENT "
+            f"default at run time: the seat RUNS and loses whatever that table "
+            f"gated. TO FIX: add the seat under the key named in each line "
+            f"below. The 2 runner_core tables are keyed by VENDOR label and the "
+            f"2 composer tables by the composer's own key via "
+            f"composer.COMPOSER_MODEL_MAP, so a new vendor needs an entry in "
+            f"that map as well. A simulated seat needs no entry: its `-SIM` "
+            f"suffix resolves to the vendor label through "
+            f"runner_core._spec_key."), notes
     return PASS, (f"all {len(seats)} seat(s) present in all {len(tables)} "
                   f"per-model table(s)"), notes
 

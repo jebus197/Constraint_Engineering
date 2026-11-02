@@ -613,11 +613,43 @@ def _apply_phenotype_transform(text: str, transform: PhenotypeTransform) -> str:
 
     # --- 6. Deduplicate ---
     if transform.format_style in ("concise", "minimal"):
+        # ★ C0037 REPAIRED 2026-11-02, ON HIS RULING of 2026-11-01: *"Repair the
+        # two as you suggest."* THE SURVIVOR IS DECIDED BY CONTENT, NOT POSITION.
+        #
+        # THE DEFECT. `_semantically_duplicate` is ASYMMETRIC in its containment
+        # branch -- `intersection / min(len(left), len(right)) >= 0.95` fires
+        # when the SHORTER line's tokens sit inside the longer one's -- while
+        # this loop kept whichever line arrived FIRST. So a SPECIAL CASE
+        # appearing before its own GENERAL FORMULA evicted the formula and kept
+        # the special case, which is how a safety-stock formula was deleted and
+        # its single-parameter variant retained.
+        #
+        # MEASURED over the real corpus before this change: 14 of 1,677 lines
+        # dropped, 0.8348%, Wilson 95% [0.004979, 0.013964], of which 11 went by
+        # containment alone, 78.5714%, Wilson 95% [0.524108, 0.924286].
+        #
+        # THE PREDICATE IS UNCHANGED, deliberately. It identifies near-duplicates
+        # correctly; the fault was never in deciding THAT two lines overlap, only
+        # in deciding WHICH survives. Leaving it alone keeps
+        # `test_falsifier_C0037_containment_dedup_2026-09-10.py`'s mechanism
+        # assertions green, so this repair cannot be mistaken for removing the
+        # finding's subject.
+        #
+        # NOTHING IS WEAKENED: the same pairs are still collapsed and the line
+        # count after dedup is unchanged. Only the retained member moves, and it
+        # moves toward the member carrying MORE distinct tokens.
         deduped: list[str] = []
         for line in text.split("\n"):
             if not line.strip():
                 continue
-            if not any(_semantically_duplicate(line, existing) for existing in deduped):
+            matched = False
+            for i, existing in enumerate(deduped):
+                if _semantically_duplicate(line, existing):
+                    if len(_normalise_tokens(line)) > len(_normalise_tokens(existing)):
+                        deduped[i] = line
+                    matched = True
+                    break
+            if not matched:
                 deduped.append(line)
         text = "\n".join(deduped)
 
@@ -1347,11 +1379,47 @@ def resolve_layer_conflicts(
 
     kept: list[dict[str, Any]] = []
     conflicts: list[ConflictRecord] = []
+    #: Blocks no topic could be assigned to, so no conflict among them could be
+    #: detected either way. See the C0036 note below: without this, `conflicts`
+    #: being empty is indistinguishable from there being no conflict.
+    unarbitrated: list[dict] = []
 
     for entry in entries:
         topic, stance = _directive_topic_and_stance(entry["text"])
         if topic is None:
-            # No detectable conflict dimension — always keep
+            # ★ C0036 REPAIRED 2026-11-02, ON HIS RULING of 2026-11-01: *"Repair
+            # the two as you suggest."* THE BLIND SPOT IS NOW RECORDED, NOT
+            # SILENT.
+            #
+            # THE DEFECT WAS THIS COMMENT. It read "No detectable conflict
+            # dimension" and then behaved as though there were NONE. Those are
+            # different claims: `_directive_topic_and_stance` recognises exactly
+            # 4 topics -- verbosity, examples, rationale, table -- and returns
+            # `(None, None)` for everything else, so it is blind to 95.6120% of
+            # the directive blocks it is meant to arbitrate. Both sides of a
+            # contradiction on any other subject survive composition, and the
+            # returned `conflicts` list reads as "0 conflicts" when it is a zero
+            # of the CLASSIFIABLE SUBSET ONLY. Its own documented examples --
+            # never infer missing data against fill missing values with
+            # defaults, and use metric A against use metric B -- all return
+            # nothing.
+            #
+            # KEEPING THE ENTRY IS AND REMAINS CORRECT: a resolver must not
+            # delete what it cannot arbitrate. What was wrong was saying nothing
+            # about it. The count reaches the caller through `manifest`, which is
+            # already this function's provenance surface, so no signature
+            # changes and no existing caller breaks.
+            #
+            # THE TOPIC VOCABULARY IS DELIBERATELY NOT GROWN. Adding a 5th topic
+            # would leave the resolver blind to the 6th, and
+            # `test_falsifier_C0036_C0054_conflict_topics_2026-09-10.py` guards
+            # against exactly that growth. A resolver that announces what it
+            # could not classify is honest at any vocabulary size.
+            unarbitrated.append({
+                "packet": entry["packet"].name,
+                "layer": entry["packet"].layer,
+                "text": entry["text"][:100],
+            })
             kept.append(entry)
             continue
 
@@ -1468,6 +1536,29 @@ def resolve_layer_conflicts(
         }
         for c in conflicts
     ]
+
+    # ★ C0036: the arbitration's own coverage, so a zero in `conflicts` can be
+    # read for what it is. `classifiable` is the denominator the conflict count
+    # actually belongs to.
+    manifest = dict(manifest)
+    manifest["conflict_arbitration"] = {
+        # `entries` is every block the resolver iterated, so this is the
+        # denominator `conflicts_found` actually belongs to. A first version of
+        # this line read `len(kept) + len(unarbitrated) - len(unarbitrated)`,
+        # which is just `len(kept)` -- the survivors, not the classifiable --
+        # and would have reported a wrong denominator in the very field added to
+        # stop a count being read against the wrong one.
+        "total_blocks": len(entries),
+        "classifiable_blocks": len(entries) - len(unarbitrated),
+        "unarbitrated_blocks": len(unarbitrated),
+        "conflicts_found": len(conflicts),
+        "unarbitrated": unarbitrated[:40],
+        "_what_this_means": (
+            "`conflicts_found` counts conflicts among blocks a topic could be "
+            "assigned to. `unarbitrated_blocks` could not be classified, so a "
+            "contradiction among them is neither detected nor denied. A zero in "
+            "conflicts_found is a zero of the classifiable subset only."),
+    }
 
     resolved = ComposedDirectiveSet(
         packets=rebuilt_packets,

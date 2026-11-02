@@ -111,14 +111,25 @@ def main() -> int:
     # exactly 1 spoken heading and vice versa, so an unmatched member on either
     # side makes the system unsatisfiable.
     pair = {(a, b): z3.Bool(f"m_{idx[a]}_{idx[b]}") for a in dset for b in sset}
-    for a in dset:
-        solver.add(z3.PbEq([(pair[(a, b)], 1) for b in sset], 1))
-    for b in sset:
-        solver.add(z3.PbEq([(pair[(a, b)], 1) for a in dset], 1))
-    for (a, b), v in pair.items():
-        if a != b:
-            solver.add(z3.Not(v))
-    z3_ok = solver.check() == z3.sat
+    # ★ EMPTY-SIDE GUARD, 2026-11-01. `z3.PbEq([], 1)` raises
+    # `ValueError: not enough values to unpack` inside z3's own argument
+    # handling, so whenever ONE side is empty this comparator CRASHED instead of
+    # reporting. It hit the day it was written: every derived item lacked a
+    # `spoken_heading`, which this script's own docstring names as a FINDING in
+    # its own right, and the finding became a traceback. A comparator that
+    # crashes yields NO verdict, which is strictly worse than a wrong one --
+    # and it was about to block a commit while appearing to be a z3 bug.
+    if not dset or not sset:
+        z3_ok = (not dset) and (not sset)
+    else:
+        for a in dset:
+            solver.add(z3.PbEq([(pair[(a, b)], 1) for b in sset], 1))
+        for b in sset:
+            solver.add(z3.PbEq([(pair[(a, b)], 1) for a in dset], 1))
+        for (a, b), v in pair.items():
+            if a != b:
+                solver.add(z3.Not(v))
+        z3_ok = solver.check() == z3.sat
 
     # ── SymPy: the independent second opinion ──
     # ★ THE HEADINGS GO IN AS INTEGERS, NOT STRINGS. `FiniteSet` sympifies its
