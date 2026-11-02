@@ -175,6 +175,18 @@ The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B20's bound-orchestrator experiment cannot run: no runner arm declares it, and the arm's monitoring loop is the unbuilt 4th component
+
+*Parked 2026-11-02T12:37:59+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## All 6 remaining open entries wait on a founder decision: the role dimension question (B21, B22), which definition counts as a seat being right (B56), the convergence gate ruling (B76), whether a switched-off finding stays listed (C0001), and B20 whose monitoring arm needs a run that has not happened
+
+*Parked 2026-11-02T14:01:30+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

@@ -132,6 +132,17 @@ BARE_WORD_NUMBER_OK = re.compile(
     r"any one|some one|which one|the only one|not one|more than one|"
     r"one of (?:two|three|four|five|the|his|her|its|my|our|their|them|these|"
     r"those)|one another's|zero[- ]plant|zero[- ]day|one[- ]line|one[- ]off|"
+    #: ★ `<digit>-zero` added 2026-11-02, on the ground this list already
+    #: states for `two-sided` and `leave-one-out`: a hyphenated number word
+    #: qualifying a noun is English, not data. It fired on this project's own
+    #: phrase "the earliest 3-zero window", where the COUNT is already the
+    #: digit 3 and `zero` names the value being counted. Rewriting it as
+    #: "3-0 window" would be unreadable, and the alternative -- editing the
+    #: authored detail to avoid the term -- would change a report's prose to
+    #: satisfy a checker, which is the guard-accusing-correct-code shape
+    #: recorded on 2026-10-28 where 9 of 36 failures were guards punishing the
+    #: repair. `zero[- ]plant` was already here for the experiment's own name.
+    r"\d+[- ]zeros?\b|"
     r"one[- ]sided|one[- ]way|one[- ]to[- ]one|ten[- ]fold|"
     #: ★ COMPOUND ADJECTIVES BUILT ON A NUMBER WORD ARE NOT COUNTS, added
     #: 2026-10-29 when the detector fired on this project's own term

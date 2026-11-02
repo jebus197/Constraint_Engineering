@@ -100,9 +100,24 @@ class TestInflationIsGone:
         settled, why = gen.settled_in_the_register("B64")
         assert settled and "CLOSED" in why, why
         assert not gen.still_asks("B64")
-        # and the other direction, so it is not merely refusing everything
-        open_settled, _ = gen.settled_in_the_register("B61")
-        assert not open_settled
+        # and the other direction, so it is not merely refusing everything.
+        #
+        # ★ REPOINTED FROM B61 TO C0001, 2026-11-02, AND THE OLD CONTROL WAS
+        # RIGHT TO FAIL. B61's ticket was CLOSED on 2026-11-02 when its entry
+        # was closed, so B61 became settled in the register and stopped being a
+        # control -- the same staleness shape as a ratchet holding a name that
+        # is no longer unreached. C0001 is chosen because its single register
+        # ticket is open AND its entry is deliberately left open pending the
+        # founder's judgement on whether a finding whose code path is switched
+        # off stays listed, so it is unlikely to settle as a side effect of
+        # other work. If it ever does, repoint this at another entry with an
+        # open ticket rather than deleting the assertion: without it the test
+        # passes by refusing everything.
+        open_settled, why_open = gen.settled_in_the_register("C0001")
+        assert not open_settled, (
+            f"C0001 is now settled in the register ({why_open}), so this "
+            f"control no longer controls; repoint it at an entry with an open "
+            f"ticket")
 
     def test_the_register_filter_IS_WIRED_not_merely_defined(self, gen, monkeypatch):
         """THE WIRING, WHICH NO LIVE MUTATION CAN REACH. `settled_in_the_register`

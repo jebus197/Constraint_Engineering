@@ -664,20 +664,7 @@ def _apply_phenotype_transform(text: str, transform: PhenotypeTransform) -> str:
         # NOTHING IS WEAKENED: the same pairs are still collapsed and the line
         # count after dedup is unchanged. Only the retained member moves, and it
         # moves toward the member carrying MORE distinct tokens.
-        deduped: list[str] = []
-        for line in text.split("\n"):
-            if not line.strip():
-                continue
-            matched = False
-            for i, existing in enumerate(deduped):
-                if _semantically_duplicate(line, existing):
-                    if len(_normalise_tokens(line)) > len(_normalise_tokens(existing)):
-                        deduped[i] = line
-                    matched = True
-                    break
-            if not matched:
-                deduped.append(line)
-        text = "\n".join(deduped)
+        text = "\n".join(_dedupe_lines(text.split("\n")))
 
     # --- 7. Simplify language ---
     if transform.simplify_language:
@@ -1303,6 +1290,54 @@ def _directive_topic_and_stance(text: str) -> tuple[str | None, str | None]:
         return "table", "include"
 
     return None, None
+
+
+def _dedupe_lines(lines: list[str]) -> list[str]:
+    """Collapse near-duplicate directive lines, keeping the RICHER member.
+
+    ★ EXTRACTED FROM `compose` 2026-11-02, AND THE EXTRACTION IS THE FIX TO A
+    SECOND DEFECT -- in the GUARD rather than in this code.
+    
+    The C0037 repair (the survivor decided by content, not position) landed
+    earlier the same day as 13 lines INSIDE `compose`, a function of over 500
+    lines. Code that cannot be called cannot be tested, so the first guard
+    written for it reproduced this loop in the test file and asserted on the
+    COPY. Reverting the repair in this module then left that guard GREEN,
+    because the test was running its own loop -- a producer and a consumer
+    describing the same thing separately, each individually correct, which is
+    the defect class `execute-do-not-grep` (2026-09-04) names and which 4 of
+    this project's finds came from. The project's own prior lesson says it
+    plainly: "Extract before guarding. 6 lines inside a 3,400-line function
+    cannot be called, so they could not be tested."
+
+    THE SURVIVOR RULE, which is the repair. `_semantically_duplicate` is
+    ASYMMETRIC in its containment branch -- it fires when the SHORTER line's
+    tokens sit inside the longer one's -- and this loop used to keep whichever
+    line arrived FIRST. So a SPECIAL CASE appearing before its own GENERAL
+    FORMULA evicted the formula, which is how a safety-stock formula was deleted
+    and its single-parameter variant retained. The survivor is now the member
+    carrying MORE distinct tokens, in either arrival order.
+
+    NOTHING IS WEAKENED: the same pairs still collapse and the line count after
+    dedup is unchanged. Only the retained member moves. The PREDICATE is
+    untouched, deliberately, so the 2026-09-10 falsifier's mechanism assertions
+    stay green and this repair cannot be mistaken for removing the finding's
+    subject.
+    """
+    deduped: list[str] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        matched = False
+        for i, existing in enumerate(deduped):
+            if _semantically_duplicate(line, existing):
+                if len(_normalise_tokens(line)) > len(_normalise_tokens(existing)):
+                    deduped[i] = line
+                matched = True
+                break
+        if not matched:
+            deduped.append(line)
+    return deduped
 
 
 def _specificity_score(packet: DirectivePacket) -> int:

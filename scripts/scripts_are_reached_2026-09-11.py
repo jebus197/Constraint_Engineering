@@ -173,6 +173,24 @@ SELF_REFERENTIAL: tuple[str, ...] = ()
 #: the note is at least staged. The 6 measurements above read as orphans until
 #: the note naming them was added to the index.
 UNREACHED: tuple[str, ...] = ()
+#: ★ EMPTIED AGAIN 2026-11-02, AND THE RATCHET IS WHAT SAID SO. 5 entries were
+#: added that morning for the 4 mutation harnesses and the behaviour-preserving
+#: comparison, each of which genuinely cannot be RUN from inside the suite --
+#: the harnesses invoke `python3 -m pytest` and would recurse, and the
+#: comparison needs a pre-change copy from a session scratchpad.
+#:
+#: WITHIN MINUTES `test_the_recorded_set_is_still_accurate` reported all 5 as
+#: STALE, and it was right. `bench/tests/test_todays_producers_are_reached_2026-11-02.py`
+#: does not merely MENTION them: `test_an_exempted_harness_still_exists_and_its_reason_still_holds`
+#: reads each one's source and ASSERTS it still invokes pytest, so that the
+#: exemption goes red rather than becoming silent slack if the reason stops
+#: holding. A test asserting a property of a script REACHES that script, which
+#: is exactly what `vouches` permits an instrument to do for another instrument.
+#:
+#: SO THE EXEMPTION WAS UNNECESSARY, and the honest state is that all 12 of that
+#: day's producers are reached by 1 test file: 13 by being EXECUTED, 5 by having
+#: their exemption-reason ASSERTED. Leaving the 5 listed here would have been
+#: slack of exactly the width this ratchet exists to refuse.
 
 #: A line that is nothing but one script path, in any form a roll call is
 #: plausibly written in: `"scripts/x.py",`, a bare indented path, or a markdown
