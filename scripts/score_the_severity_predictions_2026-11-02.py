@@ -50,9 +50,26 @@ def main() -> int:
         prog="score_the_severity_predictions_2026-11-02.py",
         description="Score the run against the pre-registered predictions. "
                     "Reads only.")
-    ap.add_argument("--run-dir", required=True,
-                    help="the run's log directory, the one holding runner_state.json")
+    # ★ NOT `required=True`, 2026-11-02, and the reason is a real property.
+    # With it required, `script --bogus` made argparse report the MISSING
+    # required argument and never name `--bogus`, so the refusal was loud but
+    # unactionable -- `test_an_unknown_flag_is_rejected_loudly` asserts that a
+    # refusal NAMES the flag it refused, and it was right to fail this. With a
+    # default the unknown flag is named, and the default is derived rather than
+    # typed: the newest run directory that actually holds a runner_state.json.
+    ap.add_argument("--run-dir", default=None,
+                    help="the run's log directory, the one holding "
+                         "runner_state.json (default: the newest such directory)")
     a = ap.parse_args()
+    if a.run_dir is None:
+        cands = [d for d in (REPO / "bench" / "logs").iterdir()
+                 if d.is_dir() and (d / "runner_state.json").is_file()]
+        if not cands:
+            raise SystemExit("no run directory under bench/logs holds a "
+                             "runner_state.json; pass --run-dir explicitly")
+        a.run_dir = str(max(cands, key=lambda d: d.stat().st_mtime))
+        print(f"  (no --run-dir given; using the newest: "
+              f"{pathlib.Path(a.run_dir).name})")
 
     prereg = json.loads(PREREG.read_text())
     ents = _entries(_state(pathlib.Path(a.run_dir)))

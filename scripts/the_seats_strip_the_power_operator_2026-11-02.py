@@ -49,6 +49,7 @@ JSON rather than the raw text (the first attempt regexed raw JSON, where `\\n` i
 """
 from __future__ import annotations
 
+import argparse
 import json
 import pathlib
 import re
@@ -112,7 +113,14 @@ def measure(run: str) -> dict:
 
 
 def main() -> int:
-    run = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("-") else DEFAULT_RUN
+    # ★ A REAL PARSER, 2026-11-02. This read `sys.argv[1]` directly and IGNORED
+    # every flag: `--bogus` ran the whole measurement and exited 0, which
+    # `test_an_unknown_flag_is_rejected_loudly` names as the 118-day no-op. An
+    # argument accepted and not acted on is indistinguishable from one honoured.
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("run", nargs="?", default=DEFAULT_RUN,
+                    help="run name under bench/logs to measure")
+    run = ap.parse_args().run
     r = measure(run)
     k, n = r["stripped"], r["intact"] + r["stripped"]
 
@@ -160,5 +168,9 @@ def main() -> int:
 if __name__ == "__main__":
     sys.path.insert(0, str(REPO / "scripts"))
     from _cli_help import answer_help
-    answer_help(__doc__, __file__)
+    # takes_no_arguments=False: this script HAS its own parser, and the
+    # helper's default refusal fires BEFORE it, which made every flag
+    # declared below unreachable -- an addition nothing can reach, found
+    # 2026-11-02 when --log was refused on a script that declares it.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     sys.exit(main())

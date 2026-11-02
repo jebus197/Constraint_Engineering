@@ -154,5 +154,9 @@ def main() -> int:
 if __name__ == "__main__":
     sys.path.insert(0, str(REPO / "scripts"))
     from _cli_help import answer_help
-    answer_help(__doc__, __file__)
+    # takes_no_arguments=False: this script HAS its own parser, and the
+    # helper's default refusal fires BEFORE it, which made every flag
+    # declared below unreachable -- an addition nothing can reach, found
+    # 2026-11-02 when --log was refused on a script that declares it.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     sys.exit(main())

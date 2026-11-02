@@ -117,11 +117,24 @@ def main() -> int:
     # the defect itself, shown rather than described
     blocks = re.findall(r"```python\n(.*?)```", orig, re.S)
     ns: dict = {}
-    for b in blocks:
+    # ★ THE FAILURE LEAVES A TRACE, 2026-11-02. This was `except Exception: pass`
+    # and `TestNoScriptSwallowsAnErrorIntoSilence` was right to refuse it -- on
+    # the same night a memory file was written arguing that a swallowed
+    # exception is not a record of a failure but a failure that looks like data.
+    # A block that will not execute is EXPECTED here, because the target's
+    # listings are prose fragments, so the handler stays; what changes is that
+    # it SAYS which block failed and why.
+    skipped: list[str] = []
+    for i, b in enumerate(blocks):
         try:
             exec(b, ns)                                    # noqa: S102
-        except Exception:                                  # noqa: BLE001, S110
-            pass
+        except Exception as _bx:                           # noqa: BLE001
+            skipped.append(f"block {i}: {type(_bx).__name__}: {_bx}")
+    if skipped:
+        print(f"  {len(skipped)} of {len(blocks)} listing(s) did not execute, "
+              f"which is expected for a prose target:")
+        for s in skipped:
+            print(f"      {s[:110]}")
     vals = [1.0, 2.0, 3.0, 4.0, 5.0]
     if "round_dispersion" in ns:
         got = ns["round_dispersion"](vals)
