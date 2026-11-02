@@ -1,0 +1,43 @@
+{
+  "_what_this_is": "Pre-registered predictions for study_run1b_rerun_20261102T033919Z, written at 2026-11-02T04:24:21+00:00 while the run is IN FLIGHT and its outcome unknown. Written before the predicted events, which is the only thing that makes it worth anything. The run was launched at 03:39 with 12 rounds and the ladder set to exhaust, after its 2026-10-03 predecessor was diagnosed rather than repeated.",
+  "_state_at_writing": {
+    "gate_evaluations_seen": 2,
+    "hierarchical_novel_critical_series_so_far": [
+      5,
+      0
+    ],
+    "note": "These are the facts available when the predictions below were fixed. A reader can check that the predictions were not written to fit rounds already observed."
+  },
+  "_the_diagnosis_being_tested": "The predecessor did not crash. It completed 8 rounds; 4 of its 9 gate evaluations failed on a single contested finding; on its LAST evaluation the gate PASSED but needs 3 consecutive, so it ended 2 passing rounds short. gamma_critical rose 0.702 to 0.732 against a 0.41 threshold and was never the obstacle. Producer: scripts/why_study_run1b_did_not_converge_2026-11-02.py.",
+  "predictions": [
+    {
+      "id": "R1",
+      "claim": "The re-run CONVERGES, where the predecessor did not.",
+      "reasoning": "The predecessor's gate passed on its final evaluation and needed 3 consecutive passes. A 12-round budget allows the run to accumulate them, and exhausting the ladder gives the contested finding that held the gate shut more rungs at which to resolve.",
+      "falsified_if": "the run reaches its 12-round ceiling with converged_at null, i.e. it exhausts its budget as the predecessor did",
+      "this_is_the_load_bearing_one": true
+    },
+    {
+      "id": "R2",
+      "claim": "Convergence, if it happens, occurs at round 10 or later is NOT predicted; the minimum arithmetically implied by the predecessor was 10, but THIS run may converge earlier because exhausting the ladder changes how fast findings resolve.",
+      "reasoning": "Stated explicitly as a NON-prediction so that an early convergence is not later claimed as a hit. The 10-round figure bounds the PREDECESSOR's budget, not this run's behaviour.",
+      "falsified_if": "n/a \u2014 this entry predicts nothing and scores nothing",
+      "this_is_the_load_bearing_one": false
+    },
+    {
+      "id": "R3",
+      "claim": "gamma is NOT the obstacle in this run either: gamma_critical at the final evaluation is at or above the configured gamma_alt_threshold of 0.41.",
+      "reasoning": "It held throughout the predecessor at 0.702 to 0.732. If it falls below 0.41 here, the diagnosis that the count side rather than the decay curve was the obstacle needs revisiting for this target.",
+      "falsified_if": "gamma_critical at the final evaluation is below 0.41"
+    },
+    {
+      "id": "R4",
+      "claim": "The Fable seat produces findings despite being registered in only 1 of the 4 per-model tables.",
+      "reasoning": "The predecessor's Fable-SIM produced 17 findings, the highest of its 6 seats, while missing its fingerprint, phenotype transform and coherence budget. If a seat can lead the panel while unregistered, the cost of the registration gap is NOT finding yield, and the loud pre-flight refusal is justified on provenance grounds rather than on output.",
+      "falsified_if": "Fable-SIM contributes 0 findings to the final registry"
+    }
+  ],
+  "_what_is_deliberately_not_predicted": "Finding COUNT and final kappa. The predecessor produced 75 findings and a final kappa of 0.195, but the re-run changes 2 variables at once \u2014 the round budget and the ladder depth \u2014 so any count comparison confounds them. Predicting a number here would be a figure that answers a different question.",
+  "_scored_by": "scripts/why_study_run1b_did_not_converge_2026-11-02.py plus the run's own report.json",
+  "_written_at": "2026-11-02T04:24:21+00:00"
+}
