@@ -58,7 +58,30 @@ LABELLED = [
     # Both were True until 2026-09-16. The founder ruled, the valve was set to 6
     # and the detector wired, so no entry waits on either -- judged against the
     # list, not read from the predicate.
-    ("I23: exhausted_round_threshold defaults to 8 while max_rounds is 8", False),
+    # ★ RELABELLED False -> True, 2026-11-02, AND THE RECORD MOVED RATHER THAN
+    # THE PREDICATE. This label was written 2026-09-10, when B21 named
+    # `max_rounds` but declared no dependency. Commit 9a5c06aa added
+    # `[NEEDS YOUR RULING]` to B21, which already discussed `max_rounds` twice --
+    # "2 sources of truth for `max_rounds` disagree with every experiment ever
+    # run" -- so an item about `max_rounds` defaulting wrongly now GENUINELY
+    # waits on B21's ruling. Bisected across a59fc3ac, cf215aa8, 0414d6f9,
+    # c1ea2443 and 9a5c06aa: PARK at the first 4 and BLOCK at the 5th. HEAD's
+    # UNEDITED tool reproduces it, so the 2 repairs made to `blocker_triage.py`
+    # the same evening are NOT the cause.
+    #
+    # THIS IS A RELABEL BECAUSE THE SUBJECT CHANGED, NOT A TEST BENT TO MATCH
+    # CODE, and the distinction is checkable: the predicate is byte-identical at
+    # 9a5c06aa and the task list is not.
+    #
+    # ★ AND IT WENT UNNOTICED FOR 5 COMMITS BECAUSE THIS FILE IS OUTSIDE THE
+    # COMMIT GATE. `hooks/pre-commit`'s guard list holds 120 files and this is
+    # not 1 of them, so 21 tests that exist to keep the triage tool honest are
+    # never run by the mechanism that refuses a red commit. That is the
+    # "a guard nothing reaches" half of the additive standard, applied to a
+    # guard rather than to a feature. Putting it in the gate raises the gate's
+    # cost, which is entry B81's subject and his decision, so it is recorded
+    # here and not done unilaterally.
+    ("I23: exhausted_round_threshold defaults to 8 while max_rounds is 8", True),
     ("I31: update_drift has no production caller, wire it or retire it", False),
     ("sk_enabled is false in the exp56 arms", False),
     ("bench/reference_runner_v3.py has a stale line citation", False),
@@ -296,3 +319,80 @@ class TestTheThirdQuestionIsAnswered:
         """A shape change here would break every caller silently."""
         out = B.classify("anything at all")
         assert isinstance(out, tuple) and len(out) == 3
+
+
+class TestABareWordCannotDeclareADependency:
+    """The word `precondition` alone must not make an entry block.
+
+    THE DEFECT, 2026-11-02, AND THE TOOL HAD BECOME WHAT ITS OWN DOCSTRING
+    WARNS AGAINST. `DECLARES` listed `precondition` as a bare alternative, so a
+    sentence DISCUSSING a precondition declared one. B20 gained the sentence
+    "concluded the precondition held" that evening and the tool returned BLOCK
+    on an entry that declares no dependency at all -- while B20 at the previous
+    commit matched the pattern 0 times. The docstring's own standard: "Anything
+    looser reports a mention as an obstruction, which is how a triage tool
+    becomes the interruption it was built to prevent."
+
+    MEASURED BEFORE NARROWING, so the repair is not a guess: of the OPEN and
+    BLOCKED entries on the live list, 2 use the word (B20 and B77) and 0 use it
+    in a declaring construction. Narrowing therefore loses 0 detections and
+    removes 2 false-positive sources.
+
+    EVERY TEST HERE BUILDS ITS OWN LIST, for the reason the file already
+    records: an anti-vacuity test that points at a live entry goes red when the
+    founder rules on that entry, reporting a cleared backlog as a broken
+    predicate.
+    """
+
+    TERM = "acting_loop_pause"
+
+    def _list(self, tmp_path, body: str, state: str = "OPEN"):
+        p = tmp_path / "LIST.md"
+        p.write_text(f"**Q9.** {body}\n"
+                     f"<!-- task: Q9 | state: {state} | status: PROPOSED -->\n",
+                     encoding="utf-8")
+        return p
+
+    def test_the_bare_word_does_NOT_block(self, B, tmp_path):
+        tasks = self._list(
+            tmp_path,
+            f"Traced `{self.TERM}` and concluded the precondition held, which "
+            f"the P-pass then refuted. Nothing waits on it.")
+        got, why = B.blocks_progress(f"{self.TERM} needs a decision", tasks=tasks)
+        assert got is False, (
+            f"a sentence DISCUSSING a precondition was read as declaring one: {why}")
+
+    def test_a_DECLARING_construction_still_blocks(self, B, tmp_path):
+        """ANTI-VACUITY. Without this, deleting the word entirely would satisfy
+        the test above, and the capability would be removed rather than narrowed.
+        """
+        for phrasing in (f"`{self.TERM}` is a precondition and nothing can proceed "
+                         f"until it is settled.",
+                         f"This is BLOCKED ON `{self.TERM}` and cannot proceed.",
+                         f"Preconditions: `{self.TERM}` must be settled first."):
+            tasks = self._list(tmp_path, phrasing, state="BLOCKED")
+            got, why = B.blocks_progress(f"{self.TERM} needs a decision",
+                                         tasks=tasks)
+            assert got is True, f"{phrasing!r} should declare a dependency: {why}"
+
+    def test_the_narrowed_forms_are_matched_on_an_OPEN_entry_too(self, B, tmp_path):
+        """A BLOCKED state short-circuits the pattern, so the declaring forms
+        must be shown to work where the state does NOT already say it."""
+        tasks = self._list(
+            tmp_path,
+            f"A single registration point is a precondition for `{self.TERM}`, "
+            f"so this cannot proceed. It also needs a non-path identifier to "
+            f"match, which `{self.TERM}` supplies.")
+        got, why = B.blocks_progress(f"{self.TERM} needs a decision", tasks=tasks)
+        assert got is True, f"a declaring form on an OPEN entry must block: {why}"
+
+    def test_the_other_declaring_phrases_are_untouched(self, B, tmp_path):
+        """The narrowing must not have disturbed the alternatives beside it."""
+        for phrasing in (f"`{self.TERM}` is the founder's call.",
+                         f"This awaits his ruling on `{self.TERM}`.",
+                         f"`{self.TERM}` is reserved to him.",
+                         f"NEEDS YOUR RULING on `{self.TERM}`."):
+            tasks = self._list(tmp_path, phrasing)
+            got, why = B.blocks_progress(f"{self.TERM} needs a decision",
+                                         tasks=tasks)
+            assert got is True, f"{phrasing!r} must still declare: {why}"

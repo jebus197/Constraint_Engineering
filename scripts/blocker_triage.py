@@ -166,10 +166,14 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
     # IDENTIFIERS AND PATHS ONLY. A capitalised ordinary word is not a subject.
     # An earlier filter kept any 6+ character token that was not all-lowercase, so
     # "Repair the experimental notes" matched entry 7.1 on the word "Repair".
-    terms = {t for t in re.findall(r"[A-Za-z_][A-Za-z0-9_]*_[A-Za-z0-9_]+"
-                                   r"|[A-Za-z][A-Za-z0-9]*-[A-Za-z0-9-]+"
-                                   r"|[\w./-]+\.(?:py|json|md|sh|txt)"
-                                   r"|[\w-]+/[\w./-]+", text)
+    # ★ A WHOLE FILENAME IS TRIED FIRST, 2026-11-02. See the note above: with
+    # the snake_case alternative first, `roster_aware_quiescence_2026-10-07.py`
+    # split into that prefix and `-10-07.py`, a date fragment matching every
+    # script of that date.
+    terms = {t for t in re.findall(r"[\w./-]+\.(?:py|json|md|sh|txt)"
+                                   r"|[\w-]+/[\w./-]+"
+                                   r"|[A-Za-z_][A-Za-z0-9_]*_[A-Za-z0-9_]+"
+                                   r"|[A-Za-z][A-Za-z0-9]*-[A-Za-z0-9-]+", text)
              if len(t) >= 6 and _looks_like_an_identifier(t, text)}
     if not terms:
         return False, "no distinctive term to match against the entries"
@@ -199,9 +203,33 @@ def blocks_progress(text: str, tasks: pathlib.Path | None = None) -> tuple[bool,
     # state BLOCKED, or its text names the item inside a passage declaring a
     # dependency. Anything looser reports a mention as an obstruction, which is
     # how a triage tool becomes the interruption it was built to prevent.
+    # ★ `precondition` NARROWED 2026-11-02, AND THE TOOL HAD BECOME THE
+    # INTERRUPTION ITS OWN DOCSTRING WARNS ABOUT. The bare word matched a
+    # sentence DISCUSSING a precondition -- "concluded the precondition held" --
+    # written into B20 the same evening, and the tool returned BLOCK on an entry
+    # that declares no dependency at all. Measured before changing: of the OPEN
+    # and BLOCKED entries, 2 use the word (B20 and B77) and 0 use it in a
+    # declaring construction.
+    #
+    # ★ AND THE HARM IS 1 ENTRY, NOT 2, WHICH CORRECTS MY FIRST REPORT OF IT.
+    # Applying the narrowed pattern to every OPEN and BLOCKED entry flips
+    # exactly 1 from declaring to not-declaring: B20. B77 KEEPS declaring, and
+    # correctly, because it carries `[NEEDS YOUR RULING]` twice on its own
+    # account -- it is 1 of the 9 decisions already in front of him, so a BLOCK
+    # on B77 is TRUE. The same holds for B21 and B79 via `[NEEDS YOUR RULING]`
+    # and for B56 via "awaits his definition". So the narrowing removes 1 false
+    # verdict and leaves 4 genuine declarations untouched, which is the whole of
+    # what it does. I had reported B77 as a second spurious case; it is not.
+    #
+    # The docstring's own rule is the standard this
+    # restores: "Anything looser reports a mention as an obstruction, which is
+    # how a triage tool becomes the interruption it was built to prevent."
     DECLARES = re.compile(
         r"BLOCKED ON|blocked on|NEEDS THE FOUNDER|NEEDS YOUR RULING|awaits? (?:his|the founder)"
-        r"|cannot proceed|precondition|is the founder's(?: call| to)?|reserved to him", re.I)
+        r"|cannot proceed"
+        r"|precondition (?:for|of|on)\b|is a precondition|preconditions?:"
+        r"|the precondition is"
+        r"|is the founder's(?: call| to)?|reserved to him", re.I)
     for n, i in enumerate(starts):
         _, end = body_bounds(lines, starts, n)
         ident = ENTRY.match(lines[i]).group(1)
