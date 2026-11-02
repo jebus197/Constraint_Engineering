@@ -391,4 +391,19 @@ Each seat resolves to a key that selects how many characters of directive it is 
 
 What you decide, and the recommendation. Yours because a key is not a label. It indexes a prior, so renaming a key changes what a model is told about itself on the next run, and the archive's existing records are filed under the current spellings, so a figure already measured would be attributed to a name that no longer exists. Nothing has been renamed.
 
+DECISION 10. WHETHER THE SEVERITY FORMULA OR THE EVIDENCE RULE SHOULD CHANGE
+Section 7.7 of the mathematical appendix states that a finding's severity is the weight of its constraint class, times confidence, times a verification factor. The verification factor is the harness's own falsifier verdict and is recorded. The other 2 are not, and for opposite reasons, which is the whole of this item.
+
+Confidence is refused by your own operational directive. Its gate on detection probability reads that the figure must come from actual tool execution and not from self assessed confidence, and that a claim based on being certain is not admissible while a figure derived from 9 of 10 relevant tests catching the flaw class is admissible. So confidence appearing on 0 of 3,311 archived findings, with a Wilson 95 percent interval from 0.000000 to 0.001159, is the directive working as designed rather than a gap.
+
+The hard or soft classification is the opposite case: required and homeless. Section 11 of the same directive says that before producing any output, every constraint must be classified as hard or soft. Of 98 distinct fields across those 3,311 findings, 0 hold such a classification. The only near candidate is an integer class identifier from section 4, which the shadow's own documentation records as a different quantity.
+
+So the specification cannot be implemented as written without accepting self reported confidence, and the directive forbids exactly that. The shadow's substitution of the asserted severity for the first 2 factors is therefore not a shortcut. It is the only admissible route that exists, which reframes the severity question you have asked 3 times.
+
+What you decide. Whether section 7.7's second factor changes, or the directive's refusal does, or the reduced form becomes the official implementation.
+
+The recommendation, and why. Narrow the directive's refusal to permit a confidence that is itself a function of tool output. It is the smallest change that leaves both documents true: the directive's own gate on detection probability already draws its line at self assessed confidence rather than at confidence as such, so a confidence built from tool receipts satisfies it and the formula becomes implementable unchanged. Amending the mathematics would edit a formula to fit a collection accident. Adopting the reduced form leaves the appendix stating something nothing implements.
+
+Adding the hard or soft field is separable and is not a decision, because the directive already requires the classification, so recording it carries out an instruction rather than changing it.
+
 Written under CDSFL note standard v1.9 (1 November 2026).

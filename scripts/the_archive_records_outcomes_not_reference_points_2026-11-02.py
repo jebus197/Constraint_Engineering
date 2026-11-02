@@ -186,9 +186,31 @@ def main() -> int:
     print("       MISSING: 1 field, a pre-run description of the target.")
 
     print()
-    print("  INSTANCE 4 -- q = d.p, AND IT IS WORSE THAN THE OTHER 3")
-    pat = re.compile(r"estimate_q|q_from_archive|per_seat_detection|"
-                     r"def .*detection_rate|def .*precision_rate")
+    print("  INSTANCE 4 -- q = d.p, AND IT IS THE SAME SHAPE AS THE OTHER 3")
+    # ★ CORRECTED 2026-11-02 AFTER THE COMPACTION RE-CHECK MOVED THIS FIGURE
+    # FROM 0 TO 3, AND THE CORRECTION REVERSES WHAT THIS SECTION CLAIMED.
+    # It read "q has no estimator at all". That is FALSE.
+    # `bench/canary_seeding.py` defines `detection_rate`, whose own docstring is
+    # "p_hat = catches / k per model, over HELD-OUT canaries only" -- exactly
+    # q's DETECTION factor, by mutation testing pointed at reviewers rather than
+    # at a test suite, built on his ruling of 2026-08-27. It has a guard,
+    # `bench/tests/test_canary_seeding_2026-08-28.py`, and callers in the runner.
+    # IT HAS ALSO BEEN RUN 3 TIMES: a build panel on 2026-08-28 and 2 simulated
+    # runs on 2026-09-01. AND NO FIGURE SURVIVES: those runs' files mention
+    # `p_hat` and `catches` and record 0 structured values.
+    # SO THIS IS A 4TH CASE OF THE PATTERN AND A STRONGER ONE, not an exception:
+    # the mechanism exists, it has run, and the number still cannot be read --
+    # the same shape as the discrimination control at B83.
+    # The PRECISION factor has no estimator; the "precision 1.000" mentions in
+    # that module concern the answer-key leak hazard, not model precision.
+    #
+    # THE SELF-MATCH IS ALSO FIXED. This script's own file matched its own
+    # pattern, because the pattern is written here -- the 5th instance of that
+    # trap on 2026-11-02 -- so the file is excluded by identity rather than by
+    # name, and the pattern is assembled from parts so it cannot spell itself.
+    pat = re.compile("|".join([
+        "estimate" + "_q", "q" + "_from_archive", "per" + "_seat_detection",
+        r"def .*detection" + "_rate", r"def .*precision" + "_rate"]))
     hits = []
     for sub in ("scripts", "bench"):
         for f in (REPO / sub).rglob("*.py"):
@@ -199,29 +221,41 @@ def main() -> int:
                     hits.append(str(f.relative_to(REPO)))
             except Exception:                                  # noqa: BLE001
                 continue
-    print(f"    producers that estimate d or p from archived runs: {len(hits)}")
-    print(f"    -> {hits if hits else 'none'}. q has no estimator at all, and")
-    print("       no shipped default either; the worked examples pick it by")
-    print("       hand. MISSING: an estimator, not a field.")
-    print("    ★ THE NEAR MISS THAT MAKES THIS LOOK WRONG, named so a reader")
-    print("      does not have to find it. A DETECTION RATE *is* measured in")
-    print("      `scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py`,")
-    print("      and it is a DIFFERENT quantity: the statistical power of the")
-    print("      demotion test at a calibrated false-alarm size, measured on a")
-    print("      synthetic generator. `d_i` in q = d.p is a seat's probability")
-    print("      of finding a given defect. Searching for 'detection rate' finds")
-    print("      the first and not the second, which is why the absence claim")
-    print("      above is stated against the NAMES d_i and p_i rather than")
-    print("      against the words.")
+    print(f"    files matching a detection-or-precision estimator: {len(hits)}")
+    for h in hits:
+        print(f"      {h}")
+    print("    -> OF THOSE, `bench/canary_seeding.py` IS A REAL ESTIMATOR of q's")
+    print("       DETECTION factor: p_hat = catches / k per model on HELD-OUT")
+    print("       canaries. It is guarded and it has been RUN 3 times -- a build")
+    print("       panel on 2026-08-28 and 2 simulated runs on 2026-09-01.")
+    print("       AND 0 STRUCTURED p_hat VALUES ARE RECORDED by those runs, so")
+    print("       the figure cannot be read. MISSING: the recorded OUTPUT of an")
+    print("       estimator that exists and has run -- the same shape as the")
+    print("       other 3, and as the discrimination control at B83.")
+    print("       q's PRECISION factor has no estimator at all.")
+    print("    ★ 2 THINGS WEAR THE NAME 'DETECTION RATE' AND I HAD THEM THE")
+    print("      WRONG WAY ROUND, corrected 2026-11-02. The one in")
+    print("      `scripts/can_we_do_better_than_one_in_twenty_2026-10-30.py` is")
+    print("      NOT q's factor: it is the statistical power of the demotion")
+    print("      test at a calibrated false-alarm size, on a synthetic")
+    print("      generator. The one in `bench/canary_seeding.py` IS q's factor:")
+    print("      a seat's probability of catching a seeded defect, per model,")
+    print("      on held-out canaries. I used the first as the example of a")
+    print("      look-alike while asserting the second did not exist. Searching")
+    print("      for the words finds both, which is why a claim about d_i and")
+    print("      p_i has to be settled by READING the candidate rather than by")
+    print("      counting matches -- and why the count alone was wrong twice.")
 
     print()
     print("=" * 74)
     print("THE SHARED CAUSE, WHICH IS THE RESULT")
     print("=" * 74)
-    print("  0 of the 4 quantities above are derivable from the archive today.")
-    print("  3 of the 4 are blocked by a MISSING RECORDED FIELD rather than by")
-    print("  a missing run and never by money: 4 fields in total. The 4th, q,")
-    print("  is blocked by having no estimator written.")
+    print("  0 of the 4 quantities above are derivable from the archive today,")
+    print("  and ALL 4 are blocked by something that was COMPUTED AND NOT KEPT")
+    print("  rather than by a missing run and never by money. 3 lack a recorded")
+    print("  FIELD. The 4th, q's detection factor, lacks the recorded OUTPUT of")
+    print("  an estimator that exists and has been run 3 times -- which is the")
+    print("  STRONGER case, because there the work was done and discarded.")
     print("  The archive records what HAPPENED and not the reference point each")
     print("  outcome would need to be interpretable -- a post-fix pass rate with")
     print("  no pre-fix one, a round count with no target description, a")

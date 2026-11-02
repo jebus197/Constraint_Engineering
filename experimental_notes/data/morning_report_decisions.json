@@ -801,5 +801,17 @@
     ],
     "evidence_line": "0 of 4 quantities the model needs are archive-derivable today: `confidence` and a HARD/SOFT class on 0 of 3,311 entries, Wilson [0.000000, 0.001159]; nu blocked by a missing baseline behind 224 of 962, 0.232848; 0 of 21 state keys describing the target across 59 runs; and 0 producers estimating d or p. 3 of the 4 are blocked by a missing recorded field, none by money. Substituting the archive's unusable nu proxy multiplies the floor by 2240/481 = 4.656965 and puts it above 1 at q = 0.2.",
     "spoken_heading": "WHETHER TO RECORD A PRE RUN DESCRIPTION OF THE TARGET BEFORE BUILDING THE ESTIMATOR"
+  },
+  "task:B87": {
+    "title": "B87 - the severity formula asks for a quantity the directive rules inadmissible",
+    "spoken_heading": "WHETHER THE SEVERITY FORMULA OR THE EVIDENCE RULE SHOULD CHANGE",
+    "what": "Section 7.7 of the mathematical appendix states `Sev(f) = W(class) . confidence . V(verification)`. The verification factor is the harness's own falsifier verdict and IS recorded. The other 2 are not, and for opposite reasons. **`confidence` is REFUSED by your own operational directive**, whose `d_tool` gate reads *\"must come from actual tool execution ... not from self-assessed confidence\"* — so its appearance on **0 of 3,311 archived findings**, Wilson [0.000000, 0.001159], is the directive working rather than a gap. **The HARD/SOFT class is the opposite: REQUIRED and homeless.** Section 11 says *\"Before producing any output, classify every constraint as HARD or SOFT\"*, and of 98 distinct finding fields, 0 hold it.",
+    "why": "The specification cannot be implemented as written without accepting self-reported confidence, which the directive forbids. So the shadow's substitution of the asserted severity for `W . confidence` is not a shortcut — it is the only admissible route that exists, which reframes the severity question you have asked 3 times. Adding the HARD/SOFT field is separable and is NOT a decision, because the directive already requires the classification.",
+    "options": [
+      "**Narrow the directive's refusal to permit a confidence that is itself a function of tool output.** This is the recommendation and the smallest change that leaves both documents true: `d_tool` already draws its line at *self-assessed* rather than at confidence as such, and a confidence built from tool receipts satisfies it, so the formula becomes implementable unchanged.",
+      "**Amend section 7.7 so its 2nd factor is tool-derived.** Honest, but it edits the mathematics to fit a collection accident rather than the reverse.",
+      "**Adopt the shadow's reduced form formally** — the asserted severity stands in for `W . confidence`, V applies alone — and record that the appendix is implemented in that reduced form. Cheapest, at the price of leaving the appendix stating a formula nothing implements."
+    ],
+    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised."
   }
 }
