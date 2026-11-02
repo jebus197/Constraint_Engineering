@@ -80,7 +80,7 @@ APPENDIX, HAND-WRITTEN AND DATED: VERDICTS RECORDED AGAINST THE 23
   Each judgement's durable home is its own entry in the master task list, not
   this file, because a verdict carries evidence and a snapshot does not.
 
-  JUDGED SO FAR: 7 of 23. OUTSTANDING: 16.
+  JUDGED SO FAR: 11 of 23. OUTSTANDING: 12.
 
   1. degraded_convergence_2026-10-07.py, 288 lines, roster-aware convergence.
      VERDICT: VERIFIED AND ADOPTABLE; the adoption decision is the founder's.
@@ -156,6 +156,55 @@ APPENDIX, HAND-WRITTEN AND DATED: VERDICTS RECORDED AGAINST THE 23
      fallback those checks sit beside is available for only 4 of 192 declared
      figures, because 48 of 49 producers cannot be asked what they printed as
      of a past date.
+
+  8. roster_aware_quiescence_2026-10-07.py, 191 lines, the same question as
+     items 1 and 4, answered a third time BY THE SAME SEAT AS ITEM 1.
+     VERDICT: ADOPT THIS ONE. It supersedes both. Item 1 states the exact
+     requirement and then takes a safe upper bound on it; this computes that
+     same exact value; item 4 restates the bound in seat-rounds. The bound is
+     never too small, 0 of 36 roster-by-correlation cases, and is substantially
+     looser: 18 quiet rounds at a 1-seat roster against an exact 9 to 11. What
+     decides it is that this design's case for combining its 2 parts is
+     MEASURED rather than asserted, and it is the only such case found in the
+     whole triage: its committed falsifier runs clean and shows the record
+     alone still closing too early at 2.4796 times target, the raised
+     requirement alone holding the risk but misreporting a degraded run as
+     clean, and both together closing properly at 0.7125 of target. A healthy
+     run pays nothing. Cross-checked against an independent numerical
+     calculation to better than 1 part in 1,000,000,000, with a constraint
+     solver confirming its 2 labels are mutually exclusive. 1 parameter is open
+     and is the founder's: which of 2 recorded correlation figures it should
+     use. Recorded in entry B77, whose recommendation this corrects for the
+     second time.
+
+  9. severity_instrument.py, 223 lines, the instrument-noise half of the
+     severity ruler. VERDICT: ITS ANALYSIS IS SOUND AND ALREADY IN THE
+     CANONICAL RECORD; THE CODE IS NOT ADOPTED. The appendix already measures
+     the per-assignment noise in the severity number, and 82 of 273 identical
+     defects land on opposite sides of the 0.7 cut. Its claim that the
+     effective-severity specification cannot carry the number's ordering
+     through to the gate was verified 3 ways here: a constraint solver returns
+     unsatisfiable on the negation, an exact-rational sweep over 303 pairs
+     disagrees 0 times, and symbolic algebra confirms the bound. 0 of its 5
+     exported names are live.
+
+ 10. severity_noise_sweep.py, 220 lines, is a de-coarsening REACHING the gate
+     or FITTED to the archive. VERDICT: THE SHARPEST INSTRUMENT IN THE TRIAGE,
+     and unadopted. It distinguishes the 2 cases by whether the departing set
+     grows monotonically with the assumed noise, which no single verdict count
+     can do -- which is why 2 seats could hold opposite positions on the same
+     number. Nested at 14 of 14 swept values on the archive.
+
+ 11. severity_instrument.py, 156 lines, the joint round's reconstruction.
+     VERDICT: IT REFUSES ITS OWN COMPOSITION ON A MEASUREMENT, which is the
+     founder's standard applied correctly by a seat. Re-running its producer
+     against today's archive, the figures have MOVED and the refusal is now
+     better supported than when made: the composed form has gone from 0 one-way
+     violations to 1, on the run of 2026-11-02, where it would permit a
+     convergence the live indicator refuses. The smoothing alone remains clean
+     at 0 violations across all 65 catalogues. That run is the same one entry
+     B76 is about, so 2 independent instruments now say it closed too
+     permissively.
 
   WHY THEY ARE BEING TAKEN SINGLY RATHER THAN BATCHED. The judgement a
   design needs is whether its claim about live code still holds, whether its

@@ -1,8 +1,15 @@
 """Step 4 for a PRINTED PROOF, and the polarity guard that keeps it out of severity.
 
 FOLDED BACK 2026-11-01 ON HIS RULING, verbatim: *"Fix it and fold it back as you
-suggest."* Written by panel seat `fable` in the joint round of 2026-10-31 and
-preserved under `experimental_notes/seat_evidence/`; tested under analysis, the
+suggest."* Taken from the copy preserved under panel seat `fable` in the joint round of
+2026-10-31. ★ AUTHORED BY panel seat `cc2`, corrected 2026-11-02: the byte-identical
+body was preserved 56 minutes earlier under seat `cc2`, from cc2's OWN sandbox
+in the BLIND round of 2026-10-30, where a seat cannot see its co-seat's work.
+Both PROVENANCE records carry the same sha256. So cc2 authored it and fable's
+copy is a joint-round return; this file credited the copy it was drawn from
+rather than the origin. The 1 alternative -- 2 seats independently producing an
+identical 8412-byte file including identical prose -- is not credible rather
+than formally excluded. Preserved under `experimental_notes/seat_evidence/`; tested under analysis, the
 5-step cycle and the tools before folding, as his standing rule requires, where
 it passed 7 of 8 with a 95 per cent interval of 0.529112 to 0.977583.
 

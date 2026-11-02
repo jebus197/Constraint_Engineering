@@ -130,6 +130,15 @@ BARE_WORD_NUMBER_OK = re.compile(
     r"\b(?:no one|one another|one-off|one by one|one or (?:two|more|the other)|"
     r"at one|in one|as one|the one|this one|that one|each one|every one|"
     r"any one|some one|which one|the only one|not one|more than one|"
+    #: ★ `one[- ]way` and `the same one` added 2026-11-02, on the ground this
+    #: list already states for `one-line`, `one-off`, `two-sided` and
+    #: `leave-one-out`: a hyphenated number word qualifying a noun is English,
+    #: not data. `one-way` is the technical term for a guarantee that holds in
+    #: a single direction -- the property a roster-aware convergence fix is
+    #: measured against -- and rewriting it as `1-way` would be unreadable.
+    #: `the same one` is a PRONOUN standing for a previously named run, exactly
+    #: as `the one`, `this one` and `that one` already are in this list.
+    r"one[- ]way|the same one|"
     r"one of (?:two|three|four|five|the|his|her|its|my|our|their|them|these|"
     r"those)|one another's|zero[- ]plant|zero[- ]day|one[- ]line|one[- ]off|"
     #: ★ `<digit>-zero` added 2026-11-02, on the ground this list already

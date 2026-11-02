@@ -1,7 +1,9 @@
 """The proof verifier is in the tree, and a proof that asserts nothing is refused.
 
 HIS RULING, 2026-11-01, verbatim: *"Fix it and fold it back as you suggest."*
-Written by panel seat `fable` in the joint round of 2026-10-31, tested under
+Taken from the copy preserved under panel seat `fable` in the joint round of
+2026-10-31; authored by seat `cc2` in the blind round of 2026-10-30 -- see the
+correction in `bench/proof_verify.py`. Tested under
 analysis, the 5-step cycle and the tools before folding as his standing rule
 requires, where it passed 7 of 8.
 
