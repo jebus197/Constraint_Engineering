@@ -813,5 +813,18 @@
       "**Adopt the shadow's reduced form formally** — the asserted severity stands in for `W . confidence`, V applies alone — and record that the appendix is implemented in that reduced form. Cheapest, at the price of leaving the appendix stating a formula nothing implements."
     ],
     "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised."
+  },
+  "task:B88": {
+    "title": "B88 - the fold-back gate now accepts, which exposes whether its suite can see the target at all",
+    "spoken_heading": "WHETHER THE FOLD BACK GATE SHOULD PROVE ITS SUITE CAN SEE THE TARGET",
+    "what": "`_apply_back_gate` required a clean exit from a suite it ran in a sandbox that excludes `bench/logs`, so a suite reading the archive failed there whatever the candidate said. 19 findings in 1 run were refused with the identical reason, and across the archive the facility had promoted 0 of 34. That is fixed: the baseline is now measured in the same sandbox and only a NEW failing test refuses a candidate. The fix makes promotion reachable for the first time, and that raises a question the universal refusal was hiding: nothing checks that the configured suite exercises the target at all. A target the suite never touches would now be ACCEPTED, which is a false accept where the old behaviour gave a false reject.",
+    "why": "A false accept is worse than a false reject, because a fix folded into the artefact on the strength of an unrelated suite carries no evidence at all. The exposure is measured rather than theoretical: 7 of 7 prose runs in the archive were handed a suite chosen by argparse rather than for the target, the earliest on 2026-10-03.",
+    "options": [
+      "**Make the launcher refuse to substitute a default suite for a target whose run named no suite at all.** This is the recommendation. It is SIMPLEST SUFFICIENT, because it addresses the cause measured above rather than the symptom, and it costs 0 extra suite runs on your machine. ADDITIVE: nothing is removed, and the gate is still available to any run that names its own suite. It leaves 1 residual, stated plainly: a Python target given a wrong but EXPLICIT suite is still unprotected.",
+      "**Run a discrimination control inside the gate before promoting** -- replace the target wholesale and require the suite's result to change, which is the instrument this project already uses elsewhere. It closes the residual the first option leaves, and it costs a 3rd suite run per candidate: at the measured 11 s and 19 candidates that is 209 s added to a run on your machine.",
+      "**Do both.** NOT recommended, and deliberately so. `composability-requires-a-measurement` asks for a committed measurement showing a composed fix dominates either part alone on a named property, and no such measurement has been taken here. Where a single fix performs as well, the single fix is preferred.",
+      "**Accept the risk and record the suite in the acceptance reason**, so a reader can judge relevance after the fact. Cheapest, and it moves the check to a human."
+    ],
+    "evidence_line": "34 of 34 refusals across every archived run, Wilson [0.898485, 1.000000], Clopper-Pearson [0.897182, 1.000000], i.e. 0 of 34 promotions, Wilson [0.000000, 0.101515]; 19 of 19 refusals in 1 run on the identical reason; 7 of 7 prose runs given the argparse default, Wilson [0.645670, 1.000000]. Producers: scripts/the_apply_back_gate_has_no_baseline_2026-11-02.py and scripts/the_apply_back_baseline_mutations_2026-11-02.py"
   }
 }

@@ -416,6 +416,10 @@ from bench.dm._sk_format import (
 # next-round request that makes the prompt's "will be rejected" promise true.
 from bench.dm._rk_proof import build_proof_requests as build_rk_proof_requests
 from bench.panel_sandbox import secret_ignore
+#: ONE PARSER FOR BOTH GATES. `build_acceptance` already counts collection
+#: ERRORs alongside FAILEDs (2026-08-23); a second implementation here would
+#: be a second chance to omit that.
+from bench.build_acceptance import failing_nodeids
 # Exp 40 fix 1E.7: cross-model diversity metric (compliance-theatre detector).
 from bench.dm._diversity import diversity_signal_from_round
 # Exp 40 fix 1E.7: per-finding alternative extraction for diversity metric.
@@ -12560,6 +12564,12 @@ def _inround_reask(
 # ctx set at experiment start (mirrors _merge_arb_ctx / _INROUND_REASK).
 _APPLY_BACK_CTX: Dict[str, Any] = {}
 
+#: The failing node-ids the gate's sandbox carries WITHOUT any candidate applied,
+#: keyed on (target, command). Measured once per key and reused, because the
+#: sandbox copy is deterministic given an unchanged repository -- which holds for
+#: the length of a run. Same keying as `build_acceptance._BASELINE`.
+_APPLY_BACK_BASELINE: Dict[Tuple[str, str], Tuple[frozenset, int]] = {}
+
 
 def _apply_back_setup(cfg, target_path: "Path", logs_dir: "Path") -> "Path":
     """If enabled, create a per-run working copy of the target article
@@ -12702,24 +12712,40 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
         # A non-Python target still must not be replaced by nothing. There is no
         # syntax to check, so emptiness is the only structural check available.
         return False, "empty candidate for a non-Python target"
+    # ★ A NON-PYTHON TARGET IS REFUSED HERE, BEFORE THE COMMAND IS CONSULTED.
+    #
+    # THE REFUSAL IS CORRECT AND ITS REASON MUST BE TRUE. Green-only promotion
+    # means a fix is folded back only when a suite says it is safe, so no suite
+    # means no promotion -- that part is right and is the C0001 lesson. What was
+    # WRONG until 2026-10-17 is that a prose target never reached this line: the
+    # unconditional `ast.parse` above rejected it first and the log recorded a
+    # syntax error in English prose, so a reader learned the models were writing
+    # broken code when the truth is that a prose fix has no suite to gate it.
+    #
+    # AND IT WAS STILL UNREACHABLE AFTER THAT REPAIR, WHICH IS WHY IT MOVED ON
+    # 2026-11-02. It sat INSIDE `if not test_cmd:`, so it spoke only when no
+    # command was configured -- and a prose target WITH one fell through to
+    # pytest. z3 on the branch structure: with `is_python_target` false and a
+    # command present, the conjunction reaching this refusal is `unsat`, and
+    # SymPy's `simplify_logic` agrees it is `False`. Measured the same day, that
+    # is exactly what happened: `study_run1b_rerun_20261102T033919Z` ran a prose
+    # target against the launcher's ARGPARSE DEFAULT suite and refused 19
+    # findings with a pytest result that could not depend on any of them.
+    # `bench/tools/commissioning_arms_2026-09-21.py` had already fixed this on
+    # 2026-09-30 for its own prose arm, by passing an EMPTY `--test-cmd`; its
+    # comment says the default "faked the gate rather than excluding it". That
+    # repair lived in the CALLER, so a launch path that did not go through the
+    # arms table got the faked gate back. It is enforced HERE now.
+    #
+    # A PROSE FIX NEEDS A DIFFERENT VERIFIER, namely the finding's own
+    # falsifier, which `bench/fix_efficacy.py` already knows how to ask. That
+    # is a design change rather than a repair and is tracked separately, so
+    # the honest behaviour for now is to refuse and SAY WHY.
+    if not is_python_target(rel_target):
+        return False, ("no suite can gate a non-Python target "
+                       f"({rel_target}); a prose fix needs its falsifier, "
+                       "not pytest")
     if not test_cmd:
-        # THE REFUSAL IS CORRECT AND ITS REASON MUST BE TRUE. Green-only
-        # promotion means a fix is folded back only when a suite says it is
-        # safe, so no suite means no promotion -- that part is right and is the
-        # C0001 lesson. What was WRONG until 2026-10-17 is that a prose target
-        # never reached this line: the unconditional `ast.parse` above rejected
-        # it first and the log recorded a syntax error in English prose, so a
-        # reader learned the models were writing broken code when the truth is
-        # that a prose fix has no suite to gate it.
-        #
-        # A PROSE FIX NEEDS A DIFFERENT VERIFIER, namely the finding's own
-        # falsifier, which `bench/fix_efficacy.py` already knows how to ask. That
-        # is a design change rather than a repair and is tracked separately, so
-        # the honest behaviour for now is to refuse and SAY WHY.
-        if not is_python_target(rel_target):
-            return False, ("no suite can gate a non-Python target "
-                           f"({rel_target}); a prose fix needs its falsifier, "
-                           "not pytest")
         return False, "no test_cmd configured (cannot gate)"
     with tempfile.TemporaryDirectory() as td:
         sb = Path(td) / "sb"
@@ -12733,6 +12759,74 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
         )
         tgt = sb / rel_target
         tgt.parent.mkdir(parents=True, exist_ok=True)
+
+        # ★ THE BASELINE IS MEASURED IN THIS SANDBOX BEFORE THE CANDIDATE IS
+        # WRITTEN, AND THAT WAS MISSING UNTIL 2026-11-02.
+        #
+        # THE DEFECT, OBSERVED. The gate required exit 0 from a suite it ran in
+        # a sandbox that EXCLUDES `.git`, `bench/logs` and the credentials. A
+        # suite containing a test that reads the archive therefore fails here no
+        # matter what the candidate says -- and the gate reported that as the
+        # candidate's doing. `study_run1b_rerun_20261102T033919Z` made 19
+        # apply-back decisions: 19 REJECT, 0 PROMOTE, every one carrying the
+        # byte-identical reason `suite_fail:3 failed, 48 passed, 28 skipped`.
+        # Across the whole archive the facility has REFUSED 34 of 34, Wilson 95%
+        # [0.898485, 1.000000], Clopper-Pearson [0.897182, 1.000000] --
+        # equivalently it has promoted 0 of 34, Wilson [0.000000, 0.101515],
+        # Clopper-Pearson [0.000000, 0.102818]. The 2 statements are the same
+        # fact and each interval belongs to its OWN count: stating the 0 with
+        # the 34's interval is what the repository's stated-interval guard
+        # caught here, and it is the fault
+        # `feedback_an_interval_belongs_to_one_denominator_2026-10-30` records.
+        #
+        # ESTABLISHED BY CALLING THIS FUNCTION, not by reading it: the prose
+        # target's OWN bytes, prose sharing no sentence with it, and
+        # `bench/runner_core.py` fed its own bytes all drew the SAME refusal. A
+        # no-op cannot break a test, so the verdict did not depend on its input.
+        # The 3 failures were `TestCounterfactual` in
+        # `bench/tests/test_immune_memory_evaluation.py`, whose
+        # `_all_archived_decisions()` globs `bench/logs` -- the directory the
+        # copy above deliberately omits. Producer:
+        # `scripts/the_apply_back_gate_has_no_baseline_2026-11-02.py`.
+        #
+        # GREEN-ONLY PROMOTION IS NOT LOOSENED. The C0001 lesson is that the
+        # run-time S_k score tolerates regressions and so the gate must not; a
+        # candidate introducing ANY new failing node-id is still rejected. What
+        # changes is that a failure PRESENT WITHOUT THE CANDIDATE is no longer
+        # blamed on it. That is not a new policy either: `bench/build_acceptance.py`
+        # settled it on 2026-08-22 and pinned it with
+        # `test_step_three_compares_against_the_parent_rather_than_assuming_green`.
+        # Two mechanisms were doing one job and only one of them had the fix.
+        #
+        # ITS PARSER IS REUSED RATHER THAN REWRITTEN, because `failing_nodeids`
+        # counts collection ERRORs alongside FAILEDs -- a lesson of 2026-08-23,
+        # where matching only FAILED returned an empty set for a patch that broke
+        # every test in the repository and the empty set read as "nothing went red".
+        base_key = (rel_target, test_cmd)
+        baseline = _APPLY_BACK_BASELINE.get(base_key)
+        if baseline is None:
+            try:
+                b = subprocess.run(
+                    shlex.split(test_cmd), capture_output=True, text=True,
+                    cwd=str(sb), timeout=300,
+                    env={**_seat_environment(), "PYTHONDONTWRITEBYTECODE": "1"},
+                )
+            except (subprocess.TimeoutExpired, Exception) as e:
+                return False, f"gate_exec:baseline:{type(e).__name__}"
+            baseline = (failing_nodeids(b.stdout + b.stderr), b.returncode)
+            # Cached on (target, command) because the copy above is deterministic
+            # given an unchanged repository, which holds for the length of a run.
+            # Same keying as `build_acceptance._BASELINE`.
+            #
+            # THE EXIT CODE IS CACHED ALONGSIDE THE NODE-IDS, and leaving it out
+            # was a defect in the first version of this repair, found by its own
+            # P-pass. A pytest COLLECTION error exits 2, and an abnormal exit
+            # cannot be judged by a node-id difference. Refusing every abnormal
+            # exit outright would have reinstated the very fault being fixed:
+            # where the sandbox ALREADY aborts without the candidate, each
+            # candidate would again be refused for something it did not cause.
+            _APPLY_BACK_BASELINE[base_key] = baseline
+
         tgt.write_text(candidate_source, encoding="utf-8")
         try:
             r = subprocess.run(
@@ -12746,11 +12840,30 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
             )
         except (subprocess.TimeoutExpired, Exception) as e:
             return False, f"gate_exec:{type(e).__name__}"
-        if r.returncode != 0:
+        base_ids, base_rc = baseline
+        # THE DIFFERENCE IS TAKEN FIRST, before any judgement on the exit code.
+        # A named new failure is the most specific and most useful refusal there
+        # is, and it is available whatever the exit code was.
+        new = failing_nodeids(r.stdout + r.stderr) - base_ids
+        if new:
+            named = ", ".join(sorted(new)[:3])
+            more = f" (+{len(new) - 3} more)" if len(new) > 3 else ""
+            return False, f"suite_regressed:{named}{more}"[:160]
+        # pytest exits 0 when all passed and 1 when tests failed; either is a
+        # session that ran, so an empty difference means the candidate added
+        # nothing. Any other code is an interrupted session, an internal error or
+        # a usage fault -- accepted only when the sandbox exits the SAME way
+        # without the candidate, which makes it pre-existing rather than caused.
+        if r.returncode not in (0, 1) and r.returncode != base_rc:
             out = (r.stdout + r.stderr).strip().splitlines()
-            tail = next((ln for ln in reversed(out) if "failed" in ln),
-                        out[-1] if out else "")
-            return False, f"suite_fail:{tail[:120]}"
+            tail = out[-1] if out else ""
+            return False, (f"gate_exec:rc{r.returncode}"
+                           f" (baseline rc{base_rc}):{tail[:80]}")
+        if base_ids or base_rc not in (0, 1):
+            # ACCEPTED, and the reason says what the baseline already carried so a
+            # reader is never left thinking the sandbox was green when it was not.
+            return True, (f"ok (no new failures; {len(base_ids)} pre-existing"
+                          f", baseline rc{base_rc})")
     return True, "ok"
 
 

@@ -207,6 +207,12 @@ Classified 2026-11-02 after B85 closed. Each of the 12 remaining OPEN entries wa
 
 **This is YOUR DECISION, by the entry's own words — "needs his ruling".** Not blocking, and not work to be done meanwhile.
 
+## B20 per-round predicate: whether it catches a divergence the absence detectors miss cannot be measured until a run writes round_wall_clock
+
+*Parked 2026-11-02T21:39:32+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)
