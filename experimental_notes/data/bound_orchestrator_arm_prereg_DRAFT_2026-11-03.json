@@ -1,0 +1,78 @@
+{
+  "name": "bound_orchestrator_arm_prereg",
+  "status": "DRAFT, NOT REGISTERED",
+  "why_draft": "The founder recommended a pause before the orchestrator experiment is RUN so he can read the morning report and give any verdicts first. Separately his own ruled order (ticket 72f1d6095d83, OPEN, ruled 2026-11-01) places 1 simulated run on the severity mechanics BEFORE the orchestrator work. This file is therefore built and deliberately not registered.",
+  "hypothesis_under_test": "A bound orchestrator -- an orchestrator model running INSIDE the harness, with authority to change code, managed the way the founder manages CC1 -- degrades the run's adjudication quality LESS than intuition suggests, because the harness's adjudications are overwhelmingly tool-made rather than assertion-made, so the orchestrator's own assertions mostly do not decide anything.",
+  "prior_measurement_it_rests_on": {
+    "claim": "77 of 79 adjudications across the 3 shakedown legs were tool-made rather than assertion-made",
+    "proportion": 0.974684,
+    "wilson_95": [
+      0.912314,
+      0.99303
+    ],
+    "clopper_pearson_95": [
+      0.911523,
+      0.996919
+    ],
+    "producer": "scripts/were_the_shakedown_adjudications_tool_made_2026-10-17.py",
+    "note": "The 2 non-tool adjudications are NAMED rather than bucketed: both adjudicator='runner', mechanism 'model_confirm_quorum (3/1 independent)'."
+  },
+  "predictions": [
+    {
+      "id": "O1",
+      "statement": "The tool-made share of the bound orchestrator arm's adjudications is NOT shown to be below 0.80. HOLDS when the Wilson 95% lower bound is at or above 0.80; FALSIFIED only when the Wilson 95% UPPER bound is below 0.80; INDETERMINATE when the interval straddles the floor.",
+      "falsifier": "The Wilson 95% UPPER bound of the tool-made share falls below 0.80. An interval straddling the floor is INDETERMINATE, not falsified.",
+      "round_decidable": false,
+      "why": "The share is over the run's completed adjudications, so it has 1 evaluation point at the end.",
+      "scored_by": "scripts/score_the_orchestrator_arm_2026-11-03.py",
+      "why_three_valued": "The first version of this prediction read HOLDS if the LOWER bound clears the floor and FALSIFIED otherwise, and the archive proved that wrong. Scored across 347 archived run directories it called 10 of 28 scorable runs FALSIFIED, and 7 of those 10 have a point estimate of EXACTLY 1.0 with sample sizes from 8 to 15: a run whose every adjudication is tool-made first clears a 0.80 Wilson floor at n = 16, so the rule was falsifying runs for being SMALL. To claim the share is below the floor the interval must exclude the floor from above, which is the same one-sided form the P3 prediction of study_run1b uses when it requires its interval to exclude 0.5. Under the corrected rule the archive gives 18 HOLDS, 9 INDETERMINATE and 1 FALSIFIED."
+    },
+    {
+      "id": "O2",
+      "statement": "The orchestrator arm reaches convergence by the same two-sided gate as the control arm: gamma_critical >= 0.30 AND 3 consecutive zero-new-critical rounds.",
+      "falsifier": "The orchestrator arm fails to converge within the round ceiling while the control arm converges.",
+      "round_decidable": true,
+      "why": "gamma_history and gate_history are both per-round and present in 65 of 65 runner_state.json files, so this is evaluable at every round boundary.",
+      "scored_by": "scripts/score_the_orchestrator_arm_2026-11-03.py"
+    },
+    {
+      "id": "O3",
+      "statement": "0 of the orchestrator's code changes are applied without a recorded verification.",
+      "falsifier": "Any applied change lacks a recorded verification.",
+      "round_decidable": true,
+      "why": "This is the actuator's G1 generalised to the orchestrator: an action without a record is the failure, and it is checkable per action rather than at the end.",
+      "scored_by": "scripts/score_the_orchestrator_arm_2026-11-03.py"
+    }
+  ],
+  "what_this_prereg_does_NOT_claim": [
+    "It does not claim the orchestrator arm is worth running before the severity run. The founder's ruling orders that the other way.",
+    "It does not claim O1's threshold of 0.80 is derived. It is a CHOSEN decision boundary, set below the 0.912314 prior lower bound so the prediction can fail without the prior being wrong, and it needs his ruling before registration.",
+    "It does not claim the 3 predictions compose. No measurement shows that scoring all 3 catches a divergence any 1 of them misses, and under his composability standard that claim requires a measurement before it may be made.",
+    "It does not claim O1 is scorable on most runs. 319 of 347 archived run directories record no adjudications at all, so NOT SCORABLE is the modal outcome and that is a fact about the record, not about the arm."
+  ],
+  "open_question_for_him": "O1's threshold is the one number here that is a judgement rather than a measurement. 0.80 is proposed because it sits below the prior interval's lower bound, so a pass does not merely restate the prior. It is his to set or reject.",
+  "archive_baseline_measured_2026-11-03": {
+    "note": "Measured through the canonical classifier `classify_adjudication` in scripts/were_the_shakedown_adjudications_tool_made_2026-10-17.py, which was EXTRACTED for this purpose so the scorer cannot re-derive the predicate and drift.",
+    "runs_carrying_adjudications": 28,
+    "entries_scored": 803,
+    "tool_made": 769,
+    "assertion_made": 34,
+    "share": 0.957659,
+    "wilson_95": [
+      0.941416,
+      0.969544
+    ],
+    "clopper_pearson_95": [
+      0.941332,
+      0.970502
+    ],
+    "vs_shakedown_legs": {
+      "shakedown": "77 of 79 = 0.974684",
+      "fisher_exact_p": 0.763617,
+      "odds_ratio": 1.7022,
+      "reading": "The 3 shakedown legs and the wider archive are NOT distinguishable, so the prior this hypothesis rests on is representative at the entry level."
+    },
+    "THE COVERAGE CAVEAT, WHICH IS LARGER THAN THE SPLIT ITSELF": "2508 registry entries across the archive carry NO adjudicator field at all, against 803 that do. So the tool-made share is computed over about 24% of entries, and the remaining 76% are not assertion-made -- they are UNRECORDED. Any statement of the form 'the harness's adjudications are 95.8% tool-made' is therefore a statement about the entries that record an adjudicator, and must be said that way.",
+    "the_one_genuinely_falsifying_run": "sim45_memory_20260830T161215Z, 0 of 16 tool-made. It is the only archived run whose interval excludes the 0.80 floor from above, and it is a real signal rather than a small-sample artefact."
+  }
+}

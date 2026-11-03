@@ -50,6 +50,35 @@ ASSERTION_MECHANISMS = {
 }
 
 
+def classify_adjudication(e: dict) -> str:
+    """"tool", "assertion" or "unknown" for 1 registry entry.
+
+    EXTRACTED 2026-11-03 so that a second caller cannot re-derive it and drift.
+    The scorer for the bound-orchestrator arm needs exactly this predicate, and
+    its first draft re-implemented it WRONG in the same way this script's own
+    first version did -- scoring on a `mechanism` field read from
+    `*_report.json`, treating anything not naming a quorum as tool-made. That
+    returned NOT SCORABLE across 347 of 347 archived runs, because the fields
+    are `status_adjudicator` and `status_mechanism` and they live in
+    `runner_state.json`.
+
+    THE RECORDED ADJUDICATOR IS THE AUTHORITY, which is the distinction the
+    comment in `main()` was written to protect: carrying a tool's output is not
+    the same as having been DECIDED by one, and the broader predicate returned
+    79 of 79 instead of 77.
+
+    `main()` calls this, so the committed figure of 77 of 79 is produced THROUGH
+    this function and any change to it moves that figure rather than silently
+    diverging from it.
+    """
+    ad = str(e.get("status_adjudicator") or "").strip().lower()
+    if ad == "tool":
+        return "tool"
+    if ad:
+        return "assertion"
+    return "unknown"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -90,9 +119,10 @@ def main() -> int:
             # output is not the same as having been DECIDED by one, and the
             # broader predicate erased exactly the distinction the figure is
             # about.
-            if ad == "tool":
+            verdict = classify_adjudication(e)
+            if verdict == "tool":
                 tool += 1
-            elif ad:
+            elif verdict == "assertion":
                 assertion += 1
                 unknown_values[f"adjudicator={ad!r} mechanism={m!r}"] += 1
             else:
@@ -142,7 +172,7 @@ def main() -> int:
         except Exception as exc:                        # noqa: BLE001
             print(f"  interval unavailable: {exc}")
     print()
-    print(f"B20 QUOTED: 77 of 79 = 97.4684%, Wilson [91.2314%, 99.3030%]")
+    print("B20 QUOTED: 77 of 79 = 97.4684%, Wilson [91.2314%, 99.3030%]")
     print(f"THIS SCRIPT: {tool} of {denom}"
           f" = {100*tool/denom:.4f}%" if denom else "no entries")
     print(f"REPRODUCES: {'YES' if (tool, denom) == (77, 79) else 'NO'}")

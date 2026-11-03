@@ -218,6 +218,12 @@ Classified 2026-11-02 after B85 closed. Each of the 12 remaining OPEN entries wa
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## Commit 45 pre-commit board is running, so the tree may not be edited until it finishes
+
+*Parked 2026-11-03T06:53:30+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

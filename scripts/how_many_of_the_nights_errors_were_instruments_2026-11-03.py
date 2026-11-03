@@ -99,6 +99,12 @@ CLASSIFIED = {
         "INSTRUMENT",
         "the pre-commit board reads the working tree while the commit records "
         "the index, and nothing checks the 2 agree"),
+    "feedback_a_floor_must_be_excluded_not_merely_missed_2026-11-03": (
+        "INSTRUMENT",
+        "a scorer's verdict rule falsified a prediction when an interval's "
+        "LOWER bound missed a floor, which falsifies a run for being small: 7 "
+        "of the 10 runs it called falsified had a point estimate of exactly "
+        "1.0"),
     "feedback_a_fail_safe_must_not_be_recorded_as_a_fact_2026-11-03": (
         "SUBJECT",
         "the actuator's own recorded reason asserted that a run's process was "
