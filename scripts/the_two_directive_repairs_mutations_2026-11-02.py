@@ -90,7 +90,15 @@ def main() -> int:
     print(f"  falsifiers, which is the coverage this file adds.")
     print(f"  composer.py restored to its original text: "
           f"{MOD.read_text() == original}")
-    return 0 if (red == applied and applied) else 1
+    # ★ A SKIPPED ANCHOR USED TO EXIT 0, corrected 2026-11-03. This is the
+    # 5th harness with this bug and the 1 the first sweep MISSED, because
+    # that sweep classified by the printed message `applied mutation(s)
+    # turned` rather than by this exit condition, and this file words its
+    # output differently while carrying the identical fault. A skipped
+    # mutation lowers `applied` AND is absent from `red`, so the equality
+    # holds and a lost property reads as a complete run. The denominator
+    # is now the number of mutations DECLARED, which a skip cannot move.
+    return 0 if (red == applied == len(MUTATIONS)) else 1
 
 
 if __name__ == "__main__":

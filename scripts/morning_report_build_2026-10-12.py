@@ -840,26 +840,64 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
       "delivered. Answers owed, not work owed. Producer: "
       "`scripts/his_older_instructions_triage_2026-10-11.py`.")
     A("")
-    A(_VB.format("the founder's own words"))
-    A("")
-    for q in owed:
-        A(f"- **{q['date']}** — {_first_sentence(q['text'])}")
-    A("")
-    A(_VE)
-    A("")
+    # ★ THE REGION IS ONLY OPENED WHEN IT HAS SOMETHING IN IT, 2026-11-03. With
+    # 0 explanations owed the markers were emitted around nothing, which cost 4
+    # lines and left an empty verbatim region in a report already 69 lines over
+    # Rule 10's ceiling. An empty exemption region is also meaningless: it
+    # exempts no text while still being a region the balance check must account
+    # for, and the same night's stray-close defect showed what an unaccounted
+    # marker costs.
+    if owed:
+        A(_VB.format("the founder's own words"))
+        A("")
+        for q in owed:
+            A(f"- **{q['date']}** — {_first_sentence(q['text'])}")
+        A("")
+        A(_VE)
+        A("")
     if superseded:
         A(f"**And {len(superseded)} discounted as no longer relevant**, on his question "
           f"*\"Are these questions still relevant? If not you can discount those that are "
           f"not.\"* Each is discounted against the record, not by judgement:")
         A("")
-        A(_VB.format("the discounting record, quoted"))
-        A("")
-        for r in superseded:
-            A(f"- **{r['date']} — {r['subject']}**")
-            A(f"  {r['why']}")
-            A(f"  *What remains:* {r['what_remains']}")
-        A("")
-        A(_VE)
+        # ★ HIS `pf` OF 2026-11-01 REACHES THIS SECTION TOO, 2026-11-03. It was
+        # applied to the PARKED section and not to this one, its sibling: this
+        # enumerated 11 struck questions at 3 lines each, 9 of them repeating an
+        # identical retirement sentence and an identical "Nothing", under a
+        # heading that already said 0 were owed. That is the re-presenting of
+        # settled business his ruling names. The TTS renderer at the equivalent
+        # point already states the count and does not enumerate, so the 2
+        # renderings disagreed and the MARKDOWN was the wrong one.
+        #
+        # THE FOLD KEEPS WHAT MATTERS. Collapsing all 11 was the obvious move and
+        # would have hidden 2 live items: grouping by `what_remains` gives 3
+        # distinct values, and while 9 say "Nothing. He struck the question", the
+        # other 2 declare REMAINING WORK. So the nothing-remains group is COUNTED
+        # and every other item is ENUMERATED, which is what `parked_presentation`
+        # means by folding what is restated rather than dropping it.
+        _struck = [r for r in superseded
+                   if str(r.get("what_remains", "")).strip().lower()
+                   .startswith("nothing")]
+        _live_sup = [r for r in superseded if r not in _struck]
+        if _struck:
+            A(f"**{len(_struck)} of those were struck rather than deferred** — "
+              f"his ruling of 2026-11-01, verbatim *\"Retire them. stm\"* — so "
+              f"nothing remains on any of them and they are counted here rather "
+              f"than listed again. Every one is kept in full in the record this "
+              f"section is derived from.")
+            A("")
+        if _live_sup:
+            A(f"**{len(_live_sup)} of them leave something behind**, so each is "
+              f"named:")
+            A("")
+            A(_VB.format("the discounting record, quoted"))
+            A("")
+            for r in _live_sup:
+                A(f"- **{r['date']} — {r['subject']}**")
+                A(f"  {r['why']}")
+                A(f"  *What remains:* {r['what_remains']}")
+            A("")
+            A(_VE)
         A("")
     # ★ HIS `pf`, 2026-11-01. The raw headings used to be printed verbatim,
     # which re-presented settled business and led with identifiers. Now routed
