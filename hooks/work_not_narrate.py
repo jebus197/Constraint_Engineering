@@ -37,9 +37,20 @@ All 5 must hold. `d` is his explicit instruction to discuss rather than proceed,
 so it is honoured absolutely: a hook that overrode his own command would be worse
 than the defect it treats.
 
-IT CANNOT LOOP. Claude Code sets `stop_hook_active` when a stop has already been
-blocked once; this exits 0 immediately in that case. So it interrupts at most one
-stop per turn, and never traps the session.
+IT CANNOT TRAP A SESSION, BUT IT IS NOT CAPPED AT 1 REFUSAL EITHER -- AND THIS
+PARAGRAPH SAID OTHERWISE UNTIL 2026-11-03. It read that `stop_hook_active` makes
+this exit 0 immediately, so it interrupts at most one stop per turn. That cap IS
+the defect `MAX_REFUSALS_PER_TURN` was added to remove, as the comment on that
+constant records in the founder's own words -- he watched a turn stop after 2
+tasks and asked "You still stopped?". The bound is now a BUDGET of 8 refusals per
+turn, counted here and keyed to the turn's own user message, and any failure to
+read or write that counter ALLOWS the stop. So the session cannot be trapped, and
+the mechanism is a budget rather than an absence of one.
+
+WHY THE STALE SENTENCE MATTERED RATHER THAN MERELY LAGGING. On 2026-11-03 a
+session read it as current, concluded the gate was malfunctioning after 6
+refusals in 1 turn, and spent reasoning on a non-existent defect. A comment that
+inverts its own subject misleads; one that merely lags is noise.
 
 Self-test: `python3 work_not_narrate.py --self-test`
 """

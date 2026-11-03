@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import functools
 import glob
 import json
 import math
@@ -148,7 +149,69 @@ def is_one_of_his_annotated_responses(path: Path) -> bool:
     """
     return (is_a_response_file(path)
             and path.suffix.lower() in TEXT_SUFFIXES
-            and path.name not in NOT_HIS_ANNOTATIONS)
+            and path.name not in NOT_HIS_ANNOTATIONS
+            # ★ 2026-11-03: the allow list above trusts the EXTENSION, and an
+            # 11 MB PNG named `.md` walked through it and contributed 780
+            # annotations he never wrote. See `is_binary_file`.
+            and not is_binary_file(path))
+
+
+#: Byte signatures of formats that are NOT text, for files that reach the first
+#: 4 KiB with no NUL. A PDF is the case that matters: `%PDF` then ASCII, so a
+#: NUL test alone does not see it.
+_BINARY_MAGIC = (b"\x89PNG", b"\xff\xd8\xff", b"GIF8", b"%PDF", b"BM",
+                 b"RIFF", b"\x1f\x8b", b"PK\x03\x04", b"\x00\x00\x01\x00")
+
+
+def is_binary_file(path: Path, probe: int = 4096) -> bool:
+    """Is this file binary? Decided by its BYTES, never by its extension.
+
+    ★ ADDED 2026-11-03. THIS IS THE 4TH FILE OF THE SAME SHAPE TO CORRUPT THE
+    RECORD OF HIS WORDS, and the first 3 were each patched by NAME or by
+    EXTENSION.
+
+    THE HISTORY, from this module's own comments. `.DS_Store` was excluded by
+    name. Word's `~$` lock files were excluded by prefix. Then
+    `CDSFL_UX_Mockup_Pack_Light_2026-10-20.zip` returned 65 lines of compressed
+    binary as his annotations, and the repair of 2026-10-20 was the ALLOW LIST
+    `TEXT_SUFFIXES = {.txt, .rtf, .md}`, recorded here with the words *"AN
+    EXCLUSION LIST CANNOT HOLD"* and *"The ALLOW list is decidable."*
+
+    THE ALLOW LIST IS DECIDABLE AND IT WAS ALSO DEFEATED, because an extension
+    is a CLAIM ABOUT CONTENT rather than content. `Google Search Discussion on
+    severity- 2026-09-28_10-28.md` is an 11,076,291-byte PNG -- it opens
+    `\x89PNG`, `IHDR`, `IDAT` -- and `.md` is on the allow list. It decoded to
+    249,610 lines of which 780 began with `#`, so the reader returned 780
+    annotations he never wrote: 0.481779 of the entire 1,619-annotation corpus.
+    3 guards went red on it and the reader slowed from 3.576 s to 684.25 s,
+    which took every commit with it.
+
+    SO THE PREDICATE HAS TO READ THE FILE. That is `execute-do-not-grep` applied
+    to file typing: a name describes itself consistently whatever it contains.
+
+    WHY BOTH TESTS AND NOT 1, measured, because his composability standard wants
+    a figure rather than a pair of ideas that fit together. Over the 348 files in
+    his folder: a NUL byte in the first 4 KiB catches 39, a magic number catches
+    28, and 26 are caught by both. 2 are caught by MAGIC ONLY -- both PDFs,
+    which have no early NUL -- so the NUL test alone misses 2 of the 30 binaries
+    it is aimed at. Today those 2 wear `.pdf` and the allow list stops them
+    anyway; a PDF saved as `.md` is the case the pair exists for, and it is the
+    same accident that produced the PNG. Neither test is redundant, which is the
+    condition the standard sets.
+
+    IT CANNOT DROP A VERDICT OF HIS. Every shape-based discriminator tried on
+    this folder was measured and REFUTED in 2026-10-17 -- a dated-filename
+    filter lost 8 of 598, a markdown-structure test lost 12 real verdicts
+    including "Verdict: y". Those all guessed whether PROSE was his. This asks
+    whether the file is TEXT AT ALL, which is a different question with a hard
+    answer: 0 of his legitimate .txt and .md files carry a NUL byte. The only 3
+    that do are this PNG and 2 `~$ok` Word lock files already excluded by prefix.
+    """
+    try:
+        head = path.open("rb").read(probe)
+    except OSError:
+        return False                   # unreadable is a REPORTED gap, not a skip
+    return b"\x00" in head or head.startswith(_BINARY_MAGIC)
 
 
 def is_a_response_file(path: Path) -> bool:
@@ -238,7 +301,52 @@ def read_any(path: Path) -> str:
 
     `errors="ignore"` is deliberate and is the point: an undecodable byte must cost ONE
     character, never the whole file. `splitlines()` then handles CR, LF and CRLF alike.
+
+    ★ DECODED ONCE PER (path, mtime, size), 2026-11-03, on his instruction *"have
+    you/can you fix them, and do so in such a way that any researcher/model using
+    the CDSFL harness to do real work, would be unlikely to run into similar
+    issues?"*
+
+    WHAT IT COST TO NOT CACHE. `context_for` calls this once per ANNOTATION, and
+    780 of his 1,619 annotations live in one 11.08 MB file, so that file was
+    decoded 780 times. Measured on the live corpus by 2 independent routes that
+    agree to 99.5%: a strided sample of 63 of the 1,619 annotations costs 420.63 ms
+    each and PROJECTS the loop at 680.995 s, against a pinned CLI wall of 684.25 s
+    for the same arguments. The library call alone is 3.576 s, so essentially the
+    whole cost was re-decoding. 2 guards that shell out to this CLI then died on
+    `pytest.ini`'s 300 s timeout and NO COMMIT COULD LAND.
+
+    A HEAD-OF-LIST SAMPLE WOULD HAVE HIDDEN IT. The first 40 annotations sit in
+    small files and cost 18.68 ms each, projecting 30.241 s -- 22.5x too low. The
+    sample has to be strided so every file is drawn in proportion to its share.
+
+    WHY HERE AND NOT IN `context_for`. 11 call sites across 7 files reach this
+    function and 4 of them call it inside a loop over his files, so the quadratic
+    term is removed for every caller rather than for the one that exposed it.
+    That is what makes the repair general rather than local to the failure found.
+
+    THE INVALIDATION KEY IS (path, mtime_ns, size), so a file edited mid-run is
+    re-decoded rather than served stale. THE HONEST HOLE: a write that preserves
+    BOTH size and mtime_ns -- an mtime-restoring tool, say -- would be missed. No
+    caller in this repo does that; a researcher's might, and `read_any.cache_clear`
+    is the escape hatch for one that does.
     """
+    try:
+        st = path.stat()
+    except OSError:
+        return ""
+    return _decode_cached(str(path), st.st_mtime_ns, st.st_size)
+
+
+#: Small on purpose. His corpus is 18.77 MB on disk and decodes larger, and his
+#: machine's 8 GiB is a FIXED RESOURCE that work may never be refused for. 8
+#: entries is enough for the access pattern that matters -- consecutive
+#: annotations from the same file -- and caps the cache at a handful of files
+#: rather than the whole folder.
+@functools.lru_cache(maxsize=8)
+def _decode_cached(path_str: str, mtime_ns: int, size: int) -> str:
+    """The body of `read_any`, keyed so a changed file is decoded again."""
+    path = Path(path_str)
     ext = path.suffix.lower()
     try:
         if ext in ZIPPED:
@@ -253,6 +361,52 @@ def read_any(path: Path) -> str:
         return decode_bytes(path.read_bytes())
     except Exception:
         return ""
+
+
+#: The escape hatch the `read_any` docstring names. An attribute, not a second
+#: public name, so there is exactly 1 way to reach it and it cannot drift.
+read_any.cache_clear = _decode_cached.cache_clear          # type: ignore[attr-defined]
+read_any.cache_info = _decode_cached.cache_info            # type: ignore[attr-defined]
+
+
+def lines_of(path: Path) -> tuple[str, ...]:
+    """The lines of a response file, split ONCE per (path, mtime, size).
+
+    ★ ADDED 2026-11-03, because caching the DECODE fixed only half the cost.
+
+    THE HALF THAT WAS LEFT, measured. With `read_any` cached, the reader still
+    took 51.23 s where the library call is 3.576 s. `splitlines()` on his 11.08 MB
+    severity file costs 56.48 ms and produces 249,610 lines, and `context_for`
+    ran it once per annotation -- 780 times for that file alone. 56.48 ms x 780
+    = 44.05 s, which is 94% of the 47 s that remained. The decode was never the
+    only quadratic term; it was the VISIBLE one.
+
+    WHY A TUPLE AND NOT A LIST. A cache that hands out a mutable object hands
+    every later caller the first caller's edits. The tuple makes that
+    impossible rather than merely discouraged.
+
+    SAME KEY AS `read_any`, so a file edited mid-run is re-split, and the same
+    honest hole applies: a write preserving both size and mtime_ns is missed.
+    """
+    try:
+        st = path.stat()
+    except OSError:
+        return ()
+    return _lines_cached(str(path), st.st_mtime_ns, st.st_size)
+
+
+#: 4, not 8. The hit rate measured over his whole corpus is 1,557 of 1,619 at
+#: maxsize 8, so locality is high and a smaller cache loses almost nothing --
+#: and the split lines of his biggest file cost about as much again as its
+#: decoded text, on a machine whose 8 GiB is a fixed resource.
+@functools.lru_cache(maxsize=4)
+def _lines_cached(path_str: str, mtime_ns: int, size: int) -> tuple[str, ...]:
+    """The body of `lines_of`, keyed so a changed file is split again."""
+    return tuple(read_any(Path(path_str)).splitlines())
+
+
+lines_of.cache_clear = _lines_cached.cache_clear           # type: ignore[attr-defined]
+lines_of.cache_info = _lines_cached.cache_info             # type: ignore[attr-defined]
 
 
 #: Curly-quote byte ranges that DISCRIMINATE the two single-byte codecs Word may write.
@@ -652,6 +806,33 @@ def claim_a_naive_grep_is_blind_to_some_of_them() -> dict:
     }
 
 
+def binaries_wearing_a_text_extension() -> list:
+    """Files the allow list would have accepted and `is_binary_file` excluded.
+
+    A SILENT SKIP IS THE DEFECT THIS MODULE EXISTS TO PREVENT, so an exclusion
+    decided by content is reported by name, with its size and signature. If one
+    of these is actually his writing, this list is where that shows up.
+    """
+    out = []
+    for p in sorted(RESPONSES.glob("*")):
+        if not is_a_response_file(p):
+            continue
+        if p.suffix.lower() not in TEXT_SUFFIXES:
+            continue
+        if p.name in NOT_HIS_ANNOTATIONS:
+            continue
+        if not is_binary_file(p):
+            continue
+        try:
+            head = p.open("rb").read(8)
+            size = p.stat().st_size
+        except OSError:
+            head, size = b"", -1
+        out.append({"file": p.name, "bytes": size,
+                    "signature": head.hex(), "why": "binary, not text"})
+    return out
+
+
 def unreadable_but_annotated() -> list:
     """Files whose RAW BYTES contain an annotation marker but which the reader cannot read.
 
@@ -786,14 +967,17 @@ def context_for(ann: dict, before: int = 6, after: int = 1) -> list[str]:
     if not f.is_file() or not isinstance(i, int):
         return []
     try:
-        # `read_any`, NOT a plain read_text. These files include .docx and
+        # `lines_of`, NOT `read_any(...).splitlines()`: the SPLIT was 94% of the
+        # cost once the decode was cached. See `lines_of`.
+        #
+        # `read_any` underneath, NOT a plain read_text. These files include .docx and
         # .zip-backed formats that grep treats as binary -- 908 of 1,174 of his
         # annotations live in files a naive reader cannot see, which is the
         # whole reason this script exists. A first draft of this function
         # called a `_read_any` that DOES NOT EXIST in this module; it parsed
         # fine and would have returned [] for every annotation, i.e. silently
         # restored the exact defect it was written to fix.
-        lines = read_any(f).splitlines()
+        lines = lines_of(f)
     except Exception:                                        # noqa: BLE001
         return []
     if not lines:
@@ -832,12 +1016,14 @@ def main() -> int:
     anns = annotations(since, until)
     shape = claim_a_naive_grep_is_blind_to_some_of_them()
     gaps = unreadable_but_annotated()
+    binaries = binaries_wearing_a_text_extension()
 
     if args.json:
         if args.context > 0:
             for a in anns:
                 a["context"] = context_for(a, before=args.context)
-        print(json.dumps({"annotations": anns, "coverage": shape, "reader_gaps": gaps},
+        print(json.dumps({"annotations": anns, "coverage": shape, "reader_gaps": gaps,
+                          "excluded_binaries": binaries},
                          indent=1))
     else:
         print(f"== the founder's annotations in {RESPONSES} ==")
@@ -864,6 +1050,10 @@ def main() -> int:
         print(f"   {len(gaps)} file(s) look annotated but cannot be read")
         for g in gaps:
             print(f"     {g}")
+        print("\n== excluded for being BINARY, not text (a loud skip) ==")
+        print(f"   {len(binaries)} file(s) wear a text extension but are not text")
+        for b in binaries:
+            print(f"     {b['file']}  {b['bytes']:,} bytes  sig={b['signature']}")
 
     if args.verify and gaps:
         print(f"\nREFUSED: {len(gaps)} response file(s) carry an annotation marker in their raw "

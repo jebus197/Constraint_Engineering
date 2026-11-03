@@ -92,6 +92,29 @@ def test_every_exclusion_names_a_reason():
 
 
 @pytest.mark.skipif(not R.RESPONSES.is_dir(), reason="folder absent")
+def test_the_binary_reason_is_reported_and_not_merely_applied():
+    """A 3rd way to drop a file is only acceptable if it is LOUD.
+
+    The other 2 reasons are visible by construction: a name in a list anyone can
+    read, and a suffix outside a list anyone can read. A content test is not
+    visible that way, so it has to publish what it excluded or it becomes the
+    silent skip this whole module exists to prevent.
+    """
+    dropped = {p.name for p in R.RESPONSES.glob("*")
+               if R.is_a_response_file(p)
+               and p.suffix.lower() in R.TEXT_SUFFIXES
+               and p.name not in R.NOT_HIS_ANNOTATIONS
+               and R.is_binary_file(p)}
+    reported = {row["file"] for row in R.binaries_wearing_a_text_extension()}
+    assert dropped == reported, (
+        f"dropped for being binary but NOT reported: {sorted(dropped - reported)}; "
+        f"reported but not dropped: {sorted(reported - dropped)}")
+    for row in R.binaries_wearing_a_text_extension():
+        assert row["bytes"] > 0 and row["signature"], (
+            f"the report must carry enough to identify the file: {row}")
+
+
+@pytest.mark.skipif(not R.RESPONSES.is_dir(), reason="folder absent")
 def test_every_exclusion_still_corresponds_to_a_file_that_exists():
     """A DEAD EXCLUSION IS AN UNWIRED ADDITION, the shape this project keeps
     producing. If he deletes a foreign document, its entry should go too."""
@@ -112,6 +135,13 @@ def test_the_exclusion_does_not_reach_any_other_file():
     rule was added because `CDSFL_UX_Mockup_Pack_Light_2026-10-20.zip` returned
     65 lines of compressed binary as his annotations.
 
+    EXTENDED AGAIN 2026-11-03 for a 3RD declared reason, and the reason the
+    suffix rule was not enough is that an extension is a CLAIM a file makes
+    about itself. `Google Search Discussion on severity- 2026-09-28_10-28.md` is
+    an 11,076,291-byte PNG -- signature 89504e470d0a1a0a -- and `.md` is on the
+    allow list, so it passed both earlier reasons and returned 780 annotations
+    he never wrote, 0.481779 of the whole corpus.
+
     THE PROPERTY IS UNCHANGED and is what matters: nothing is dropped except for
     a reason that is written down. The assertion grew to cover the second reason
     rather than being relaxed to tolerate it, and it still names the offending
@@ -123,14 +153,21 @@ def test_the_exclusion_does_not_reach_any_other_file():
     by_suffix = {p.name for p in R.RESPONSES.glob("*")
                  if R.is_a_response_file(p)
                  and p.suffix.lower() not in R.TEXT_SUFFIXES}
-    undeclared = excluded - by_name - by_suffix
+    # ★ THE 3RD DECLARED REASON, 2026-11-03: the file is BINARY by its bytes.
+    # Added the same way the suffix rule was -- the assertion GREW to cover it
+    # rather than being relaxed to tolerate it -- and the reason is written down
+    # in the same sense as the other 2, because `binaries_wearing_a_text_
+    # extension` reports each one by name, size and signature.
+    by_binary = {p.name for p in R.RESPONSES.glob("*")
+                 if R.is_a_response_file(p) and R.is_binary_file(p)}
+    undeclared = excluded - by_name - by_suffix - by_binary
     assert not undeclared, (
         f"{len(undeclared)} file(s) are dropped for no declared reason: "
         f"{sorted(undeclared)}. Every exclusion must be either a name in "
         f"NOT_HIS_ANNOTATIONS or an extension outside TEXT_SUFFIXES.")
-    assert excluded == by_name | by_suffix, (
+    assert excluded == by_name | by_suffix | by_binary, (
         f"the excluded set {sorted(excluded)} does not equal the union of the "
-        f"2 declared reasons, so one of them is not doing what it says.")
+        f"3 declared reasons, so one of them is not doing what it says.")
 
 
 def test_both_exclusion_reasons_are_actually_in_use():

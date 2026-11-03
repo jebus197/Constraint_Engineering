@@ -144,8 +144,17 @@ INSTRUMENT = (
 DIAGNOSTIC = ("scripts/scripts_are_reached_2026-09-11.py",)
 
 #: Files that carry a ROLL-CALL but may also hold real references, so only the
-#: roll-call LINES are dropped. The parked note cites producers as well as listing
-#: orphans, so excluding it wholly would lose those citations.
+#: roll-call LINES are dropped.
+#:
+#: ★ THIS COMMENT NAMED THE PARKED NOTE AS AN EXAMPLE AND WAS WRONG BY 2026-11-03,
+#: WHICH COST A WASTED REPAIR. It read that the parked note "cites producers as
+#: well as listing orphans, so excluding it wholly would lose those citations".
+#: The parked note is in `INSTRUMENT` and is excluded WHOLLY -- checked by
+#: execution, it is in that tuple and in no other, and `SELF_REFERENTIAL` is
+#: empty. The ground is given above: a file whose job is to name orphans can
+#: never be evidence about them. A session read this sentence as current, cited a
+#: new producer in the parked note to wire it, and the producer stayed unreached;
+#: the citation had to be moved to a note that is actually scanned.
 #: EMPTY, 2026-09-11, and its own guard is what emptied it. The parked note
 #: carried a roll call of orphan paths while orphans existed; all 6 were wired
 #: that day, the roll call went with them, and

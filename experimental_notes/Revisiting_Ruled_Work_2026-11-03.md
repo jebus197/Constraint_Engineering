@@ -40,4 +40,31 @@ It does not claim the subject index is wrong to be sparse, nor propose populatin
 
 Producers: `scripts/the_subject_index_cannot_answer_a_novelty_question_2026-11-03.py`, and for the truncation finding referenced above, `scripts/a_truncated_ruling_reads_as_complete_2026-11-03.py`.
 
+## The same failure in a second form: a comment doing a mechanism's job
+
+The near-miss above was caught by prose in the code, not by the register. That prose was itself 4 days stale, because the founder had already ruled. Pulling that thread found 4 guard comments on the same day that described behaviour their code no longer had, and in each case the stale text argued for the **opposite** of what the code does.
+
+Each was confirmed stale by execution rather than by reading, because a comment and the claim that it is wrong are both prose until a predicate is run:
+
+- `scripts/blocker_triage.py` said the permission question was still his to rule on. Ticket `e41e1fdbc223` carries `ruled=2026-10-30`.
+- `scripts/scripts_are_reached_2026-09-11.py` said excluding the parked note wholly would lose its producer citations. That note is in `INSTRUMENT`, a whole-file exclusion, and in no other list.
+- `hooks/work_not_narrate.py` said it interrupts at most 1 stop per turn. `MAX_REFUSALS_PER_TURN` reads 8, and the comment on that constant records the 1-refusal cap as the defect it was added to remove.
+- `.claude/CLAUDE.md` repeated that same claim about the refusal cap.
+
+**3 of the 4 changed a decision actually taken** — 0.750000, Wilson 95% [0.300642, 0.954413], Clopper-Pearson [0.194120, 0.993691]. The first nearly added a rule contradicting a ruling of his; the second caused a producer to be cited in a file the reachability scan does not read, so it stayed unreached and the citation had to be moved; the third led to a correctly working Stop gate being called malfunctioning. **With 4 items the lower bound sits below half, so that is a statement about these 4 and not a general tendency**, and the classification of "changed a decision" is recorded judgement rather than a derivation. The 1 that changed nothing changed nothing only because its twin had already misled the same session, so even it is not evidence that a stale comment is harmless.
+
+**The common shape with the register miss is the point.** In both cases the authoritative answer existed somewhere checkable — the `INSTRUMENT` tuple, the ticket store — and prose beside the code was trusted instead. A comment cannot be wrong about its own subject in a way a reader can detect, which is why the predicate has to be run.
+
+All 4 are corrected. Producer: `scripts/a_stale_comment_can_be_load_bearing_2026-11-03.py`.
+
+## A correction to the explanation given in the preceding commit
+
+The commit that recorded the denominator drift also explained a second discrepancy, and that explanation was wrong in its operative half. It said that linting the committed parked file from a temporary path returned 9 findings where the gate reported 0 "because the gate lints `after_`-prefixed copies and the lint carries date-scoped rules", concluding that a probe's location manufactures the number.
+
+**The lint takes an `--as` flag for precisely this, and the gate passes it.** The same bytes score 9 findings without that flag and **0** with it. So the gate is not working around its own temp path; it is telling the linter which real path the content belongs to, and the discrepancy came entirely from a probe that omitted the flag.
+
+That makes it the third instance in one session of a single pattern: **the tool offered the right route and the wrong one was used.** The register's `--word` search finds a closed ticket in 8 matches where `--subject` returns 0; the lint's `--as` gives 0 findings where its absence gives 9. In both cases the wrong route returned a confident number that was read as an answer about the subject rather than as an artefact of the query. The habit is not distrust of zeros — it is reading an instrument's interface before quoting its output.
+
+The preceding commit's message is left as written, because rewriting pushed history to tidy a message was declined once before on the same reasoning: an additive correction leaves both the error and its repair in the record, which is what the record is for.
+
 Written under CDSFL note standard v1.9 (1 November 2026).

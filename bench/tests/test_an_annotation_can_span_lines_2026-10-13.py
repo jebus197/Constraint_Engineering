@@ -184,13 +184,36 @@ def test_the_corpus_count_is_unchanged_by_the_fix(R):
 
     The pin is therefore neither raised nor relaxed. It is measured over the
     population it was always meant to describe.
+
+    ★ 528 -> 527 ON 2026-11-03, AND THE PIN WAS COUNTING A HEADING OF MINE.
+    The 2-or-more-hashes rule added to `_looks_like_a_markdown_heading` on
+    2026-11-02 removed exactly 1 line from this closed window, and that line is
+    `FINAL_REPORT_FOR_OPUS_2026-08-27.md` line 55:
+
+        ## Note 6 - Scope, diversity, and an optional validation front
+        (unchanged from prior draft; all [SPECULATIVE] program design, ...)
+
+    2 hashes, a section heading of a report THIS SESSION wrote. It was never his
+    writing, so 528 was 1 too high from the moment that rule landed and 527 is
+    the true size of the closed population. PROVEN BY AN A/B ON THAT RULE ALONE,
+    in one process: with the 2-hash shortcut disabled the window returns 528,
+    with it enabled 527, and the single differing annotation is the line above.
+
+    WHAT THIS IS NOT. It is not a guard relaxed to make a board green. The
+    guard's job -- catching an annotation of his joined to or split from its
+    neighbour -- is untouched, and the direction of the correction REMOVES a
+    line from his record rather than admitting one. The 2026-11-02 commit
+    changed a decision and left its own pin stale, which is a documentation
+    defect of equal standing to a code one; this is that sweep, late.
+
+    REVERSIBLE IN 1 LINE if he judges otherwise: put 528 back.
     """
     import datetime as _dt
     # `by="report"` ASKS THE CLOSED QUESTION. The default filters on mtime,
     # which anything touching a file moves, so the population is not closed
     # and this pin drifted to 517 with nothing lost. See `_report_date`.
     bounded = R.annotations(until=_dt.date(2026, 10, 13), by="report")
-    assert len(bounded) == 528, (
+    assert len(bounded) == 527, (
         f"the annotation count moved to {len(bounded)} over a CLOSED window "
         f"ending 2026-10-13; joining or splitting his annotations changes the "
         f"record rather than reading it, and new writing cannot move this figure")
