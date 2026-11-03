@@ -109,7 +109,7 @@ def main() -> int:
                                     * (1 - sp.Rational(str(vh)))))
             assert abs(loss - sym) < 1e-12, "NumPy and SymPy disagree on the loss"
             row.append(f"{name.split(' / ')[1]} {loss:.6f}")
-        print(f"   honest v_bar {vh:.1f} loses: " + ",  ".join(row))
+        print(f"   honest v_bar {vh:.6f} loses: " + ",  ".join(row))
 
     print("\n4. THE LABEL, AND IT IS NOT DECORATION. This is DERIVED: it follows")
     print("   from the equations and says NOTHING about whether it has happened.")

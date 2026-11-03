@@ -82,7 +82,15 @@ def main() -> int:
     print(f"\n  {red} of {applied} applied mutation(s) turned the suite RED")
     ok = MOD.read_text() == original
     print(f"  runner restored to its original text: {ok}")
-    return 0 if (red == applied and applied and ok) else 1
+    # ★ A SKIPPED ANCHOR USED TO EXIT 0, corrected 2026-11-03. The test was
+    # `red == applied`, and a mutation whose anchor no longer matches lowers
+    # `applied` AND is absent from `red`, so the equality still held and this
+    # harness reported success while a property went untested. It happened:
+    # a fix to the subject rewrote 1 anchor, this printed "11 of 11 applied"
+    # and exited 0, and the direction requirement was unguarded until the
+    # SKIP line was read by eye. The denominator is now the number of
+    # mutations DECLARED, which a skip cannot move.
+    return 0 if (red == applied == len(MUTATIONS) and ok) else 1
 
 
 if __name__ == "__main__":

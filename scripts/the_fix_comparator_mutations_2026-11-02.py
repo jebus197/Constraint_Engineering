@@ -42,9 +42,18 @@ MUTATIONS = [
     # ineffective mutation says nothing, exactly like a SKIP, and reporting it
     # as "NOT GUARDED" would have been a false finding about my own guard --
     # the same call made twice on the cy gate the same day.
+    # ★ ANCHOR REPOINTED 2026-11-03. The subject's key set was hoisted to a
+    # module-level `_COMPOSED_MEASUREMENT_KEYS` so the refusal MESSAGE could be
+    # derived from it rather than retyped beside it -- the message had named 4
+    # keys while the check enforced 5, and a caller obeying the message was
+    # refused for `direction`. That hoist changed this anchor's text, and this
+    # harness reported the mutation as SKIP while still printing "11 of 11
+    # applied", so a property went untested behind a line that read green. The
+    # anchor now names the module-level set, which is the 1 place the key set
+    # lives, so it cannot drift from the subject again by a retype.
     ("the declared direction requirement is removed from BOTH checks",
-     '''    need = {"property", "composed", "a_alone", "b_alone", "direction"}''',
-     '''    need = {"property", "composed", "a_alone", "b_alone"}
+     '''    need = set(_COMPOSED_MEASUREMENT_KEYS)''',
+     '''    need = set(_COMPOSED_MEASUREMENT_KEYS) - {"direction"}
     m = dict(m); m.setdefault("direction", "higher_is_better")'''),
     ("direction is ignored, so lower-is-better inverts",
      '''    dominates = ((comp > aa and comp > bb) if d == "higher_is_better"
@@ -122,7 +131,15 @@ def main() -> int:
         MOD.write_text(original)
     print(f"\n  {red} of {applied} applied mutation(s) turned the suite RED")
     print(f"  module restored to its original text: {MOD.read_text() == original}")
-    return 0 if (red == applied and applied) else 1
+    # ★ A SKIPPED ANCHOR USED TO EXIT 0, corrected 2026-11-03. The test was
+    # `red == applied`, and a mutation whose anchor no longer matches lowers
+    # `applied` AND is absent from `red`, so the equality still held and this
+    # harness reported success while a property went untested. It happened:
+    # a fix to the subject rewrote 1 anchor, this printed "11 of 11 applied"
+    # and exited 0, and the direction requirement was unguarded until the
+    # SKIP line was read by eye. The denominator is now the number of
+    # mutations DECLARED, which a skip cannot move.
+    return 0 if (red == applied == len(MUTATIONS)) else 1
 
 
 if __name__ == "__main__":

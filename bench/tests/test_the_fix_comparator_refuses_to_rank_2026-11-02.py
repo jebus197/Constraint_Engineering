@@ -305,3 +305,76 @@ def test_it_consults_no_model_which_is_the_standing_correction():
                       "chat.completions", "deepseek"):
         assert forbidden not in src, (
             f"the comparator references {forbidden!r}; it must be deterministic")
+
+def test_the_refusal_MESSAGE_names_every_key_the_check_REQUIRES():
+    """THE DEFECT OF 2026-11-03, PINNED, and it is a 2-declarations fault.
+
+    The refusal message listed 4 keys -- property, composed, a_alone, b_alone --
+    while the check enforced 5. A caller that supplied exactly what the message
+    asked for was refused for `direction`, which the message never named. Found
+    by CALLING the function with those 4 keys, not by reading it.
+
+    This asserts the message against the SET, so a future key added to the set
+    and not to the message fails here instead of being discovered by a caller.
+    """
+    from bench.fix_comparator import _COMPOSED_MEASUREMENT_KEYS
+    _v, why = composability_verdict(Candidate("a", ""), Candidate("b", ""))
+    missing = [k for k in _COMPOSED_MEASUREMENT_KEYS if k not in why]
+    assert not missing, (
+        f"the refusal message omits required key(s) {missing}, so a caller "
+        f"obeying it is refused for something it was never told about")
+    assert len(_COMPOSED_MEASUREMENT_KEYS) >= 5, (
+        "the key set shrank; if that is deliberate the direction defect of "
+        "2026-11-02 must be re-checked, because `direction` is what closed it")
+
+
+def test_a_measurement_with_exactly_the_LISTED_keys_is_ACCEPTED_or_names_why():
+    """ANTI-VACUITY for the test above. If the message named the keys but the
+    check wanted something else entirely, the assertion above would still pass.
+    So: supply every key the message names, and require the verdict NOT to be a
+    refusal for a missing key.
+    """
+    m = {"property": "p", "composed": 0, "a_alone": 3, "b_alone": 5,
+         "direction": "lower_is_better"}
+    v, why = composability_verdict(
+        Candidate("a", ""), Candidate("b", ""), Candidate("c", "", measurement=m))
+    assert "omits" not in why, (
+        f"a measurement carrying every declared key was still refused as "
+        f"partial: {why}")
+    assert v != MEASUREMENT_REQUIRED or "omits" not in why
+
+# ---- extent, which no test called directly until 2026-11-03 ---------------
+def test_extent_reports_a_net_zero_AND_says_whether_it_PARSED():
+    """`net_lines == 0` means 2 different things, and only another field tells
+    them apart.
+
+    FOUND 2026-11-03 by calling `extent` directly. It was imported by this file
+    and never exercised here -- `compare()` reached it, so it was not dead code,
+    but its own contract had no direct test. A fix text that does not parse and a
+    fix that is genuinely net-neutral BOTH report `net_lines == 0`. A consumer
+    reading that field alone would conflate "no net change" with "I could not
+    read your fix", which is the shape of asking what a 0 is a 0 OF.
+
+    Nothing is currently at risk, because `compare()` emits the whole dict. This
+    pins the 2 fields that disambiguate it, so a future change that drops either
+    one fails here rather than in a consumer.
+    """
+    unparseable = Candidate("raw code, no markers", "        x = 1\n        y = 2\n")
+    neutral = Candidate(
+        "parses, net-neutral",
+        "<<<< SEARCH f.py\n        x = 1\n==== REPLACE\n        x = 2\n>>>>")
+    a, b = extent(unparseable), extent(neutral)
+
+    assert a["net_lines"] == b["net_lines"] == 0, (
+        "the premise of this test is that both cases report a net of 0; if that "
+        "changed, the ambiguity is gone and this test should be retired")
+    assert a["parses"] is False and b["parses"] is True, (
+        "`parses` is the field that disambiguates a net-zero; it must keep "
+        "distinguishing an unreadable fix from a net-neutral one")
+    assert a["diff_hunks"] == 0 and b["diff_hunks"] >= 1, (
+        "`diff_hunks` is the SECOND disambiguator and is not redundant: a "
+        "consumer that reads hunks rather than `parses` must also be able to "
+        "tell the 2 apart")
+    assert b["file_hint"] == "f.py", (
+        "a parsed fix must carry its file hint, which is what makes the extent "
+        "attributable to a target at all")

@@ -93,6 +93,20 @@ class Candidate:
     measurement: dict[str, Any] | None = None
 
 
+#: ★ THE REQUIRED KEYS OF A COMPOSED MEASUREMENT, DECLARED ONCE.
+#:
+#: FOUND 2026-11-03 by exercising this module rather than reading it: the
+#: refusal message named 4 keys while the check enforced 5, so a caller
+#: that obeyed the message was refused for `direction`, which the message
+#: never mentioned. The message is now DERIVED from this set, so the 2
+#: cannot drift apart again -- 1 declaration with 2 readers rather than 2
+#: declarations asserted to agree. `direction` is load-bearing: without it
+#: "dominates" is undefined, and the first version of this function called
+#: a slower composition BETTER on a lower-is-better metric.
+_COMPOSED_MEASUREMENT_KEYS = frozenset(
+    {"property", "composed", "a_alone", "b_alone", "direction"})
+
+
 def _extract(fix_text: str):
     """The live parser, not a re-implementation.
 
@@ -233,7 +247,7 @@ def composability_verdict(a: Candidate, b: Candidate,
             f"no measurement supplied for the composition of {a.label!r} and "
             f"{b.label!r}. To recommend it, name the property and show the "
             f"composed fix dominating BOTH parts alone on that property. "
-            f"Required keys: property, composed, a_alone, b_alone.")
+            f"Required keys: {', '.join(sorted(_COMPOSED_MEASUREMENT_KEYS))}.")
     # ★ `direction` IS REQUIRED, AND THIS WAS A LIVE DEFECT FOUND BY EXERCISING
     # THIS FUNCTION ON 2026-11-02 RATHER THAN BY READING IT. The first version
     # tested `comp > aa and comp > bb` unconditionally, so given a wall-clock
@@ -244,7 +258,7 @@ def composability_verdict(a: Candidate, b: Candidate,
     # opposite ways and both are plausible strings. A proxy chosen without
     # measuring its alternatives is this project's most recorded error class, so
     # the direction is DECLARED and its absence is refused.
-    need = {"property", "composed", "a_alone", "b_alone", "direction"}
+    need = set(_COMPOSED_MEASUREMENT_KEYS)
     missing = sorted(need - set(m))
     if missing:
         return MEASUREMENT_REQUIRED, (
