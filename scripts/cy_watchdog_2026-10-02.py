@@ -447,8 +447,25 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
           last_cpu: float | None = None,
           outcome_dir: pathlib.Path | None = None,
           first: bool = False) -> tuple:
-    """One mechanical check. Returns new state and emits events for what changed."""
+    """One mechanical check. Returns new state, THE EVENTS IT EMITTED, and
+    emits them for what changed.
+
+    THE 7TH RETURN ELEMENT IS B20's PRECONDITION, added 2026-11-03. Before it,
+    an event name reached stdout and nothing else: not this return value and not
+    the pulse file, so an actuator had no machine-readable way to learn WHICH
+    event fired and would have had to parse prose. Every event still goes to
+    stdout through the same `say()` in the same order, so nothing the watch
+    decides and nothing the Monitor wake path sees has changed.
+    """
     now = time.time()
+    #: (kind, message) for every event this tick, newest last.
+    events: list[tuple[str, str]] = []
+
+    def ev(kind: str, msg: str) -> None:
+        """Record the event AND emit it. `say` remains the only stdout path."""
+        events.append((kind, msg))
+        say(kind, msg)
+
     exists = log.is_file()
     size = log.stat().st_size if exists else 0
 
@@ -472,7 +489,7 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
     # is doing something unusual and the operator should hear it, not infer it
     # from a byte count going backwards.
     if exists and size < offset:
-        say("LOG TRUNCATED", f"the log shrank from {offset} to {size} bytes, so "
+        ev("LOG TRUNCATED", f"the log shrank from {offset} to {size} bytes, so "
                              f"it was rewritten or rotated. Re-reading from the "
                              f"start; anything written before this is already "
                              f"reported.")
@@ -486,7 +503,7 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
                 chunk = fh.read()
                 offset = fh.tell()
         except OSError as exc:
-            say("WATCHDOG", f"cannot read the log ({exc}); treating as stalled")
+            ev("WATCHDOG", f"cannot read the log ({exc}); treating as stalled")
             chunk = ""
         matches = []
         for ln in chunk.splitlines():
@@ -497,21 +514,21 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
                 # The conditional threshold line with the queue AT or UNDER its
                 # bound. Reported as PROGRESS below rather than as trouble, so
                 # the figure is still visible without crying wolf.
-                say("QUEUE", ln.strip()[:300])
+                ev("QUEUE", ln.strip()[:300])
                 continue
             matches.append(ln.strip()[:300])
         if first and len(matches) > BACKLOG_SUMMARY_THRESHOLD:
-            say("BACKLOG", f"the log already held {len(matches)} problem "
+            ev("BACKLOG", f"the log already held {len(matches)} problem "
                            f"line(s) written before this watch armed. They are "
                            f"summarised, not replayed: a replay of that many "
                            f"gets cut off, and it is the newest lines -- the "
                            f"only ones still worth acting on -- that get cut. "
                            f"Read the log for the rest. The 3 most recent:")
             for mt in matches[-3:]:
-                say("BACKLOG LINE", mt)
+                ev("BACKLOG LINE", mt)
         else:
             for mt in matches:
-                say("TROUBLE", mt)
+                ev("TROUBLE", mt)
         # NOT `last_change = now` HERE. Reading bytes that were already on disk
         # when this watchdog attached is not the log ADVANCING, and treating it
         # as advance is how a watchdog inherits a false assumption of health:
@@ -524,12 +541,12 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
 
     r = _round_count(log, outcome_dir)
     if r > rounds:
-        say("PROGRESS", f"round {r} landed (was {rounds})")
+        ev("PROGRESS", f"round {r} landed (was {rounds})")
         rounds = r
 
     if not _alive(pid):
-        say("PROCESS GONE", f"pid {pid} is no longer running; the run has ended")
-        return offset, last_size, last_change, rounds, True, last_cpu
+        ev("PROCESS GONE", f"pid {pid} is no longer running; the run has ended")
+        return offset, last_size, last_change, rounds, True, last_cpu, events
 
     stalled_for = now - last_change
     if stalled_for > stall_s:
@@ -551,20 +568,20 @@ def probe(log: pathlib.Path, pid: int | None, offset: int, last_size: int,
                 advanced = True
                 last_cpu, cpu = cpu, again
         if advanced:
-            say("QUIET BUT WORKING",
+            ev("QUIET BUT WORKING",
                 f"no log growth for {int(stalled_for)} s, but pid {pid} has "
                 f"consumed {cpu - last_cpu:.1f} s more CPU since the last "
                 f"check, so it is running and not hung. A panel seat writes "
                 f"nothing until it finishes.")
         else:
-            say("STALLED", f"no log growth for {int(stalled_for)} s "
+            ev("STALLED", f"no log growth for {int(stalled_for)} s "
                            f"(threshold {stall_s} s) AND no CPU progress"
                            + (f" (cputime {cpu:.1f} s, unchanged)" if cpu is not None
                               else " (CPU time unavailable)")
                            + ". SILENCE IS NOT SUCCESS — pause, diagnose, "
                              "repair, resume.")
         last_change = now      # report once per stall window, not every tick
-    return offset, last_size, last_change, rounds, False, _cpu_seconds(pid)
+    return offset, last_size, last_change, rounds, False, _cpu_seconds(pid), events
 
 
 #: THE PULSE FILE, ADDED 2026-11-02, AND IT EXISTS FOR A GATE TO READ.
@@ -591,7 +608,7 @@ PULSE_NAME = "cy_pulse.json"
 
 
 def write_pulse(path, *, log, pid, rounds, last_size, ended, verdict=None,
-                detail=None, interval=60) -> None:
+                detail=None, interval=60, events=None) -> None:
     """Record the watch's liveness, atomically. NEVER raises.
 
     Atomic because a Stop gate may read this at any moment and a half-written
@@ -616,6 +633,12 @@ def write_pulse(path, *, log, pid, rounds, last_size, ended, verdict=None,
             "ended": bool(ended),
             "verdict": verdict,
             "detail": (detail or "")[:400],
+            # THE EVENTS OF THE LATEST TICK, for an actuator to read instead of
+            # parsing prose. Deliberately NOT folded into `verdict`, which
+            # means the final outcome: a mid-run event is not a result, and
+            # conflating the 2 is how a reader treats one as the other.
+            "events": [{"kind": k, "message": str(m)[:300]}
+                       for k, m in (events or [])][-8:],
             "watchdog_pid": os.getpid(),
         }
         tmp = path.with_suffix(path.suffix + ".tmp")
@@ -716,12 +739,13 @@ def main() -> int:
 
     first = True
     while not stop["now"]:
-        offset, last_size, last_change, rounds, ended, last_cpu = probe(
+        offset, last_size, last_change, rounds, ended, last_cpu, events = probe(
             log, pid, offset, last_size, last_change, rounds, args.stall_seconds,
             last_cpu, outcome_dir, first=first)
         first = False
         write_pulse(pulse, log=log, pid=pid, rounds=rounds,
-                    last_size=last_size, ended=ended, interval=args.interval)
+                    last_size=last_size, ended=ended, interval=args.interval,
+                    events=events)
         if ended or args.once:
             break
         if (time.time() - last_beat) > args.heartbeat_minutes * 60:

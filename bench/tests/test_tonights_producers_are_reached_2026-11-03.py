@@ -54,6 +54,7 @@ NOT_RUN_HERE = {
     "the_models_word_mutations_2026-11-03.py": "invokes pytest; would recurse",
     "the_bare_clock_dating_mutations_2026-11-03.py": "invokes pytest; would recurse",
     "the_second_route_mutations_2026-11-03.py": "invokes pytest; would recurse",
+    "the_events_channel_mutations_2026-11-03.py": "invokes pytest; would recurse",
 }
 
 
