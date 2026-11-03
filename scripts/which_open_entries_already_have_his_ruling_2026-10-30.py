@@ -167,6 +167,103 @@ def is_suspect(asks_for_a_ruling: bool,
     return ruled_field < newest_his_voice
 
 
+
+#: THE SECOND SOURCE, ADDED 2026-11-03 ON HIS CHALLENGE. He asked whether all
+#: the decisions put to him were new issues he had never ruled on. This script
+#: answered 0 of 12 suspects -- and it was looking in the wrong place. It reads
+#: COMMIT MESSAGES only, while the surface that actually records his verdicts
+#: beside a decision is the report's own detail file, whose `ruled` and
+#: `his_words` fields held 3 of the 14 presented decisions: B21, B71 and B84,
+#: 0.214286, Wilson 95% [0.075714, 0.475892].
+#:
+#: ALL 3 TURNED OUT TO BE HANDLED CORRECTLY, which is why the predicate here is
+#: NOT "his words exist". Each of those entries tells him in the text he reads
+#: that his earlier ruling stands and names the distinct question that remains.
+#: The failure that would cost him a decision twice is narrower and is what this
+#: detects: HIS RULING IS ON RECORD AND THE TEXT HE READS DOES NOT SAY SO.
+DETAIL = REPO / "experimental_notes" / "data" / "morning_report_decisions.json"
+
+#: Phrases that acknowledge a prior verdict of his. A DATE ALONE IS NOT ENOUGH
+#: and matching one would have produced a false positive here: B71's section
+#: says "You ruled on 1 November" where its field holds 2026-11-01, so a
+#: date-string test would have accused a compliant entry.
+_ACKNOWLEDGES = re.compile(
+    r"you ruled|already ruled|ruling stands|is not reopened|you have settled|"
+    r"you settled|you authorised|you authorized|permission is granted|"
+    r"I accept your recommendation|you accepted", re.I)
+
+
+def detail_rulings() -> dict:
+    """ident -> {ruled, his_words, acknowledged} from the file HE is shown.
+
+    `acknowledged` asks whether the `title` and `what` fields -- which are what
+    the report renders to him verbatim -- say that he already ruled. If his
+    verdict is on record and that text does not say so, the entry reads to him
+    as a fresh question he has already answered.
+    """
+    try:
+        obj = json.loads(DETAIL.read_text(encoding="utf-8"))
+    except Exception:                                        # noqa: BLE001
+        return {}
+    out = {}
+    for key, rec in obj.items():
+        if not key.startswith("task:") or not isinstance(rec, dict):
+            continue
+        ruled = str(rec.get("ruled") or "").strip()
+        words = str(rec.get("his_words") or "").strip()
+        if not (ruled or words):
+            continue
+        ident = key.split(":", 1)[1]
+        out[ident] = {"ruled": ruled, "his_words": words}
+    report = _rendered_report()
+    presented = _presented_idents(report)
+    for ident, rec in out.items():
+        rec["acknowledged"] = _acknowledged_in_report(ident, report)
+        rec["presented"] = ident in presented
+    return out
+
+
+
+def _rendered_report() -> str:
+    """The report AS GENERATED. Read, never guessed.
+
+    THE FIRST VERSION OF THIS GUESSED and was wrong on its first run, which is
+    the 3rd proxy-predicate error of 2026-11-03. It inferred "presented as a
+    decision" from the PRESENCE of an `options` field, and C0001 carries
+    options yet is not rendered as a numbered decision at all -- the report puts
+    it under outstanding work with the words "YOU RULED THIS ON 2026-11-01; the
+    work is outstanding", which is a fuller acknowledgement than the predicate
+    was looking for. A proxy for what a generator renders is not what it
+    renders; run it and read it.
+    """
+    try:
+        r = subprocess.run(
+            [sys.executable, str(REPO / "scripts" / "morning_report_build_2026-10-12.py")],
+            capture_output=True, text=True, cwd=str(REPO), timeout=180)
+        return r.stdout or ""
+    except Exception:                                        # noqa: BLE001
+        return ""
+
+
+def _presented_idents(report: str) -> set:
+    """Entries the report renders as NUMBERED decisions, from its own headings."""
+    return set(re.findall(r"^### \d+\.\s+([A-Za-z]+\d+)", report, re.M))
+
+
+def _acknowledged_in_report(ident: str, report: str) -> bool:
+    """Does the text he reads say he already ruled on this entry?
+
+    Scoped to the entry's own rendered section where it has one, and otherwise
+    to any line naming it -- because an entry can be acknowledged outside the
+    decisions list, as C0001 is.
+    """
+    m = re.search(rf"^### \d+\.\s+{re.escape(ident)}\b.*?(?=^### |\Z)",
+                  report, re.S | re.M)
+    scope = m.group(0) if m else "\n".join(
+        ln for ln in report.splitlines() if ident in ln)
+    return bool(_ACKNOWLEDGES.search(scope))
+
+
 def analyse() -> dict:
     rows = []
     for e in parse_entries():
@@ -192,10 +289,19 @@ def analyse() -> dict:
                      "ruled_field": e.ruled, "newest_quote": newest,
                      "quoting_commits": quotes[:3],
                      "his_voice_commits": his[:3], "suspect_stale": stale})
+    # THE 2 CHANNELS ARE REPORTED APART, NOT SUMMED. They answer different
+    # questions -- one asks whether a commit quotes him naming the entry, the
+    # other whether the text he is shown admits a verdict already on record --
+    # and a single opaque count would hide which surface was blind.
+    det = detail_rulings()
+    unacknowledged = sorted(i for i, v in det.items() if not v["acknowledged"])
     return {"rows": rows,
             "n_open": len(rows),
             "n_asking": sum(1 for r in rows if r["asks_for_a_ruling"]),
-            "suspects": [r["ident"] for r in rows if r["suspect_stale"]]}
+            "suspects": [r["ident"] for r in rows if r["suspect_stale"]],
+            "detail_rulings": det,
+            "n_with_his_words": len(det),
+            "unacknowledged": unacknowledged}
 
 
 def wilson(k: int, n: int, z: float = 1.959963984540054) -> tuple[float, float]:
@@ -237,12 +343,46 @@ def main() -> int:
         slo, shi = proportion_confint(k, max(n, 1), method="wilson")
         agree = abs(slo - lo) < 1e-12 and abs(shi - hi) < 1e-12
     except Exception:                                          # pragma: no cover
-        slo = shi = float("nan"); agree = False
+        slo = shi = float("nan")
+        agree = False
     print()
     print(f"OPEN entries: {a['n_open']}   asking for a ruling: {n}")
     print(f"SUSPECT ALREADY-RULED: {k} of {n} -> {a['suspects']}")
     print(f"    Wilson 95% (closed form) [{lo:.6f}, {hi:.6f}]")
     print(f"    Wilson 95% (statsmodels) [{slo:.6f}, {shi:.6f}]  agree={agree}")
+    print()
+    det = a.get("detail_rulings", {})
+    print()
+    print("SECOND SOURCE -- the detail file he is actually shown:")
+    print(f"  decisions whose record holds a ruling of his : {a['n_with_his_words']}")
+    for i, v in sorted(det.items()):
+        mark = "OK " if v["acknowledged"] else "!! "
+        print(f"    {mark}{i:5s} ruled={v['ruled'] or '-':11s} "
+              f"presented_as_a_decision={str(v.get('presented')):5s} "
+              f"acknowledged_in_what_he_reads={v['acknowledged']}")
+        if v["his_words"]:
+            print(f"          his words: {v['his_words'][:72]}")
+    bad = a.get("unacknowledged", [])
+    bad_shown = [i for i in bad if det.get(i, {}).get("presented")]
+    bad_hidden = [i for i in bad if not det.get(i, {}).get("presented")]
+    n_shown = sum(1 for v in det.values() if v.get("presented"))
+    print(f"  HIS RULING ON RECORD, NOT ACKNOWLEDGED IN HIS TEXT: "
+          f"{len(bad)} of {a['n_with_his_words']}")
+    print(f"    ...among entries PRESENTED to him as decisions : "
+          f"{len(bad_shown)} of {n_shown} -> {bad_shown}")
+    if n_shown:
+        lo3, hi3 = wilson(len(bad_shown), n_shown)
+        print(f"      Wilson 95% [{lo3:.6f}, {hi3:.6f}]")
+    print(f"    ...among entries NOT presented                 : "
+          f"{len(bad_hidden)} of {a['n_with_his_words'] - n_shown} -> {bad_hidden}")
+    if a["n_with_his_words"] - n_shown:
+        lo4, hi4 = wilson(len(bad_hidden), a["n_with_his_words"] - n_shown)
+        print(f"      Wilson 95% [{lo4:.6f}, {hi4:.6f}]")
+    print("    THE SPLIT IS THE POINT. A decision PUT TO HIM that hides his own")
+    print("    prior ruling costs him the decision twice. One merely RECORDED and")
+    print("    never shown costs him nothing today and is a documentation gap.")
+    print("    Summing the 2 would read as `your decision queue is wrong`, which")
+    print("    the measurement does not support.")
     print()
     print("These are SUSPECTS for reading, never verdicts. A quotation beside an")
     print("entry id shows he SPOKE on it, not what he decided, and closing an")
