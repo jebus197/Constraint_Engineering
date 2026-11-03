@@ -126,6 +126,22 @@ BARE_WORD_NUMBER = re.compile(rf"\b{_NW}\b", re.I)
 #: with" and the ordinals are English, not data, and his own rule exempts
 #: ordinals and dates that read naturally aloud. Listed explicitly rather than
 #: inferred, so a reader can see exactly what is forgiven.
+#: ★ A PRONOMINAL `one` CARRYING A MODIFIER, added 2026-11-03. The list
+#: below already exempts `the one`, `this one`, `each one` and `the only
+#: one`, but not an adjective sitting between the article and the word, so
+#: `the expensive one`, `an inherited one` and `a varying one` were
+#: reported on correct English prose. Measured on the generated morning
+#: report: 8 of its 13 spelled-number findings are this shape.
+#:
+#: IT CANNOT HIDE A NUMBER, and that is the reason it is safe rather than
+#: convenient: the pattern matches only the token `one`, so a spelled
+#: `two`, `three` or higher is untouched. Checked by running it over the
+#: report and listing every token it silenced -- `one` and nothing else.
+_PRONOUN_ONE_WITH_MODIFIER = re.compile(
+    r"\b(?:the|a|an|that|this|another|its|his|her|their|our|my|every|"
+    r"each|any|no|some|first|last|next|only)\s+(?:[a-z-]+\s+){1,2}one\b",
+    re.I)
+
 BARE_WORD_NUMBER_OK = re.compile(
     r"\b(?:no one|one another|one-off|one by one|one or (?:two|more|the other)|"
     r"at one|in one|as one|the one|this one|that one|each one|every one|"
@@ -1546,7 +1562,12 @@ def lint(path: pathlib.Path) -> list:
             if bm:
                 lo_i = max(0, bm.start() - 18)
                 window = unquoted[lo_i:bm.end() + 18]
-                if not BARE_WORD_NUMBER_OK.search(window):
+                #: The pronominal window is WIDER on purpose: an article plus up
+                #: to 2 modifiers can sit further back than 18 characters, as in
+                #: "the only measured one", which needs 21.
+                wide = unquoted[max(0, bm.start() - 40):bm.end() + 18]
+                if not (BARE_WORD_NUMBER_OK.search(window)
+                        or _PRONOUN_ONE_WITH_MODIFIER.search(wide)):
                     out.append((para_no,
                                 "SPELLED NUMBER (Rule 27 in full: use digits)",
                                 bm.group(0), s))

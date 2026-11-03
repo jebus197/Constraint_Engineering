@@ -891,7 +891,18 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         if it.get("ruled"):
             A(f"  You ruled on this on {it['ruled']}; what is left is work.")
     A("")
-    A(_VE)
+    # ★ THE ORPHAN `_VE` IS REMOVED, 2026-11-03. This section used to print the
+    # parked headings VERBATIM and was wrapped accordingly. His `pf` of
+    # 2026-11-01 routed it through `parked_presentation`, which makes the text
+    # this project's OWN presentation prose, and the opening `_VB` was dropped
+    # -- correctly, since Rule 27 should bind it -- while the closing marker was
+    # left behind. The output therefore carried 4 begin markers against 5 ends,
+    # which `region_state` reports as 1 stray close and the note standard calls
+    # malformed. FOUND 2026-11-03 by the self-lint added to this generator the
+    # same hour, on its FIRST run: nothing had ever linted this file, because it
+    # is gitignored and the test that would catch it is not on the commit board.
+    # A repair that removes an opening marker must remove its close in the same
+    # edit; this is the half that was missed.
     A("")
     A("---")
     A("")
@@ -1224,6 +1235,35 @@ def main(argv: list[str]) -> int:
         desk.parent.mkdir(parents=True, exist_ok=True)
         desk.write_text(tts, encoding="utf-8")
         print(f"  wrote {desk}  ({len(tts.splitlines())} lines)")
+        # ★ LINT WHAT WAS JUST WRITTEN, added 2026-11-03. Rule 27 binds section 1
+        # because its text comes from `data/morning_report_decisions.json`, which
+        # this project authors -- the comment at `_VB` above says so and declines
+        # to wrap it in a verbatim region for exactly that reason. Nothing was
+        # checking it: the report is gitignored so the pre-commit note ratchet
+        # never sees it, and the test that would catch it is not on the board.
+        # Putting that test on the board would make its verdict depend on an
+        # untracked file existing, so the check belongs HERE, where the file is
+        # made. It REPORTS and never refuses: withholding his morning report over
+        # a prose finding would cost him the thing he needs.
+        try:
+            from note_vagueness_lint import blocking as _blocking
+            for _f in (out, desk):
+                _hits = _blocking(_f)
+                if _hits:
+                    print(f"  NOTE-STANDARD: {len(_hits)} blocking finding(s) in "
+                          f"{_f.name} -- read before delivering")
+                    for _h in _hits[:6]:
+                        print(f"      para {_h[0]}  {_h[1]}  {_h[2]!r}")
+                    if len(_hits) > 6:
+                        print(f"      ... and {len(_hits) - 6} more")
+                else:
+                    print(f"  NOTE-STANDARD: {_f.name} is clean")
+        except Exception as _lx:                               # noqa: BLE001
+            # A lint failure must never cost him the report, but it must not pass
+            # silently either -- a swallowed exception is not a record.
+            print(f"  NOTE-STANDARD: the lint could not run "
+                  f"({type(_lx).__name__}: {str(_lx)[:120]}). The report IS "
+                  f"written; its compliance is UNCHECKED, not clean.")
         # STAMP THEM HERE, because regenerating WIPES a stamp applied afterwards and a
         # step you must remember is a step that gets forgotten. His order of 2026-10-12:
         # give each output its own hash value, to track them exactly.

@@ -137,6 +137,17 @@ def main() -> int:
     print(f"   accusations the prose date removes     : {len(exon)}")
     _show("false accusations among the pre-fix total", len(exon),
           len(fires) + len(exon))
+    #: ★ THE DENOMINATOR IS STAMPED, added 2026-11-03 after the post-compaction
+    #: re-verification found this ratio had moved. This producer measures the
+    #: CURRENT corpus, so adding notes moves BOTH sides: the record was taken at
+    #: 16 of 53 and a run after 9 more notes reports 17 of 59. Neither is wrong.
+    #: Printing the corpus size beside the ratio is what makes a later, different
+    #: pair CONSISTENT with the record instead of contradicting it.
+    print(f"   CORPUS AT THIS RUN: {len(notes)} note(s) under experimental_notes/, "
+          f"of which {bare} carry a bare clock.")
+    print("   THIS RATIO MOVES WITH THE CORPUS. A later run reporting a different")
+    print("   pair is not a contradiction: quote the pair WITH the corpus size, as")
+    print("   16 of 53 at 631 tracked notes, or the figure cannot be checked.")
     for name, oc, nc, mt in exon[:5]:
         print(f"      {name[:44]:44s} rule said {oc:%Y-%m-%d %H:%M}  "
               f"header says {nc:%Y-%m-%d %H:%M}  mtime {mt:%Y-%m-%d %H:%M}")

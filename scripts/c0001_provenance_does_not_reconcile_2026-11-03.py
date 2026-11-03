@@ -62,12 +62,25 @@ def main() -> int:
     claim = re.search(r"Raised ([\d-]+) at severity ([\d.]+), the highest of "
                       r"the (\d+)", body)
     print("\n1. THE CLAUSE, read from the entry rather than quoted from memory.")
-    if not claim:
-        print("   the clause is no longer present, so this producer's premise")
-        print("   has been addressed.")
-        return 0
-    date, sev, n = claim.group(1), float(claim.group(2)), int(claim.group(3))
-    print(f"   date {date}   severity {sev}   'the highest of the' {n}")
+    #: ★ THE ARCHIVE IS MEASURED WHETHER OR NOT THE CLAUSE SURVIVES, corrected
+    #: 2026-11-03. A first version returned here the moment the clause was
+    #: corrected, so the very measurements that JUSTIFIED the correction became
+    #: unreproducible by the script committed beside them -- a producer outliving
+    #: its defect, which this project has recorded before. The archive facts do
+    #: not depend on the entry's wording: they are facts about 4 archived runs.
+    #: So the clause check becomes a REPORTED status and the measurement runs on.
+    clause_present = claim is not None
+    if not clause_present:
+        print("   the original clause is NO LONGER PRESENT, which means the")
+        print("   correction has landed. The archive measurements below are")
+        print("   reported anyway, because they are what justified it and they")
+        print("   must stay reproducible after the subject is fixed.")
+        date, sev, n = "2026-06-06", 0.9, 28
+        print(f"   reading the HISTORICAL claim as committed: date {date}, "
+              f"severity {sev}, 'the highest of the' {n}")
+    if clause_present:
+        date, sev, n = claim.group(1), float(claim.group(2)), int(claim.group(3))
+        print(f"   date {date}   severity {sev}   'the highest of the' {n}")
 
     print("\n2. EVERY CANDIDATE RUN, measured.")
     rows = []
