@@ -141,8 +141,26 @@ def _changed(since: str) -> list[str]:
 
 
 def _iv(k: int, n: int):
+    """Wilson and Clopper-Pearson, on 2 independent implementations EACH.
+
+    ★ WILSON HAD ONLY 1 ROUTE UNTIL 2026-11-03 and the gap was invisible
+    because the function imported 3 libraries. Clopper-Pearson was genuinely
+    cross-checked -- scipy.beta against an mpmath bisection -- while Wilson came
+    from statsmodels alone, so the reported `|diff|` spoke for one of the 2
+    quantities and said nothing about the other. That is exactly the defect
+    B97 names: 2 library names buying 0 cross-checks for the quantity that
+    needed one.
+
+    THE REPAIR IS A PROPAGATION, NOT AN INVENTION. The written-out Wilson below
+    is the implementation already proven in
+    `scripts/a_models_own_verified_flag_closes_it_2026-11-03.py`, where SymPy
+    simplifies it minus the canonical closed form to 0 on both bounds. The
+    returned difference is now the MAXIMUM over both quantities, so neither can
+    hide behind the other.
+    """
     from scipy import stats
     from statsmodels.stats.proportion import proportion_confint
+    import math
     import mpmath
     mpmath.mp.dps = 40
 
@@ -150,7 +168,7 @@ def _iv(k: int, n: int):
         def f(x):
             return mpmath.betainc(a, b, 0, x, regularized=True) - y
         lo, hi = mpmath.mpf(0), mpmath.mpf(1)
-        for _ in range(200):
+        for _ in range(240):
             mid = (lo + hi) / 2
             lo, hi = (mid, hi) if f(mid) < 0 else (lo, mid)
         return float((lo + hi) / 2)
@@ -158,11 +176,18 @@ def _iv(k: int, n: int):
     if n == 0:
         return (0.0, 1.0), (0.0, 1.0), 0.0
     wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
+    # SECOND WILSON, written out, so a library disagreement cannot pass.
+    z = stats.norm.ppf(0.975)
+    p = k / n
+    den = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / den
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / den
+    wdiff = max(abs(wl - (centre - half)), abs(wh - (centre + half)))
     cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
     ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
-    d = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
-            abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
-    return (max(0.0, wl), wh), (cl, ch), d
+    cdiff = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
+                abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
+    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
 
 
 def main() -> int:

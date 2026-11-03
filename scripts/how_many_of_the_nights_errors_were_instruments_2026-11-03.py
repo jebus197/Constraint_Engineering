@@ -120,6 +120,31 @@ CLASSIFIED = {
         "INSTRUMENT",
         "an audit of rigour by STEM import count ranked 4 of 7 producers "
         "backwards, because 2 library names can resolve to 1 verifier"),
+    # ★ 4 ADDED 2026-11-03 EVENING, BECAUSE THE REFUSAL ABOVE FIRED FOR THEM.
+    # This producer refuses to quote a count while its population and its
+    # classification disagree, and 4 entries written the same morning were
+    # unclassified. The refusal was CORRECT -- it is the population-and-rule
+    # discipline working -- so the repair is to classify them, not to relax it.
+    "feedback_an_extension_is_a_claim_about_content_2026-11-03": (
+        "INSTRUMENT",
+        "an 11 MB PNG carrying a `.md` extension was read as 780 of his "
+        "rulings, 0.481779 of the corpus: the READER trusted a filename over "
+        "the bytes, and the file itself was never the fault"),
+    "feedback_his_own_marker_hides_his_words_2026-11-03": (
+        "INSTRUMENT",
+        "a shape heuristic discarded 41 of 583 of his `#` comments as markdown "
+        "headings, 36 of which end in one of his own ticket markers, so the "
+        "discriminator was in front of the rule that threw them away"),
+    "feedback_a_merge_moves_work_it_does_not_finish_it_2026-11-03": (
+        "INSTRUMENT",
+        "a resolution rule read MERGED as settled and would have closed 48 "
+        "rows wrongly; 76 of 89 merge parents end at UNCONFIRMED, so the "
+        "rule's own premise about the store was false"),
+    "feedback_a_compaction_summary_can_invent_his_question_2026-11-03": (
+        "INSTRUMENT",
+        "a compaction summary attributed 4 questions to him that appear 0 "
+        "times in 1,716 typed transcript entries and 0 times in 839 "
+        "annotations: the summary is an instrument and it fabricated input"),
 }
 
 

@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import importlib.util
+import os
 import pathlib
 import tempfile
 
@@ -194,7 +195,20 @@ def main() -> int:
     print("   => none of these notes ever claimed the day it was accused of.")
 
     print("\n3. THE RULE STILL CATCHES WHAT IT IS FOR. 3 cases, driven.")
-    now = dt.datetime.now()
+    #: ★ THE WRITE TIME IS PINNED TO 10:00, NOT TAKEN FROM THE WALL CLOCK
+    #: (2026-11-03). This used `datetime.now()` and added 2 hours, which WRAPS
+    #: PAST MIDNIGHT after 21:59: the header then carried `00:42` beside the
+    #: write day's prose date, a claimed time about 22 hours in the PAST, and
+    #: the rule correctly stayed silent. The self-check reported WRONG and this
+    #: producer exited 1 -- for 2 of every 24 hours, and only for those 2.
+    #:
+    #: Measured by driving the identical construction at 8 hours of the day:
+    #: ACCUSE at 00, 06, 10, 14, 18 and 21; SILENT at 22 and 23. NOTHING IN
+    #: `future_stamp` WAS WRONG. Repairing the rule to satisfy this probe would
+    #: have broken correct code, which is the shape the record names twice.
+    #: The file's own mtime is now set alongside the header, so the relation the
+    #: case claims holds whatever hour this runs at.
+    now = dt.datetime.now().replace(hour=10, minute=0, second=0, microsecond=0)
     cases = []
     with tempfile.TemporaryDirectory() as d:
         dd = pathlib.Path(d)
@@ -202,6 +216,7 @@ def main() -> int:
         a = dd / "Same_Day_Clock_Ahead.md"
         a.write_text(f"# A note\n\n{now.day} {now:%B} {now.year}, "
                      f"{fut:%H:%M} GMT\n\nbody\n")
+        os.utime(a, (now.timestamp(), now.timestamp()))
         cases.append(("a same-day clock 2 hours ahead", a, True))
         tom = now + dt.timedelta(days=1)
         b = dd / "Header_Dated_Tomorrow.md"

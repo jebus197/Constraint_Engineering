@@ -213,8 +213,36 @@ def test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket(rows):
     def key(f, text):
         return (str(f).split("#")[0], " ".join(str(text).split()).lower())
 
-    unconfirmed = {key(t.anchor, t.verbatim or t.title)
-                   for t in store.unconfirmed()}
+    # ★ THE PREDICATE NOW TESTS THE PROPERTY THIS GUARD STATES, NOT A PROXY FOR
+    # IT (2026-11-03). It read `store.unconfirmed()`, which admits exactly one
+    # status. The property in the docstring and in the assertion message below is
+    # "their tickets have been SETTLED anyway", and settled is the complement of
+    # live, not the complement of UNCONFIRMED. The 2 formulations differ on 6
+    # statuses -- CONTESTED, CORROBORATED, OPEN, REOPENED, UNDECIDED, WITHHELD --
+    # every one of them LIVE, so flagging them said "settled" of a ticket that is
+    # not settled.
+    #
+    # FOUND BY HIS OWN ESCALATION ROUTE. On 2026-11-03 he instructed
+    # `reopen('86a5a9f182c2', ...)`. `reopen` is the founder-only path out of a
+    # terminal status and it sets REOPENED -- which is LIVE and is NOT
+    # UNCONFIRMED -- so the guard went on refusing a ticket he had personally
+    # put back into live work. A guard that cannot see the founder's own remedy
+    # is reading the wrong field.
+    #
+    # WHY `live` AND NOT `not settled`, WHICH IS NOT THE SAME THING HERE. A row
+    # with NO TICKET AT ALL is in neither set. Keying off `live` leaves such a
+    # row flagged, exactly as the old predicate did; keying off `not settled`
+    # would silently excuse it. Verified 2 routes, 2026-11-03: set algebra gives
+    # `settled & live == {}` and `settled | live == STATUSES`, and z3 returns
+    # unsat for both "a status is both" and "a status is neither".
+    #
+    # DOMINANCE, MEASURED, as the additive standard requires for a widening:
+    # the new predicate flags a strict SUBSET of the old one --
+    # {s : new(s) and not old(s)} is EMPTY -- so 6 false-positive status classes
+    # are removed and 0 true positives are lost. All 7 TERMINAL statuses, plus
+    # REJECTED, plus the no-ticket case, are still flagged.
+    # Producer: scripts/a_guard_cannot_refuse_his_own_remedy_2026-11-03.py.
+    live_keys = {key(t.anchor, t.verbatim or t.title) for t in store.live()}
 
     # ★ THE ESCAPE NOW READS THE LIVE MARKER, NOT THE ROW'S PROSE (2026-10-20).
     # It was `if "is DONE" in r["evidence"]`, a match against the sentence the
@@ -257,7 +285,7 @@ def test_a_tracked_row_whose_entry_is_open_has_not_settled_its_ticket(rows):
             continue
         if _its_entry_is_finished(r):
             continue
-        if key(r["file"], r["text"]) not in unconfirmed:
+        if key(r["file"], r["text"]) not in live_keys:
             wrong.append(r["text"][:60])
     assert not wrong, (
         f"{len(wrong)} annotation(s) are recorded as TRACKED by an entry that "

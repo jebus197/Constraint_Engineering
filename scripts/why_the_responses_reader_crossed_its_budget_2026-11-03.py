@@ -104,6 +104,27 @@ def main() -> int:
 
     from_big = [a for a in anns if a["file"] == biggest]
     others = [a for a in anns if a["file"] != biggest]
+    #: ★ THE DEFECT THIS MEASURES IS NOW REPAIRED, AND THAT IS NOT A FAILURE
+    #: OF THIS PRODUCER (2026-11-03). It split the corpus by its largest file to
+    #: show where the 684.25 s went. The largest file is an 11 MB PNG wearing a
+    #: `.md` extension, and the reader now excludes it by its BYTES, so it
+    #: contributes 0 annotations and the split has an empty side.
+    #:
+    #: Exiting 1 here said "this producer broke". The truth is the opposite: the
+    #: empty side IS the evidence that the 780 phantom annotations are gone. A
+    #: producer outliving its defect must say so and keep its historical figure,
+    #: which is the shape `feedback_a_producer_outlives_its_defect` names. So
+    #: the repaired condition is reported and exits 0; only a genuinely
+    #: unreadable corpus still exits non-zero, above.
+    if not from_big and others and rd.is_binary_file(
+            (REPO.parent / "Responses" / biggest)):
+        print(f"  REPAIRED: the largest file contributes 0 of {len(others)} "
+              f"annotations because the reader now excludes it by its bytes.")
+        print("    So the split this producer needs has an empty side BY "
+              "DESIGN, and that is the fix landing rather than a fault.")
+        print(f"    The pinned {PINNED_CLI_WALL:.2f} s stands as a HISTORICAL "
+              f"figure for the pre-fix reader and must be quoted as such.")
+        return 0
     if not from_big or not others:
         print("  REFUSED: cannot split annotations by file, so no comparison.")
         return 1

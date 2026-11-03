@@ -60,4 +60,44 @@ Of the 63 questions, 14 are the complaint this note answers and **49 are genuine
 
 The format the founder endorsed on the 30th of October is 4 parts for every item put to him: what it is, what it affects, what it decides, and what is recommended. Every section above follows it. A reference code alone is not an item description, and an item presented by code without those 4 parts should be treated as not yet presented.
 
+## 4 more answered, added at 16:30, each verified by running something
+
+### The demotion false-alarm figure he challenged
+
+He asked, against a recommendation of 0.05: *"Can we improve on this statistic? A 1 in 20 chance of demoting a model that is performing just fine seems unreasonably high?"*
+
+He was right and the figure had already moved. The operating point stands at 1 in 50, which is 0.02, and the guard that pins it passes 6 of 6 with the named constant set to 0.02. That guard's own description records the figure as having been given in answer to this very challenge, and notes that he accepted 1 in 50 after challenging 1 in 20. So the exchange completed and only the register row stayed open.
+
+It also changes nothing in practice today. A search for a demotion call anywhere in the harness code, excluding the definitions themselves, returns 0 matches. The parameter governs a mechanism that does not act.
+
+**What it affects:** nothing live. **What is recommended:** no action unless a demotion mechanism is built, at which point 0.02 is the figure of record.
+
+### Which panel requests are genuinely outstanding
+
+He asked that the reading distinguish genuinely undone panel work from stale recording: *"Not all of them are likely to be stale. They have simply not yet been done as far as I can tell?"*
+
+Measured by running the census over the whole log tree. 139 directories carry a brief. 4 of them have no seat reply and no harvested sandbox, which means those reviews never ran. 132 have at least 1 reply. A further 3 are marked retired against his own ruling, being the briefs he rejected and replaced, so they are superseded rather than owed.
+
+Between them the 4 that never ran name 7 task entries, covering the immune mechanism repairs, the required quiet run and the claim channel's promotion, and every one of those 7 entries is now done. So the reviews never happened and the work they were to review has since closed.
+
+**What it affects:** the size of the panel backlog, which is 4 and not 30. **What it decides:** whether any of the 4 is still wanted, which is his call and not something a census can settle. **What is recommended:** treat all 4 as optional, since each one's subject is closed.
+
+### Whether a closed status already stops settled work recurring
+
+He asked: *"Do we have a 'closed' status in the ticket store that can prevent closed/completed work like this from being endlessly repeated? If not, you should probably create one."*
+
+It exists and it works, so nothing needs creating. Tested by execution against a copy of the register so the live one was untouched: re-proposing the exact text of a closed ticket returned the outcome described as a reworded match, resolved to the same identity it already had, and left the status closed. No new row was minted.
+
+The control matters as much as the result. A sentence that had never been raised returned the outcome created, with status open. The 2 outcomes differ, so the refusal discriminates rather than answering the same way for everything, which is what a 0 from an untested mechanism would look like.
+
+**What it affects:** whether settled work can be re-raised. It cannot, by identity. **What is recommended:** no action.
+
+### Whether the worked-proofs work was ever done
+
+He asked: *"I also authorised the 'worked proofs work', but I don't know if this work was ever done?"*
+
+It was done. The proof verify module in the bench package, which re-checks a worked proof by running it rather than accepting it as written, is wired into the harness, and the guard that asserts so passes 18 of 18, and that guard is a member of the commit gate's own list, so it runs on every commit rather than only when someone remembers to run it.
+
+**What it affects:** nothing outstanding. **What is recommended:** no action.
+
 Written under CDSFL note standard v1.9 (1 November 2026).

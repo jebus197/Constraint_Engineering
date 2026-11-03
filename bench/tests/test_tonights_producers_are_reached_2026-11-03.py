@@ -39,6 +39,24 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 SCRIPTS = REPO / "scripts"
 
 #: Producers that must RUN. Each is read-only and exits 0.
+#:
+#: ★ 11 ADDED 2026-11-03 EVENING, AFTER THIS GUARD'S OWN ANTI-VACUITY TEST
+#: CAUGHT 13 PRODUCERS IN NEITHER LIST. 12 of the 13 predate the addition that
+#: found them, so the debt was already there; writing one more producer is what
+#: made the test fire. Each of the 11 was checked before being listed rather
+#: than added and hoped for: a static scan for `write_text`, a `w` mode, a
+#: `mkdir`, `shutil`, `os.remove` or a `json.dump` returned 0 writes for all 11,
+#: and each was then executed and timed. 2 non-zero exits were found by that
+#: check and both were real:
+#:   * `score_the_orchestrator_arm` exited 2 because a bare invocation is a
+#:     usage error BY DESIGN -- it needs `--run <dir>` or `--survey`. It is
+#:     listed here WITH its flag rather than exempted, because exempting it
+#:     would leave the v_bar weight of 0.350000 quoted to him with nothing
+#:     running the script that produced it.
+#:   * `why_the_responses_reader_crossed_its_budget` exited 1 on a REFUSED
+#:     branch that had become unreachable-as-a-fault: the 11 MB PNG it splits
+#:     the corpus by is now excluded by its bytes, so the empty side IS the
+#:     earlier fix landing. It now reports the repaired condition and exits 0.
 MUST_RUN = (
     "a_models_own_verified_flag_closes_it_2026-11-03.py",
     "a_bare_clock_was_dated_from_the_mtime_2026-11-03.py",
@@ -47,7 +65,24 @@ MUST_RUN = (
     "b96_the_report_against_the_note_standard_2026-11-03.py",
     "counting_imports_ranks_producers_backwards_2026-11-03.py",
     "what_a_simulated_run_would_actually_test_2026-11-03.py",
+    "a_compaction_summary_can_invent_his_question_2026-11-03.py",
+    "a_guard_cannot_refuse_his_own_remedy_2026-11-03.py",
+    "a_stale_comment_can_be_load_bearing_2026-11-03.py",
+    "a_truncated_ruling_reads_as_complete_2026-11-03.py",
+    "has_the_ticket_store_earned_its_place_2026-11-03.py",
+    "how_many_of_the_nights_errors_were_instruments_2026-11-03.py",
+    "score_the_orchestrator_arm_2026-11-03.py",
+    "the_subject_index_cannot_answer_a_novelty_question_2026-11-03.py",
+    "which_of_his_questions_are_still_open_2026-11-03.py",
+    "why_the_responses_reader_crossed_its_budget_2026-11-03.py",
+    "would_asterisks_make_his_comments_machine_readable_2026-11-03.py",
 )
+
+#: Arguments a producer REQUIRES, so that needing one is not a reason to leave
+#: it unrun. Absent here means a bare invocation, which is the normal case.
+EXTRA_ARGS = {
+    "score_the_orchestrator_arm_2026-11-03.py": ("--survey",),
+}
 
 #: Harnesses that must NOT be run from inside the suite, with the mechanical
 #: reason, following the sibling guard's convention.
@@ -56,6 +91,10 @@ NOT_RUN_HERE = {
     "the_bare_clock_dating_mutations_2026-11-03.py": "invokes pytest; would recurse",
     "the_second_route_mutations_2026-11-03.py": "invokes pytest; would recurse",
     "the_events_channel_mutations_2026-11-03.py": "invokes pytest; would recurse",
+    "the_actuator_contract_mutations_2026-11-03.py":
+        "invokes pytest AND writes; would recurse and mutate the tree",
+    "the_orchestrator_scorer_mutations_2026-11-03.py":
+        "invokes pytest AND writes; would recurse and mutate the tree",
 }
 
 
@@ -65,12 +104,13 @@ def test_the_producer_still_runs(name):
     p = SCRIPTS / name
     if not p.is_file():
         pytest.skip(f"{name} is not in this checkout")
-    r = subprocess.run([sys.executable, str(p)], capture_output=True,
+    argv = [sys.executable, str(p), *EXTRA_ARGS.get(name, ())]
+    r = subprocess.run(argv, capture_output=True,
                        text=True, timeout=300, cwd=str(REPO))
     assert r.returncode == 0, (
-        f"{name} exited {r.returncode}. The figures it produced were quoted to "
-        f"the founder, so this is a silent loss of their support.\n"
-        f"stderr tail:\n{r.stderr[-900:]}")
+        f"{name} exited {r.returncode} (argv {argv[2:]}). The figures it "
+        f"produced were quoted to the founder, so this is a silent loss of "
+        f"their support.\nstderr tail:\n{r.stderr[-900:]}")
     assert r.stdout.strip(), f"{name} ran and printed nothing"
 
 
