@@ -46,6 +46,7 @@ MUST_RUN = (
     "c0001_provenance_does_not_reconcile_2026-11-03.py",
     "b96_the_report_against_the_note_standard_2026-11-03.py",
     "counting_imports_ranks_producers_backwards_2026-11-03.py",
+    "what_a_simulated_run_would_actually_test_2026-11-03.py",
 )
 
 #: Harnesses that must NOT be run from inside the suite, with the mechanical

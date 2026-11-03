@@ -277,6 +277,15 @@ def build_parser() -> argparse.ArgumentParser:
                     help="proceed even if the preflight POST halts (the BIOS "
                          "F1-to-continue). The failure is still printed and is "
                          "recorded in the run's console log.")
+    ap.add_argument("--hil-review", action="store_true",
+                    help=("arm the runner's human-review stop, which is opt-in "
+                          "and defaults to off. Without this a simulated run "
+                          "CANNOT pause: measured 2026-11-03, the gate was "
+                          "consulted 0 times across 324 archived run logs and "
+                          "0 of 78 runs ever recorded a pause, because this "
+                          "runner had no way to ask for it. Needed before any "
+                          "actuator that acts on a paused run can be tested "
+                          "where fixes are meant to be tested first."))
     ap.add_argument("--expect-uniform-ladder", action="store_true",
                     help="this run deliberately uses --seat-models uniform as a "
                          "control arm, so POST reports the non-climbing ladder as "
@@ -660,6 +669,10 @@ def main() -> int:
         domain=args.domain,
         max_rounds=args.rounds,
         falsifier_gate_enabled=True,
+        # OPT-IN AND OFF BY DEFAULT, so an existing simulated run is
+        # unchanged. The runner's own default is False at
+        # reference_runner_v3.py:2308; this only makes it ASKABLE.
+        hil_review=bool(getattr(args, 'hil_review', False)),
         routing_enabled=True,
         # THE RUNG BUDGET IS OPT-IN AND DEFAULTS TO PARITY. REVERTED 2026-10-05.
         #
