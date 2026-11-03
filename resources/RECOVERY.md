@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 2 November 2026 16:37 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 3 November 2026 05:57 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -26,6 +26,24 @@ session loss, compaction event, or fresh start with a new model instance.
 ---
 
 ---
+
+## SESSION STATE — 2026-11-03 05:56 GMT (READ THIS FIRST)
+
+**Written against `079471e4`; the save carrying this block is its child. Stamped 2026-11-03T05:56:05+00:00.**
+
+**THE NIGHT'S HEADLINE IS THAT 10 OF THE SESSION'S ERRORS WERE IN MEASURING INSTRUMENTS, NOT IN THEIR SUBJECTS, AND EVERY ONE WAS CAUGHT BY ASKING WHAT THE PREDICATE TESTS.** 3 shapes recur and each has a producer. **Matching a word is not measuring an act:** an audit scoring this session's producers by STEM-import count passed 4 of a discovered population of 7 that rested an interval on a single route, because `scipy` and `statsmodels` resolve to 1 verifier — producer `scripts/counting_imports_ranks_producers_backwards_2026-11-03.py`, reproducible at the pre-repair revision with `--rev d6ea0538`. **Naming a path is not establishing reachability:** asked whether his owed verdicts bear on a simulated run, a path-mention predicate said 0 of 14 and a definition-site predicate said **7 of 14**, 0.500000, Wilson 95% [0.267992, 0.732008]. **A 0 is worth nothing until the detector is shown to return a count above 0:** the review gate that `bench/hil_review_trigger.py` implements emits a "CONSULTED, not firing" line on every non-firing pass, and that line appears 0 times across 324 archived run logs, which reads as dead code and is not — it is opt-in behind `cfg.hil_review`, default False at `bench/reference_runner_v3.py:2308`.
+
+**B20'S PRECONDITION IS BUILT AND THE ACTUATOR IS NOT.** `probe()` in `scripts/cy_watchdog_2026-10-02.py` emits 10 distinct event kinds, measured by AST over lines 445-567 against 13 module-wide, and every one reached stdout and neither the return value nor the pulse file. The events now reach the pulse in their own key, with `bench/tests/test_the_watchdog_events_reach_the_pulse_2026-11-03.py` at 10 tests and `scripts/the_events_channel_mutations_2026-11-03.py` at 7 of 7 mutations red, watchdog restored byte-for-byte. **The actuator's scope was then refuted twice by its own standard**, which is the useful result: 0 of 78 archived runs ever paused, Wilson [0.000000, 0.046938]; the gate turned out opt-in rather than dead; and the actual gap was that `bench/tools/run_simulated_experiment.py` mentioned `hil_review` 0 times, so a simulated run could not pause at all. That 2-line repair is the only actuator work done, and its design is recorded in `experimental_notes/Actuator_Design_2026-11-03.md`.
+
+**WHAT A SIMULATED EXPERIMENT CAN AND CANNOT TEST, answering his aim directly.** Of 141 `.py` files changed since 2026-11-02, 44 are guard tests and 85 are scripts — both the commit board's job — leaving 12 product modules of which **5 are reachable**, 0.416667, Wilson [0.193260, 0.680489]. Producer `scripts/what_a_simulated_run_would_actually_test_2026-11-03.py`, guard at 8 tests. **No choice of review article changes which modules a run imports**, so the substance of a given issue set is not the binding constraint.
+
+**2 OF HIS CORRECTIONS ARE CARRIED AND BOTH WENT AGAINST ME ON MEASUREMENT.** He struck "asking for less" as a mischaracterisation of his own behaviour; re-measuring found 46 of those 80 matches were the English adverb *simply*, 11 were the project's own `simplest sufficient` standard, and only 10 were genuine complaints of excess — 10 of 839, Wilson [0.006487, 0.021800] — while his own account reaches 52 of 839 at Fisher p = 3.336033e-08. And he asked whether his annotated response files parse: they do, 583 annotations from 42 `.txt` files and 256 from 19 `.rtf`, with 80 of 347 files invalid UTF-8 and **0 annotations lost** to it.
+
+**DISCHARGE AND RUNWAY.** 209 of 240 markers DONE, 0.870833, Wilson [0.822492, 0.907490]. Live set 22 distinct entries, 19 awaiting him by a named artefact and **0 with an action that is mine alone**. The runway is all but complete: R2 through R11 including R5a all DONE, and R1 (restart Exp 53, the zero-plant control) the only live item, DEFERRED on his 2026-10-30 ruling.
+
+**WHAT IS OWED HIM, AND THE 2 THAT MATTER MOST.** 14 numbered decisions. **B76 on 2 enabled convergence criteria that disagreed and B77 on the convergence gate's roster-blind count side are the minimum before any experiment**, because `_evaluate_gate_conditions` and `_check_hardened_convergence` are the default path that decides when a run terminates — verified at `bench/reference_runner_v3.py:11307`, where the latter returns `gamma_alt_converged`. A run's convergence result is the experiment's primary outcome, so running before those are ruled yields a number nobody can interpret.
+
+**IN FLIGHT AT THE TIME OF WRITING.** Commit 43 was REFUSED with 5 failed and 2422 passed. 1 failure is identified and fixed: a Wilson bound typed as `0.433664` where B20 correctly holds `0.434482`, confirmed by reintroduction to account for 1 failure and not 5. A 2nd refusal is characterised by running the pre-commit's note ratchet by hand — `experimental_notes/Actuator_Design_2026-11-03.md` at 0 to 1 finding for a missing standard stamp. **4 test failures remain unnamed and the board's 120-guard set is being run to name them.**
 
 ## SESSION STATE — 2026-11-02 17:50 GMT (READ THIS FIRST)
 
