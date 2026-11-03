@@ -156,7 +156,18 @@ BARE_WORD_NUMBER_OK = re.compile(
     #: as `the one`, `this one` and `that one` already are in this list.
     r"one[- ]way|the same one|"
     r"one of (?:two|three|four|five|the|his|her|its|my|our|their|them|these|"
-    r"those)|one another's|zero[- ]plant|zero[- ]day|one[- ]line|one[- ]off|"
+    r"those)|one another's|zero[- ]plant|zero[- ]day|zero[- ]critical|zero[- ]character|one[- ]line|one[- ]off|"
+    #: ★ `zero[- ]critical` and `zero[- ]character` added 2026-11-03, on
+    #: exactly the ground the entry below states for `<digit>-zero`: a
+    #: hyphenated number word qualifying a noun is English, not data.
+    #: FOUND by laying the spoken morning report's owed Rule 27 findings
+    #: out as words against digits so the founder could judge them by
+    #: reading them aloud, which is what decision 14 asks of him. Most
+    #: read BETTER as digits -- "Two findings" to "2 findings". These 2
+    #: read worse: `the 0-critical streak` and `a 0-character falsifier`
+    #: disfigure a name rather than correcting a count. The exemption
+    #: requires the hyphen or space AND the following word, so a bare
+    #: `zero` standing as a quantity is untouched -- checked by probe.
     #: ★ `<digit>-zero` added 2026-11-02, on the ground this list already
     #: states for `two-sided` and `leave-one-out`: a hyphenated number word
     #: qualifying a noun is English, not data. It fired on this project's own
