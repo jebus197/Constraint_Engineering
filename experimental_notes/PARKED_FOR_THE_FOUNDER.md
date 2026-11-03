@@ -224,6 +224,36 @@ Classified 2026-11-02 after B85 closed. Each of the 12 remaining OPEN entries wa
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B20, the orchestrator bound inside the harness: the arm is built but stays unregistered until he lifts his own deferral
+
+*Parked 2026-11-03T09:54:51+00:00. Body corrected 2026-11-03T10:07 GMT, because the heading this entry arrived with asserted a dependency that is not the recorded reason.*
+
+**WHAT IS PARKED.** The orchestrator-inside-the-harness experiment, built to his 2026-10-17 specification, exists and runs. Its pre-registration exists only as a draft, at `experimental_notes/data/bound_orchestrator_arm_prereg_DRAFT_2026-11-03.json`. It is not registered and has not been run.
+
+**WHY, AND IT IS HIS OWN SEQUENCING RATHER THAN A DEPENDENCY ON ANOTHER ENTRY.** His words, 2026-10-17: *"I do not wish you to become too sidetracked on this specific issue. It should be built and tested at the appropriate time."* So the work is deferred, not refused. The entry for B20, the orchestrator bound inside the harness, already records that the deferral's own stated ground -- that other issues came first -- is now measurably met, and that the deferral does not release itself: he sets the priority and he lifts it.
+
+**PERMISSION IS SEPARATELY SETTLED AND IS NOT A SECOND OBSTACLE.** His ruling of 2026-10-30, live as ticket `e41e1fdbc223` and reached through 2 superseded rows as the discussion marker was renamed twice that night: *"No. a free panel, or simulated experiment has never previously needed any additional permissions, beyond that that I issue when I  tell you to run them."* Read through the annotation reader, not through the register's preview, which truncates that sentence before the clause beginning "beyond" and so reads as the opposite ruling. A simulated run needs no extra permission category; the permission is his instruction to run it, and it has not been given for this arm.
+
+**HOW THE FIRST VERSION OF THIS ENTRY CAME TO BE WRONG, recorded because the cause is a tool and will recur.** `scripts/blocker_triage.py` was called without `--check-only`, so it wrote. The title it was given carried only bare alphanumeric entry codes, which is that classifier's documented failure mode -- it returned *no distinctive term to match against the entries* and that message became this entry's body. A park meaning the classifier could not match a term is not a park meaning the item does not block. Re-run with distinctive terms and a full detail, the verdict is still PARK, for a real reason: no entry declares a dependency on that arm. **The blast radius was measured rather than assumed:** the old heading added exactly 1 code, B77, to the set `scripts/whose_move_is_it_on_each_entry_2026-11-02.py` reads from headings, and B77 already carried non-parked routes, so no entry changed bucket and no measurement was altered.
+
+**NOTHING WAITS ON THIS.** It is recorded so a draft pre-registration is not mistaken for a registered one.
+
+## His words reach me truncated 3 times over, and the shortest cut is the one that reads as finished
+
+*Parked 2026-11-03T10:30 GMT.*
+
+**WHAT WAS FOUND, AND IT IS 1 CONFIRMED INSTANCE RATHER THAN A RATE.** His permission ruling of 2026-10-30 is shown by the issue register as ending at the word "permissions", which reads as a finished ruling that a free panel or simulated experiment needs no permission. His full annotation, read through the founder-response reader from the consolidated verdicts file of that date, continues past a comma: *"beyond that that I issue when I  tell you to run them."* That clause is the operative half. The rule is not that no permission is needed; it is that the permission IS his instruction to run it. A run nobody asked for still lacks his word.
+
+**THE CHAIN, MEASURED, AND THE 2 CUTS DO DIFFERENT DAMAGE.** The ticket's stored source text holds 151 characters and the clause. The title derived from it holds 120 and is EXACTLY the source truncated to that width -- asserted, not inferred -- and that cut falls MID-WORD, ending "beyond that that I iss", so at 120 characters the truncation is VISIBLE while the words are already gone. The register then prints the title cut to 96, which lands cleanly on "permissions", a word boundary that reads as complete. A 4th width, 160, sits in the title normaliser. **So the SILENCE is the print-site cut and the LOSS is the storage cut.** An earlier draft of this finding said widening the print would recover nothing; that was wrong, and the correction matters because it changes which repair addresses which harm.
+
+**THE EXTENT, over all 3,383 tickets.** 1,399 titles are truncated at all, 0.413538, Wilson 95% [0.397051, 0.430222], Clopper-Pearson [0.396876, 0.430350]. 248 are cut at a word boundary, so nothing half-written warns the reader, 0.073308, Wilson [0.065000, 0.082583]. Of those, 20 drop text containing a qualifier able to restrict or reverse what survives, 0.005912, Wilson [0.003830, 0.009114]. **THAT LAST FIGURE IS AN UPPER BOUND AND NOT A TALLY OF HARMS**, because whether a truncation changes meaning is not mechanically decidable, and stating it that way would imply that it is. 493 of 3,383 titles are exactly the source text cut to 120, 0.145729, Wilson 95% [0.134241, 0.158020], Clopper-Pearson [0.134001, 0.158072]. Producer: `scripts/a_truncated_ruling_reads_as_complete_2026-11-03.py`.
+
+**WHY IT IS INCONSISTENT RATHER THAN MERELY TERSE.** The line directly BELOW the print site marks its own truncation, printing how many rows it is hiding. So within 1 function the row count says when it is hiding rows and the text does not say when it is hiding his words.
+
+**THE 3 CANDIDATE REPAIRS, AND THE CHOICE IS HIS.** Mark the truncation wherever a cut occurs, which is the smallest change and makes the silence impossible while recovering no words. Print from the stored source text rather than the derived title, which recovers the words at the print site but leaves the derived title lossy for every other reader of it. Or widen the derived title, which recovers words everywhere and makes every listing longer. **NO COMPOSABILITY CLAIM IS MADE between them:** nothing here measures a combination as better than any single one, and under his definition a composed fix needs that measurement before it may be recommended. **The simplest sufficient repair for the harm actually observed is the first**, because what inverted his ruling was the silence and not the width.
+
+**NOTHING WAITS ON THIS** and no fix has been applied, because `d` was in force when it was found.
+
 ---
 
 # Settled — kept for the record, not for his attention (16)

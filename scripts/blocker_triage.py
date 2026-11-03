@@ -63,11 +63,32 @@ PARKED = REPO / "experimental_notes" / "PARKED_FOR_THE_FOUNDER.md"
 #: which noun the sentence happened to use for the same act.
 #:
 #: THIS IS NOT A NEW CATEGORY. It is the existing IRREVERSIBLE category matching
-#: the words it already intends; a paid panel IS a paid dispatch. Whether a FREE
-#: dispatch or a simulated run should also require permission -- both spend his
-#: token allowance and occupy his 8 cores, which his 2026-10-11 ruling makes a
-#: fixed resource -- is a 4th category and therefore his to rule on, so it is
-#: raised as a ticket rather than added here in his name.
+#: the words it already intends; a paid panel IS a paid dispatch.
+#:
+#: ★ AND THE 4TH CATEGORY QUESTION IS ANSWERED. HE RULED ON 2026-10-30 AND THE
+#: ANSWER IS NO, SO THE ABSENCE OF A RULE HERE IS NOW CORRECT RATHER THAN
+#: PENDING. This comment used to say that whether a FREE dispatch or a simulated
+#: run should also require permission -- both spending his token allowance and
+#: occupying his 8 cores, which his 2026-10-11 ruling makes a fixed resource --
+#: was a 4th category and therefore his to rule on, raised as a ticket rather
+#: than added here in his name. That was the right call and he then made it. His
+#: words, live as ticket `e41e1fdbc223`: *"No. a free panel, or simulated
+#: experiment has never previously needed any additional permissions, beyond
+#: that that I issue when I  tell you to run them."*
+#:
+#: READ THE CLAUSE AFTER THE COMMA; IT IS THE OPERATIVE HALF. The rule is NOT
+#: that such a run needs no permission. It is that the permission IS his
+#: instruction to run it. A run nobody asked for still lacks his word, and the
+#: absence of a permission pattern here must not be read as pre-authorisation.
+#:
+#: THE COMMENT WENT STALE FOR 4 DAYS AND THAT NEARLY COST SOMETHING. On
+#: 2026-11-03 this paragraph was read as a live open question and a 4th category
+#: was almost added in his name -- which would have contradicted an explicit
+#: ruling rather than merely duplicated work. What stopped it was searching the
+#: register. And the register's own preview truncates his sentence at 96
+#: characters, before the clause beginning "beyond", so it shows what reads as
+#: the opposite ruling; the full words came from
+#: `scripts/read_founder_responses_2026-10-11.py`.
 NEEDS_PERMISSION: list[tuple[str, re.Pattern, str]] = [
     ("IRREVERSIBLE", re.compile(
         r"delete\s+(a\s+)?(git\s+)?(ref|branch|tag)|git\s+(branch\s+-D|push\s+--force|reflog\s+expire)"
