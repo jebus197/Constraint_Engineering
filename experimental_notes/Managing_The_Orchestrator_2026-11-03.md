@@ -134,4 +134,34 @@ The project's design position: his intervention is the human-in-the-loop design 
 
 It is a description of his patterns, not evidence that applying them to a different model produces the same results. **No measurement here bears on whether this template works as a management protocol** [SPECULATIVE], and treating the sketch as validated would be the flattering-measure failure the project record names 3 times. What would test it: the orchestrator run with and without the template, scored on the same rubric, with the standards-compliance rate as the named property.
 
+## What the formal construction adds, and where it does not fit
+
+The founder asked that the rigour recommended by the 2 standards he named — Meta-Agent Architectures and the Model-Agent Interface — be used in deciding how this session should interact with the orchestrator, and that the decision state what is useful and applicable and what is not.
+
+Neither name exists as a published specification. The formal construction that does the work he pointed at is the **assume-guarantee contract** (arXiv 2608.14590), in which each agent declares the inputs it relies on and the outputs it promises, so a composition can be checked rather than hoped for.
+
+### 3 elements apply directly
+
+**1. The orchestrator declares its assumptions and guarantees as data.** The reason is not tidiness: a declaration lets a claim be checked against the orchestrator's own stated promise rather than against the manager's judgement, which removes the manager as arbiter of whether work is acceptable. The worked example is `bench/tools/cy_actuator_2026-11-03.py`, whose `ASSUMES` and `GUARANTEES` dictionaries hold 4 assumptions and 5 guarantees, with `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` iterating the guarantees and failing if any guarantee is declared with no test class naming it.
+
+**2. A terminal state requires a verification.** Already enforced: `TicketStore.close()` in `bench/ticket_store.py` refuses without a verification, and `bench/reference_runner_v3.py` gates CONFIRMED to CLOSED on `verified`. Applied to the orchestrator, it means no fix may be declared finished on the orchestrator's own assertion.
+
+**3. A model's assertion settles nothing.** The project's standing no-voting rule, which applies to the orchestrator exactly as to every seat. It may propose, classify and sequence; it may not confirm its own work by saying so.
+
+### 1 element does not fit, and the mismatch is named rather than smoothed
+
+The adjacent industrial pattern is the **thin orchestrator**: a deterministic supervisor performing classification, gathering, reliability checks and delegation only, holding no domain judgement of its own.
+
+The founder's specification asks for something different. The orchestrator is to decide *"which fixes are 'better' than others, which compose and which don't and which meet our formal simplest sufficient fix, additive and composability standards"* — his words of 2026-10-17, and the part he called doubly useful once fixes fold back at the close. That is domain judgement.
+
+So the orchestrator in this design is deliberately **not thin**, and any claim that it follows the thin-orchestrator pattern would be false.
+
+What follows is a constraint rather than a contradiction. Because the orchestrator holds judgement, its judgements are what most needs a declared contract, and the comparator it would use already exists: `bench/fix_comparator.py`, 395 lines, exposing `compare` with `additive_verdict` and `composability_verdict`, guarded by `bench/tests/test_the_fix_comparator_refuses_to_rank_2026-11-02.py`, which already refuses to rank without evidence. A declared contract is therefore what keeps a judging orchestrator accountable, not an administrative formality.
+
+### 1 element is unresolved and is his to settle
+
+His specification asks for a sandbox *"which the orchestrator model shouldn't know about"*. The isolated copy exists and is guarded — `bench/tools/run_simulated_experiment_sandboxed.sh` and `bench/panel_sandbox.py`, with 2 guards. No concealment mechanism exists in either: the sandbox is created as `mktemp -d -t cdsfl_sim` and `tempfile.mkdtemp(prefix="cdsfl_sim_panel_")`, so the path names the simulation, and a seat armed with Bash can read its own working directory.
+
+Full concealment from a shell-armed model is probably not achievable, so this is a design question rather than a defect. Raised as `qs:a7e64483f941` with 3 options: rename the path, accept discoverability and record it as part of what the arm measures, or remove the shell — which would conceal the sandbox and also remove the tool use the project exists to measure.
+
 Written under CDSFL note standard v1.9 (1 November 2026).
