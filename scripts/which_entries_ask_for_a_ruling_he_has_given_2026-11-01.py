@@ -63,6 +63,39 @@ GAVE = re.compile(
     r"ON\s+HIS\s+(?:RULING|INSTRUCTION)|HIS\s+INSTRUCTION)", re.I)
 
 
+def gave_outside_the_ask(text: str):
+    """The first `GAVE` match that is NOT inside a sentence asking him to rule.
+
+    ★ THE DETECTOR SPELLED ITS OWN PATTERN, found 2026-11-02. `ASKS` matches
+    `NEEDS HIS RULING` and `GAVE` matches `HIS RULING`, which is a SUBSTRING of
+    it -- so the asking phrase satisfied the giving pattern on its own and every
+    entry using those 3 words was reported as ALSO recording a ruling it does
+    not record.
+
+    MEASURED BEFORE THE REPAIR: of 35 entries matching `ASKS`, 31 matched `GAVE`
+    somewhere and **6 matched it ONLY inside the asking phrase -- 6 of 31,
+    0.193548, Wilson 95% [0.091870, 0.362803], Clopper-Pearson [0.074520,
+    0.374732]**. The 6 are B13, B17, B37, B82, B83 and B87, and 3 of them (B82,
+    B83, B87) are entries genuinely awaiting his decision, which is the
+    direction that misleads: a reader is told he has ruled where he has not.
+    `feedback_already_ruled_and_misread_rates` records that failure reaching him
+    4 times already, and
+    `feedback_a_detector_must_not_spell_out_its_own_pattern_2026-11-02` records
+    this exact shape twice before today.
+
+    WHY MASKING AND NOT A NARROWER `GAVE`. Narrowing `GAVE` to exclude a
+    preceding `NEEDS` would have to anticipate every phrasing; masking is stated
+    over the OTHER pattern's own matches, so the 2 cannot drift apart. Only the
+    matched asking phrase is masked, about 16 characters, so a genuine ruling
+    recorded in the same sentence is still found.
+    """
+    spans = [m.span() for m in ASKS.finditer(text)]
+    for g in GAVE.finditer(text):
+        if not any(s <= g.start() < e for s, e in spans):
+            return g
+    return None
+
+
 def _check(label: str, cond: bool, detail: str = "") -> None:
     if not cond:
         FAILURES.append(f"{label}: {detail}")
@@ -96,7 +129,7 @@ def main(argv=None) -> int:
     print("M1. ENTRIES THAT ASK FOR A RULING AND ALSO RECORD ONE")
     print("=" * 72)
     asking = [e for e in live if ASKS.search(e.text)]
-    both = [e for e in asking if GAVE.search(e.text)]
+    both = [e for e in asking if gave_outside_the_ask(e.text)]
     print(f"live entries                         : {len(live)}")
     print(f"  asking him for a decision          : {len(asking)}")
     print(f"  ALSO recording a ruling of his     : {len(both)}")
@@ -110,7 +143,7 @@ def main(argv=None) -> int:
               f"marker-ruled={getattr(e, 'ruled', None)}")
         a0 = max(0, ask.start() - 90)
         print(f"      ASKS: ...{e.text[a0:ask.end() + 110].strip()[:190]}")
-        g = GAVE.search(e.text)
+        g = gave_outside_the_ask(e.text)
         if g:
             g0 = max(0, g.start() - 60)
             print(f"      GAVE: ...{e.text[g0:g.end() + 150].strip()[:190]}")

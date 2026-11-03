@@ -440,6 +440,14 @@ STAMP_LINE = re.compile(r"^\s*(\d{4}-\d{2}-\d{2})[,]?\s+(\d{2}):(\d{2})\s+([A-Z]
 #: every note that mentions a time.
 _BARE_CLOCK_IN_HEADER = re.compile(r"\b(\d{1,2}):(\d{2})\s*(?:GMT|BST|UTC)\b")
 
+#: A PROSE DATE IN THE HEADER, e.g. "15 April 2026" or "2 November 2026", which
+#: is the form every note in this project actually writes. `STAMP_LINE` wants an
+#: ISO date at the START of a line and only 145 of 639 notes satisfy it, so the
+#: bare-clock branch is the one that runs in practice and it needs a date.
+_PROSE_DATE_IN_HEADER = re.compile(
+    r"\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|"
+    r"September|October|November|December)\s+(\d{4})\b")
+
 
 def future_stamp(path: pathlib.Path):
     """Return (claimed, actual) when the note's own stamp is ahead of its mtime."""
@@ -465,8 +473,35 @@ def future_stamp(path: pathlib.Path):
         b = _BARE_CLOCK_IN_HEADER.search(header)
         if not b:
             return None
+        #: ★ PREFER A PROSE DATE IN THE SAME HEADER OVER THE FILE'S MTIME,
+        #: added 2026-11-03. The bare-clock branch dated the time from mtime,
+        #: which is right only while a note is never touched again. Edit a note
+        #: on a later day and the rule reports it as claiming a time it never
+        #: claimed: `Divergence_Directive_Implementation_2026-04-15.md` says
+        #: "15 April 2026, 22:40" and was accused of claiming 2026-07-28 22:40,
+        #: because its mtime is 28 July. MEASURED over the 639 notes in
+        #: experimental_notes/: the rule accuses 53, and 16 of those 53 carry a
+        #: prose date in the very same header that exonerates them --
+        #: 0.301887, Wilson 95% [0.195183, 0.435368]. Producer:
+        #: scripts/a_bare_clock_was_dated_from_the_mtime_2026-11-03.py.
+        #:
+        #: IT DOES NOT WEAKEN THE RULE. The prose date REPLACES mtime's date in
+        #: the claim, and the comparison against mtime is unchanged, so a note
+        #: whose header genuinely claims a future day is still accused -- more
+        #: accurately than before, because the accusation now quotes the day the
+        #: note actually names. This is why the fix is additive: it reads a
+        #: field the rule already had in front of it and ignored.
+        _pd = _PROSE_DATE_IN_HEADER.search(header)
+        _base = mtime
+        if _pd:
+            try:
+                _base = _dt.datetime.strptime(
+                    f"{int(_pd.group(1))} {_pd.group(2)} {_pd.group(3)}",
+                    "%d %B %Y")
+            except ValueError:
+                _base = mtime
         try:
-            claimed = mtime.replace(hour=int(b.group(1)), minute=int(b.group(2)),
+            claimed = _base.replace(hour=int(b.group(1)), minute=int(b.group(2)),
                                     second=0, microsecond=0)
         except ValueError:
             return None

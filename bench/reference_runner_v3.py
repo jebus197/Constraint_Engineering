@@ -6149,12 +6149,68 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
                     _log(f"  fix-efficacy probe error for {canonical_id}: "
                          f"{type(_fe_exc).__name__}: {str(_fe_exc)[:160]}")
 
+        _exec_backed = (entry.get("falsifier_verdict") == "CONFIRMED"
+                        or bool(entry.get("bugzilla_verified")))
         if (entry["status"] in ("CONFIRMED", "CORROBORATED")
-                and entry.get("verified")):
-            # CLOSED stays TOOL-ONLY and remains honestly so: `verified` is
-            # only ever set by an execution — the Bugzilla close-the-loop
-            # above (fix applied to a sandbox copy, ruff/mypy/bandit/test_cmd
-            # re-run) or the falsifier gate. The model never sets it.
+                and entry.get("verified")
+                and _exec_backed):
+            # CLOSED STAYS TOOL-ONLY, AND UNTIL 2026-11-03 IT ONLY SAID SO.
+            #
+            # The sentence this comment used to end with was "The model never
+            # sets it." That was false, and the conjunct above is what makes it
+            # true. `runner_core.parse_findings` reads a `VERIFIED` key out of
+            # the model's own reply JSON and sets `Finding.verified` from it
+            # (both the boolean `true` and the string "TRUE"), `register`
+            # copies it straight into the entry at :3644, and `mark_verified`
+            # at :20207 carries it again under `if f.verified`. So a model
+            # could write one word and reach the terminal state, recorded as
+            # `adjudicator="tool"` with `evidence="verified fix"`.
+            #
+            # THE STATUS MACHINE ALREADY REFUSED THE FRONT DOOR. Entry C0010 of
+            # commissioning_arm1_panel_20260921T215405Z carries a
+            # `refused_transitions` row showing a model's CONFIRMED request
+            # refused and substituted with CORROBORATED -- the no-model-voting
+            # rule working exactly as intended -- and then closed anyway on the
+            # flag, which is the stronger claim. The bolt was on one door.
+            #
+            # MEASURED, by scripts/a_models_own_verified_flag_closes_it_2026-11-03.py:
+            # 34 of 412 closures whose mechanism is `verified_flag` had NEITHER
+            # a CONFIRMED falsifier NOR a bugzilla verification (0.082524,
+            # Wilson [0.059654, 0.113107]), across 15 of 76 archived runs
+            # (0.197368, Wilson [0.123420, 0.300438]), the newest dated
+            # 20261102T004713Z. All 34 are origin_type=model and all 34 record
+            # `adjudicator="tool"`. 26 carry fix_efficacy
+            # NOT_PROBED_NO_FALSIFIER and 6 carry
+            # FIX_DOES_NOT_CURE_ITS_OWN_FALSIFIER -- for those 6 the runner had
+            # already measured that the fix fails its own test.
+            #
+            # WHY THIS PREDICATE AND NOT A WIDER ONE. Every legitimate setter of
+            # `verified` in this file already leaves one of the 2 markers: the
+            # falsifier gate at :7989 sits inside `if verdict == "CONFIRMED"`
+            # after `e["falsifier_verdict"] = verdict`; the routing path at
+            # :8975 and the sweep at :9468 and :16630 each set
+            # `falsifier_verdict = "CONFIRMED"` themselves; the Bugzilla
+            # close-the-loop at :6064 sets `bugzilla_verified`. So the conjunct
+            # stops 0 legitimate closures -- 378 of the 412 above are backed and
+            # are unaffected. No new field is introduced, because a field with
+            # no caller is not an addition (`additive-standard`, symmetric
+            # form); a future executor that needs to record itself can add one
+            # together with its caller.
+            #
+            # CONVERGENCE IS ARITHMETICALLY UNAFFECTED, by the same reasoning
+            # the 2026-10-03 block at :7969 sets out: `unverified_critical_count`
+            # skips every entry whose status is not UNCONFIRMED and never reads
+            # `verified`. An entry that no longer closes stays CONFIRMED or
+            # CORROBORATED, and CONFIRMED is already in `_TERMINAL`, so it adds
+            # no noise to the discovery pool either.
+            #
+            # WHAT IS NOT FIXED HERE, AND IS HIS RULING. The same model-set flag
+            # feeds `v_bar` at bench/dm/_manager.py:717, documented as mean
+            # verification quality and 1 of the 4 CapabilityFingerprint
+            # dimensions that decide allocation. Whether the parser should read
+            # `VERIFIED` from a model reply at all is a question about what
+            # v_bar measures, and changing it changes a measurement that drives
+            # the experiment, so it is not changed unasked.
             registry.resolve(
                 canonical_id, "CLOSED", round_idx, adjudicator="tool",
                 evidence=("bugzilla close-the-loop verified"

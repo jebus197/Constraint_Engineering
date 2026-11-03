@@ -271,6 +271,87 @@ def main() -> int:
               f"{iv['clopper_pearson'][1]:.6f}]"
               f"   (2-tool max |diff| {iv['cp_crosscheck_max_abs_diff']:.2e})")
 
+    # ★ WHAT THE DEFECT ACTUALLY COST, added 2026-11-02 because "0 of 34"
+    # read as 34 discarded fixes and that is not what happened.
+    # ★ WHERE THE WRONG SUITE CAME FROM, added 2026-11-02 so the figure quoted
+    # in B88 is reproducible rather than prose. The launcher's argparse default
+    # is the immune-memory suite; a run that passes no `--test-cmd` gets it
+    # whatever its target is.
+    print("\n1a. HOW MANY PROSE RUNS WERE HANDED A SUITE BY ARGPARSE")
+    DEFAULT_CMD = OBSERVED_TEST_CMD
+    prose_all, on_default, no_flag = 0, 0, 0
+    import json as _json
+    for rep in sorted((REPO / "bench" / "logs").glob("*/*_report.json")):
+        try:
+            d = _json.loads(rep.read_text(errors="replace"))
+        except Exception:  # noqa: BLE001
+            continue
+        cfg = d.get("_declared_config") or {}
+        if not cfg:
+            continue
+        art = str(cfg.get("test_article") or "")
+        tk = d.get("target_kind")
+        kind = tk.get("kind") if isinstance(tk, dict) else None
+        if kind != "prose" and not art.endswith(".md"):
+            continue
+        prose_all += 1
+        if str(cfg.get("test_cmd") or "").strip() == DEFAULT_CMD:
+            on_default += 1
+        if "--test-cmd" not in (d.get("_declared_argv") or []):
+            no_flag += 1
+    print(f"   prose runs with a declared config        : {prose_all}")
+    print(f"   ... carrying the launcher's ARGPARSE DEFAULT: {on_default}")
+    print(f"   ... passing no --test-cmd at all            : {no_flag}")
+    if prose_all:
+        iv1 = _two_tool_intervals(on_default, prose_all)
+        print(f"     Wilson 95%          [{iv1['wilson'][0]:.6f}, "
+              f"{iv1['wilson'][1]:.6f}]")
+        print(f"     Clopper-Pearson 95% [{iv1['clopper_pearson'][0]:.6f}, "
+              f"{iv1['clopper_pearson'][1]:.6f}]")
+
+    print("\n1b. WHAT IT COST, WHICH IS LESS THAN 0 OF 34 SOUNDS")
+    prose_runs, total_decisions, wasted = 0, 0, 0.0
+    for name in runs:
+        d = (REPO / "bench" / "logs" / name)
+        rep = next(iter(sorted(d.glob("*_report.json"))), None)
+        kind = None
+        if rep is not None:
+            try:
+                import json as _j
+                rd = _j.loads(rep.read_text(errors="replace"))
+                tk = rd.get("target_kind")
+                kind = tk.get("kind") if isinstance(tk, dict) else None
+                if kind is None:
+                    art = (rd.get("_declared_config") or {}).get("test_article", "")
+                    kind = "prose" if str(art).endswith(".md") else None
+            except Exception:  # noqa: BLE001
+                kind = None
+        if kind == "prose":
+            prose_runs += 1
+        total_decisions += runs[name]["promote"] + runs[name]["reject"]
+        log = d / "console.log"
+        if log.is_file():
+            for line in log.read_text(errors="replace").splitlines():
+                if "apply-back REJECT" in line:
+                    m = re.search(r"\s+in (\d+(?:\.\d+)?)s\b", line)
+                    if m:
+                        wasted += float(m.group(1))
+    print(f"   runs whose target was PROSE : {prose_runs} of {len(runs)}")
+    if runs:
+        iv2 = _two_tool_intervals(prose_runs, len(runs))
+        print(f"     Wilson 95%          [{iv2['wilson'][0]:.6f}, "
+              f"{iv2['wilson'][1]:.6f}]")
+        print(f"     Clopper-Pearson 95% [{iv2['clopper_pearson'][0]:.6f}, "
+              f"{iv2['clopper_pearson'][1]:.6f}]")
+    print(f"   suite time on refusals that could not depend on the candidate:")
+    print(f"     {wasted:.1f} s ({wasted/60:.1f} min) across {total_decisions} "
+          f"decision(s)")
+    print("   => 0 PROMOTIONS WERE LOST. A prose target cannot be gated by a")
+    print("      pytest suite at all, so the repaired gate still refuses all of")
+    print("      them -- for being prose, which is TRUE. What the defect cost is")
+    print(f"      {total_decisions} false reasons in the project's own evidence,")
+    print(f"      and {wasted:.1f} s of suite time producing them.")
+
     print(f"\n2. THE RUN THAT EXPOSED IT: {OBSERVED_RUN[:46]}")
     obs = runs.get(OBSERVED_RUN)
     if obs is None:

@@ -207,6 +207,27 @@ def _report_lines_for(p: "Path") -> set:
 def _looks_like_a_markdown_heading(line: str) -> bool:
     if not _MD_HEADING.match(line):
         return False
+    stripped = line.lstrip()
+    # ★ 2 OR MORE HASHES IS ALWAYS A HEADING, NEVER HIS MARKER. Added 2026-11-02
+    # after 2 markdown headings in an EXTERNAL note leaked through as his
+    # annotations and the commit gate refused the commit for 2 verdict rows it
+    # could not find. Both had defeated the shape test below for the same
+    # reason: they are headings PHRASED AS QUESTIONS, so they end in "?" while
+    # the shape test assumes a heading does not.
+    #
+    # HIS CONVENTION IS EXACTLY 1 HASH, AND THAT IS MEASURED RATHER THAN
+    # ASSUMED. Across the 45 response files where a generated original survives
+    # as an ORACLE -- so his lines are known rather than guessed -- 583 of his
+    # annotations open with exactly 1 hash and 0 open with 2 or more, Wilson 95%
+    # [0.000000, 0.006546]. In the live reporting window, 568 of 570
+    # annotations open with 1 hash and the only 2 with more are the 2 leaking
+    # headings, 0.003509, Wilson 95% [0.000963, 0.012702]. So this rule removes
+    # exactly those 2, keeps all 568, and orphans no verdict row.
+    #
+    # The shape test is KEPT for the single-hash case, where it is still the
+    # only available signal and where the oracle is preferred over it anyway.
+    if len(stripped) - len(stripped.lstrip("#")) >= 2:
+        return True
     body = line.lstrip("#").strip()
     # A heading rarely runs past a clause and rarely ends in sentence punctuation.
     return len(body) <= 120 and not body.rstrip().endswith((".", "?", "!"))
