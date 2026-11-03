@@ -79,29 +79,52 @@ def _rows() -> list:
     return out
 
 
-def _iv(k: int, n: int) -> tuple:
-    """Wilson and Clopper-Pearson, each on 2 independent tools."""
+def _iv(k: int, n: int):
+    """Wilson and Clopper-Pearson, on 2 INDEPENDENT implementations each.
+
+    PROPAGATED 2026-11-03 from the one producer that already had both routes.
+    An audit of this session's producers by STEM-IMPORT COUNT passed this file,
+    and the count was a proxy: the project had already measured that `scipy` and
+    `statsmodels` resolve to the identical verifier, so 2 library names can buy
+    0 cross-checks. The predicate that matters is ROUTES PER QUANTITY -- Wilson
+    from statsmodels against Wilson written out, and Clopper-Pearson from
+    scipy's beta quantile against mpmath's regularized incomplete beta by
+    bisection. 2 libraries computing 2 DIFFERENT intervals is not a cross-check
+    of either one.
+
+    The 3rd return value is the LARGER of the 2 disagreements, so a drift in
+    either quantity surfaces in the single number the caller already prints.
+    """
     from scipy import stats
     from statsmodels.stats.proportion import proportion_confint
     import mpmath
     mpmath.mp.dps = 40
-
-    def bi(a, b, y):
-        f = lambda x: mpmath.betainc(a, b, 0, x, regularized=True) - y
-        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
-        for _ in range(200):
-            mid = (lo + hi) / 2
-            lo, hi = (mid, hi) if f(mid) < 0 else (lo, mid)
-        return float((lo + hi) / 2)
-
     if n == 0:
         return (0.0, 1.0), (0.0, 1.0), 0.0
     wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
+    # second Wilson, written out, to catch a library disagreement
+    import math
+    z = stats.norm.ppf(0.975)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    hw = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    wdiff = max(abs(wl - (c - hw)), abs(wh - (c + hw)))
     cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
     ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
-    d = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
-            abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
-    return (wl, wh), (cl, ch), d
+
+    def bi(a, b, y):
+        def _f(x):
+            return mpmath.betainc(a, b, 0, x, regularized=True) - y
+        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
+        for _ in range(240):
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if _f(m) < 0 else (lo, m)
+        return float((lo + hi) / 2)
+
+    cdiff = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
+                abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
+    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
 
 
 def main() -> int:

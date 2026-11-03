@@ -45,6 +45,7 @@ MUST_RUN = (
     "what_a_self_reported_v_bar_is_worth_2026-11-03.py",
     "c0001_provenance_does_not_reconcile_2026-11-03.py",
     "b96_the_report_against_the_note_standard_2026-11-03.py",
+    "counting_imports_ranks_producers_backwards_2026-11-03.py",
 )
 
 #: Harnesses that must NOT be run from inside the suite, with the mechanical
@@ -52,6 +53,7 @@ MUST_RUN = (
 NOT_RUN_HERE = {
     "the_models_word_mutations_2026-11-03.py": "invokes pytest; would recurse",
     "the_bare_clock_dating_mutations_2026-11-03.py": "invokes pytest; would recurse",
+    "the_second_route_mutations_2026-11-03.py": "invokes pytest; would recurse",
 }
 
 

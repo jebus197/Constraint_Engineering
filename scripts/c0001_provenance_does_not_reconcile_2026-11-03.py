@@ -48,6 +48,29 @@ TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 LOGS = REPO / "bench" / "logs"
 
 
+
+def _max_severity(ents: dict) -> float | None:
+    """SECOND ROUTE to `the highest`: the run's actual maximum severity.
+
+    INDEPENDENT of the primary, which counts entries at or above a threshold
+    constant of 1.0 and asks whether that count is 0. This asks for the maximum
+    and compares against it. A drifted threshold, or a run whose top severity
+    sat below 1.0, splits the 2 answers -- which is why both are reported, per
+    the primary/secondary falsifier rule of 2026-10-31.
+
+    NO CONFIDENCE INTERVAL IS REPORTED ANYWHERE IN THIS FILE, and that is a
+    decision rather than an omission. Every figure here is a complete
+    enumeration -- 4 of 4 runs in the `exp42_composer` family, every registry
+    entry in a run, every C-prefixed entry in the task list -- serving an
+    IDENTIFICATION question. An interval on `1 of 4` would state what fraction
+    of composer runs carry severity 0.90, which is not the question his
+    provenance clause raises. Do not add one.
+    """
+    sevs = [float(v["severity"]) for v in ents.values()
+            if isinstance(v, dict) and v.get("severity") is not None]
+    return max(sevs) if sevs else None
+
+
 def main() -> int:
     argparse.ArgumentParser(
         description=("Check C0001's provenance clause against the archive."
@@ -96,21 +119,37 @@ def main() -> int:
         at_top = sum(1 for v in ents.values()
                      if isinstance(v, dict) and float(v.get("severity") or 0) >= 1.0)
         rows.append((rep.parent.name, len(ents), d.get("total_findings"),
-                     c1.get("severity"), at_top))
-    print(f"   {'run':48s} {'reg':>4} {'total':>6} {'C0001':>7} {'at 1.0':>7}")
-    for name, reg, tot, cs, top in rows:
-        print(f"   {name[:48]:48s} {reg:4d} {str(tot):>6} {str(cs):>7} {top:7d}")
+                     c1.get("severity"), at_top, _max_severity(ents)))
+    print(f"   {'run':44s} {'reg':>4} {'total':>6} {'C0001':>7} {'at 1.0':>7} "
+          f"{'max sev':>8}")
+    for name, reg, tot, cs, top, mx in rows:
+        print(f"   {name[:44]:44s} {reg:4d} {str(tot):>6} {str(cs):>7} {top:7d} "
+              f"{str(mx):>8}")
 
     match = [r for r in rows if r[3] is not None and abs(float(r[3]) - sev) < 1e-9]
     print("\n3. VERDICT, 3 claims checked separately.")
     print(f"   severity {sev} matches {len(match)} of {len(rows)} candidate run(s)"
           f"{': ' + match[0][0] if len(match) == 1 else ''}")
     if len(match) == 1:
-        _, reg, tot, _, top = match[0]
+        _, reg, tot, c1sev, top, mx = match[0]
         print(f"   'the highest': FALSE -- {top} entries in that run sit at "
               f"severity 1.0")
+        # SECOND, INDEPENDENT ROUTE: the run's actual maximum, not a threshold
+        # count. Reported beside the primary so a disagreement cannot hide.
+        route_a = (top == 0)
+        route_b = (mx is not None and float(c1sev) >= mx)
+        print(f"     route A, entries at or above 1.0 is 0  : {route_a}")
+        print(f"     route B, C0001 {c1sev} against max {mx} : {route_b}")
+        print(f"     THE 2 ROUTES AGREE: {route_a == route_b}")
         print(f"   'the {n}'      : NO REFERENT -- that run has {reg} registry "
               f"entries and reports {tot} findings")
+    # And the secondary says MORE than the primary can: the superlative fails
+    # against every candidate, so the unresolved identification cannot save it.
+    never = [r[0] for r in rows
+             if r[3] is not None and r[5] is not None and float(r[3]) < r[5]]
+    print(f"   'the highest' is FALSE in {len(never)} of {len(rows)} candidate "
+          f"runs, not only the matching one, so the open identification cannot")
+    print("     rescue the superlative. This is what the 2nd route adds.")
     cs = len(re.findall(r"<!-- task: C\d+ ", t))
     print(f"   the task list's own C-prefixed entries: {cs}, not {n}")
     print("\n   SO 1 OF THE 3 IDENTIFYING CLAIMS HOLDS. The date and severity")
