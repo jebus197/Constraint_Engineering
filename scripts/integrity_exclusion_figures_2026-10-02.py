@@ -84,7 +84,12 @@ def zero_verdict_rate():
 def run_1b_halt():
     """Run 1b halted with BOTH halves of the two-sided gate satisfied."""
     d = ROOT / "bench" / "logs" / RUN_1B
-    rep = json.loads(next(d.glob("*_report.json")).read_text())
+    # sorted(), NOT next(): 2 run directories hold 2 matching reports and
+    # 1 of them is a different experiment's. Directory order currently
+    # agrees with name order, so this changes no figure -- it removes the
+    # dependence on that agreement.
+    _reps = sorted(d.glob("*_report.json"))
+    rep = json.loads(_reps[0].read_text())
     last = [r for r in rep.get("rounds", []) if r.get("round") == 2]
     alarm = rep.get("irreducible_queue_alarm", {})
     return {

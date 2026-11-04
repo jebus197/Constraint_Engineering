@@ -37,7 +37,9 @@ spec.loader.exec_module(rr)
 
 
 def section0(name):
-    rec = json.load(open(next(REC.glob("r0_%s_*.json" % name))))
+    # sorted(), NOT next(): an unsorted glob picks by directory order.
+    _recs = sorted(REC.glob("r0_%s_*.json" % name))
+    rec = json.load(open(_recs[0]))
     return rr._extract_corroboration_sections(rec["response"])[0]
 
 

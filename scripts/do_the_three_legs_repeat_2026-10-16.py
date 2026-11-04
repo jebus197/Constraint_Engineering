@@ -61,7 +61,11 @@ def descriptions(dirname: str) -> list[str]:
 
 def report(dirname: str) -> dict:
     d = ROOT / "bench" / "logs" / dirname
-    f = next(d.glob("*_report.json"), None)
+    # sorted(), NOT next(): see integrity_exclusion_figures for why. 2 run
+    # directories hold 2 matching reports; order currently agrees, so no
+    # figure moves.
+    _reps = sorted(d.glob("*_report.json"))
+    f = _reps[0] if _reps else None
     return json.loads(f.read_text(encoding="utf-8")) if f else {}
 
 def rate(A, B, t) -> float:
