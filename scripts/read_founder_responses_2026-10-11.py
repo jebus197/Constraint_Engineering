@@ -763,9 +763,42 @@ def _annotations_in(p: Path, d: _dt.date | None = None,
 
 
 def claim_a_naive_grep_is_blind_to_some_of_them() -> dict:
-    """The measurement that justifies this script, recomputed rather than quoted."""
+    """The measurement that justifies this script, recomputed rather than quoted.
+
+    ★★★ TWO DENOMINATORS LIVE HERE AND THEY ANSWER DIFFERENT QUESTIONS, 2026-11-04.
+    The READABILITY figures (`files`, `cr_only`, `not_valid_utf8`) are properties
+    of the folder, so they are counted over every file `is_a_response_file`
+    admits. The ANNOTATION figures are claims about HIS WRITING, so they are
+    counted over `is_one_of_his_annotated_responses` only.
+
+    UNTIL TODAY ALL OF THEM USED THE BROAD PREDICATE, AND THE FIRST LINE READ
+    AFTER `rs` CARRIED THE CONSEQUENCE. `scripts/cdsfl_recover.py` quotes
+    `annotations_total` and `annotations_in_blind_files` in the FIRST READ
+    banner, so every session was told he had written **1,953** verdicts of which
+    1,688 were invisible to grep. He wrote **839**, of which 583 are. The gap
+    decomposes exactly: 1953 = 839 + 1114, verified in plain integers and in
+    SymPy, and **1,114 of 1,953 -- 0.570405, Wilson [0.548333, 0.592199] -- was
+    not his writing at all**. 1,103 of those 1,114 came from 2 files: an 11 MiB
+    PNG wearing a `.md` extension (780) and a `.zip` (323).
+
+    THE 2026-11-03 REPAIR FIXED THE DECIDING LAYER AND LEFT THIS ONE. That
+    morning `is_binary_file` was added to the narrow predicate precisely to
+    exclude that PNG, and `annotations()` duly fell. This function never
+    consulted the narrow predicate, so it went on reporting the PNG's 780.
+
+    AND THE BROAD PREDICATE IS *NOT* NARROWED TO FIX IT, deliberately. Its other
+    2 call sites are the module's gap detectors, and narrowing readability would
+    make an unparseable file stop being reported as a gap --
+    `test_the_readability_predicate_was_not_narrowed` enforces that on purpose.
+    So the residue is EXCLUDED FROM THE COUNTS AND REPORTED BY NAME in
+    `annotations_excluded_as_not_his` and `excluded_files`, because an exclusion
+    nobody can see is the shape this project's own record warns about.
+
+    Producer: `scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py`.
+    """
     files = [p for p in RESPONSES.glob("*") if is_a_response_file(p)]
     annotated, blind, blind_count, total_count = 0, 0, 0, 0
+    excluded_count, excluded = 0, []
     cr, nonutf8 = 0, 0
     for p in files:
         try:
@@ -783,6 +816,20 @@ def claim_a_naive_grep_is_blind_to_some_of_them() -> dict:
         # the count now comes from the same function that yields the annotations.
         n = len(_annotations_in(p))
         if not n:
+            continue
+        # ★ AN ANNOTATION COUNT IS A CLAIM ABOUT HIS WRITING. A file the reader
+        # can READ but which is not HIS is tallied separately and named, never
+        # folded into the totals the FIRST READ banner quotes. The readability
+        # counters above have already seen it, which is the point: 2 questions,
+        # 2 denominators, 1 pass over the folder.
+        if not is_one_of_his_annotated_responses(p):
+            try:
+                size = p.stat().st_size
+            except OSError:
+                size = -1
+            excluded_count += n
+            excluded.append({"file": p.name, "annotations": n, "bytes": size,
+                             "suffix": p.suffix.lower() or "(none)"})
             continue
         annotated += 1
         total_count += n
@@ -803,6 +850,12 @@ def claim_a_naive_grep_is_blind_to_some_of_them() -> dict:
         "annotations_in_blind_files": blind_count,
         "blind_share_of_annotations": (round(blind_count / total_count, 4)
                                        if total_count else None),
+        # ★ THE RESIDUE, REPORTED RATHER THAN DROPPED (2026-11-04). Readable
+        # files bearing a marker that `is_one_of_his_annotated_responses`
+        # excludes. If one of these is ever actually his writing, this is where
+        # it surfaces -- which a silent `continue` would never have allowed.
+        "annotations_excluded_as_not_his": excluded_count,
+        "excluded_files": sorted(excluded, key=lambda r: -r["annotations"]),
     }
 
 

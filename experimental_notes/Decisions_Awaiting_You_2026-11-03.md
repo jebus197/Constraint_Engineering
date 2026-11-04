@@ -450,4 +450,109 @@ What you decide. Whether the spoken renderer should wrap genuinely quoted materi
 
 The recommendation, and why. Wrap them. It is additive, because it exempts quotation rather than changing any sentence, and it is the simplest sufficient fix for the inconsistency, because identical quoted text is currently judged 1 way in the written copy and another in the spoken one. The argument against is real and worth stating: a document that exempts the very text breaking a rule is the shape the checker's own notes warn about, where a file buys amnesty for its own violations. Its honest cost is that it accounts for 2 of the 17, so it settles the consistency and not the other 15. Those 15 are the prose of the document you listen to each morning, and whether digits improve or harm it when read aloud is a judgement you should make by hearing a few, rather than a judgement I should make by applying a rule. The check now reports them every time the report is built, so they cannot go quiet while you decide.
 
+### DECISION 15. WHY YOUR WORDS GET SKIPPED, AND IT IS NOT A READING PROBLEM
+
+This is the answer to the question you have asked several times, and it is not the answer either of us expected. You wrote that it seems astonishing that a system whose whole diet is written English should fail to read plain English, and you worried that we were chasing esoteric solutions to a basic problem. You were right to worry. The cause is plumbing.
+
+When you type a message while a turn is already running, the harness does not record it the way it records an ordinary message. It writes it to a different kind of transcript entry, with your words in a top level field rather than inside the message body, and it delivers it wrapped in a system reminder block. Every instrument in this project that reads a transcript looks inside the message body. None of them can see those entries at all.
+
+Measured across the whole record, with each exclusion applied by a named rule so the count can be argued with rather than taken on trust: of 1,421 distinct messages of yours, 1,120 are recorded both ways, 95 only in the ordinary place, and 206 only in the second place. That is 0.144968, with a Wilson 95 percent interval from 0.127620 to 0.164231 and a Clopper-Pearson interval from 0.127060 to 0.164358, the 2 implementations agreeing to within 3 parts in 10 to the power 17.
+
+The 206 are not trivia. They include your correction that the Wolfram licence renewal is already automated and that I should stop rediscovering it as an issue. They include the ruling that renamed the discussion label. They include your request that an explanation of 2 deferred entries be added to the report. And they include a question I then told you that you had never asked.
+
+That last one is the part that matters, and it is a claim of mine being withdrawn rather than a complaint about the harness. Earlier today a producer was written to check whether a compaction summary had invented a question of yours about a quantity called v-bar. It reported that the term appears 0 times in 1,719 of your typed messages and 0 times in 839 of your annotations, and concluded the summary had made it up. You asked it directly at 3:56 that morning. The question was typed mid turn, so the producer could not see it, and the instrument built to catch exactly this class of miss was itself blind to 14.5 percent of your words. The claim is withdrawn and the answer to your actual question is decision 13 of this file, which was raised before this was found and asks exactly what v-bar should measure.
+
+How it was found is worth stating, because it was not found by looking for it. Building the inventory you asked for needed every message you had sent since the 2nd of November. The obvious scan returned 14 for that window. 2 messages quoted word for word in a compaction summary were not among the 14, and both exist. Rather than assume the summary had invented them, the record was searched a second way, and there they were.
+
+There are 2 separate exposures here and only 1 of them can be fixed in this project.
+
+The first is delivery, while a session is running, and it cannot be fixed here. The harness hands me your mid turn message inside a system reminder, and my own standing instructions describe system reminder content as background context rather than as an instruction from you. So your direct instruction arrives in the one wrapper that carries less weight than a message typed at the prompt. That is a property of the tool and it is reported rather than repaired.
+
+The second is the record afterwards, and it can be fixed. 1 reader that returns both records as a single list of your messages, so that no instrument has to know the harness stores your words in 2 places. It adds messages and removes none, which is the additive standard satisfied rather than argued for, and its check asserts that the result is a superset of what the old scan returns, because a reader that merely changed its answer would look the same as one that broke.
+
+What you decide. Nothing on the repair itself, which needs no ruling and is being built. What is worth your attention is whether you want the delivery half raised with Anthropic as a tool problem, since it is their wrapper and not our code.
+
+The recommendation, and why. Build the union reader, and treat the formatting question in decision 17 as settled by this finding rather than as an open option. The 3 measured causes of lost responses this week are an 11 megabyte image file carrying a markdown extension, a shape rule that discards your comments as headings, and this. None of the 3 is a comprehension failure, and none of the 3 would have been fixed by changing how you write.
+
+
+### DECISION 16. WHETHER THE COMMIT GATE SHOULD GROW, AND WHAT IT WOULD COST
+
+Before every commit this project runs a set of fast correctness checks and refuses the commit if any fail. That set is defined in 1 file, and that file states its own scope in its own words: the checks written since the 29th of October.
+
+Measured against that rule, 104 check files carry a name dated on or after that day. 49 are in the set the commit gate runs. 55 were not, 1 of which was created tonight, so 54 predate tonight. Running all 55 together returned 5 failures, 646 passes and 1 skip, in 292.97 seconds.
+
+All 5 failures were real, and repairing 2 of them exposed 2 more that the first pass had not reached, so 7 were found and all 7 are now green. Not 1 of the 7 was a defect in the product being tested, which is worth saying plainly. 3 were probes that added hours to the wall clock and so broke only between 22:00 and midnight, because the arithmetic wrapped past the end of the day and claimed a time in the past. 1 was a statistical interval resting on a single route where the project requires 2. 2 were scripts whose exit codes were correct behaviour that the check misread. And 1 was 13 measurement scripts that nothing ran at all, 12 of which predate the script whose addition exposed them.
+
+The gate's own file already records this exact failure happening once before: a check sat failing through 3 consecutive commits because nothing cheap ran it. It has now happened again, at 10 times the scale.
+
+What you decide. Whether the gate should grow to cover its own stated scope, and if so by how much.
+
+The recommendation, and why. Add a cost bounded subset and narrow the written scope rule to match it, so the rule stops being violated by construction. The reason this is a decision for you rather than a repair for me is cost, and it collides with an entry already open. The gate ran in 598.13 seconds tonight, inside the 660 seconds its own file names as the point past which a gate gets bypassed and therefore protects nothing. Adding the 54 takes it to about 891 seconds, which is 1.35 times that limit. So the gate's scope rule and the gate's cost limit cannot both be honoured, and which one gives way is a judgement about how long you are willing to wait for a commit. 1 file was added tonight without waiting for your ruling, and it is named here so the choice is visible rather than quiet: the check that protects tonight's repair to a check the gate already runs. It costs 2.5 seconds.
+
+
+### DECISION 17. WHETHER TO ADOPT THE ASTERISK FORMAT, AND THE ANSWER IS PROBABLY NOT
+
+You proposed opening and closing each paragraph I write in a spoken file with an asterisk, so that your own comments, which open with a hash, could always be told apart from the surrounding text. You offered it as a compromise you would be willing to make if it helped, while saying it was born of desperation rather than knowledge. You then settled the cost side yourself: Read Aloud speaks a lone asterisk as the word asterisk, exactly as it speaks every other special character.
+
+Your proposal works. Measured against ground truth, which exists only where the original generated file survives on the Desktop and so covers 49 of 348 files: 583 lines in those files open with a hash and every 1 of the 583 is yours. Today's shape rule reads 542 of them correctly and discards 41 as markdown headings, which is 0.070326 with a Wilson 95 percent interval from 0.052261 to 0.094016. Your format recovers all 583.
+
+It is not the cheapest thing that works, and that is the finding. Of the 41 comments being discarded, 36 end in 1 of your own ticket markers, which is 0.878049 with a Wilson interval from 0.744558 to 0.946767. A markdown heading never does. Among them: agreed, you should rerun it under full monitoring protocol, marked as a statement. Has that task already been run, marked as a question. Repair the 2 as you suggest, marked as a statement. Permission is granted, marked as a statement. The marker that tells your comment apart from a heading was sitting at the end of the very line the rule was throwing away.
+
+The direction that would be dangerous is the opposite one, where my own headings get read as your rulings, and the ground truth cannot measure it because in those 49 files every hash line is yours, so that cell of the table is empty and a 0 from an empty denominator is not a 0. The control is the reverse population: 1,153 single hash headings in the project's own notes, where the truth is known the other way and every one of them is mine. The marker rule takes 0 of the 1,153, with a Wilson upper bound of 0.003321.
+
+Composed, the pair does beat either half alone, which is the only form of composability this project accepts. Against 2 named properties, comments already written that become readable and comments in future files read correctly, the asterisk format alone scores 0 of 41 and 583 of 583, the marker rule alone scores 36 of 41 and 578 of 583, and both together score 36 of 41 and 583 of 583. So the composed pair wins, and its entire additional gain over the marker rule by itself is 5 comments out of 583, which is 0.008576. That is what the 2 spoken asterisks per paragraph would buy.
+
+What you decide. Whether to adopt the marker rule alone, both, or neither.
+
+The recommendation, and why. Adopt the marker rule and change nothing about how you write. It recovers 36 of the 41 at no cost to you, it works on files already on disk, which a format adopted today cannot reach at all, and it removes machinery rather than adding it, which is what you asked for when you said to avoid building more complex parsing. You also asked whether a single agreed format exists that I can read reliably and that Word supports natively. It does and you are already using it. Measured across your folder, plain text decodes at 0.9999 of its bytes and yields 583 of your annotations. Rich text decodes at 0.2686, because the markup is most of the file, and yields 256. Markdown yields 0. And Word's own native format is not in the reader's accepted list at all, so moving to it would recover nothing. Your existing choice of plain text saved out of Word is the right answer and no format change is needed.
+
+
+### DECISION 18. WHICH IDENTIFIER A SPOKEN REPORT SHOULD CARRY
+
+You observed that you no longer see the generated identifiers for issues, and that you only saw them for a short time after we agreed them. You are right, and the measurement is stark.
+
+Counted over the files written today, because a store holding 3,384 tickets is irrelevant if no identifier reaches the document you actually read: 2 of 14 spoken files carry at least 1 ticket identifier. That is 0.142857, with a Wilson 95 percent interval from 0.040094 to 0.399414 and a Clopper-Pearson interval from 0.017795 to 0.428129. The written companions do better and are still thin, at 11 of 33, which is 0.333333 with a Wilson interval from 0.197502 to 0.503921. The master task list carries 80 distinct identifiers and every other note carries 3 or fewer.
+
+The obvious repair is hostile to comfortable listening, which is what the spoken file exists for, which is why this comes to you rather than being fixed quietly. A ticket identifier is 12 hexadecimal characters, and Read Aloud speaks it character by character, so 1 reference costs 12 spoken tokens where a short code costs 2. A report attaching an identifier to each of 14 decisions would add roughly 168 spoken tokens of hexadecimal to a document whose entire purpose is comfortable listening.
+
+A speakable identifier already exists and it is yours. The short codes on the master task list are stable, unique, and already mapped to the ticket store in both directions: 14 of 240 entries name a ticket identifier in their own text, and 419 of 3,384 tickets name a task code.
+
+What you decide. Which identifier a spoken file should carry.
+
+The recommendation, and why. The spoken file cites the short code, and the written companion cites the short code beside the full identifier. You get a reference you can speak aloud and quote back to me, a machine reading the companion gets the full digest, and an issue with no entry yet gets an entry raised, which is what the task list is for. There is 1 claim this does not establish, and it should not be oversold: it is not shown that the identifiers would have prevented anything. The store records that 2 items are duplicates but not which came first, so work avoided because a ticket already existed is recorded nowhere. 5 of 3,384 tickets are marked as duplicates, which is 0.001478, and the 2 cases found today of work being redone were caught by reading the register by hand rather than by the store refusing them. That is a gap in the instrument, not a result about it.
+
+### DECISION 19. WHETHER A LIST THAT MAY NOT TERMINATE IS ACCEPTABLE, AND IT WAS HIDDEN FROM YOU
+
+There are 2 things in this decision and the second is arguably worse than the first.
+
+The first is a ratio that stood at 0.8986 when this decision was written and at 0.9034 when it was last checked. It moves with every entry added or closed, so take it from its producer, the task list burndown script, rather than from this sentence. Treating each closed entry as producing some number of new entries, a ratio below 1 means the list finishes with certainty and a ratio at or above 1 means it need never finish. On the 11th of September it was 0.4444 with the whole interval below 1, so the list demonstrably terminated. On the 17th of October it was 0.8148 with an interval from 0.6155 to 1.0787, and an entry was raised then to tell you the upper bound had crossed 1. Tonight, from 186 entries added against 207 closed, it is 0.8986 with an interval from 0.7374 to 1.0950, and an exact test against a ratio of 1 returns 0.3130.
+
+The point estimate is still below 1. What has gone is the ability to assert termination at 95 percent confidence, and the evidence against a non terminating list has got weaker rather than stronger, because that test value rose from 0.0873 to 0.3130.
+
+Tonight's 5 new entries are not the cause, and that was checked before it was said. Immediately before them the ratio was 0.8786 with an upper bound of 1.0725, already above 1. The crossing happened during the burst of entries raised between the 1st and the 3rd of November, while 4 long investigations were running at once.
+
+The second thing is that this entry was marked as done while its own first line says it needs your ruling, and while the field that records your ruling was empty. The morning report builds its decisions section from entries that are still open, so a decision you had never made was invisible on the only surface that exists to show you decisions. That is the same suppression found tonight in 2 other entries, where a ruling of yours from the 17th of October silences questions added weeks later. Repetition is visible to you. Suppression is not. The marker is corrected to open, which is a record fix and not a reopening of anything you decided.
+
+The test that reports that 0.8986 is deliberately left red, because its own author wrote that silencing it would be the one forbidden action. It is also not among the checks that run before a commit, which is why it has been saying this since at least the 1st of November with nobody reading it. That is the cost question in decision 16.
+
+What you decide. Whether a list whose termination is no longer demonstrated is acceptable as it stands.
+
+The recommendation, and why. Accept it and keep closing. The point estimate is below 1, no test rejects termination, and the rise is explained by a 3 day burst of findings raised while several investigations ran together. The honest position is that termination is not currently demonstrated, which is a weaker claim than non termination and does not by itself call for a change of plan. The alternative that would force 0.8986 down is a cap on how fast new entries may be raised, and that works by suppressing findings, which is the opposite of what this project is for. If instead you want the ratio treated as a stopping condition, so that the runway does not resume until the whole interval sits below 1, say so, because that is a materially different plan from the current one.
+
+### DECISION 20. WHETHER TO PRODUCE THE ERROR FIGURE OR RETIRE IT
+
+Both your instruction files state, in 2 places each, that of 12 errors on the 11th of October, 10 were catchable by more careful reasoning before running anything. They give that as 0.8333, with a 95 per cent interval from 0.5520 to 0.9530 and a binomial probability of 0.0193 against an even split.
+
+0 scripts reproduce any of those 4 figures. That is your own rule, broken inside the file that states it: nothing may be quoted to you as measured unless the script that produced it is committed alongside. It is also the figure cited whenever the depth over breadth instruction is discussed, including in the answer written for you tonight, which is how it came to light.
+
+The denominator cannot be recovered. The 11th of October carries 14 memory files, 6 of them lessons and 8 of them findings, and which 12 of those 14 the figure counted is recorded nowhere. Reconstructing it would mean choosing a population to fit a number that is already written down, which is the shape this project refuses.
+
+The single existing producer classifies errors on a different axis. It asks whether an error was in the measuring instrument, in the subject being measured, or in how the work was sequenced, rather than whether it was catchable before running anything. So generalising it by date would answer a different question and would not reproduce the figure.
+
+Meanwhile 2 producers do exist for the same underlying concern, and both are sharper than the figure they would replace. The first finds that 16 of 18 of a night's recorded errors were in the measuring instruments rather than in the code being measured, which is 0.888889 with a Wilson interval from 0.672002 to 0.968980 and a Clopper Pearson interval from 0.652880 to 0.986249. The second finds that 0 of 7 errors on another night were noticed unaided, with an exact binomial probability of 0.0078 that the unaided share is below a half, 5 of the 7 having been caught by running an instrument and 2 by re-reading the record. Both state their own limit: they count errors that were written down.
+
+What you decide. Whether to spend the work producing the original figure, to retire it in favour of the 2 that have producers, or to leave it flagged where it stands.
+
+The recommendation, and why. Retire it, under the additive standard's removal clause. That clause admits a removal only on a committed measurement showing the replacement dominates on a named property, and the named property here is reproducibility: the replacements have producers and the incumbent cannot have any. Nothing is deleted meanwhile. The flag is already in place in both files, naming the 2 producers that do exist, so the figure cannot be quoted again innocently.
+
 Written under CDSFL note standard v1.9 (1 November 2026).

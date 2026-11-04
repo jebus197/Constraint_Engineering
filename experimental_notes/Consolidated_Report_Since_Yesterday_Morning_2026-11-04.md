@@ -171,7 +171,7 @@ The guard reporting it, `bench/tests/test_task_list_burndown_2026-09-11.py`, is 
 
 ## 7. What is owed
 
-**By him: 18 decisions**, all in `experimental_notes/Decisions_Awaiting_You_2026-11-03.txt` and its byte-identical Desktop mirror. Both decision surfaces agree on all 18 — z3 bijection `True`, SymPy `FiniteSet` equality `True` (`scripts/do_the_two_decision_surfaces_agree_2026-11-01.py`). The 4 added tonight are 15 (the mid-turn record), 16 (whether the gate should grow), 17 (the asterisks), 18 (which identifier a spoken report carries).
+**By him: 19 decisions**, all in `experimental_notes/Decisions_Awaiting_You_2026-11-03.txt` and its byte-identical mirror at `~/Desktop/CDSFL_tts/`. Both decision surfaces agree on all 19 — z3 bijection `True`, SymPy `FiniteSet` equality `True` (`scripts/do_the_two_decision_surfaces_agree_2026-11-01.py`). The 5 added tonight are 15 (the mid-turn record), 16 (whether the gate should grow), 17 (the asterisks), 18 (which identifier a spoken report carries) and 19 (whether a list that may not terminate is acceptable, and that it was hidden from you).
 
 **Plus 2 SUPPRESSED questions**, which are worse than repetition because repetition is visible and suppression is not. `scripts/how_many_decisions_actually_need_him_2026-11-01.py` finds 2 entries whose live asks are hidden from the generated decision list by a `ruled:` date that PREDATES them: **B13** (ruled 2026-10-17, later addition 2026-10-18) and **B21** (ruled 2026-10-17, later additions 2026-10-31, 2026-11-01, 2026-11-02).
 
@@ -181,7 +181,7 @@ The guard reporting it, `bench/tests/test_task_list_burndown_2026-09-11.py`, is 
 
 ## 8. Triage of the open list
 
-245 entries: **21 open**, 210 done, 1 blocked, 4 deferred, 9 withdrawn. Of the 17 open before tonight, `scripts/how_many_decisions_actually_need_him_2026-11-01.py` classifies **14 as genuinely owed to him**, 5 as presented to him but not his, 1 (C0001) as released by another, and B22 as *"asking a go-ahead his standing rule grants"* — which is why the panel was dispatched without asking.
+246 entries: **23 live** (22 open, 1 blocked), 210 done, 4 deferred, 9 withdrawn. The word *open* carried 2 meanings across the 2 surfaces that report it until tonight; both now state the breakdown. Of the 17 open before tonight, `scripts/how_many_decisions_actually_need_him_2026-11-01.py` classifies **14 as genuinely owed to him**, 5 as presented to him but not his, 1 (C0001) as released by another, and B22 as *"asking a go-ahead his standing rule grants"* — which is why the panel was dispatched without asking.
 
 **B83 and B84 were wrongly triaged as completable unsupervised earlier tonight**, and both say `NEEDS HIS RULING` in their own text: B83 because storing the discrimination-control outcome changes what the runner writes into the archive days after a run finished, and B84 for the same reason about a pre-run target description.
 

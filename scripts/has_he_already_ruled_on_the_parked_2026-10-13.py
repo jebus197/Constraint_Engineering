@@ -150,7 +150,27 @@ def classify_items(items, states, ann_text):
         idents = {i for i in IDENT_RE.findall(heading)}
         hits = []
         for date, txt in ann_text:
-            for ident in idents:
+            # ★ SORTED, BECAUSE A SET ITERATES IN HASH ORDER AND THAT MADE THIS
+            # MEASUREMENT NONDETERMINISTIC ACROSS PROCESSES — found 2026-11-04
+            # when the commit gate refused a commit on
+            # `test_every_item_survives_a_real_apply` reporting "body lost" for
+            # an item that was present in full.
+            #
+            # The inner loop takes the FIRST ident that the ruling text mentions
+            # and `break`s. A heading naming 6 entries — B20, B21, B22, B56, B76
+            # and C0001, which is a real item here — therefore recorded whichever
+            # of them the set happened to yield first, and Python randomises
+            # string hashing per process. Measured over 3 regenerations of the
+            # live file: the B21/B20 split came out 11/4, then 12/3, then 12/3.
+            # So the stored reason line said "2026-11-01 names B20" while a fresh
+            # run derived B21, and the guard accused a correct file.
+            #
+            # THE SIBLING BRANCH 6 LINES BELOW ALREADY SORTS — `undecided.append(
+            # (heading, sorted(idents)))`. The determinism was known and applied
+            # on one path and not the other, which is why this is a 1-token fix
+            # rather than a redesign. Sorting reproduces the stored file exactly,
+            # so nothing he has read changes.
+            for ident in sorted(idents):
                 if re.search(r"\b" + re.escape(ident) + r"\b", txt):
                     hits.append((date, ident, txt[:150]))
                     break

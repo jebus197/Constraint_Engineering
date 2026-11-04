@@ -97,9 +97,21 @@ def brief(cap: int = DEFAULT_CAP, budget: int = DEFAULT_BUDGET) -> str:
     live = [e for e in entries if e.state in LIVE_STATES]
     done = sum(1 for e in entries if e.state == "DONE")
 
+    # ★ THE WORD "OPEN" MEANT 2 DIFFERENT THINGS IN THE SAME BANNER, 2026-11-04.
+    # This line called `len(live)` the open count while `LIVE_STATES` is
+    # ("OPEN", "BLOCKED"), and `task_list_markers.summarise` -- injected into the
+    # very same turn by the pulse hook -- counts `state == "OPEN"` strictly and
+    # reports BLOCKED separately. So one turn carried "23 open" and "22 open,
+    # 1 blocked", and a reader could only conclude that one of them was wrong.
+    # Both were right; the LABEL was wrong. The breakdown is now stated, so the
+    # 2 figures reconcile on sight instead of contradicting each other.
+    by_state = {s: sum(1 for e in live if e.state == s) for s in LIVE_STATES}
+    shown = ", ".join(f"{by_state[s]} {s.lower()}" for s in LIVE_STATES
+                      if by_state[s])
+
     lines = [
         "## THE OPEN WORK, INLINE — not a reading list",
-        f"  {len(entries)} entries: {len(live)} open, {done} done. "
+        f"  {len(entries)} entries: {len(live)} live ({shown}), {done} done. "
         f"`ruled` names the date HE decided it; an entry without one is a "
         f"question or a decision still owed.",
     ]

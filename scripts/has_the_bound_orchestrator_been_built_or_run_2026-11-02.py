@@ -159,18 +159,101 @@ def main() -> int:
     print(f"   hooks/cy_monitor_gate.py exists         : {gate.is_file()}")
     if wd.is_file():
         src = wd.read_text()
-        kinds = sorted(set(re.findall(r'say\(\s*"([A-Z_ ]+)"', src)))
-        print(f"   the watchdog's EVENT VOCABULARY         : {kinds}")
+        # ★ BOTH EMITTERS, BY SYNTAX TREE — corrected 2026-11-04. This read
+        # `say("UPPERCASE")` only and reported 4 kinds as "the watchdog's EVENT
+        # VOCABULARY". The watchdog's events are emitted by `ev()`, a DIFFERENT
+        # function with 10 distinct literal kinds, and `say()` adds ARMED, CLOSED
+        # and HEARTBEAT with WATCHDOG shared between them. The union is 13, which
+        # is the figure B20's own text records and which this instrument
+        # contradicted by a factor of more than 3.
+        #
+        # A regex naming the wrong function is the predicate error this project
+        # keeps finding: the check ran, returned a number, and the number was
+        # about something else. The AST route cannot name the wrong function
+        # silently, because the function is the key it groups by.
+        import ast as _ast
+        _ev, _say = set(), set()
+        try:
+            for _n in _ast.walk(_ast.parse(src)):
+                if not isinstance(_n, _ast.Call) or not _n.args:
+                    continue
+                _nm = getattr(_n.func, "id", getattr(_n.func, "attr", ""))
+                _a = _n.args[0]
+                if not (isinstance(_a, _ast.Constant) and isinstance(_a.value, str)):
+                    continue
+                if _nm == "ev":
+                    _ev.add(_a.value)
+                elif _nm == "say" and _a.value.split()[0].isupper():
+                    _say.add(_a.value.split()[0])
+        except SyntaxError:
+            pass
+        kinds = sorted(_ev | _say)
+        print(f"   the watchdog's EVENT VOCABULARY         : {len(kinds)} kinds, "
+              f"{len(_ev)} from ev() and {len(_say)} from say() with "
+              f"{len(_ev & _say)} shared")
+        print(f"     {kinds}")
         print(f"   -> THAT VOCABULARY IS THE 'WHAT IS SCREWY' RULE B20 SAYS IS MISSING.")
         print(f"      B20's own text names this as its highest-risk arm: 'noticing")
         print(f"      that something is screwy with no rule naming what screwy")
         print(f"      means'. Each event above is a mechanical predicate, and the")
         print(f"      pulse file added 2026-11-02 makes them readable by a program")
         print(f"      rather than only by a human reading prose.")
-    verdicts["monitoring_loop"] = (
-        "PARTLY BUILT: the detector and its event vocabulary exist and arm "
-        "automatically; what is absent is a loop that ACTS on them unattended"
-        if wd.is_file() and gate.is_file() else "ABSENT")
+    # ★ THE ACTUATOR IS PROBED, NOT ASSUMED ABSENT — corrected 2026-11-04.
+    # This verdict was a HARDCODED STRING: given the watchdog and the gate, it
+    # asserted "what is absent is a loop that ACTS on them unattended" with no
+    # reference to anything that might act. So it could not change when the
+    # actuator was built, and `bench/tools/cy_actuator_2026-11-03.py` landed in
+    # commit 99d800db the following day while this instrument went on reporting
+    # the component as PARTLY BUILT. B20's entry text repeated that, which is the
+    # SECOND time that entry's absence list has gone stale — its own text already
+    # records the first, where 2 of 3 claims were false.
+    #
+    # An instrument whose verdict is a constant measures nothing. That is the
+    # `boundary_band_sensitivity` shape this project has confirmed before: a
+    # value shipped as an unconditional constant, vacuous in 41 of 41 reports.
+    # The other 3 components here were already probed by IMPORTING the candidate
+    # and naming the tests that reach it, so this now does the same.
+    act = REPO / "bench" / "tools" / "cy_actuator_2026-11-03.py"
+    act_ok, act_names, act_tests = False, [], []
+    if act.is_file():
+        try:
+            import importlib.util as _ilu
+            _spec = _ilu.spec_from_file_location("_cy_actuator_probe", act)
+            _mod = _ilu.module_from_spec(_spec)
+            _spec.loader.exec_module(_mod)
+            act_ok = True
+            act_names = sorted(n for n in dir(_mod)
+                               if n in ("classify", "main", "act", "resume"))
+        except Exception as _e:                              # noqa: BLE001
+            act_names = [f"import failed: {type(_e).__name__}"]
+        act_tests = sorted(p.name for p in (REPO / "bench" / "tests").glob("test_*.py")
+                           if "cy_actuator" in p.read_text(errors="replace"))
+    print(f"   bench/tools/cy_actuator_2026-11-03.py exists: {act.is_file()}")
+    if act.is_file():
+        print(f"   it imports                              : {act_ok}")
+        print(f"   it exposes                              : {act_names}")
+        print(f"   tests that reach it                     : {act_tests}")
+        print(f"   -> THE ACTING HALF EXISTS. It watches a launched run, classifies")
+        print(f"      why the run stopped, records that with its evidence, and under")
+        print(f"      `--act` re-invokes the same launch command with `--resume`.")
+
+    if not (wd.is_file() and gate.is_file()):
+        verdicts["monitoring_loop"] = "ABSENT"
+    elif act_ok and act_tests:
+        # ★ RULE 20: BUILT AND TESTED IS NOT ENABLED, and the distinction is the
+        # one he had to ask for 4 times. The actuator acts only under `--act`,
+        # and nothing in the harness passes it, so the loop does not yet run
+        # unattended even though every part of it exists.
+        verdicts["monitoring_loop"] = (
+            "BUILT AND TESTED, NOT ENABLED: the detector, its event vocabulary, "
+            "the pulse file and the actuator all exist and the actuator is "
+            f"reached by {len(act_tests)} test file(s); it acts only under "
+            "`--act`, which nothing in the harness passes, so the cycle is not "
+            "yet unattended")
+    else:
+        verdicts["monitoring_loop"] = (
+            "PARTLY BUILT: the detector and its event vocabulary exist and arm "
+            "automatically; what is absent is a loop that ACTS on them unattended")
 
     # ---- 3. the researcher-facing interface / UX backend --------------------
     print("\n3. A RESEARCHER-FACING INTERFACE, AND THE UX BACKEND HE AUTHORISED")
@@ -256,16 +339,39 @@ def main() -> int:
                          ("absent", absent), ("present but not usable", degraded)):
         if group:
             print(f"    {label:24s}: {', '.join(sorted(group))}")
-    print("  WHAT REMAINS, STATED RATHER THAN COUNTED: a loop that ACTS on the")
-    print("  watchdog's events unattended. The detector, its event vocabulary and")
-    print("  the pulse file exist; nothing performs the pause, diagnose, fix and")
-    print("  resume cycle without a human or a model in the loop.")
+    # ★ THIS BLOCK WAS A CONSTANT TOO, and fixing the verdict above without it
+    # left the output self-contradictory for one run: "4 of 4 built" followed by
+    # "WHAT REMAINS: a loop that ACTS". That is the same fixed-the-deciding-layer-
+    # left-the-reporting-layer shape found in the verdict census the same night,
+    # repeated here within the hour. It now DERIVES from the verdict.
+    _ml = verdicts.get("monitoring_loop", "")
+    if _ml.startswith("BUILT AND TESTED, NOT ENABLED"):
+        print("  WHAT REMAINS, AND NEITHER HALF IS A BUILD: the actuator acts only")
+        print("  under `--act`, which 0 production callers pass, so the cycle is not")
+        print("  yet unattended; and the experiment has never been run. ENABLING it")
+        print("  changes run behaviour and RUNNING it costs money, so both are his.")
+    elif _ml.startswith("PARTLY BUILT"):
+        print("  WHAT REMAINS, STATED RATHER THAN COUNTED: a loop that ACTS on the")
+        print("  watchdog's events unattended. The detector, its event vocabulary and")
+        print("  the pulse file exist; nothing performs the pause, diagnose, fix and")
+        print("  resume cycle without a human or a model in the loop.")
+    else:
+        print(f"  WHAT REMAINS: the monitoring loop reads {_ml[:60]!r}.")
     print(f"  HAS THE EXPERIMENT BEEN RUN? "
           f"{'No. 0 runs in the archive declare the arm.' if not declared and not cands else 'See section 5.'}")
     print("  HIS OWN PRIORITY RULING STILL GOVERNS THE BUILD, 2026-10-17: *\"I do")
     print("  not wish you to become too sidetracked on this specific issue. It")
-    print("  should be built and tested at the appropriate time.\"* So an absent")
-    print("  component here is a DEFERRAL he ordered, not neglected work.")
+    print("  should be built and tested at the appropriate time.\"*")
+    # ★ ALSO DERIVED, 2026-11-04. This closed with "So an absent component here is
+    # a DEFERRAL he ordered, not neglected work", which reads as an excuse once
+    # there are 0 absent components -- and there now are 0.
+    _absent = [k for k, v in verdicts.items() if str(v).startswith("ABSENT")]
+    if _absent:
+        print(f"  So the {len(_absent)} absent component(s) here are a DEFERRAL he")
+        print("  ordered, not neglected work.")
+    else:
+        print("  0 components are absent, so the deferral now governs only the")
+        print("  ENABLEMENT and the RUN, which are his to release.")
     return 0
 
 

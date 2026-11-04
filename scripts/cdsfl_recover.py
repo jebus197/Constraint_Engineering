@@ -244,9 +244,20 @@ def _responses_label() -> str:
     if n_ann is None:
         return ("THE FOUNDER'S ANNOTATED RESPONSES — his '#' verdicts. READ WITH "
                 "scripts/read_founder_responses_2026-10-11.py, NEVER with grep")
+    # ★ THE EXCLUSION IS NAMED IN THE BANNER, 2026-11-04. Until today these 2
+    # figures were counted over every READABLE file rather than over his own,
+    # so this line told every session he had written 1,953 verdicts when he had
+    # written 839 — 1,114 of the difference coming from an 11 MiB PNG wearing a
+    # `.md` extension and a `.zip`. The counts are now his; the residue is said
+    # out loud, because a figure whose denominator is invisible cannot be
+    # checked by the person reading it.
+    extra = cov.get("annotations_excluded_as_not_his") or 0
+    residue = (f" A further {extra} markers sit in readable files that are NOT his "
+               f"writing and are excluded here." if extra else "")
     return (f"THE FOUNDER'S ANNOTATED RESPONSES — {n_ann} '#' verdicts across {n_files} files, "
             f"{blind} of them in files grep treats as BINARY. The only record here he wrote "
-            f"himself. READ WITH scripts/read_founder_responses_2026-10-11.py, NEVER with grep")
+            f"himself.{residue} READ WITH scripts/read_founder_responses_2026-10-11.py, "
+            f"NEVER with grep")
 
 
 
