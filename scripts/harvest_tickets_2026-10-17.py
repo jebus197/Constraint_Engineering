@@ -422,12 +422,35 @@ def from_chat(since: str, limit_per_file: int = 400) -> list[dict]:
             ts = str(d.get("timestamp", ""))[:19]
             if ts[:10] < since:
                 continue
-            msg = d.get("message") or {}
-            role = msg.get("role") or "?"
-            c = msg.get("content")
-            text = c if isinstance(c, str) else " ".join(
-                x.get("text", "") for x in (c or [])
-                if isinstance(x, dict) and x.get("type") == "text")
+            # ★ THE QUEUE RECORD IS READ TOO, 2026-11-03. A message he types
+            # while a turn is already running is stored on an entry of type
+            # `queue-operation` with `operation: "enqueue"`, its text in a
+            # TOP-LEVEL `content` key, NO `message` dict and NO `role`. This
+            # function took `msg = d.get("message") or {}` and read the text out
+            # of it, so for every such entry `text` was the empty string,
+            # `raises_a_marker("")` was falsy, and the row was dropped before any
+            # decision. Measured: 206 of his 1,421 distinct messages exist ONLY
+            # in that record, 0.144968, Wilson 95% [0.127620, 0.164231].
+            #
+            # THE REALISED LOSS HERE IS 0 AND THAT IS STATED RATHER THAN BURIED:
+            # 0 of the 206 raise a bare marker, so no proposal of his has
+            # actually gone missing by this route. It is repaired because the
+            # NEXT marker he types mid-turn would have gone the same way, and
+            # because `ruled` depends on the role, which the queue entry lacks.
+            if (d.get("type") == "queue-operation"
+                    and d.get("operation") == "enqueue"
+                    and isinstance(d.get("content"), str)):
+                # A queued message is HIS by construction -- the harness queues
+                # only what was typed at the prompt -- so the role is `user`,
+                # which is what `ruled` below depends on.
+                role, text = "user", d["content"]
+            else:
+                msg = d.get("message") or {}
+                role = msg.get("role") or "?"
+                c = msg.get("content")
+                text = c if isinstance(c, str) else " ".join(
+                    x.get("text", "") for x in (c or [])
+                    if isinstance(x, dict) and x.get("type") == "text")
             text = " ".join(str(text).split())
             # RAISES, not merely MENTIONS. See `raises_a_marker` above: without
             # this, 31 of 31 harvested chat rows were noise -- 24 hook echoes,

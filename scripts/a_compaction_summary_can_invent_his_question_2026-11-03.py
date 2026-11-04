@@ -1,10 +1,46 @@
 #!/usr/bin/env python3
-"""Did he ever ask what `v_bar` is? The compaction summary says so. He did not.
+"""Did he ever ask what `v_bar` is? HE DID. This script's first answer was WRONG.
 
-THE DEFECT, OBSERVED 2026-11-03. The compaction summary of 06:19:48 UTC listed,
-among the founder's outstanding questions, one asking what `v_bar` is and saying
-he had never heard of it. CC1 carried that as HIS request and began answering it.
-It is not his. It appears in NOTHING he wrote.
+★★★ THE ORIGINAL CLAIM IS WITHDRAWN, 2026-11-03 EVENING, UNDER
+`failure-later-refutation-protocol`. Recorded in full because the shape of the
+error is more valuable than the answer.
+
+  WHAT WAS CLAIMED. That the compaction summary of 06:19:48 UTC INVENTED a
+  question of his asking what `v_bar` is, and that the question appears in
+  nothing he wrote. The headline figure was 0 hits in 1,719 of his typed
+  messages and 0 in 839 of his annotations.
+
+  WHAT THE ORIGINAL PASS ASSESSED, AND IT WAS NOT CARELESS. It partitioned the
+  corpus 3 ways and made a 2-SIDED prediction so a broken search could not
+  produce the answer; it refused to report a negative unless the summary
+  partition was non-zero; it pinned its own regex both ways; and it checked that
+  its prefilter was lossless against an exhaustive decode. All of that held.
+
+  WHAT REFUTED IT. He asked it directly at 2026-11-03T03:56:55 --
+  *"What is v-bar? I have never heard of it before? Is it part of the
+  mathematical model?"* -- typed WHILE A TURN WAS RUNNING. The harness stores
+  such a message on an entry of type `queue-operation` with the text in a
+  top-level `content` key, no `message` dict, and no `promptSource` field. So
+  `_text_of` returned "" for it and `_partition` could not classify it as his.
+  The corpus the measurement was certain about was missing 206 of his 1,421
+  distinct messages, 0.144968, Wilson 95% [0.127620, 0.164231].
+
+  WHAT IT IMPLIES, AND THIS IS THE PART WORTH KEEPING. Every defence above
+  guarded the SEARCH. None guarded the CORPUS. A 2-sided prediction, a pinned
+  regex and a lossless prefilter are all checks that the instrument reads what
+  it was pointed at; not one of them asks whether it was pointed at everything.
+  The anti-vacuity control worked perfectly and was satisfied by summary text,
+  so it could never have surfaced this. An instrument written to catch a
+  fabricated question of his was itself blind to 14.5 per cent of his words, and
+  it then told me he had never asked something he asked 19 hours earlier.
+
+  SCOPE OF THE FAILURE, NOT GENERALISED BEYOND IT. The regex, the partition
+  logic, the interval arithmetic and the prefilter check were all correct and
+  are unchanged. 1 function could not see 1 record shape.
+
+THE SCRIPT NOW READS BOTH RECORDS through `scripts/his_messages.py`, which is
+the single reader for what he typed, and the verdict it prints flips on the
+evidence rather than on this docstring.
 
 WHY THIS CLASS OF ERROR IS THE EXPENSIVE ONE. A fabricated question is
 indistinguishable, downstream, from a real instruction: it acquires his name, it
@@ -153,7 +189,19 @@ def _iv(k: int, n: int):
 
 
 def _text_of(entry: dict) -> str:
-    """Flatten an entry's message content to text, whatever shape it carries."""
+    """Flatten an entry's message content to text, whatever shape it carries.
+
+    ★ THE QUEUE RECORD IS READ HERE TOO (2026-11-03 evening), AND NOT READING IT
+    IS WHY THIS SCRIPT'S ORIGINAL VERDICT WAS WRONG. A message he types while a
+    turn is already running is stored on an entry of type `queue-operation` with
+    its text in a TOP-LEVEL `content` key and NO `message` dict at all. This
+    function returned "" for every one of them, so the HIS partition could not
+    contain them and the measurement reported 0 where the answer was 1.
+    """
+    if (entry.get("type") == "queue-operation"
+            and entry.get("operation") == "enqueue"
+            and isinstance(entry.get("content"), str)):
+        return entry["content"]
     msg = entry.get("message")
     if isinstance(msg, str):
         return msg
@@ -177,9 +225,21 @@ def _text_of(entry: dict) -> str:
 
 
 def _partition(entry: dict) -> str:
-    """HIS, SUMMARY or OTHER. The structural filter, not a keyword one."""
+    """HIS, SUMMARY or OTHER. The structural filter, not a keyword one.
+
+    ★ THE 2nd RECORD IS ADMITTED TO `HIS` (2026-11-03 evening). `promptSource`
+    is a sound marker for a message typed AT THE PROMPT and it is absent from a
+    `queue-operation` entry entirely, so a mid-turn message of his fell through
+    to OTHER -- counted, but not counted as his. That single omission inverted
+    this script's verdict. The queue rule is applied FIRST only after the
+    summary test, so a compaction summary can never be reclassified by it.
+    """
     if entry.get("isCompactSummary") is True:
         return "SUMMARY"
+    if (entry.get("type") == "queue-operation"
+            and entry.get("operation") == "enqueue"
+            and not entry.get("isMeta")):
+        return "HIS"
     if (entry.get("promptSource") == "sdk"
             and not entry.get("isMeta")
             and not entry.get("isCompactSummary")):
@@ -279,19 +339,30 @@ def scan_transcripts() -> dict:
 
 def count_his_messages() -> int:
     """The DENOMINATOR for the HIS partition: every message he actually typed."""
-    n = 0
-    for f in sorted(TRANSCRIPTS.glob("*.jsonl")):
-        with f.open("rb") as fh:
-            for raw in fh:
-                if b'"sdk"' not in raw:
-                    continue
-                try:
-                    e = json.loads(raw)
-                except Exception:                            # noqa: BLE001
-                    continue
-                if isinstance(e, dict) and _partition(e) == "HIS":
-                    n += 1
-    return n
+    #: ★ THE PREFILTER WAS `b'"sdk"'` AND IT WAS A 2nd COPY OF THE SAME BUG.
+    #: A prefilter must be provably WEAKER than the decision it approximates. A
+    #: `queue-operation` entry contains no `"sdk"` anywhere, so this loop could
+    #: not reach the branch `_partition` had just been taught, and the
+    #: denominator would have stayed at 1,719 while the numerator moved. Both
+    #: markers are admitted now, which is a strict superset of either.
+    #: ★ THE DENOMINATOR COMES FROM THE SHARED READER (2026-11-03 evening), and
+    #: the first correction here got it wrong in the opposite direction. Teaching
+    #: `_partition` the queue record took this count from 1,719 to 5,463, because
+    #: a raw row count counts a mid-turn message TWICE -- once queued, once
+    #: absorbed -- and admits the task notifications the harness queues to
+    #: itself. A denominator inflated by harness noise makes the rate meaningless
+    #: in the flattering direction, which is the failure the project records as
+    #: "ask what a 0 is a 0 OF".
+    #:
+    #: `scripts/his_messages.py` is the single reader for this question. It
+    #: deduplicates across both records and excludes 7 named harness shapes, so
+    #: the denominator is DISTINCT MESSAGES OF HIS: 1,421 as measured.
+    import importlib.util                                    # noqa: PLC0415
+    spec = importlib.util.spec_from_file_location(
+        "_hm", REPO / "scripts" / "his_messages.py")
+    hm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hm)
+    return len(hm.distinct())
 
 
 def scan_annotations() -> dict:
@@ -388,8 +459,14 @@ def main() -> int:
     print("  VERDICT:", "HE DID WRITE IT -- the summary was faithful."
           if found_in_his else
           "HE NEVER WROTE IT. The question is a SUMMARY ARTEFACT.")
+    #: ★ THIS LINE USED TO READ "0 in anything he wrote" UNCONDITIONALLY, which
+    #: contradicted the verdict printed immediately above it the moment the
+    #: verdict flipped. A sentence that cannot change when its subject does is
+    #: the stale-comment defect this project has recorded repeatedly, and here
+    #: it sat 1 line below the thing it contradicted.
     print(f"  The control proves the search works: {c['SUMMARY']} hit(s) in")
-    print("  summary-generated text, 0 in anything he wrote. Same regex.")
+    print(f"  summary-generated text, against {c['HIS']} in his own messages")
+    print(f"  and {a['k']} in his annotations. Same regex throughout.")
     print()
     print("  SCOPE. This is about the QUESTION'S PROVENANCE only. `v_bar` is")
     print("  real, carries 0.350000 of the orchestrator role score, and is")

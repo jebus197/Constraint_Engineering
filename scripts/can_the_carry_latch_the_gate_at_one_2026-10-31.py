@@ -3,9 +3,30 @@
 gate reads 1.0 as CORRUPTION rather than as high risk?
 
 WHY THIS EXISTS. The carry tier was built on 2026-10-31 so that residual risk
-accumulates across passes, which is what the founder's definition of severity
-requires. It introduced a 4th precedence tier for `R_old`. Two comments in
-`bench/reference_runner_v3.py` interact with it and were written BEFORE it:
+accumulates across passes. It introduced a 4th precedence tier for `R_old`. Two
+comments in `bench/reference_runner_v3.py` interact with it and were written
+BEFORE it:
+
+★ A CLAUSE ATTRIBUTING THIS TO HIM IS REMOVED, 2026-11-03. The sentence above
+read that accumulation across passes "is what the founder's definition of
+severity requires". It said 2 wrong things in 1 clause: it EQUATED residual risk
+with severity, and it put that equation under HIS name. He disowned the
+conflation himself on 2026-11-02 -- *"I have clearly been conflating these two
+terms a lot recently. I hope that conflation has not been reflected in your
+work?"* and *"the fault was entirely mine"* -- and asked to be told loudly when
+his framing is wrong, which is the `pushback-duty` directive he wanted
+strengthened.
+
+THE ANSWER TO HIS QUESTION IS: ONCE, HERE, AND NOWHERE THAT RUNS. Measured over
+5,026 files on 2026-11-03, 32 lines place the 2 terms within 80 characters of
+each other and 7 of those also attribute a definition to him; of the 7, 4 are
+notes reporting this very defect, 1 is his own instruction quoted on the task
+list, and 2 are a panel seat's tool input. This line was the only live one. The
+appendix keeps them separate by construction -- section 7.7 gives
+`Sev(f) = W(class) . confidence . V(verification)` with no residual-risk term,
+while `R_k` is the recursive reduction quantity -- and no code identifier named
+`residual_risk` appears in any gating path. So the conflation reached 1 comment
+and 0 behaviour. The carry tier itself is unaffected and is not revised here.
 
   * `_sk_admits` (~:16979): "R == 1 IS A CORRUPTION SIGNAL, NOT AN OPERATING
     POINT (panel, cc2). ... `model_params` has 0 writers, so R_old is 0.5 on
