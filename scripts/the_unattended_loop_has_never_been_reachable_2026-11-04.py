@@ -124,6 +124,9 @@ def section_2_the_archive() -> dict:
     print("=" * 76)
     runs = sorted(d for d in LOGS.iterdir() if d.is_dir()) if LOGS.is_dir() else []
     cfg_true, cmd_text, any_mention = set(), set(), set()
+    #: (path, exception name) for every file the P1 predicate could NOT
+    #: evaluate. An unevaluable file is not a false one.
+    unreadable: list[tuple[str, str]] = []
 
     def walk(o) -> bool:
         if isinstance(o, dict):
@@ -150,8 +153,25 @@ def section_2_the_archive() -> dict:
                 try:
                     if walk(json.loads(raw)):
                         cfg_true.add(d.name)
-                except Exception:
-                    pass
+                except (json.JSONDecodeError, RecursionError, TypeError,
+                        ValueError) as err:
+                    # NOT `pass`. A file that will not parse is one the
+                    # predicate could not evaluate, and swallowing it folded
+                    # "could not tell" into the 0 this section reports for P1.
+                    # Counted and printed instead, so the 0 carries its own
+                    # completeness. Caught by
+                    # test_operational_scripts.py::test_no_bare_or_silently_
+                    # swallowed_exception_handlers, which was the only real
+                    # violation among 615 scripts.
+                    try:
+                        where = str(f.relative_to(REPO))
+                    except ValueError:
+                        # Not under the repository: a planted file in a test's
+                        # temp directory. Record the absolute path rather than
+                        # letting the RECORDER raise inside the handler whose
+                        # whole purpose is to record.
+                        where = str(f)
+                    unreadable.append((where, type(err).__name__))
 
     n = len(runs)
     print(f"\n  run directories examined: {n}")
@@ -159,13 +179,20 @@ def section_2_the_archive() -> dict:
     print(f"  P2 text holds --hil-review         : {len(cmd_text)}"
           f"   {sorted(cmd_text)[:3]}")
     print(f"  P3 mentions hil_review at all      : {len(any_mention)}")
+    print(f"  files P1 could NOT evaluate        : {len(unreadable)}"
+          + (f"   {unreadable[:2]}" if unreadable else "   (so P1's 0 is complete)"))
     print()
     iv = _interval(len(cfg_true), n)
     _show("share of runs the unattended loop could have acted on:", iv)
-    print(f"\n  ALL 3 PREDICATES AGREE that P1 is 0. P2 and P3 are nonzero and")
+    print(f"\n  ALL 3 PREDICATES AGREE that P1 is 0"
+          + (" over every file that could be parsed; "
+             f"{len(unreadable)} could not, so the 0 is a floor rather than a "
+             "count" if unreadable else " and no file was unevaluable")
+          + ". P2 and P3 are nonzero and")
     print(f"  are NOT evidence the flag was set: a prelaunch note naming the")
     print(f"  flag is a plan, not a launch. The deciding predicate is P1.")
-    return {"cfg_true": len(cfg_true), "n": n, "iv": iv}
+    return {"cfg_true": len(cfg_true), "n": n, "iv": iv,
+            "unreadable": unreadable}
 
 
 def section_3_the_citations() -> dict:

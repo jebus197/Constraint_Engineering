@@ -236,6 +236,28 @@ He instructed a fully simulated orchestrator run on 2026-11-01 (annotation 12 of
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B20 the bound orchestrator: whether to turn it on
+
+*Parked 2026-11-04T17:30:02+00:00.*
+
+B20's own tail states both of its findings are his to decide and that neither argues against building the loop nor is a reason to change the flag default. Its build order is his ruling, use the narrow form after B21. B21 in turn carries [NEEDS YOUR RULING] on which declared member each of his 3 functional words maps to, which both panel seats said independently the code cannot settle. Decision 27 asks whether either of the 2 switches is flipped, and its first option was corrected on 2026-11-04 to say plainly that it flips 1 of the 2. Nothing in B20 is buildable until he rules.
+
+**This is YOUR DECISION, by the entry's own words — "his to decide".** Not blocking, and not work to be done meanwhile.
+
+## B21 the role layer: which member each functional word maps to
+
+*Parked 2026-11-04T17:30:02+00:00.*
+
+B21 is OPEN with status TESTED. Its 2 remaining items are both [NEEDS YOUR RULING]: which declared member each of his 3 functional words maps to, and the mypy config. The deferred tree-wide mypy count it named has since been taken as B130, measured at 1 invocation over 1,713 files in 1.1 seconds, so the ground the deferral rested on is spent and the framing is now that installing a config would reveal existing errors rather than introduce new ones.
+
+**This is YOUR DECISION, by the entry's own words — "NEEDS YOUR RULING".** Not blocking, and not work to be done meanwhile.
+
+## B131 whether to verify the 43 external citations
+
+*Parked 2026-11-04T18:04:50+00:00.*
+
+B131 measures that 43 arXiv identifiers, 44 DOIs and 260 links sit in the record with exactly 1 named by any test, and that all 14 citation-guarding test files guard internal citations only. What is decidable with no network access finds 0 faults in 43. Whether an identifier resolves to a real paper carrying the attribution the record gives it needs 1 network lookup each, and verify-supersession-boundary makes the external check his and not mine. The entry carries 3 options and a recommendation downgraded to the cheap check alone, because 4 of my own detectors on that surface produced false positives in one pass.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

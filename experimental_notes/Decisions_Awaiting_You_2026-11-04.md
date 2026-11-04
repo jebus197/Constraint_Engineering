@@ -727,3 +727,31 @@ The third option. Accept the refusal and handle it by hand each time it fires. T
 What is not in question. Nothing is deleted under any option. The archive file sits beside the index in the same folder and every pointer in it still resolves, which is why moving an entry there costs nothing but a reader's extra step.
 
 Written under CDSFL note standard v1.9 (1 November 2026).
+
+## DECISION 30. NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES
+
+What it is. The repository holds 14 test files whose names carry the word citation, and every one of them guards an internal citation: a path that must exist, a line that must still hold its substring, a log that must appear in the manifest, an entry's evidence field. None covers a citation to anything outside the repository. Measured across 834 markdown files, with archival copies of other models' replies excluded because a citation inside a preserved reply is that seat's rather than the record's: 43 distinct arXiv identifiers, 15 of them cited in more than 1 file, 44 distinct DOIs and 260 distinct links.
+
+Exactly 1 of the 43 is named by any test, which is 0.023256 with a Wilson 95 per cent interval of 0.004117 to 0.120590 and a Clopper-Pearson interval of 0.000589 to 0.122890, agreed across 2 independent implementations to within 3 parts in 10 to the power 17 for the first and 2 parts in 10 to the power 19 for the second. That 1 is identifier 1706.03762, which 2 ouroboros tests resolve, convert to a PDF address and parse. So the single external citation this project does verify is verified by execution rather than by assertion, and it is verified because a download path was proven live on it rather than because anyone set out to check a citation.
+
+What can be settled here finds nothing wrong, and it is reported because a check that finds nothing is a result while a check never run is not. An arXiv identifier has a fixed form: 2 digits of year, 2 of month, then a sequence number. The month must be 01 to 12, the date must not be in the future, and from 2015 the sequence is 5 digits rather than 4. All 3 are decidable from the string alone, and a fabricated identifier is a likely place for an impossible one. None of the 43 fails any of the 3, each with a Wilson interval of 0 to 0.082010, so a fault rate above about 8 per cent is excluded.
+
+What cannot be settled here, and why I did not settle it. Whether an identifier resolves to a real paper carrying the attribution the record gives it needs 1 network lookup for each one. The standing rule is that the external check is not mine to answer and is deferred to you, and spending dozens of lookups is your call rather than mine.
+
+Why it matters rather than being tidiness. This project's own lesson from the same day is that an unchecked citation propagates: a declaration carried 2 drifted line numbers and the name of a function that does not exist, and the invented name reached a closing report written for an outside reader, which repeated it faithfully because the declaration was wrong. The same failure in an external citation is harder to see rather than easier, because nothing in the repository can contradict it.
+
+An admission belongs here because it changes what I recommend. 4 detectors were written for this surface in one pass and 3 of them produced false positives. A pattern for the identifier's shape, without requiring the word arXiv, matched 2 adjacent columns of a results table and called them impossible months. A similarity measure on the prose around an identifier, offered as a test of whether the same paper is described consistently in different files, flagged 10 of the 15 multi-file identifiers, and the 2 inspected were both correct, because a bibliography line and a prose paragraph citing the same author and year share few words. An extractor for DOIs and links captured the full stop at the end of the sentence as part of the identifier, flagging 5 of 44 DOIs and 30 of 260 links that are all sound. And the instrument counted itself the moment it was placed: its own guard's filename carries the word citation, so the count of citation guards rose from 14 to 15, and the guard's test fixtures name 3 identifiers, so the count of verified identifiers rose from 1 to 3. That last one was found by running the pair rather than by reading it, and it is now excluded by name with 3 tests holding the exclusion in place.
+
+The 1 detector that behaved differs in a way worth stating. It requires the literal word arXiv, which an author had to type on purpose, and then reads fixed-width fields rather than matching a shape. A marker is a declaration of intent. A shape is a coincidence waiting to happen.
+
+What you decide. Whether external citations are verified at all, and if so how. 3 options.
+
+The first option. Rule that they need no verification, on the ground that this record's claims rest on its own measurements and a citation is context rather than evidence. It costs nothing and leaves the risk where it is.
+
+The second option. Verify the 43 arXiv identifiers once, by network lookup, and record the result beside each so that no later reader repeats the question. It costs 43 lookups and a note. It settles the population as it stands today and says nothing about what is added later.
+
+The third option, and my recommendation, though a weaker one than I would have given before counting my own failures. Ship only the check on the identifier's own digits. It is already written, it is green at 0 of 43, and it refuses a future identifier with an impossible month or a future date at the commit that introduces it. It costs 1 guard file. It catches a fabricated date and it cannot catch a plausible identifier attached to the wrong paper.
+
+I do not recommend the second option unprompted. 3 of my own 4 detectors on this surface produced false positives, so the base rate of my instruments here is poor, and the case for spending 43 of your lookups on a population whose only sound check is already clean is weak. If you want it, it is worth doing once and recording the answer next to each identifier.
+
+No composability claim is made. Nothing here measures the third option combined with the second against either of them alone.

@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 4 November 2026 17:14 GMT (2026-11-04T17:14:53+00:00)
+Generated: 4 November 2026 18:21 GMT (2026-11-04T18:21:04+00:00)
 
 ---
 
@@ -18,34 +18,34 @@ Generated: 4 November 2026 17:14 GMT (2026-11-04T17:14:53+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `c4553e95` The mypy question deferred for machine cost takes 1.1 seconds, and the figure it yields is half config noise and a third one idiomatic line
-- **Committed:** 2026-11-04 13:47:00 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 13
+- **Last commit (the PARENT of the commit containing this file):** `ee1f89df` The second complete board found 20 failures my own repairs had introduced, and the canonical interval helper carried a crash that no test could reach
+- **Committed:** 2026-11-04 17:14:54 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 14
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/tests/test_a_deliverable_pair_uses_the_right_check_2026-11-03.py`
-- `M  bench/tests/test_his_words_are_read_from_both_records_2026-11-03.py`
-- `A  bench/tests/test_the_severity_frame_counts_one_run_twice_2026-11-04.py`
+- `A  bench/tests/test_is_any_external_citation_verified_2026-11-04.py`
+- `A  bench/tests/test_the_unattended_loop_producer_2026-11-04.py`
+- `A  bench/tests/test_what_the_backtick_changed_2026-11-04.py`
+- `M  bench/tickets/sv_completions.jsonl`
+- `M  bench/tickets/tickets.jsonl`
+- `M  bench/tickets/tickets_searches.jsonl`
+- `M  docs/CURRENT_STATE.md`
 - `M  experimental_notes/CDSFL_MASTER_TASK_LIST.md`
 - `M  experimental_notes/Decisions_Awaiting_You_2026-11-04.md`
 - `M  experimental_notes/Decisions_Awaiting_You_2026-11-04.txt`
-- `A  experimental_notes/The_Second_Complete_Board_2026-11-04.md`
-- `A  resources/NEW_SESSION_HANDOVER.md`
-- `M  resources/RECOVERY.md`
-- `M  resources/suite_record.json`
-- `M  scripts/a_bare_clock_was_dated_from_the_mtime_2026-11-03.py`
-- `M  scripts/a_compaction_summary_can_invent_his_question_2026-11-03.py`
-- `M  scripts/a_models_own_verified_flag_closes_it_2026-11-03.py`
-- `M  scripts/a_per_round_predicate_peeks_2026-11-04.py`
-- `M  scripts/a_stale_comment_can_be_load_bearing_2026-11-03.py`
-- … and 14 more, not shown (list capped at 15 of 29 — run `git status --porcelain` for the full set)
+- `M  experimental_notes/PARKED_FOR_THE_FOUNDER.md`
+- `M  experimental_notes/The_Second_Complete_Board_2026-11-04.md`
+- `M  experimental_notes/data/morning_report_decisions.json`
+- `M  resources/MEMORY_EXCLUSIONS.md`
+- `M  resources/NEW_SESSION_HANDOVER.md`
+- … and 8 more, not shown (list capped at 15 of 23 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**15581 tests collected** at 4 November 2026 17:14 GMT, HEAD `c4553e95` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**15634 tests collected** at 4 November 2026 18:21 GMT, HEAD `ee1f89df` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +75,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `ee1f89df The second complete board found 20 failures my own repairs had introduced, and the canonical interval helper carried a crash that no test could reach`
 - `c4553e95 The mypy question deferred for machine cost takes 1.1 seconds, and the figure it yields is half config noise and a third one idiomatic line`
 - `8c1ba3e9 Both mechanisms that keep the memory index inside its limits are exhausted at once, and I nearly rebuilt one of them before tracing its callers`
 - `88f30053 His blinkered-depth hypothesis measured for the first time: not supported on this budget, and the decision rule he wrote has a missing third category`
@@ -84,4 +85,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `e6857344 The cy gate refused 5 stops for a run that did not exist, because it matched the git commit shell whose message named the runner - and its repair needs his permission`
 - `ed92ccfe Six reporting layers disagreed with the layers that decide, three of them in B20's own status instrument, plus the inventory and the answers still owed`
 - `6a423579 sv: his mid-turn words live in a record no instrument read, 206 of 1,421; a panel's own sandbox harvest had inflated 27 of 32 into 37 of 42; B87's letter-level conflict dissolves; 19 decisions owed and every live entry now waits on him`
-- `a08c184a The joint round resolved both disagreements, each seat withdrew a round-1 claim, my "opposite failure modes" synthesis was superseded, and I had hand-rolled a record the project already had a tool for`
