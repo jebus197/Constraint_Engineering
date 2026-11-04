@@ -66,7 +66,28 @@ INDEPENDENTLY_RENDERED = {
 
 
 def _strip_markers(s: str) -> str:
-    return "\n".join(re.sub(r"^#+ ", "", ln) for ln in s.splitlines())
+    """Normalise BOTH sides to prose before comparing them.
+
+    Heading hashes were the only thing stripped here, which accused a correct
+    pair: the spoken copy of Closing_Report_The_Period_2026-11-04 carries 0
+    asterisks and 0 backticks against the markdown's 18 and 6, because the
+    zero-markup rule for spoken files requires exactly that. 9 of its 161 lines
+    differed, every one of them only by removed bold spans and backticks.
+
+    THIS IS NORMALISATION, NOT DETECTION, and the difference is why the
+    false-positive measurements recorded for the markdown-in-a-spoken-file
+    checker do not bind here. A bare backtick fires on a chemical SMILES string
+    in 226 spoken files, so a one-sided DETECTOR may not look for it; removing
+    it from both sides of a comparison is symmetric and changes no verdict,
+    because a SMILES string loses its backticks on both sides equally.
+    """
+    out = []
+    for ln in s.splitlines():
+        ln = re.sub(r"^#+ ", "", ln)
+        ln = re.sub(r"\*\*(.+?)\*\*", r"\1", ln)   # paired span only
+        ln = ln.replace("`", "")
+        out.append(ln)
+    return "\n".join(out)
 
 
 def _pair(stem: str):

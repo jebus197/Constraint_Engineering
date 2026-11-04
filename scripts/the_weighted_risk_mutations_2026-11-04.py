@@ -182,4 +182,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # A `--help` MUST NOT run the measurement. This script WRITES: it mutates 3
+    # tracked files in place and restores them from bytes it read. Answering the
+    # flag by doing the work would therefore edit the repository to print usage,
+    # which is worse than the time it costs. Caught by
+    # test_help_never_acts_2026-09-11.py on the full board, outside the gate.
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from _cli_help import answer_help
+    answer_help(__doc__, __file__)
     sys.exit(main())

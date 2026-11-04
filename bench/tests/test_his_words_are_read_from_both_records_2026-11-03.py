@@ -156,11 +156,35 @@ def test_the_producer_that_was_wrong_now_answers_correctly(hm):
     assert "HE DID WRITE IT" in r.stdout, (
         "the producer has gone back to reporting that the question was a "
         "summary artefact. It was his.")
-    assert "of 1421" in r.stdout.replace(",", ""), (
-        "the denominator is no longer the count of DISTINCT messages of his. A "
-        "raw row count double-counts every mid-turn message and admits the task "
-        "notifications the harness queues to itself, which inflates it in the "
-        "flattering direction.")
+    # The denominator is checked by EXECUTION against the reader, not pinned to
+    # a value. It was pinned to 1421 and outgrew it the same week: he sent 3
+    # more messages on 2026-11-04 and the producer correctly printed 1424,
+    # which failed a test whose stated concern is the DEFINITION of the
+    # denominator and not its magnitude. 3 checks, each covering the others'
+    # hole: a floor, so a reader that collapsed could not pass; live equality,
+    # so the figure cannot drift from the reader; and de-duplication still
+    # active, which is the "distinct, not raw" claim the pin was standing in for.
+    printed = re.search(r"his typed messages\s+\d+ of ([\d,]+)", r.stdout)
+    assert printed, (
+        "the producer no longer prints a 'his typed messages N of M' line, so "
+        "the denominator cannot be read out of it at all")
+    denominator = int(printed.group(1).replace(",", ""))
+    live_distinct = len(hm.distinct())
+    live_rows = len(list(hm.iter_messages()))
+
+    assert denominator >= 1421, (
+        f"the denominator is {denominator}, below the 1421 distinct messages "
+        f"that existed on 2026-11-03. It may grow and may not shrink: a reader "
+        f"that de-duplicates too hard would otherwise agree with itself.")
+    assert denominator == live_distinct, (
+        f"the producer printed {denominator} but the reader counts "
+        f"{live_distinct} distinct messages, so the figure has drifted from "
+        f"the mechanism that is supposed to produce it.")
+    assert live_distinct < live_rows, (
+        f"de-duplication is inert: {live_distinct} distinct against "
+        f"{live_rows} raw rows. A raw row count double-counts every mid-turn "
+        f"message and admits the task notifications the harness queues to "
+        f"itself, which inflates it in the flattering direction.")
 
 
 # ------------------------------------------------------ THE READER'S OWN RULES

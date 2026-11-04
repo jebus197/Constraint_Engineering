@@ -53,9 +53,111 @@ SHORT = (3, 5, 8, 12, 20, 40)
 LONG = (40, 100, 250, 500, 1000)
 
 
+# NOTE 2026-11-04: the CANONICAL `_iv`, verbatim from
+# `scripts/a_bare_clock_was_dated_from_the_mtime_2026-11-03.py`. This file
+# already held a vectorised closed-form Wilson in `_wilson_bounds`, so its
+# second Wilson route existed -- but written as `z**2 / n`, where the route
+# detector looks for `z * z / (2 * n)`, and Clopper-Pearson rested on scipy
+# alone with no second route at all. Using the canonical helper fixes the real
+# gap and the detection gap together, and matches the 16 producers that already
+# conform. `_wilson_bounds` stays: it is vectorised and this is not.
+def _iv(k: int, n: int):
+    """Wilson and Clopper-Pearson, on 2 INDEPENDENT implementations each.
+
+    PROPAGATED 2026-11-03 from the one producer that already had both routes.
+    An audit of this session's producers by STEM-IMPORT COUNT passed this file,
+    and the count was a proxy: the project had already measured that `scipy` and
+    `statsmodels` resolve to the identical verifier, so 2 library names can buy
+    0 cross-checks. The predicate that matters is ROUTES PER QUANTITY -- Wilson
+    from statsmodels against Wilson written out, and Clopper-Pearson from
+    scipy's beta quantile against mpmath's regularized incomplete beta by
+    bisection. 2 libraries computing 2 DIFFERENT intervals is not a cross-check
+    of either one.
+
+    The 3rd return value is the LARGER of the 2 disagreements, so a drift in
+    either quantity surfaces in the single number the caller already prints.
+    """
+    from scipy import stats
+    from statsmodels.stats.proportion import proportion_confint
+    import mpmath
+    mpmath.mp.dps = 40
+    if n == 0:
+        return (0.0, 1.0), (0.0, 1.0), 0.0
+    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
+    # second Wilson, written out, to catch a library disagreement
+    import math
+    z = stats.norm.ppf(0.975)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    hw = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    wdiff = max(abs(wl - (c - hw)), abs(wh - (c + hw)))
+    cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
+    ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
+
+    def bi(a, b, y):
+        """Invert the regularised incomplete beta by bisection.
+
+        HARDENED 2026-11-04. `mpmath.betainc` is fast, but its hyp2f1 path
+        FAILS TO CONVERGE for large parameters at mid-range x. Measured at
+        a=2437, b=17564 it succeeds for x <= 0.1264 and for x >= 0.9 and raises
+        ValueError in between -- which is exactly where a bisection over [0, 1]
+        takes its first step, so the whole inversion died rather than degrading.
+        It surfaced when a producer called this at k=2436, n=20000; every
+        existing caller used a small n, and the guard that executes every `_iv`
+        against the same k and n uses n <= 38, so no test could have seen it.
+
+        Where betainc raises, the same integral is computed by quadrature in
+        log space instead. At the measured failing point that agreed with
+        scipy's quantile to 1.11e-16. It costs about 6 s per bound against
+        milliseconds for betainc, so it is used only after a failure, never by
+        default.
+        """
+        logB = mpmath.log(mpmath.beta(a, b))
+
+        def by_quad(x):
+            if x <= 0:
+                return mpmath.mpf(0)
+            def dens(u):
+                return mpmath.e**((a - 1) * mpmath.log(u)
+                                  + (b - 1) * mpmath.log1p(-u) - logB)
+            return mpmath.quad(dens, [0, min(mpmath.mpf(x), mpmath.mpf(1))])
+
+        fell_back = False
+
+        def _f(x):
+            nonlocal fell_back
+            if not fell_back:
+                try:
+                    return mpmath.betainc(a, b, 0, x, regularized=True) - y
+                except Exception:
+                    fell_back = True
+            return by_quad(x) - y
+
+        # STOP ON PRECISION, not on a fixed count. The bracket halves every
+        # step, so 2**-60 is already below this tolerance and a fixed 240 did
+        # 180 redundant evaluations. That is free for betainc and it is NOT
+        # free for the quadrature fallback, which costs about 28 ms per
+        # evaluation: 240 steps took 6.66 s and 60 take 1.69 s for a bound
+        # identical to 12 decimal places. The count is still capped so a
+        # pathological case cannot spin.
+        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
+        tol = mpmath.mpf("1e-18")
+        for _ in range(240):
+            if hi - lo < tol:
+                break
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if _f(m) < 0 else (lo, m)
+        return float((lo + hi) / 2)
+
+    cdiff = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
+                abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
+    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
+
+
 def _ivl(rate: float, trials: int = TRIALS) -> str:
     k = int(round(rate * trials))
-    lo, hi = proportion_confint(k, trials, alpha=0.05, method="wilson")
+    (lo, hi), _cp, _agree = _iv(k, trials)
     return f"{rate:.4f} [{lo:.4f}, {hi:.4f}]"
 
 
@@ -126,11 +228,9 @@ def _round_lengths(repo: pathlib.Path):
 
 
 def _share(k, n):
-    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
-    lo2 = stats.beta.ppf(0.025, k, n - k + 1) if k else 0.0
-    hi2 = stats.beta.ppf(0.975, k + 1, n - k) if k < n else 1.0
+    (lo, hi), (lo2, hi2), agree = _iv(k, n)
     return (f"{k:>3} of {n} = {k/n:.6f}  Wilson [{lo:.6f}, {hi:.6f}]  "
-            f"CP [{lo2:.6f}, {hi2:.6f}]")
+            f"CP [{lo2:.6f}, {hi2:.6f}]  (2-route |diff| {agree:.1e})")
 
 
 def _section_four(repo: pathlib.Path, first_fire: int) -> int:

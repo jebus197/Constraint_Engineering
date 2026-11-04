@@ -84,21 +84,112 @@ def _run(scopes: list[str]) -> tuple[str, float, bool]:
     return out, time.time() - t0, "errors prevented further checking" in out
 
 
-def _iv(k: int, n: int) -> str:
+# NOTE 2026-11-04: this is the CANONICAL `_iv`, taken verbatim from
+# `scripts/a_bare_clock_was_dated_from_the_mtime_2026-11-03.py` rather than
+# written again here. This file first carried a variant that computed both
+# quantities correctly but returned a richer shape, so the guard that EXECUTES
+# every `_iv` against the same k and n could not read it, and a second variant
+# whose Wilson algebra used `z**2` where the detector looks for `z * z`. Both
+# were my deviations from a convention 14 producers already satisfy. The lesson
+# is to use the canonical implementation, not to widen the instrument.
+def _iv(k: int, n: int):
+    """Wilson and Clopper-Pearson, on 2 INDEPENDENT implementations each.
+
+    PROPAGATED 2026-11-03 from the one producer that already had both routes.
+    An audit of this session's producers by STEM-IMPORT COUNT passed this file,
+    and the count was a proxy: the project had already measured that `scipy` and
+    `statsmodels` resolve to the identical verifier, so 2 library names can buy
+    0 cross-checks. The predicate that matters is ROUTES PER QUANTITY -- Wilson
+    from statsmodels against Wilson written out, and Clopper-Pearson from
+    scipy's beta quantile against mpmath's regularized incomplete beta by
+    bisection. 2 libraries computing 2 DIFFERENT intervals is not a cross-check
+    of either one.
+
+    The 3rd return value is the LARGER of the 2 disagreements, so a drift in
+    either quantity surfaces in the single number the caller already prints.
+    """
+    from scipy import stats
     from statsmodels.stats.proportion import proportion_confint
-    from scipy.stats import beta as sbeta
-    import mpmath as mp
-    mp.mp.dps = 30
-    lo, hi = proportion_confint(k, n, method="wilson")
-    z = mp.mpf("1.959963984540054235524594430520551527955")
-    p = mp.mpf(k) / n
-    d = 1 + z**2 / n
-    c = (p + z**2 / (2 * n)) / d
-    h = (z / d) * mp.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))
-    cp_lo = float(sbeta.ppf(0.025, k, n - k + 1)) if k else 0.0
-    cp_hi = float(sbeta.ppf(0.975, k + 1, n - k)) if k < n else 1.0
-    return (f"{k} of {n} = {k/n:.6f}  Wilson [{max(0.0, lo):.6f}, {hi:.6f}] "
-            f"(mpmath agrees to {abs(float(c+h)-hi):.1e})  "
+    import mpmath
+    mpmath.mp.dps = 40
+    if n == 0:
+        return (0.0, 1.0), (0.0, 1.0), 0.0
+    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
+    # second Wilson, written out, to catch a library disagreement
+    import math
+    z = stats.norm.ppf(0.975)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    hw = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    wdiff = max(abs(wl - (c - hw)), abs(wh - (c + hw)))
+    cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
+    ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
+
+    def bi(a, b, y):
+        """Invert the regularised incomplete beta by bisection.
+
+        HARDENED 2026-11-04. `mpmath.betainc` is fast, but its hyp2f1 path
+        FAILS TO CONVERGE for large parameters at mid-range x. Measured at
+        a=2437, b=17564 it succeeds for x <= 0.1264 and for x >= 0.9 and raises
+        ValueError in between -- which is exactly where a bisection over [0, 1]
+        takes its first step, so the whole inversion died rather than degrading.
+        It surfaced when a producer called this at k=2436, n=20000; every
+        existing caller used a small n, and the guard that executes every `_iv`
+        against the same k and n uses n <= 38, so no test could have seen it.
+
+        Where betainc raises, the same integral is computed by quadrature in
+        log space instead. At the measured failing point that agreed with
+        scipy's quantile to 1.11e-16. It costs about 6 s per bound against
+        milliseconds for betainc, so it is used only after a failure, never by
+        default.
+        """
+        logB = mpmath.log(mpmath.beta(a, b))
+
+        def by_quad(x):
+            if x <= 0:
+                return mpmath.mpf(0)
+            def dens(u):
+                return mpmath.e**((a - 1) * mpmath.log(u)
+                                  + (b - 1) * mpmath.log1p(-u) - logB)
+            return mpmath.quad(dens, [0, min(mpmath.mpf(x), mpmath.mpf(1))])
+
+        fell_back = False
+
+        def _f(x):
+            nonlocal fell_back
+            if not fell_back:
+                try:
+                    return mpmath.betainc(a, b, 0, x, regularized=True) - y
+                except Exception:
+                    fell_back = True
+            return by_quad(x) - y
+
+        # STOP ON PRECISION, not on a fixed count. The bracket halves every
+        # step, so 2**-60 is already below this tolerance and a fixed 240 did
+        # 180 redundant evaluations. That is free for betainc and it is NOT
+        # free for the quadrature fallback, which costs about 28 ms per
+        # evaluation: 240 steps took 6.66 s and 60 take 1.69 s for a bound
+        # identical to 12 decimal places. The count is still capped so a
+        # pathological case cannot spin.
+        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
+        tol = mpmath.mpf("1e-18")
+        for _ in range(240):
+            if hi - lo < tol:
+                break
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if _f(m) < 0 else (lo, m)
+        return float((lo + hi) / 2)
+
+    cdiff = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
+                abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
+    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
+
+def _iv_text(k: int, n: int) -> str:
+    """One printable line, built on `_iv` so the arithmetic exists once."""
+    (wl, wh), (cp_lo, cp_hi), agree = _iv(k, n)
+    return (f"{k} of {n} = {k/n:.6f}  Wilson [{wl:.6f}, {wh:.6f}] "
+            f"(mpmath agrees to {agree:.1e})  "
             f"Clopper-Pearson [{cp_lo:.6f}, {cp_hi:.6f}]")
 
 
@@ -165,7 +256,7 @@ def main() -> int:
         buckets[_bucket(code)] += n
     for b in ("RESOLUTION", "ANNOTATION", "POTENTIAL DEFECT", "OTHER"):
         n = buckets.get(b, 0)
-        print(f"\n  {b}: {_iv(n, total)}")
+        print(f"\n  {b}: {_iv_text(n, total)}")
         codes = sorted(((c, k) for c, k in per_code.items() if _bucket(c) == b),
                        key=lambda x: -x[1])[:6]
         print(f"    {', '.join(f'{c}={k}' for c, k in codes)}")
@@ -216,7 +307,7 @@ def main() -> int:
 
     if pot_rows:
         print(f"\n  the importlib module-loading idiom: "
-              f"{_iv(len(idiom_rows), len(pot_rows))}")
+              f"{_iv_text(len(idiom_rows), len(pot_rows))}")
         remaining = len(pot_rows) - len(idiom_rows)
         print(f"\n  POTENTIAL DEFECT after removing it: {remaining:,}")
         rem = collections.Counter(c for f, l, c in pot_rows
