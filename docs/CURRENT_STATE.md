@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 3 November 2026 05:57 GMT (2026-11-03T05:57:34+00:00)
+Generated: 4 November 2026 02:21 GMT (2026-11-04T02:21:12+00:00)
 
 ---
 
@@ -18,19 +18,23 @@ Generated: 3 November 2026 05:57 GMT (2026-11-03T05:57:34+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `079471e4` A simulated experiment cannot test most of the last 24 hours, and could not pause at all, so the actuator had nowhere to act
-- **Committed:** 2026-11-03 05:42:10 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 16
+- **Last commit (the PARENT of the commit containing this file):** `a08c184a` The joint round resolved both disagreements, each seat withdrew a round-1 claim, my "opposite failure modes" synthesis was superseded, and I had hand-rolled a record the project already had a tool for
+- **Committed:** 2026-11-04 02:03:11 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 4
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
+- `M experimental_notes/CDSFL_MASTER_TASK_LIST.md`
+- `M experimental_notes/PARKED_FOR_THE_FOUNDER.md`
+- `M resources/MEMORY_EXCLUSIONS.md`
 - `M resources/RECOVERY.md`
+- `?? bench/logs/joint_severity_spec_is_uncomputable_2026-11-04/`
 
 ---
 
 ## Tests
 
-**15183 tests collected** at 3 November 2026 05:57 GMT, HEAD `079471e4` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**15332 tests collected** at 4 November 2026 02:21 GMT, HEAD `a08c184a` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -60,13 +64,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `079471e4 A simulated experiment cannot test most of the last 24 hours, and could not pause at all, so the actuator had nowhere to act`
-- `3c1463aa B20's precondition built on his authorisation: the watchdog's 10 event kinds reached stdout and nothing else, so an actuator would have had to parse prose`
-- `64c833e2 He asked whether the decisions were all new, and the detector built for that question could not see the field named ruled`
-- `baac39b8 The audit that checked tonight's producers counted library imports, and 4 of 7 passed it while resting an interval on a single route`
-- `d6ea0538 Nothing in the suite reached the 3 generator fixes made tonight, and the decisions file was missing the markdown twin the protocol requires`
-- `d74a8450 5 of the 7 producers I wrote tonight were run by no test, including the one written 20 minutes earlier to pay off exactly that debt`
-- `9419b4b8 Reading the spoken report's owed findings aloud narrowed decision 14 from 15 to 13, and 2 of them were terms the exemption list already covered in principle`
-- `01b6e408 The post-compaction re-verification found 2 producers that could not reproduce their own figures, and a self-lint added to the morning report found a defect on its first run`
-- `5e4879c4 A mutation harness that skips a stale anchor still prints "N of N applied" and still exits 0, and fixing that found 3 properties already lost`
-- `a0eb9d00 A model's own VERIFIED flag closed its finding as tool-adjudicated, and the comment above the gate said that could not happen`
+- `a08c184a The joint round resolved both disagreements, each seat withdrew a round-1 claim, my "opposite failure modes" synthesis was superseded, and I had hand-rolled a record the project already had a tool for`
+- `4931586f A panel's own evidence-preservation step had inflated the figure a later panel was convened to measure: 88.0952 per cent triple-counted 5 findings and the true rate is 84.3750`
+- `eb90d92d He DID ask what v-bar is, and the instrument written to check whether a summary had invented his question was itself blind to 206 of his 1,421 messages`
+- `36fd3ec9 A guard tested UNCONFIRMED where it meant NOT SETTLED, so it refused his own reopen, and 7 reds had accumulated in the 54 guards the commit gate never runs`
+- `e4b83b25 3 of his questions answered in plain English and closed with an executable verification, and the honest scale of what is left: 49 distinct questions, not 1 complaint repeated`
+- `1f4b4181 An 11 MB PNG wearing a .md extension was being read as 780 of his rulings, and the 300 s test timeout it caused was masking them`
+- `791dda90 A commit that measures the register and adds to it cannot have both be true: the note said 3,383 and its own producer now returns 3,384`
+- `3f6bc8cc A token regex matching across a word boundary inverted its own verdict, and the stale comment beside the fix nearly had a rule added against his explicit ruling`
+- `b41ab9e1 The sim branch being 1 commit behind main is a merge-graph fact, not a content gap: merging would REGRESS 5 lines to superseded text`
+- `acc3fc50 A parked decision's premise inverted: splitting the grouped index lines cost 6 of 10 remaining lines when he was asked and now costs 7 of 102`
