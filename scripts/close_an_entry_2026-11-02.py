@@ -39,13 +39,6 @@ work he already ruled on is complete.
 from __future__ import annotations
 import argparse, json, pathlib, re, sys
 
-import sys as _sys, pathlib as _pl  # noqa: E402
-for _cand in (_pl.Path(__file__).resolve().parent, *_pl.Path(__file__).resolve().parents):
-    if (_cand / "_cli_help.py").is_file():
-        if str(_cand) not in _sys.path:
-            _sys.path.insert(0, str(_cand))
-        break
-from _cli_help import answer_help  # noqa: E402
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 for p in (REPO, REPO / "scripts"):
@@ -166,10 +159,16 @@ def close_entry(ident: str, *, evidence: str, resolution: str,
 
 
 def main() -> int:
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # ★ THE HELP-INTERCEPTING CALL IS REMOVED, 2026-11-03, AND THIS IS A REMOVAL
+    # WITH A MEASUREMENT BEHIND IT. A call to the shared help responder stood
+    # immediately above the parser and answered `--help` FIRST, printing this
+    # docstring and exiting, so argparse never got to list the flags. Measured
+    # across the 6 scripts that had both: 0 of 16 defined flags were visible
+    # under `--help`. argparse shows all of them, so the capability is not lost
+    # but strictly improved -- which is the only ground the additive standard
+    # accepts for taking something out.
     ap = argparse.ArgumentParser(prog="close_an_entry_2026-11-02.py",
-                                 description=(__doc__ or "").splitlines()[0],
-                                 add_help=False)
+                                 description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--check", action="store_true",
                     help="report entries whose authored detail is stale")
     ap.add_argument("--entry", default=None, help="the entry identifier")

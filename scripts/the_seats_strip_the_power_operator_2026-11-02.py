@@ -167,10 +167,15 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.path.insert(0, str(REPO / "scripts"))
-    from _cli_help import answer_help
     # takes_no_arguments=False: this script HAS its own parser, and the
     # helper's default refusal fires BEFORE it, which made every flag
     # declared below unreachable -- an addition nothing can reach, found
     # 2026-11-02 when --log was refused on a script that declares it.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # ★ THE HELP-INTERCEPTING CALL IS REMOVED, 2026-11-03. It answered `--help`
+    # BEFORE this script's own parser ran, so argparse never listed the flags:
+    # measured across the 6 scripts that had both, 0 of 16 defined flags were
+    # visible. `takes_no_arguments=False` was an earlier partial fix on
+    # 2026-11-02; it stops the helper REFUSING a flag but not from answering
+    # `--help` first. argparse's own help is now enabled, so the capability is
+    # improved rather than lost.
     sys.exit(main())

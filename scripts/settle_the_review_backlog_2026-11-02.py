@@ -33,13 +33,6 @@ everything else exactly as it was.
 from __future__ import annotations
 import math, pathlib, re, sys
 
-import sys as _sys, pathlib as _pl  # noqa: E402
-for _cand in (_pl.Path(__file__).resolve().parent, *_pl.Path(__file__).resolve().parents):
-    if (_cand / "_cli_help.py").is_file():
-        if str(_cand) not in _sys.path:
-            _sys.path.insert(0, str(_cand))
-        break
-from _cli_help import answer_help  # noqa: E402
 
 REPO = pathlib.Path(__file__).resolve().parents[1]
 for p in (REPO, REPO / "scripts"):
@@ -100,12 +93,18 @@ def main() -> int:
     # the documented behaviour -- and it refused `--apply` on the first run
     # here. Correct of it: a script that reads argv only through this helper
     # would otherwise read as argv-free and inherit a pass it has not earned.
-    answer_help(__doc__, __file__, takes_no_arguments=False)
+    # ★ THE HELP-INTERCEPTING CALL IS REMOVED, 2026-11-03. It answered `--help`
+    # BEFORE this script's own parser ran, so argparse never listed the flags:
+    # measured across the 6 scripts that had both, 0 of 16 defined flags were
+    # visible. `takes_no_arguments=False` was an earlier partial fix on
+    # 2026-11-02; it stops the helper REFUSING a flag but not from answering
+    # `--help` first. argparse's own help is now enabled, so the capability is
+    # improved rather than lost.
     import argparse
     # answer_help already refused unknown flags; this parser exists only so
     # --apply is explicit and the default is a DRY RUN. A script that closes
     # tickets by default is a script that closes them by accident.
-    ap = argparse.ArgumentParser(add_help=False)
+    ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
     args, _ = ap.parse_known_args()
 

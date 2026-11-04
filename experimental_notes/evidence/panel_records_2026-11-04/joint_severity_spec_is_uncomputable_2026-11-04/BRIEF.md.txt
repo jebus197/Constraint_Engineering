@@ -1,20 +1,79 @@
-PANEL SEAT REPLIES, VERBATIM AND COMPLETE
-severity specification panel, 2026-11-04
+# JOINT PANEL BRIEF — the severity specification, round 2. YOU DISAGREE WITH EACH OTHER ON 2 THINGS.
 
-This file is the UNFILTERED record. Each reply below is the exact text the
-seat returned, byte for byte, with nothing removed, reordered or tightened.
-It is a transcript and not a note of this project's own, which is why it is
-plain text: the note standard governs what this project WRITES, and editing a
-seat's words to satisfy a prose rule would destroy the thing being recorded.
+**This is the JOINT half of `severity_spec_is_uncomputable_2026-11-04`.** That round was BLIND. Both seats answered, both refuted the brief, and both replies are reproduced IN FULL below so this round is exposure rather than a pointer at a file.
 
-The synthesis, the verification of each claim, and the 2 points on which the
-seats contradict each other are in section 10 of
-Consolidated_Report_Since_Yesterday_Morning_2026-11-04.md. Nothing there
-replaces what is below.
+**NO COMPELLED CONVERGENCE.** A seat that reads the other and does not move has done its job, provided it names the specific claim it rejects. A seat that moves has also done its job, provided it names what moved it. Splitting the difference without engaging a claim is the one unacceptable answer.
 
-==============================================================================
-SEAT cc2 | model cc2 | route claude_cli | 11407 chars | 52 tool calls | 782.0 s | stopped None
-==============================================================================
+## WHAT IS SETTLED. DO NOT SPEND THIS ROUND ON IT.
+
+**1. The brief's headline figure was wrong and `fable` is right.** CC1 reproduced it independently before believing it. `scripts/severity_was_never_computed_from_the_model_2026-10-12.py` globbed `bench/logs/**/runner_state.json`: 77 files, 10 under `sandbox_harvest/`, 67 distinct by content hash. `42 = 32 + 2*5` and `37 = 27 + 2*5`, exact to the integer. **The rate is 27 of 32 = 0.843750, Wilson [0.682459, 0.931356]**, not 37 of 42. The appendix is corrected and the producer now deduplicates and prints the skip. **`cc2`: your correction of the denominator to 3,691 is inflated by the SAME mechanism; the deduplicated count is 3,170.**
+
+**2. `_sk_admits` does not exist.** `grep -c 'def _sk_admits'` returns 0. CC1 wrote that into the brief's artefact list and withdraws it.
+
+**3. The shadow gates nothing.** Both of you confirmed it independently.
+
+## WHAT THIS ROUND IS FOR: THE 2 ITEMS ON WHICH YOU CONTRADICT EACH OTHER
+
+### ITEM 1 — dropping `confidence` flips the gate in OPPOSITE directions
+
+`cc2`: substituting `asserted * V` moves the partition on 29 of 78 runs and flips the real gate on **11 of 78, every one False to True** — manufacturing convergences, all through the vacuous-curve branch. Derived: severity in [0,1] with a 0.7 cut means `sev/2 >= 0.7` needs `sev >= 1.4`; SymPy gives 7/5, Wolfram `Reduce` gives False. `V(None)=0.5` makes every unresolved finding sub-critical.
+
+`fable`: substituting `compute_sev_f(class, confidence, verdict)` moves the partition on 588 entries and flips **12 of 46 verdict-bearing runs, every one True to False** — preventing convergences.
+
+**The question for this round.** You substituted different definitions, so these may be 2 compatible results about 2 different changes rather than a contradiction. **Establish which, by execution, on the SAME archive and the SAME gate.** If both hold, then "drop `confidence`" is not 1 option but 2 with opposite failure modes, and that is the result the founder needs. If one is an artefact of its substitution, name which and why. The safety asymmetry matters: manufacturing a convergence releases defects, while preventing one only costs rounds.
+
+### ITEM 2 — whether the directive and the appendix conflict at all
+
+This is the hinge of open task entry B87.
+
+`cc2`: `cdsfl_operational.md:773` forbids confidence only as a **rebuttal to a tool verdict**. It sits under *Action precedence, item 1, REFUTED by tool*, and reads *"Assertions that 'my reasoning is sound' without tool receipts are inadmissible."* Section 7.7 **implements** that by setting confidence's weight to 0 exactly where a tool refuted. On that reading the 2 documents agree and B87's central claim dissolves.
+
+`fable`: the conflict is real, citing **section 15 `d_tool`** — quantities come from tool execution, *"not from self-assessed confidence"* — as an **independent** prohibition, separate from action precedence.
+
+**The question for this round.** You cite different clauses of the same document. **Quote both clauses verbatim, with their line numbers, and state whether section 15's `d_tool` independently forbids `confidence` as an INPUT TO A HARNESS-COMPUTED QUANTITY, as distinct from forbidding it as a REBUTTAL.** This is a question about 1 document and it is answerable by reading it. If it is genuinely ambiguous, say so and name the ambiguity precisely, because the founder will rule on it and he needs the 2 readings stated cleanly rather than a verdict.
+
+## REQUIRED SECTION 1 — The question
+
+Resolve item 1 by measurement and item 2 by reading, or establish that either is irreducible. Name the artefact under review by path: `bench/reference_runner_v3.py`, `bench/directives/universal/cdsfl_operational.md`, `docs/MATHEMATICAL_APPENDIX.md` section 7.7 and section 15.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery named here, not by describing it. For item 1 you must call the REAL `_check_gamma_alt_convergence` and recompute `gamma_critical` over the archive under BOTH substitutions, reporting how many runs flip under each and in which direction. `S_k`, `sigma` and `nu` are already settled between you and need no further work. A seat that returns prose without having run anything has not answered.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete; a fix without an EXECUTED falsifier is a hypothesis. Write it INTO the sandbox tree at its real path. Report the command and the output verbatim.
+
+`cc2` proposed the restricted annihilator-only form and measured it flipping 0 of 78, and declined to compose on the founder's rule because the single fix dominates. `fable` proposed `W(class) * V(verification)`. **These 2 are not obviously the same fix.** State whether they are, and if not, which dominates on a NAMED property with a MEASUREMENT. Compose ONLY on a demonstrated advantage over each part alone, and prefer the single fix wherever it performs as well; 2 repairs that merely coexist have not met that standard.
+
+**`cc2`, 1 specific debt you named yourself:** your fix treats `REFUTED` as permanent annihilation and you did not measure REFUTED-to-CONFIRMED transitions on a single canonical identifier. You called it the weakest joint in your answer. Measure it this round.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State what evidence would overturn your own answer before you conclude.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, in this order:
+
+- `verdict`
+- `moved` — what moved you and what did not, naming the claim each way
+- `flip_direction` — item 1 above resolved or irreducible, with the figures
+- `clause_reading` — item 2 above: the 2 clauses quoted verbatim with line numbers, and your reading
+- `fix` — the path(s) you wrote in the sandbox tree
+- `falsifier` — the command, verbatim
+- `falsifier_result` — the output, verbatim, including a failure
+- `refuted_to_confirmed_count` — `cc2` only; `fable` states it is not yours
+- `disagreement` — your strongest disagreement with this brief's own framing. Not optional, and "none" is a non-answer.
+- `passes_run`
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings and say how many you ran. A finding is above threshold if missing it could cause a wrong convergence verdict, a wrong fix admission, or a figure reported to the founder that cannot be reproduced.
+
+---
+
+# ROUND 1, SEAT cc2, VERBATIM AND COMPLETE
 
 All green. Writing up.
 
@@ -103,9 +162,9 @@ Where the brief is simply correct, and I confirm it against my own measurement: 
 - **The 0-of-78 flip result is weaker than it reads.** All 78 replays hold `unresolved_critical=0` and `contested=0` so that severity is the only varying input. A live run with those non-zero could flip where my replay does not. Named property: **gate verdict flips under a replay that also varies `unresolved_critical`.**
 - `spec_critical_severity` would be refuted as *simplest sufficient* if a single change at the `crit_s` comparison, with no new function, gave the same 0-flip result. I chose a named function because there are two readers; with one reader the inline form would win.
 
-==============================================================================
-SEAT fable | model fable | route claude_cli | 8345 chars | 50 tool calls | 696.2 s | stopped None
-==============================================================================
+---
+
+# ROUND 1, SEAT fable, VERBATIM AND COMPLETE
 
 All instruments executed, fixes delivered and tested. Final report.
 
@@ -150,3 +209,7 @@ python3 -m pytest bench/tests/test_the_severity_specification_shadow_2026-10-12.
 `disagreement` — Four, strongest first. (1) **The brief's headline figure is mis-scoped**: 88.0952% triple-counts 5 findings via sandbox_harvest registry copies; the distinct-finding rate is 84.3750% [68.2459%, 93.1356%]. (2) **"Exactly one of them is collected" understates the tree**: `compute_sev_f`/`stamp_sev_f` already implement the §7.7 product as a wired, tested, default-off derived field with reader-side support for both missing factors — the candidate direction "add the HARD/SOFT field" needs only a writer, not the from-scratch build the brief implies. (3) **The KEY PROPERTY is not unconditionally desirable**: at the blocking gate it is refuted by the harness's own Exp 42 measurement (2/3 of REFUTED criticals falsely REFUTED); the 84% "violation" is a scoring-layer defect only, and full §7.7 gate-compliance would have released real defects. (4) Minor: the brief's artefact list names `_sk_admits` in `bench/reference_runner_v3.py`; no such function exists in the current file (prose references in one test and one script only).
 
 `passes_run` — 5. Pass 5 (regression and consumer sweep: appendix-coupled tests, figure registry, telemetry consumers) produced no new above-threshold findings — terminated converged, no residual falsification debt on the claims above. Wolfram ran as second falsifier on one computed result (Wilson endpoints); all primary verification is SymPy/z3/statsmodels/scipy.
+
+---
+
+Written under CDSFL note standard v1.9.

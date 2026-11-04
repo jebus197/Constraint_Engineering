@@ -227,7 +227,7 @@ deduplicated    : 27 of 32 = 0.843750, Wilson [0.682459, 0.931356]
 - **cc2**: recomputing as `asserted · V` moves the critical partition on 29 of 78 runs and **flips the real gate on 11 of 78 — 14.1026%, Wilson [8.0610%, 23.5140%] — every one False→True**, i.e. manufacturing convergences, all through the vacuous-curve branch. Derived why: severity ∈ [0,1] and the cut is 0.7, so `sev/2 ≥ 0.7` needs `sev ≥ 1.4`; SymPy returns 7/5 and Wolfram `Reduce` returns `False`. `V(None)=0.5` makes **every** unresolved finding sub-critical — the exact population the A4 fail-safe exists to block on.
 - **fable**: recomputing as `compute_sev_f(class, confidence, verdict)` moves the partition on 588 entries and **flips 12 of 46 verdict-bearing runs, every one True→False**, i.e. preventing convergences.
 
-They substituted **different severity definitions**, which explains the sign and is itself the finding: the direction of the hazard depends on which replacement is chosen, so "drop `confidence`" is not one option but two with opposite failure modes. **My brief listed that direction first and neutrally. cc2 calls it "the one that breaks the harness" and "the single most consequential result I have".**
+They substituted **different severity definitions**, which explains the sign. **★ THIS FRAMING WAS MINE AND THE JOINT ROUND SUPERSEDED IT — see `Panel_FULL_RECORD_Severity_Joint_2026-11-04.md`.** I recorded it as "opposite failure modes depending on the substitution". Measured on 1 archive through the real gate, `fable`'s substitution produces **both** signs: 11 False→True (the same runs as `cc2`) **plus** 12 True→False. `fable` withdrew its own direction claim — the 11 manufactured flips all occur in runs carrying 0 entries with any `falsifier_verdict`, and its "verdict-bearing" denominator of 46 excluded exactly that population by construction. So it is not 2 options with opposite failure modes; it is 2 options of which **the first carries both failure modes and the second carries 1**, and the restricted annihilator flips **0 of 67**, Wilson [0.0000%, 5.4226%].
 
 ### 10.3 The disagreement I cannot settle from the replies alone
 
@@ -235,7 +235,7 @@ cc2 says `cdsfl_operational.md:773` forbids confidence only as a **rebuttal to a
 
 fable says the contradiction is real, citing **§15 `d_tool`** (quantities come from tool execution, *"not from self-assessed confidence"*) as an independent prohibition, plus the action-precedence item.
 
-**They cite different clauses.** Whether §15's `d_tool` independently forbids `confidence` as a severity input is a factual question about 1 document, and it is the hinge of B87. It is recorded for his ruling rather than decided here.
+**They cite different clauses — and the joint round settled it AGAINST BOTH.** `fable` quoted both with line numbers and conceded by reading: §15's `d_tool` at lines 600-606 scopes its prohibition to **the detection probability `d` entering `q = η · d · p`**, the §15 preamble at line 578 scopes all 5 constraints to the `R_k` update, and lines 773-775 forbid confidence as a **rebuttal**. Those are the only 2 occurrences of `confidence` in the directive. **Severity is not `d` and `Sev(f)` is not a factor of `q`, so B87's letter-level conflict dissolves.** `cc2` also rejected its own round-1 claim that the documents are "in exact agreement", which overstated the other way. What survives for him is **1 precisely named unlegislated case**: model self-assessed confidence as an input to a harness-computed severity that reaches a convergence gate. §7.7 includes it; `d_tool`'s rationale extends to it only by analogy, and an analogy is not a directive. Reading R1 (silence permits it) is what the text supports; reading R2 (`d_tool` states a principle instanced at `d`) is a design judgement he may adopt.
 
 ### 10.4 Findings neither B87 nor the brief contained
 
@@ -250,6 +250,27 @@ fable says the contradiction is real, citing **§15 `d_tool`** (quantities come 
 cc2 names its weakest joint itself: its fix treats `REFUTED` as permanent annihilation, and it did **not** measure REFUTED→CONFIRMED transitions on a single canonical id. If that count exceeds 0 the fix must read the latest verdict. It also states that all 78 replays hold `unresolved_critical=0` and `contested=0`, so a live run with either above 0 could flip where the replay does not.
 
 **Nothing from either seat is applied.** The proposals sit in `bench/logs/severity_spec_is_uncomputable_2026-11-04/seat_proposals.diff`, untested in this tree, and `fixes-to-HIL-only` means they reach him before they reach the runner.
+
+---
+
+## 11. A second route by which a sandbox copy reaches the canonical record
+
+**Found while reading a staged file list, immediately after the figure defect above taught me to look.** `git add -A` staged 2 files from the joint panel's sandbox harvest, both copies of `experimental_notes/data/morning_report_decisions.json` written by a seat. `bench/logs/**` is gitignored, so they should have been invisible.
+
+**The admitting mechanism is 1 line.** `.gitignore:50` reads `!bench/logs/**/*report*.json` — a negation that un-ignores any JSON with `report` in its name anywhere under `bench/logs`, presumably so run report files stay tracked. It also matches a seat's copy of a canonical data file, because the filename contains `report`.
+
+**Measured, and the honest reading is that the harm is LATENT:**
+
+| | |
+|---|---|
+| tracked files under `bench/logs` | 6,520 |
+| of those, inside a `sandbox_harvest` | **5** |
+| of those, copies of a file that also exists canonically | **1** (`experimental_notes/data/morning_report_decisions.json`) |
+| readers of that file that use a recursive glob | **0** — all 10 name an exact path |
+
+**So nothing reads the stray copy and nothing is currently wrong.** It is recorded because the mechanism is not hypothetical: the 88.0952% defect in section 10 was caused by exactly this shape, a recursive glob under `bench/logs` picking up sandbox copies of `runner_state.json`. A single reader added later with `rglob` would reach the stray copy.
+
+**The fix is 1 line and it is his**, because it changes what the repository tracks: tighten the negation so it cannot reach inside a `sandbox_harvest`. The 2 files staged tonight were unstaged rather than committed.
 
 ---
 
