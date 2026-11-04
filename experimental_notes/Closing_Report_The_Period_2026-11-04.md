@@ -75,12 +75,52 @@ The fix is thin and it is named rather than guessed: the paid dispatch block is 
 
 ## WHAT WAS GOT WRONG, COUNTED
 
-14 claims or figures of mine did not survive checking during the period, and all 14 were caught before delivery or corrected in place after it. They include a blocker count produced by misusing a triage tool, a character count written without being computed, a stale measurement quoted from an instruction file rather than its producer, a sentence in a delivered note claiming the commit gate runs a full board when it runs roughly 1 test in 6, a timestamp typed 3 minutes off a clock that had just been read, a colliding label key that made a precision figure read 4 of 12 where it is 3, and 2 hypotheses about the orchestrator entry that were refuted before being announced.
+The claims and figures of mine that did not survive checking are ENUMERATED, 9 of them, in the inventory's own cross-check section, and further ones were found after that note was written and are recorded where they occurred. A single total is deliberately NOT quoted here: no script reproduces it, and summing my own errors is exactly the kind of figure this project forbids asserting without a producer. They include a blocker count produced by misusing a triage tool, a character count written without being computed, a stale measurement quoted from an instruction file rather than its producer, a sentence in a delivered note claiming the commit gate runs a full board when it runs roughly 1 test in 6, a timestamp typed 3 minutes off a clock that had just been read, a colliding label key that made a precision figure read 4 of 12 where it is 3, and 2 hypotheses about the orchestrator entry that were refuted before being announced.
 
 5 commit attempts were refused by the project's own gate before 1 landed. Every refusal was correct, none was bypassed, and 2 of them taught a rule that had not been internalised: a new note's quality baseline is 0, so a note delivered for the first time must carry no findings at all rather than merely no blocking ones.
 
 The pattern in all of this is measured rather than asserted, and it is specific: errors concentrate in the measuring apparatus rather than in the code being measured, at 16 of 18 on a single night, with a 95 per cent interval from 0.672002 to 0.968980, and 0 of 7 errors on another night were noticed unaided. They are caught by running something, or by re-reading what is already written.
 
+
+## THE FIRST COMPLETE TEST BOARD SINCE THE 29TH OF SEPTEMBER, AND WHAT 36 DAYS HAD ACCUMULATED
+
+The founder asked for a fully green, honest board and said not to cut corners to make it green. A result of 2,502 passed and 0 failed was reported to him as that board. It was not the board. It was the commit gate's fixed guard list, which collects 2,569 tests from 128 files against the 15,431 the whole collection holds, a share of 0.1665. Calling the gate's result the collection overstates coverage by a factor of about 6, and the 12,862 tests outside it had not been executed since the 29th of September, 36 days and 382 commits earlier.
+
+The complete collection was then run. It took 2 hours and 3 minutes and reported 44 failures, 15,350 passes and 37 skips. It also printed a section that had not been seen: 24 task entries marked done whose named evidence was failing, which is a larger fact than the 44, because each of those is a completion claim with nothing currently supporting it.
+
+The 44 reduced to 18 independent root causes. 40 are fixed. The 4 that remain are decisions rather than repairs, and they are carried as decisions 22 to 25 in the decisions file of the 4th of November.
+
+### THE 2 LIVE DEFECTS
+
+The first is that one of the 6 panel seats had been dispatching in a degraded state for 2 days. A model configuration file named fable 5 1 has never existed in any commit of the project's whole history. A repair on the 2nd of November pointed the composer at that name in order to close a different defect, where the seat had been silently taking default values instead of its own. Closing that re-opened a file not found error, and every dispatch site catches it and falls back to shared static text. So the seat ran without its own directive set, its 12,000 character limit and its 0.020 coherence budget, logged but degraded. This is a composability failure in the strong sense the founder's own definition names: 2 repairs that each fix something and that, composed, leave the subject worse than either alone.
+
+The part worth keeping is why no board would have caught it. 2 independent registration instruments, both built on his rulings so that an unregistered seat fails loudly, both reported the seat healthy. Neither is vacuous: the same calls on a name that does not exist report 6 gaps. They enumerate the registration tables and neither asks whether the key they register resolves to a configuration file.
+
+The second is that the reference runner has 2 paths that set a finding to closed, and a repair on the 3rd of November, which the founder ruled and which was committed, reached only 1 of them. A flag a model can set about its own finding could therefore still close that finding through the other path. It was not found by the board. It was found by trying to disprove the board's own failure: the failing check was itself wrong, and asking what else writes a closed status found the second path. Driving the same finding through both showed them disagree in both directions. In the archive, 6 of 350 closures through that path carried no execution behind them, 1.71 per cent with a 95 per cent interval from 0.79 to 3.69 per cent. None was critical, with a maximum severity of 0.62 against the 0.700 threshold, and none postdates the repair, so the exposure was latent rather than realised. Those are 2 separate facts and are reported as such.
+
+### THE INSTRUMENTS THAT ACCUSED CORRECT WORK, WHICH WAS 10 OF THE 44
+
+This is the larger half and the more uncomfortable one. In 1 file, 7 of 21 reported findings were the checker's own false positives, 33.3 per cent with a 95 per cent interval from 17.2 to 54.6 per cent. 3 distinct predicate faults and 1 under-specified probe produced them, and 1 of the 3 is a task marked done on the 11th of September recurring through a path its own fix did not cover. Repairing the 7 scripts those findings accused would have made 7 correct files wrong.
+
+3 more were found elsewhere. A detector built to stop the founder being asked the same question twice reported 7 pairs of decisions restating a single measurement. All 7 were wrong: every shared figure came out of a date inside a producer's filename, so 3 unrelated entries whose evidence lines are each a single citation dated the same day scored a perfect match. Its own printed remedy was to merge the entries or rule one of them, so following it would have merged 3 unrelated entries and asked him to rule on a conflation the instrument had invented.
+
+A check built to detect loss of the founder's own written words reported that 1 had been lost. Nothing had been lost. The file is byte identical to its recorded baseline by hash, and a file unchanged by 1 byte cannot have lost text. What the baseline had counted was a section heading inside a report written by a different model, which names its own author on its second line and refers to the founder only in the third person. A sibling record had already been corrected for that exact line the previous day, and the baseline was simply left stale, which is the corrected on one surface and stale on another failure in its clearest form.
+
+And a check on the panel protocol reported that 6 replies had dropped the disagreement the protocol requires them to carry. All 6 carry numbered, measured objections to the brief they were answering. The checker's pattern accepted 2 kinds of leading markup and not a third, and the brief itself names the required field in that third kind, so the seats took the spelling from the brief and the checker went blind to it. Measured across all 392 archived replies, the 1 character repair changes exactly those 6 and nothing else, with no change in the losing direction.
+
+### WHAT THIS SAYS ABOUT WHERE THE DEFECTS ACTUALLY ARE
+
+Of the 44, 10 were instruments accusing correct work and 2 were live defects in the product. The rest were bookkeeping that had gone stale, including 19 caused by this period's own work. That 5 to 1 split is consistent with what the project has measured before and recorded as its central weakness: the instruments are the weak point, not the subject they measure. Every one of the 10 would have cost real work if its advice had been followed, and in 2 cases would have destroyed something: 3 unrelated task entries merged, or a baseline refreshed over a loss that had not happened.
+
+### THE 4 THAT REMAIN, AND WHY THEY ARE NOT FIXED
+
+Decision 22 is that the severity archive includes 1 run twice, through a pointer the measuring pattern follows, which is 6.55 per cent of the frame and has been there since April. The obvious repair turns 2 correct loss detectors red, so the de-duplication and their baselines have to move in 1 commit or not at all.
+
+Decision 23 is that the generated morning report now produces 477 lines of markdown against the founder's own limit of 300, because 21 decisions are owed and a sibling check deliberately requires the decisions to be the bulk of it. The arithmetic forces a choice between halving the detail on each decision and showing 9 of the 21, and neither is a choice a line budget should make for him.
+
+Decision 24 is that the master list can no longer be said to terminate. The growth ratio is 0.9147 with a 95 per cent interval from 0.7527 to 1.1115, so the upper end has crossed 1. On the 29th of October it was below 1 by less than 1 part in 100. It is not this period's 3 new entries: without them the upper end is still 1.0951. The honest statement is that termination can no longer be asserted, not that it has been refuted, and the founder asked to be told if it happened.
+
+Decision 25 is that 1 blind panel round owes its joint half. A figure reported to him about this was wrong and is withdrawn: the number 5 in the failing message is the function's exit code and not a count of rounds. There is exactly 1, confirmed by reading the syntax tree, by the disassembler and by execution. The debt itself survived 5 attempts to show it was not real.
 
 ## WHAT REMAINS
 

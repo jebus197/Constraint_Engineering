@@ -48,6 +48,13 @@ CONVERTED = (
     "Reply_To_Your_Questions_2026-11-02",
     "Session_Self_Audit_2026-11-03",
     "Decisions_Awaiting_You_2026-11-03",
+    # ADDED 2026-11-04. Both pairs below were found with a STALE spoken
+    # twin: the markdown gained a section and the .txt was not
+    # re-rendered, so the founder would have read aloud a copy 3.5 hours
+    # behind the one he could read. Both carry 0 bold spans, 0 backticks
+    # and 0 em-dashes, so markers-only is the right rule for them.
+    "Decisions_Awaiting_You_2026-11-04",
+    "Closing_Report_The_Period_2026-11-04",
 )
 
 #: Pairs where neither identity NOR markers-only applies, with the reason.

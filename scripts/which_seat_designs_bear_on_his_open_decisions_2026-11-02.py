@@ -213,6 +213,10 @@ def main() -> int:
     print(f"  ENTRY, so nothing says they bear on a pending decision:")
     for d in sorted(unlinked, key=lambda x: -x["lines"])[:10]:
         print(f"    {d['lines']:4d}L  {d['sp']}")
+    _withheld = max(0, len(unlinked) - 10)
+    if _withheld:
+        print(f"    ... and {_withheld} more not shown "
+              f"(of {len(unlinked)} total)")
     print("\n  NOTHING IS ADOPTED AND NOTHING IS REJECTED. This is a")
     print("  correspondence, so his judgement on a design can be taken beside")
     print("  the decision it bears on rather than in the abstract.")

@@ -11,8 +11,12 @@ FOUR SHAPE-BASED FIXES WERE MEASURED AND ALL FOUR REFUTED, which is why the
 exclusion is an explicit per-file list rather than a clever rule:
 
   1. a dated-filename filter drops 8 of 598, 1.3378% Wilson [0.6794%, 2.6174%];
-  2. markdown-structure detection marks FINAL_REPORT_FOR_OPUS_2026-08-27.md,
-     which holds a real verdict, and misses design_brief.txt entirely;
+  2. markdown-structure detection marks FINAL_REPORT_FOR_OPUS_2026-08-27.md
+     and misses design_brief.txt entirely. CORRECTED 2026-11-04: that report
+     holds NO verdict of his. Its 1 counted annotation was a 2-hash heading
+     in another model's report, reclassified by commit a0eb9d00. The
+     refutation survives on design_brief.txt, which has 3 one-hash lines and
+     0 two-hash lines, so a density rule still misses it;
   3. removing the `.md`-only gate on the heading filter drops 18 of 598,
      3.0100% Wilson [1.9123%, 4.7076%], 12 of them REAL verdicts;
   4. deriving an area from `subjects` resolves for 11.0865% of tickets only.
@@ -188,7 +192,11 @@ def test_both_exclusion_reasons_are_actually_in_use():
 
 def test_the_suffix_rule_keeps_every_real_annotation():
     """The rule must not cost a single one of his words. Measured 2026-10-20:
-    425 in .txt, 256 in .rtf, 1 in .md, 682 in all."""
+    425 in .txt, 256 in .rtf, 1 in .md, 682 in all. CORRECTED 2026-11-04 to
+    425 in .txt, 256 in .rtf, 0 in .md, 681 in all: the .md 1 was a 2-hash
+    heading in another model's report and was never his. `.md` stays in the
+    allow list at 0 deliberately, because under-reach is the dangerous
+    direction here. No assertion below changes."""
     import pathlib as _p
     kept = {_p.Path(str(a["file"])).suffix.lower() for a in R.annotations()}
     assert kept <= R.TEXT_SUFFIXES, (

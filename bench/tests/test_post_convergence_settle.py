@@ -53,10 +53,27 @@ def _reg(entries):
     return r
 
 
-def _entry(status="CONFIRMED", verified=True, verdicts=None, sev=0.8):
-    return {"status": status, "verified": verified, "severity": sev,
-            "verdicts": verdicts or [], "description": "d", "open_since_round": 3,
-            "last_status_change_round": 3}
+def _entry(status="CONFIRMED", verified=True, verdicts=None, sev=0.8,
+           backed=True):
+    """★ GAINED `backed` ON 2026-11-04, AND THE DEFAULT IS THE POINT.
+
+    The sweep gained an EXECUTION-BACKING conjunct on 2026-11-04, matching the
+    one the reconciliation path gained on 2026-11-03 in commit a0eb9d00. Before
+    that, this helper's `verified=True` with nothing behind it was enough to
+    close a finding, so 3 tests here closed entries on a model's own word --
+    which is the thing the 2026-11-03 repair exists to prevent, and these tests
+    passed throughout with the door unbolted.
+
+    The default is `backed=True` so the existing cases keep testing what they
+    were written to test: that the sweep settles a sound CONFIRMED finding. The
+    new case below drives `backed=False` and requires it NOT to close.
+    """
+    e = {"status": status, "verified": verified, "severity": sev,
+         "verdicts": verdicts or [], "description": "d", "open_since_round": 3,
+         "last_status_change_round": 3}
+    if backed:
+        e["falsifier_verdict"] = "CONFIRMED"
+    return e
 
 
 class TestTheTransitionThatNeverRan:
@@ -80,6 +97,36 @@ class TestTheTransitionThatNeverRan:
 class TestItCannotCloseWhatTheNormalPathWouldHold:
     """The condition must be exactly the reconciliation's, or this becomes a
     back door that settles findings the ordinary run would have kept open."""
+
+    def test_a_verified_finding_with_no_execution_behind_it_stays_open(self):
+        """THE SECOND DOOR, pinned 2026-11-04.
+
+        `verified` is a flag a MODEL can set. On 2026-11-03 the reconciliation
+        path was given a third conjunct so that flag could no longer close a
+        finding on its own, and this sibling sweep -- the runner's other live
+        CLOSED transition, called at 2 sites -- did not get it. Driving the same
+        entry through both doors showed them DISAGREE: the sweep closed what
+        reconciliation held.
+
+        Archive exposure when it was found: 6 of 350 sweep closures carried
+        neither a CONFIRMED falsifier nor `bugzilla_verified`, 0.017143, Wilson
+        [0.007880, 0.036890], across 5 of 66 runs. None was critical (max
+        severity 0.62 against the 0.7 threshold) and 0 of 6 postdate the fix,
+        so the loss was LATENT rather than realised -- 2 separate facts.
+        """
+        r = _reg({"C0001": _entry(backed=False)})
+        assert _settle_confirmed_findings(r, 4) == [], (
+            "a model's own `verified` flag closed a finding through the sweep "
+            "with no execution behind it")
+        assert r.entries["C0001"]["status"] == "CONFIRMED"
+
+    def test_bugzilla_verified_is_the_other_accepted_backing(self):
+        """The conjunct is a disjunction of 2 routes; both must work, or this
+        silently narrows to falsifier verdicts alone."""
+        e = _entry(backed=False)
+        e["bugzilla_verified"] = True
+        r = _reg({"C0001": e})
+        assert _settle_confirmed_findings(r, 4) == ["C0001"]
 
     def test_an_unverified_confirmed_finding_stays_open(self):
         """CONTESTED -> CONFIRMED reaches CONFIRMED without `verified`."""

@@ -273,7 +273,15 @@ class TestTheDebtCheckRefusesANewBlindRound:
         assert D._refuse_if_a_joint_round_is_owed() == 0
 
     def test_the_live_registry_blocks_nothing_right_now(self, D):
-        """The 4 real entries are SUPERSEDED, so the live tree must dispatch."""
+        """All 5 registry entries are SUPERSEDED; nothing else may be owed.
+
+        THIS GUARD IS A LIVENESS CHECK ON THE OPERATOR'S QUEUE, NOT A
+        REGRESSION CHECK ON CODE. It went red on the 2026-11-04 board for the
+        right reason: `the_period_reviewed_2026-11-04` was dispatched blind at
+        04:45, landed 2 replies at 05:08, and its joint half was never run.
+        The count in this docstring was 4 and the registry now holds 5, so the
+        number is derived at read time rather than typed.
+        """
         import os as _o
         prev = _o.environ.pop("PANEL_SKIP_TOPOLOGY", None)
         try:

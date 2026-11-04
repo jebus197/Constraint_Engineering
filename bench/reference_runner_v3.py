@@ -9388,13 +9388,36 @@ def _settle_confirmed_findings(registry, round_idx):
     difference between "a critical escaped" and "a label lagged" is the
     difference between an unsafe instrument and an untidy one.
 
-    The condition replicated here is exactly the reconciliation's, unresolved
-    challenges included, so this can never close something the normal path would
-    have held open. Returns the ids it settled, for the run report.
+    The condition replicated here matches the reconciliation's on `verified`,
+    on unresolved challenges and -- since 2026-11-04 -- on execution backing.
+    It is still NARROWER in one respect: reconciliation also closes
+    CORROBORATED and this settles CONFIRMED only, verified by driving the same
+    entry through both. The identity claim this docstring used to make was
+    unqualified, and it went false on 2026-11-03 when commit a0eb9d00 added
+    `_exec_backed` to the reconciliation path alone. Returns the ids it
+    settled, for the run report.
     """
     settled = []
     for cid, e in registry.entries.items():
         if e.get("status") != "CONFIRMED" or not e.get("verified"):
+            continue
+        # ★ THE SECOND DOOR, BOLTED 2026-11-04. The reconciliation path gained
+        # `_exec_backed` on 2026-11-03 (commit a0eb9d00) and this sibling did
+        # not, so a model-set `verified` with no execution behind it still
+        # reached CLOSED through here -- while the docstring above claimed the
+        # condition replicated here is exactly the reconciliation's. Found by
+        # executing both doors on the same entry, not by reading either.
+        #
+        # MEASURED: 6 of 350 archived sweep closures were not execution-backed,
+        # 0.017143, Wilson [0.007880, 0.036890], across 5 of 66 runs, 0.075758,
+        # Wilson [0.032792, 0.165392]. NONE was critical (max severity 0.62
+        # against the 0.7 threshold) and 0 of 6 postdate the fix, Wilson
+        # [0.000000, 0.390334], because the newest archived run is 2026-11-02 --
+        # so the loss was LATENT rather than realised, and those are 2 separate
+        # facts. Convergence is unaffected for the reason the :6201 block gives:
+        # an entry that no longer closes stays CONFIRMED, already in _TERMINAL.
+        if not (e.get("falsifier_verdict") == "CONFIRMED"
+                or bool(e.get("bugzilla_verified"))):
             continue
         confirms = [v for v in e.get("verdicts", []) if v.get("verdict") == "CONFIRM"]
         challenges = [v for v in e.get("verdicts", []) if v.get("verdict") == "CHALLENGE"]

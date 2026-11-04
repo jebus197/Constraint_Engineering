@@ -569,6 +569,8 @@ But the file is a hook that refuses this session's own stops, and the environmen
 
 For the record, 2 things I declined. I did not use the test seam to silence the live gate, because that is bypassing a guard rather than repairing it. And I did not arm the watcher the refusal asks for, because its premise is a run that does not exist and the log it names is not there.
 
+The recurrence is no longer a prediction. It was observed on the very next commit. That commit's message named the file, and the gate refused again naming a different process, 28697, which is a shell, which the git commit search returned alongside its child, and whose command line names the runner 2 times. So this is 2 instances on 2 processes from 1 cause, reproducible on demand, rather than a quirk of a single shell. That measurement was taken after the recommendation was written, not before it.
+
 What you decide. Whether I may apply the repair, whether you would rather apply it yourself from the patch already written, or whether to leave the gate as it is.
 
 The recommendation, and why. Allow it, under the additive standard. The gate currently refuses work for runs that do not exist, which is the false positive failure that gets a rule switched off, and the repair comes with a guard that plants both cases and asserts the committed hook and the running hook stay byte identical. The named property on which the repair dominates is reachability: that code path has 0 tests today and 5 afterwards.

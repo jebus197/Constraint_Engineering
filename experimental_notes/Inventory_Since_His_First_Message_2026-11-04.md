@@ -136,7 +136,7 @@ which is yours to decide.** It is the same tension decision 14 names about quote
 ## What the cross-check refuted
 
 He asked for the inventory to be cross-verified or refuted against every printed and saved
-source. 8 figures or claims did not survive that check, and all 8 were mine.
+source. 9 figures or claims did not survive that check, and all 9 were mine. **The header of this section said 8 against a list of 9 until the `fable` seat's recount caught it** — a header disagreeing with its own tally, which is the shape this project already records.
 
 1. **A claim that 13 of 23 live entries are genuine blockers.** Produced by calling an internal
    function of the triage tool, which answers whether a *new* item is blocked by the existing
@@ -179,3 +179,17 @@ belong on the runway, the rest on the task list.
 The answers to the questions still owed are the companion note, `Answers_Still_Owed_2026-11-04.md`; both are spoken together in `Inventory_And_Answers_2026-11-04.txt`.
 
 Written under CDSFL note standard v1.9 (1 November 2026).
+
+## THE PERIOD'S FINAL ACT: THE FIRST COMPLETE TEST BOARD SINCE THE 29TH OF SEPTEMBER
+
+Everything above was produced before the test collection had been run in full. It had not been run since the 29th of September, 36 days and 382 commits earlier, because the commit gate executes a fixed list of 128 files out of 811 and every board reported during this period was that list. The complete collection was then run, taking 2 hours and 3 minutes, and it reported 44 failures against the gate's 0.
+
+This changes the standing of several claims made above, and the changes are listed rather than absorbed.
+
+What the board added to the inventory. 8 new task entries, B117 to B124. 4 are fixed and committed: a live regression that had left 1 of 6 model seats dispatching without its own directive set for 2 days; a second path to the closed state in the reference runner that a ruled and committed repair had not reached; 7 false positives of 21 findings in 1 checker file, with 14 genuine defects beside them; and 3 further checkers accusing correct work. 4 are decisions the founder must take, carried as decisions 22 to 25 in the decisions file of the 4th of November.
+
+What the board corrected in this inventory's own figures. The board result reported to the founder earlier in this period as a fully green board was the gate's subset. That sentence was true of what it measured and wrong about what it claimed to measure, and it is the second occurrence of that shape in the record. The gate now prints its own scope beneath its own number, and a producer derives the test count share, which no instrument had previously done, although an existing instrument had been printing the adjacent file share since the 30th of October and was not consulted.
+
+What survived the board unchanged. The severity and residual risk analysis, the orchestrator findings and the panel's refutations recorded above are untouched by it: the 3 severity figures that drifted are descriptive statistics over a growing archive, and every figure carrying inferential weight comes from a frozen audit file with 1 commit in its history, none of which moved.
+
+The honest closing figures for the period, 40 fixed of 44. 40 of the 44 failures are fixed, with every fix verified by executing the test that failed rather than a different one. 4 remain and all 4 are decisions rather than repairs. 2 of the 44 were live defects in the product; 10 were instruments accusing correct work; 19 were bookkeeping staled by this period's own activity; the rest were accumulated drift. The ratio of instrument faults to product faults is 5 to 1, which is consistent with what the project has already measured and recorded as its central weakness.

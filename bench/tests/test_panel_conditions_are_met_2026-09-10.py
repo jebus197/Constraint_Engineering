@@ -480,8 +480,10 @@ class TestP5DisagreementIsPreserved:
                or (rnd, d["_seat"]) in known]
         assert len(got) >= len(under) - 2, (
             f"only {len(got)} of {len(under)} replies preserved a disagreement; "
-            f"the known 2 misses are panel_roster_fix_2026-09-09, dispatched "
-            f"before the field was in the brief. Recorded shortfalls in "
+            f"the 2-reply slack is for panel_roster_fix_2026-09-09, dispatched "
+            f"before the field was in the brief; measured 2026-11-04, both its "
+            f"replies now carry a disagreement, so the slack is currently "
+            f"unused. Recorded shortfalls in "
             f"bench/directives/universal/section_p_shortfalls.json are counted "
             f"as accounted for, not as preserved.")
 
@@ -525,6 +527,13 @@ class TestP5TheGuardIsNotVacuous:
         "## strongest_disagreement\n\n## termination\nstopped after 2 passes",
         "`strongest_disagreement`: nothing",
         "## strongest_disagreement: none\n\n## termination\nstopped after 2 passes",
+        # THE 6TH OCCURRENCE OF THIS SHAPE, 2026-11-04: the brief names the field
+        # in a CODE SPAN and both seats echoed that spelling as their heading, so
+        # the pattern's heading alternative -- which admitted `#` and `*` but not a
+        # backtick -- scored 6 real disagreements as misses. The absence half must
+        # hold for the code-span form too.
+        "## `disagreement`\nNone.",
+        "`disagreement`: none",
     ])
     def test_a_declared_absence_is_not_a_disagreement(self, reply):
         assert not carries_disagreement(reply), (
@@ -539,6 +548,11 @@ class TestP5TheGuardIsNotVacuous:
         "I disagree with the brief on Q3.",
         "## strongest_disagreement: the date parser drops 5 directories\n\n## termination\n2 passes",
         "**Strongest disagreement:**\n\nThe brief's 47 of 49 has no producer.",
+        # The form 6 replies actually used on 2026-11-04, taken from the brief's
+        # own field list. Both spellings observed: a markdown heading, and the
+        # bare code span opening a line.
+        "## `disagreement`\nThe brief's Part A premise is wrong: R_n carries w_k.",
+        "`disagreement` \u2014 strongest first. The brief's headline figure is mis-scoped.",
     ])
     def test_a_disagreement_with_a_body_still_counts(self, reply):
         """DISCRIMINATION. A predicate that refused everything would pass the

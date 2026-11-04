@@ -644,8 +644,15 @@ def write_pulse(path, *, log, pid, rounds, last_size, ended, verdict=None,
         tmp = path.with_suffix(path.suffix + ".tmp")
         tmp.write_text(json.dumps(body, indent=1), encoding="utf-8")
         tmp.replace(path)
-    except Exception:                                        # noqa: BLE001
-        pass            # telemetry must never kill a watch
+    except Exception as exc:                                 # noqa: BLE001
+        # TELEMETRY MUST NEVER KILL A WATCH -- AND MUST NEVER VANISH EITHER.
+        # A silent failure here leaves a stale or absent pulse, and the Stop
+        # gate tells a live watch from a dead one by this file's freshness, so
+        # the one outcome `write_pulse` exists to prevent is reached in
+        # silence. stderr, not stdout: the stdout contract described above is
+        # unchanged, and the docstring's "NEVER raises" still holds.
+        print(f"[cy_watchdog] pulse write FAILED for {path}: "
+              f"{type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
 
 
 def _pid_alive(pid) -> bool:

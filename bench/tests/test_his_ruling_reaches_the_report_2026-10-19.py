@@ -107,9 +107,106 @@ def test_a_null_ruled_in_the_detail_cannot_erase_a_marker_date(g, monkeypatch):
 
 _FIG = re.compile(r"\d[\d,]*\.?\d*%?")
 
+#: Tokens that are PATHS, not prose. Stripped before figures are extracted.
+#:
+#: THE FALSE POSITIVE THIS FIXES, found 2026-11-04 by the first complete board
+#: since 2026-09-29. This check reported 7 pairs of live decisions restating the
+#: same measurement, and all 7 were wrong. Every shared "figure" came out of a
+#: DATE INSIDE A PRODUCER FILENAME: `scripts/..._2026-11-03.py` yields `2026`,
+#: `11` and `03.`, the last because the extension follows the day. So B102, B104
+#: and B105 -- 3 unrelated entries whose evidence lines are each a single
+#: producer citation dated the same day -- had IDENTICAL figure sets and scored
+#: Jaccard 1.0000.
+#:
+#: The accusation's own remedy was "Merge the entries or rule one of them", so
+#: acting on it would have merged 3 unrelated entries and asked the founder to
+#: rule on a conflation this check invented. A guard's remediation advice is a
+#: hypothesis, and following this one would have destroyed work.
+#:
+#: A measurement is never written inside a filename, so removing path-like
+#: tokens cannot remove a real figure: "foo_2026-11-03.py reports 583 of 839"
+#: keeps 583 and 839 and loses only the date in the name.
+_PATHISH = re.compile(r"\S*[/\\]\S*|\S+\.(?:py|md|json|txt|toml|sh|csv|svg)\b")
+
 
 def _figures(s: str) -> set[str]:
-    return set(_FIG.findall(s or ""))
+    """The MEASUREMENTS in a line, with file paths removed first."""
+    return set(_FIG.findall(_PATHISH.sub(" ", s or "")))
+
+
+#: Jaccard at or above which 2 evidence lines count as one restatement.
+#:
+#: 0.5500 rather than 0.5000 because a pair sharing only the token "1" scored
+#: exactly 0.5000 on the 2026-10-19 data (B31 against B33) and is not a
+#: duplicate. ONE NAMED CONSTANT, read by the check and by every test below:
+#: written twice, lowering it left all 11 tests green, because each test
+#: carried its own copy of the number.
+DUPE_THRESHOLD = 0.55
+
+
+def test_the_duplicate_threshold_is_where_its_reason_says():
+    """The constant's VALUE, not merely its use.
+
+    0.5000 would reinstate the B31-against-B33 false positive the threshold was
+    raised to exclude, and nothing else in this file notices the change once
+    every test reads the constant.
+    """
+    assert DUPE_THRESHOLD == 0.55, (
+        f"the duplicate threshold is {DUPE_THRESHOLD}; at 0.5000 a pair sharing "
+        f"only the token '1' reads as a restatement, which is the false positive "
+        f"it was raised to exclude")
+
+
+def test_a_shared_producer_date_is_not_a_shared_measurement():
+    """THE FALSE POSITIVE, pinned so it cannot be reinstated.
+
+    2 evidence lines that differ ONLY in a producer filename carrying the same
+    date must share no figures at all. Before the path strip they shared 3 and
+    scored Jaccard 1.0000.
+    """
+    a = "Producer: scripts/his_words_arrive_where_nothing_looks_2026-11-03.py"
+    b = "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py"
+    assert _figures(a) == set(), f"a bare producer citation yielded {_figures(a)}"
+    assert _figures(b) == set()
+
+
+def test_a_real_shared_measurement_is_still_detected():
+    """ANTI-VACUITY. It did not exist, and that is why this needed adding.
+
+    The sensitivity of the duplicate check was recorded only in its own
+    docstring -- the 2026-10-19 case of `task:B34` against
+    `study:serialisation_cures_matched_failures`, 9 shared figures at Jaccard
+    0.6000. Nothing executed it, so narrowing `_figures` in any way at all,
+    including to nothing, would have left every test green while the check
+    silently stopped detecting the thing the founder complained about.
+
+    The 2 lines below share 9 figures out of a union of 15, which is 0.6000
+    exactly -- the measured value of that original case -- and must clear the
+    0.5500 threshold.
+    """
+    shared = "47 rounds for 50% power and 109 for 80%, 1 of 68 at 1.4706%"
+    a = shared + " plus 0.2601% and 7.8710%"
+    b = shared + " plus 9 figures and 3 tools"
+    A, B = _figures(a), _figures(b)
+    j = len(A & B) / len(A | B)
+    assert A & B, "the 2 lines share no figures; the fixture is wrong"
+    assert j >= DUPE_THRESHOLD, (
+        f"a real shared measurement scores {j:.4f} and would not be detected; "
+        f"shared={sorted(A & B)} union={len(A | B)}")
+
+
+def test_a_single_shared_digit_is_not_a_restatement():
+    """The threshold's own stated reason, executed rather than described.
+
+    The docstring records that a pair sharing only the token "1" scored 0.5000
+    on the 2026-10-19 data and is not a duplicate. That is why the threshold is
+    0.5500 and not 0.5000, and nothing tested it.
+    """
+    A, B = _figures("1 of 4 and 7"), _figures("1 of 9 and 12")
+    j = len(A & B) / len(A | B)
+    assert j < DUPE_THRESHOLD, (
+        f"a single shared digit scores {j:.4f} against a threshold of "
+        f"{DUPE_THRESHOLD} and would be flagged as a restatement")
 
 
 def test_no_two_live_decisions_restate_the_same_measurement(g):
@@ -137,7 +234,7 @@ def test_no_two_live_decisions_restate_the_same_measurement(g):
             if not (A | B):
                 continue
             j = len(A & B) / len(A | B)
-            if j >= 0.55:
+            if j >= DUPE_THRESHOLD:
                 dupes.append((round(j, 4), a, b, sorted(A & B)))
     assert not dupes, (
         f"{len(dupes)} pair(s) of LIVE decisions restate the same measurement "

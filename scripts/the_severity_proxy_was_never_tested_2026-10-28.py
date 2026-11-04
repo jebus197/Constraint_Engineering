@@ -23,11 +23,11 @@ rubric it had already measured as agreeing no better than chance".
 
 WHY THAT CITATION OVERSTATES WHAT THE NUMBER CAN CARRY. The audited corpus holds
 severities in [0.65, 0.74] ONLY -- a window 0.09 wide, standard deviation
-0.026915, against 0.224319 across the 3,237 registry entries in the archive,
-whose severities span the full [0.0, 1.0]. The band holds 0.132839 of archive
+0.026915, against 0.223168 across the 3,311 registry entries in the archive,
+whose severities span the full [0.0, 1.0]. The band holds 0.134400 of archive
 severities. Restricting the predictor to a window that narrow inflates the
 standard error of any slope fitted across it by the ratio of the deviations,
-8.3344-fold here, and the consequence is measured below rather than asserted:
+8.2915-fold here, and the consequence is measured below rather than asserted:
 
   * power against a STRONG full-range effect -- one moving P(CRITICAL) from
     0.10 at severity 0 to 0.90 at severity 1, a slope of 2*ln(9) = 4.394449 --
@@ -99,6 +99,12 @@ sys.path.insert(0, str(REPO / "scripts"))
 AUDIT = (REPO / "experimental_notes" / "adversarial_records"
          / "rubric_adherence_audit_0C8_2026-09-02.json")
 LOGS = REPO / "bench" / "logs"
+#: THE FRAME'S OWN DEFINITION, frozen so a guard can assert it. Exactly 1
+#: directory level: `bench/logs/<run>/runner_state.json`. Widening this to `**`
+#: adds 163 entries and moves every archive-derived figure while leaving every
+#: property assertion green, so the pattern itself is what must be pinned --
+#: not the statistics derived through it.
+FRAME_GLOB = "*/runner_state.json"
 CUT = 0.7
 SEED = 20261028
 # The strong full-range effect this design is tested against: P(CRITICAL)
@@ -124,7 +130,7 @@ def _audit_rows() -> tuple[np.ndarray, np.ndarray, dict]:
 def _archive_severities() -> np.ndarray:
     """Every registry severity in the archive -- the real sampling frame."""
     out: list[float] = []
-    for p in sorted(LOGS.glob("*/runner_state.json")):
+    for p in sorted(LOGS.glob(FRAME_GLOB)):
         try:
             entries = json.loads(p.read_text(encoding="utf-8")) \
                           .get("registry", {}).get("entries", {})
@@ -208,6 +214,8 @@ def measure(trials: int = 4000) -> dict:
     # --- 3. the band, against the real sampling frame ---------------------
     frame = _archive_severities()
     r["archive_n"] = len(frame)
+    r["frame_glob"] = FRAME_GLOB
+    r["frame_files"] = len(sorted(LOGS.glob(FRAME_GLOB)))
     r["archive_sd"] = float(frame.std(ddof=1))
     r["band_sd"] = float(sev.std(ddof=1))
     r["sd_ratio"] = r["archive_sd"] / r["band_sd"]
@@ -331,6 +339,14 @@ def measure(trials: int = 4000) -> dict:
     r["outside_share_cp"] = tuple(
         float(x) for x in stats.binomtest(r["archive_outside_band"],
                                           len(frame)).proportion_ci(method="exact"))
+    # The same interval for the CRITICAL-calls share, so the guard can assert a
+    # BOUND on the claim rather than an exact figure that moves every time a run
+    # lands. 1,144 of 1,440 today -> [0.772634, 0.815046].
+    r["unexamined_share_cp"] = tuple(
+        float(x) for x in stats.binomtest(
+            r["critical_above_band"],
+            r["archive_critical"]).proportion_ci(method="exact")) \
+        if r["archive_critical"] else (float("nan"), float("nan"))
 
     # --- 8. the limit that analysis cannot repair -------------------------
     blob = json.dumps(doc)

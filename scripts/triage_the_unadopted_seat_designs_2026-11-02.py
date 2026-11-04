@@ -136,8 +136,15 @@ def _live_symbol_index() -> set[str]:
             continue
         try:
             names |= _top_level_names(p.read_text(errors="replace"))
-        except Exception:                                    # noqa: BLE001
-            pass
+        except Exception as exc:                             # noqa: BLE001
+            # A FILE THAT COULD NOT BE READ BIASES THIS INDEX TOWARD
+            # "UNADOPTED": its symbols are missing, so a design naming them
+            # looks unreached. `_top_level_names` already absorbs a parse
+            # failure by returning an empty set, so only an OSError gets here
+            # -- and it must leave a trace rather than quietly shrink the
+            # symbol index this measurement is built on.
+            print(f"  [symbol index] UNREADABLE, EXCLUDED: {p} "
+                  f"({type(exc).__name__}: {exc})", file=sys.stderr)
     return names
 
 

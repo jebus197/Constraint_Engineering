@@ -104,10 +104,22 @@ class TestTheCorpusIsABoundaryBand:
         # and the outside share's lower confidence bound is still above 0.8. So
         # the gate's work has NOT moved into the audited band -- the objection
         # this class answers is still false by measurement.
-        assert produced["archive_sd"] == pytest.approx(0.224140, abs=5e-7)
+        # ★ THE EXACT PIN IS GONE, 2026-11-04, AFTER IT DRIFTED A 2ND TIME IN 6
+        # DAYS: 0.224319 (3,237 entries, 2026-10-28) -> 0.224140 (3,256,
+        # 2026-10-29) -> 0.223168 (3,311, today). Both moves were the archive
+        # GROWING -- free_run3 added 19 on 2026-10-29, then severity_bounds_
+        # validation and study_run1b_rerun added 25 and 30 on 2026-11-02 -- so
+        # over those 2 events the exact pin scored 2 false alarms and 0 true
+        # ones, while the 6 property-form assertions over the SAME archive
+        # scored 0 of 2 (Fisher exact p = 0.011905, n = 9, descriptive).
+        # The claim this class makes is the RATIO. The absolute SD is a
+        # nuisance parameter and is now REPORTED rather than asserted.
         assert produced["sd_ratio"] > 8.0, (
-            f"standard-error inflation fell to {produced['sd_ratio']:.4f}; if the "
-            f"corpus has widened, restate the headline instead of keeping it")
+            f"standard-error inflation fell to {produced['sd_ratio']:.4f} "
+            f"(archive SD {produced['archive_sd']:.6f} over "
+            f"{produced['archive_n']} entries against band SD "
+            f"{produced['band_sd']:.6f}); if the corpus has widened, restate "
+            f"the headline instead of keeping it")
 
     def test_the_archive_spans_the_full_range(self, produced):
         lo, hi = produced["archive_range"]
@@ -226,19 +238,37 @@ class TestTheStrongestObjectionIsAnswered:
     """
 
     def test_most_of_the_gates_work_happened_outside_the_audited_band(self, produced):
-        assert produced["archive_outside_share"] == pytest.approx(0.867015, abs=5e-7)
+        # ★ THE EXACT PIN IS GONE, 2026-11-04. It read 0.867161 (2,807 of
+        # 3,237) on 2026-10-28 and 0.867015 (2,823 of 3,256) on 2026-10-29;
+        # it is now 0.865600 (2,866 of 3,311). The Clopper-Pearson lower bound
+        # below carries the whole objection, and the counts are REPORTED.
         lo, hi = produced["outside_share_cp"]
         assert lo > 0.8, (
-            f"only {produced['archive_outside_share']:.6f} of entries sit outside "
-            f"the band; if this falls toward 0.5 the band is representative and "
-            f"the objection stands")
+            f"only {produced['archive_outside_share']:.6f} "
+            f"({produced['archive_outside_band']} of {produced['archive_n']}, "
+            f"Clopper-Pearson [{lo:.6f}, {hi:.6f}]) of entries sit outside "
+            f"the band; if this falls toward 0.5 the band is representative "
+            f"and the objection stands")
 
     def test_the_gates_CONFIDENT_calls_are_the_unexamined_ones(self, produced):
-        assert produced["critical_calls_unexamined_share"] == pytest.approx(
-            0.795775, abs=5e-7), (
-            "the share of CRITICAL calls made at a severity above the audited "
-            "band. These are confident classifications, so a disagreement there "
-            "is more consequential than one at the cut, not less")
+        # ★ THE EXACT PIN IS GONE, 2026-11-04. 0.794744 (1,119 of 1,408) ->
+        # 0.795775 (1,130 of 1,420) -> 0.794444 (1,144 of 1,440). The claim is
+        # that MOST of the gate's confident calls sit above the band, so the
+        # assertion is now the Clopper-Pearson lower bound against 0.5 -- the
+        # exact logical content of the claim, with NO chosen threshold -- and
+        # the share with its counts is REPORTED. The 2 FLOORS below stay: they
+        # are the LOSS detectors (both go red on deleting the largest run, 296
+        # of 3,311) while this inequality is the HEADLINE guard (it survives
+        # deleting 1,121 of 3,311). They do different jobs, so both are kept.
+        lo, hi = produced["unexamined_share_cp"]
+        assert lo > 0.5, (
+            f"only {produced['critical_calls_unexamined_share']:.6f} "
+            f"({produced['critical_above_band']} of "
+            f"{produced['archive_critical']}, Clopper-Pearson [{lo:.6f}, "
+            f"{hi:.6f}]) of the gate's CRITICAL calls were made at a severity "
+            f"above the audited band. These are confident classifications, so "
+            f"a disagreement there is more consequential than one at the cut, "
+            f"not less; if this falls toward 0.5 the objection stands")
         # ★ FLOORS, NOT PINS, RESTATED 2026-10-29. These were `== 1119` and
         # `== 1408`, measured when the archive held 3,237 severities; it now
         # holds 3,256, so both counts grew and the exact pins failed on the

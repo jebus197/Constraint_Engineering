@@ -224,6 +224,12 @@ B20 patches are written and verified in the scratchpad; applying them means writ
 
 He instructed a fully simulated orchestrator run on 2026-11-01 (annotation 12 of Closing_Report_2026-11-01.txt). The actuator drives resume by re-invoking a launch command with --resume. Only reference_runner_v3.py run --config accepts --resume; run_simulated_experiment.py declares 0 and calls run_experiment in-process, because its paid-dispatch protection is a getaddrinfo monkeypatch that cannot survive a subprocess boundary. So no invocation is both simulated and resumable. Fix: a thin subprocess shim that installs the _no_paid seam and then runs the runner run subcommand.
 
+## B20: the bound-orchestrator experiment is 4 of 4 components built; what remains is ENABLING the actuator, which changes run behaviour, and RUNNING the experiment, which costs money
+
+*Parked 2026-11-04T10:11:51+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

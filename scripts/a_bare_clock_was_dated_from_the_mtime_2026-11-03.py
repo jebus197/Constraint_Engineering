@@ -192,6 +192,10 @@ def main() -> int:
     for name, oc, nc, mt in exon[:5]:
         print(f"      {name[:44]:44s} rule said {oc:%Y-%m-%d %H:%M}  "
               f"header says {nc:%Y-%m-%d %H:%M}  mtime {mt:%Y-%m-%d %H:%M}")
+    _withheld = max(0, len(exon) - 5)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(exon)} total)")
     print("   => none of these notes ever claimed the day it was accused of.")
 
     print("\n3. THE RULE STILL CATCHES WHAT IT IS FOR. 3 cases, driven.")
@@ -238,7 +242,7 @@ def main() -> int:
                   f"{'ACCUSE' if should_fire else 'SILENT':6s} -> "
                   f"{'ACCUSE' if fired else 'SILENT':6s} "
                   f"{'ok' if good else 'WRONG'}"
-                  f"{'  ' + str(got) if got else ''}")
+                  f"{'  ' + str(got) if got is not None else ''}")
     print(f"   {ok} of {len(cases)} behave correctly")
     print("   => the fix removes false accusations without removing true ones.")
     return 0 if ok == len(cases) else 1

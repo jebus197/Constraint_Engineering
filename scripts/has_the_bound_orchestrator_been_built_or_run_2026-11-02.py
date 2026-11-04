@@ -149,6 +149,10 @@ def main() -> int:
     print(f"   grep for a role layer: {len(hits)} live line(s)")
     for h in hits[:6]:
         print(f"     {h}")
+    _withheld = max(0, len(hits) - 6)
+    if _withheld:
+        print(f"     ... and {_withheld} more not shown "
+              f"(of {len(hits)} total)")
     verdicts["role_layer"] = "BUILT" if (names or hits) else "ABSENT"
 
     # ---- 2. an autonomous monitoring loop ------------------------------------
@@ -262,6 +266,10 @@ def main() -> int:
     print(f"   grep for a model-adding / key-handling surface: {len(ux)} line(s)")
     for h in ux[:10]:
         print(f"     {h}")
+    _withheld = max(0, len(ux) - 10)
+    if _withheld:
+        print(f"     ... and {_withheld} more not shown "
+              f"(of {len(ux)} total)")
     # THE VERDICT IS THE MODULE CHECK. The grep above is context only.
     verdicts["ux_backend"] = module_verdict(
         "bench/ux_backend_2026-10-20.py", ("TABS", "seats"),
@@ -275,6 +283,10 @@ def main() -> int:
     print(f"   grep for a comparator against the 3 standards: {len(fc)} line(s)")
     for h in fc[:10]:
         print(f"     {h}")
+    _withheld = max(0, len(fc) - 10)
+    if _withheld:
+        print(f"     ... and {_withheld} more not shown "
+              f"(of {len(fc)} total)")
     verdicts["fix_comparator"] = module_verdict(
         "bench/fix_comparator.py", ("compare",),
         ("test_*fix_comparator*.py", "test_*comparator*.py"))
@@ -298,6 +310,10 @@ def main() -> int:
     print(f"   run directories whose NAME mentions an orchestrator arm: {len(cands)}")
     for c in cands[:8]:
         print(f"     {c}")
+    _withheld = max(0, len(cands) - 8)
+    if _withheld:
+        print(f"     ... and {_withheld} more not shown "
+              f"(of {len(cands)} total)")
     # and the stronger test: does any run's own config declare a bound arm?
     declared = []
     for f in sorted(logs.glob("*/runner_state.json")):

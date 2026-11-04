@@ -1490,6 +1490,43 @@ PHONETIC_PUNCT = {
     "a spoken underscore": re.compile(r"\b\w+ underscore \w+"),
 }
 
+#: ★ MARKDOWN IN A TTS FILE (Rule 14b, added 2026-11-04). The global TTS rule has
+#: always said a TTS file carries ZERO markdown -- his words are that ReadAloud
+#: speaks the asterisks -- and this linter checked for none of it. It reported
+#: `Inventory_And_Answers_2026-11-04.txt` as 0 findings while 4 asterisks, 2
+#: backticks and 1 em-dash sat in a sentence a correction script had copied
+#: verbatim out of the markdown companion. The script replaced the same string
+#: in the .md and the .txt and stripped the markup from neither.
+#:
+#: THE PATTERNS ARE NARROW BECAUSE THE OBVIOUS ONES ARE DEFEATED. Measured over
+#: 890 TTS files on 2026-11-04 before any of this shipped, 5 of 6 candidate
+#: predicates had CONFIRMED false positives and must not be re-added:
+#:   * a bare `*` fires on multiplication -- `(Ephemeral * SPK_B)` in a
+#:     cryptography note, `|union of all F_i(t)| * H_bar_union(t)` in the
+#:     mathematical framework -- 252 files, 26,213 occurrences.
+#:   * a bare `` ` `` fires on a SMILES string, 226 files.
+#:   * `^#` IS HIS OWN ANNOTATION MARKER. He opens a comment with a single hash,
+#:     and the format-test file he wrote says so in as many words. A rule
+#:     accusing the founder's own convention is the worst available outcome, 155
+#:     files.
+#:   * 2 or more `|` on a line fires on absolute-value bars and on
+#:     `KDF(root_key | ...)`, 147 files.
+#:   * `[x](y)` fires on the SMILES query `[CX3](=O)[OX2H1]`, 4 files.
+#: What survives has 0 false positives in that corpus: a PAIRED bold span, since
+#: multiplication never doubles its operator; a line opening with an asterisk and
+#: a space, which no equation does; and an em-dash, which the TTS rule forbids
+#: outright in favour of a comma or a full stop. 2 of the 3 catch the exact bytes
+#: the correction script wrote. Checked against verbatim-excluded text, so
+#: quoting his markdown back is not an accusation.
+MARKDOWN_IN_TTS = {
+    "a bold span, spoken as asterisks":
+        re.compile(r"\*\*(?!\s)[^*\n]{1,120}?(?<!\s)\*\*"),
+    "a bullet marker, spoken as an asterisk":
+        re.compile(r"^\s{0,3}\*\s+\S", re.M),
+    "an em-dash, which the rule replaces with a comma or a full stop":
+        re.compile(r"\u2014"),
+}
+
 
 def _is_tts(path) -> bool:
     """True for a delivered TTS file, by the same test the stamp rule applies."""
@@ -1609,6 +1646,15 @@ def lint(path: pathlib.Path) -> list:
                         "PHONETIC PUNCTUATION (Rule 14a: identifiers keep "
                         f"their name, lose the punctuation -- {what})",
                         m.group(0), s))
+                    break
+            for what, rx in MARKDOWN_IN_TTS.items():
+                m = rx.search(unquoted)
+                if m:
+                    out.append((
+                        para_no,
+                        "MARKDOWN IN A TTS FILE (Rule 14b: a TTS file carries "
+                        f"no markup -- {what})",
+                        m.group(0)[:60], s))
                     break
     return out
 

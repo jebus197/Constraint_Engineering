@@ -101,12 +101,19 @@ def main() -> int:
     # `--help` first. argparse's own help is now enabled, so the capability is
     # improved rather than lost.
     import argparse
-    # answer_help already refused unknown flags; this parser exists only so
-    # --apply is explicit and the default is a DRY RUN. A script that closes
-    # tickets by default is a script that closes them by accident.
+    # ★ `parse_args`, NOT `parse_known_args` -- CORRECTED 2026-11-04. The
+    # comment here read "answer_help already refused unknown flags", and the
+    # help-intercepting call was REMOVED the same day the note above records,
+    # so from 2026-11-03 nothing refused them: measured by execution,
+    # `--this-flag-does-not-exist` ran the whole measurement and exited 0.
+    # That is the 118-day no-op, and this repository has corrected the
+    # identical lenient-parse defect once already, in
+    # scripts/panel_harvest_loss_2026-09-22.py on 2026-09-24. This parser
+    # exists so --apply is explicit and the default is a DRY RUN. A script
+    # that closes tickets by default is a script that closes them by accident.
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true")
-    args, _ = ap.parse_known_args()
+    args = ap.parse_args()
 
     from bench.ticket_store import TicketStore
     from task_list_markers import parse_entries

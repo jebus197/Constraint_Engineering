@@ -62,8 +62,8 @@ def _report(label: str, k: int, n: int) -> None:
         from statsmodels.stats.proportion import proportion_confint
         b = proportion_confint(k, n, method="wilson")
         extra = f"  (2-route |diff| {max(abs(lo-b[0]), abs(hi-b[1])):.1e})"
-    except Exception:                                        # noqa: BLE001
-        pass
+    except Exception as exc:                                 # noqa: BLE001
+        extra = f"  (2nd route UNAVAILABLE: {type(exc).__name__}: {exc})"
     print(f"    {label:<44} {k} of {n} = {k/n:.6f}")
     print(f"      Wilson 95% [{lo:.6f}, {hi:.6f}]{extra}")
     try:
@@ -71,8 +71,9 @@ def _report(label: str, k: int, n: int) -> None:
         clo = 0.0 if k == 0 else float(beta.ppf(0.025, k, n - k + 1))
         chi = 1.0 if k == n else float(beta.ppf(0.975, k + 1, n - k))
         print(f"      Clopper-Pearson 95% [{clo:.6f}, {chi:.6f}]")
-    except Exception:                                        # noqa: BLE001
-        pass
+    except Exception as exc:                                 # noqa: BLE001
+        print(f"      Clopper-Pearson 95% UNAVAILABLE: "
+              f"{type(exc).__name__}: {exc}")
 
 
 def main() -> int:
@@ -113,6 +114,10 @@ def main() -> int:
     print(f"  guards that name it          : {len(guards)}")
     for g in guards[:4]:
         print(f"      {g}")
+    _withheld = max(0, len(guards) - 4)
+    if _withheld:
+        print(f"      ... and {_withheld} more not shown "
+              f"(of {len(guards)} total)")
     print("  HIS CLAIM THAT IT 'SHOULD HAVE BEEN MARKED IN THE RELEVANT")
     print("  RESOURCES' IS CORRECT AND IT WAS: built 2026-11-01, 5th member of")
     print("  KINDS, read by the harvester's MARKER and CANDIDATE_LINE patterns.")

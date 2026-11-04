@@ -153,6 +153,23 @@ def _outer_annotation_name(ann: ast.AST | None) -> str | None:
     return None
 
 
+def _variadic_tuple(ann: ast.AST | None) -> bool:
+    """``tuple[str, ...]`` is a homogeneous SEQUENCE, not a verdict record.
+
+    `lines_of(path) -> tuple[str, ...]` hands back a file's lines and `()` when
+    it cannot read one, so `if not lines:` tests EMPTINESS and discards no
+    verdict. Only a FIXED-LENGTH record -- `tuple[bool, str]` -- is true in
+    both outcomes, which is the defect this class exists for. All 3 names the
+    anti-vacuity test pins (`verify_chain`, `_verify_contents`, `_run_git_rc`)
+    are fixed-length and keep their coverage.
+    """
+    if not isinstance(ann, ast.Subscript):
+        return False
+    inner = ann.slice
+    elts = inner.elts if isinstance(inner, ast.Tuple) else [inner]
+    return any(isinstance(e, ast.Constant) and e.value is Ellipsis for e in elts)
+
+
 def _tuple_returning_function_names(sources: list[str]) -> set[str]:
     """Names of functions that hand back a tuple — annotated or literal."""
     names: set[str] = set()
@@ -161,7 +178,9 @@ def _tuple_returning_function_names(sources: list[str]) -> set[str]:
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             if _outer_annotation_name(node.returns) in ("tuple", "Tuple"):
-                names.add(node.name)
+                # ★ A VARIADIC TUPLE IS A SEQUENCE. See `_variadic_tuple`.
+                if not _variadic_tuple(node.returns):
+                    names.add(node.name)
                 continue
             for ret in _returns_in_own_scope(node):
                 if isinstance(ret.value, ast.Tuple) and len(ret.value.elts) >= 2:
@@ -324,11 +343,27 @@ def _truthiness_violations(src: str, label: str, names: set[str]) -> list[str]:
     hits: set[str] = set()
     # A NAME THIS FILE DEFINES ITSELF WINS. See `_locally_shadowed`.
     names = names - _locally_shadowed(src, names)
+    # ★ AND THE SAME RESOLUTION FOR `_ALWAYS_TRUTHY_CALLS`, WHICH BYPASSED IT.
+    # The shadow above reached `names` only, so a file defining its own
+    # `def run(paths) -> bool` was still reported for `if not run([NEW])` --
+    # correct code, because that call returns a real bool. 2 of the 4
+    # violations in this class on the 2026-11-04 board were that 1 file, and
+    # it is task A17's shape through the path A17's fix did not cover.
+    # Shadowing is restricted to the BARE-NAME form: `subprocess.run(...)` is
+    # an attribute on an imported module and is never shadowed by a local def,
+    # so the CompletedProcess trap keeps its coverage in that same file.
+    _shadowed_truthy = _locally_shadowed(src, _ALWAYS_TRUTHY_CALLS)
+
+    def _always_truthy(call: ast.Call) -> bool:
+        name = _called_name(call)
+        if name not in _ALWAYS_TRUTHY_CALLS:
+            return False
+        return not (isinstance(call.func, ast.Name) and name in _shadowed_truthy)
 
     for node in _boolean_contexts(ast.walk(tree)):
         if isinstance(node, ast.Call):
             called = _called_name(node)
-            if called in names or called in _ALWAYS_TRUTHY_CALLS:
+            if called in names or _always_truthy(node):
                 hits.add(
                     f"{label}:{node.lineno}: {called}() is tested for truth "
                     f"directly; its verdict is discarded"
@@ -346,7 +381,7 @@ def _truthiness_violations(src: str, label: str, names: set[str]) -> list[str]:
             if not targets:
                 continue
             called = _called_name(node.value)
-            if called not in names and called not in _ALWAYS_TRUTHY_CALLS:
+            if called not in names and not _always_truthy(node.value):
                 continue
             for target in targets:
                 bound[target.id] = (node.lineno, called or "?")
@@ -1160,13 +1195,32 @@ def _prints(node: ast.AST) -> bool:
 
 def _iterated_capped_slices(fn: ast.AST) -> list[tuple[int, str]]:
     iters: list[ast.AST] = []
+    # ★ AND ONLY A COMPREHENSION THAT PRINTS -- 2026-11-04. `_prints` was
+    # written for the `for` arm and never reached this one, so a genexp
+    # building a FIELD was reported as "prints ... and never says what it
+    # withheld": 2 false statements about code that renders nothing.
+    # MEASURED over scripts/: 0 of 7 comprehension capped slices sit inside a
+    # `print(...)` call, Wilson 95% [0.000000, 0.354330], Clopper-Pearson
+    # [0.000000, 0.409616], against 60 of 67 in printing `for` loops -- so
+    # this arm has never matched a printed listing. The test is MEMBERSHIP IN
+    # A `print(...)` CALL rather than `_prints` on the comprehension itself,
+    # because a printed comprehension sits INSIDE the print call and walking
+    # the comprehension alone would miss exactly the shape that must keep
+    # firing.
+    printed: set[int] = set()
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Call) and getattr(node.func, "id", None) == "print":
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.comprehension):
+                    printed.add(id(sub))
     for node in ast.walk(fn):
         if isinstance(node, ast.For):
             # ONLY A LOOP THAT PRINTS. See `_prints`.
             if _prints(node):
                 iters.append(node.iter)
         elif isinstance(node, ast.comprehension):
-            iters.append(node.iter)
+            if id(node) in printed:
+                iters.append(node.iter)
     out: list[tuple[int, str]] = []
     for it in iters:
         if not isinstance(it, ast.Subscript) or not isinstance(it.slice, ast.Slice):
@@ -1442,6 +1496,39 @@ class TestUsageTextAdvertisesOnlyImplementedFlags:
         )
 
         assert proc.returncode != 0
+        # ★ A REQUIRED ARGUMENT THE PROBE DID NOT SUPPLY PRE-EMPTS THE EXTRAS
+        # CHECK, and that is argparse's ORDER, not a defect in the script.
+        # `parse_args` reports a missing required argument from inside
+        # `parse_known_args` and exits before the leftovers are examined, so
+        # `raise_an_entry_2026-11-02.py --this-flag-does-not-exist` answers
+        # "the following arguments are required: --entry" and never names the
+        # unknown flag. Supplied with its required argument the SAME script
+        # answers "unrecognized arguments: --this-flag-does-not-exist", exits
+        # 2, and prints nothing -- so argparse still stops before any body
+        # runs and this file's offline contract is unchanged. Asserting on the
+        # extras wording alone accuses a script behaving exactly as required,
+        # which is the 2026-10-28 class: 9 of 36 board failures were guards
+        # doing that. MEASURED 2026-11-04: 1 script in scripts/ carries a
+        # required flag and 0 carry a required positional, so supplying the
+        # named flags covers the whole directory.
+        if "the following arguments are required" in proc.stderr:
+            _required = re.findall(
+                r"(?<![\w-])(--[A-Za-z][\w-]*)",
+                proc.stderr.split("the following arguments are required:", 1)[1])
+            assert _required, (
+                f"{script.name} requires an argument this probe cannot name, so "
+                f"the unknown-flag path was never reached:\n{proc.stderr[:600]}")
+            proc = subprocess.run(
+                [sys.executable, str(script),
+                 *[a for f in _required for a in (f, "PROBE")],
+                 "--this-flag-does-not-exist"],
+                capture_output=True, text=True, timeout=60, cwd=str(REPO_ROOT),
+            )
+            assert proc.returncode != 0, (
+                f"{script.name} accepted --this-flag-does-not-exist with exit 0 "
+                f"once its required argument(s) {_required} were supplied. An "
+                f"unrecognised argument that reads as success is the 118-day "
+                f"no-op again.")
         # ★ THE PROPERTY, NOT ARGPARSE'S WORDING. This asserted the literal
         # American "unrecognized arguments", which only argparse emits. A script
         # routed through `scripts/_cli_help.py::answer_help` refuses just as

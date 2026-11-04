@@ -495,6 +495,28 @@ class PolicyEngine:
             layer_name = layer_label.split("/")[0]  # "universal", "domain", "task", "model"
 
             for dp, val in flat.items():
+                # `[admission]` is REGISTRATION METADATA, not policy, and is
+                # deliberately absent from schema.toml -- which contains the
+                # string `admission` 0 times. It is read by
+                # `bench/model_admission.declaration()` and written into the
+                # composer's and runner_core's per-model tables; no policy
+                # consumer ever asks this engine for an `admission.*` parameter,
+                # and the block is inert in the merged policy (executed
+                # 2026-11-04: Fable and opus_4_6 both give constraint_count 20).
+                # Declaring its 13 leaves here would add 13 parameter
+                # definitions nothing reaches -- the unwired-addition half of
+                # the additive standard -- and would re-break this check on
+                # every future declared field.
+                #
+                # THE NAMED RESIDUAL, stated rather than hidden: a typo INSIDE
+                # the block (`composer_ky`) is now caught by neither this
+                # validator nor `model_admission.declaration()`, which ignores
+                # unknown keys. The matching repair is for `model_admission` to
+                # reject a key outside `FIELDS`; it is NOT done here and NO
+                # composability claim is made for the pair, because nothing has
+                # measured that the pair beats either part alone.
+                if dp.startswith("admission."):
+                    continue
                 # Unknown parameter check
                 if dp not in schema_dotpaths:
                     unknown_errors.append(f"{layer_label}: unknown parameter '{dp}'")

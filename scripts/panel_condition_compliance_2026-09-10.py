@@ -255,7 +255,7 @@ def source_files(d: pathlib.Path) -> list[str]:
 DISAGREEMENT_RE = re.compile(
     r"strongest[_ ]disagreements?"
     r"|where\s+i\s+disagree"
-    r"|(?:^|\n)\s*#{0,4}\s*\**\s*(?:\d+[.)]\s*)?disagreements?\b"
+    r"|(?:^|\n)\s*#{0,4}\s*[*`]*\s*(?:\d+[.)]\s*)?disagreements?\b"
     r"|i\s+disagree\s+with"
     r"|(?:my|our)\s+(?:strongest\s+|likely\s+|named\s+|own\s+)*disagreements?\b"
     r"|this\s+is\s+a\s+disagreement\b"

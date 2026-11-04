@@ -271,3 +271,88 @@ def test_the_producer_ACTUALLY_RUNS_AND_EXITS_ZERO():
                 and "a factor of 1.0000" in out), (
         "the verdict is self-contradictory again: it claims an over-report and "
         "a factor of 1.0000 in the same sentence")
+
+
+# ---------------------------------------------------------------------------
+# THE PRODUCER'S OWN CHECK MUST STILL BE ABLE TO FAIL
+#
+# ★ CONTRIBUTED BY THE `fable` SEAT of the 2026-11-04 period panel. The seat
+# repaired this defect independently in its own sandbox and wrote a falsifier
+# against ITS OWN repair; the half kept here is the one the incumbent guard
+# lacked. Everything above checks that the producer exits 0 and that its verdict
+# is not self-contradictory. Nothing above checks that `step_2_the_decomposition`
+# would go RED if the census regressed, and a check that cannot fail is the
+# vacuity shape this project has confirmed before -- `boundary_band_sensitivity`
+# shipped as an unconditional constant and was vacuous in 41 of 41 reports.
+#
+# The seat's own script could not be adopted verbatim for 2 reasons, both worth
+# recording. (1) NAMING: it looked for the verdict string "All structural checks
+# held: True" and the keys `quotes_only_his` / `residue_named`, where the
+# incumbent repair prints "ALL HELD: True" and names them
+# `census_reports_his_count` / `residue_is_named_by_the_census` -- a divergence
+# between 2 independent repairs of 1 defect, not a fault in either. (2)
+# LOCATION: it computed its repository root as `parents[1]` of its own file, so
+# run from a scratchpad it looked for the producer beside the scratchpad, found
+# nothing, and reported FALSIFIED with Python's own exit 2 for a missing file --
+# against a producer that exits 0. Here `parents[2]` of a file in `bench/tests`
+# is the repository by construction, and the board runs it.
+#
+# The regression is driven through a PROXY over the real reader, so nothing on
+# disk is edited and the real census is the input.
+
+def test_the_census_check_goes_red_on_a_reverted_census(m):
+    """ANTI-VACUITY for the producer's own verdict.
+
+    Simulates the PRE-FIX census -- the residue folded back into
+    `annotations_total` and no longer named -- and requires the producer's
+    decomposition step to refuse it.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_census_producer", PRODUCER)
+    producer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(producer)
+
+    real = m.claim_a_naive_grep_is_blind_to_some_of_them
+
+    class Reverted:
+        """Delegates everything to the real reader except the census."""
+
+        def __getattr__(self, k):
+            return getattr(m, k)
+
+        def claim_a_naive_grep_is_blind_to_some_of_them(self):
+            c = dict(real())
+            c["annotations_total"] = (c["annotations_total"]
+                                      + c["annotations_excluded_as_not_his"])
+            c["annotations_excluded_as_not_his"] = 0
+            return c
+
+    # ANTI-VACUITY OF THE PROXY ITSELF: the reversion must actually change the
+    # numbers, or the test below would pass for the wrong reason.
+    before, after = real(), Reverted().claim_a_naive_grep_is_blind_to_some_of_them()
+    assert after["annotations_total"] > before["annotations_total"], (
+        "the proxy did not inflate the total, so this test proves nothing; the "
+        "residue may have gone to 0 legitimately, in which case this guard "
+        "needs a different reversion")
+
+    s2 = producer.step_2_the_decomposition(Reverted())
+    assert not (s2["census_reports_his_count"]
+                and s2["residue_is_named_by_the_census"]), (
+        "step_2_the_decomposition stayed GREEN on a census that folds the "
+        "residue back into the total and stops naming it, so the producer's "
+        "own check measures nothing")
+
+
+def test_the_census_check_is_green_on_the_real_reader(m):
+    """The other side of the pair: it must pass on the unmodified reader.
+
+    Without this, the test above could be satisfied by a check that is red on
+    everything.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_census_producer2", PRODUCER)
+    producer = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(producer)
+    s2 = producer.step_2_the_decomposition(m)
+    assert s2["census_reports_his_count"] and s2["residue_is_named_by_the_census"], (
+        f"the producer's decomposition refuses the REAL reader: {s2}")

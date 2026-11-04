@@ -79,8 +79,15 @@ def wilson(k: int, n: int) -> tuple:
 #:   * a dated-filename filter would drop 8 of 598 annotations, 1.3378%,
 #:     Wilson [0.6794%, 2.6174%];
 #:   * a markdown-structure test (fences, '##' heading density) marks
-#:     FINAL_REPORT_FOR_OPUS_2026-08-27.md, which carries a real verdict, and
-#:     does NOT mark design_brief.txt, which carries none;
+#:     FINAL_REPORT_FOR_OPUS_2026-08-27.md, and does NOT mark
+#:     design_brief.txt, which carries none. ★ CORRECTED 2026-11-04: that
+#:     report carries NO verdict of his either. Its 1 counted annotation was
+#:     a 2-hash markdown heading in a report authored by another model, and
+#:     commit a0eb9d00 of 2026-11-03 correctly reclassified it. THE
+#:     REFUTATION SURVIVES ON ITS OTHER LEG: design_brief.txt has 3 one-hash
+#:     lines and 0 two-hash lines, so a heading-density discriminator still
+#:     misses it, while this report has 8 two-hash headings and 0 of his
+#:     words. The conclusion stands; its first stated reason does not;
 #:   * removing the `.md`-only gate on `_looks_like_a_markdown_heading` so it
 #:     applies to `.txt` as well would drop 18 of 598, 3.0100%,
 #:     Wilson [1.9123%, 4.7076%] -- 12 of them REAL verdicts of his, including
@@ -101,7 +108,13 @@ def wilson(k: int, n: int) -> tuple:
 #: a hash. The filter was correct; the set of files it reached was not.
 #: The extensions his annotated replies actually use. Measured 2026-10-20
 #: over the whole folder: .txt 425, .rtf 256, .md 1, and 0 real annotations
-#: in any other kind of file. A new extension is a deliberate addition here,
+#: in any other kind of file. ★ THE .md 1 FELL TO 0 ON 2026-11-03 (commit
+#: a0eb9d00): it was a 2-hash heading in another model's report, never his.
+#: `.md` IS RETAINED HERE DELIBERATELY AT 0, because this module's own
+#: docstring records that the dangerous direction is UNDER-reach, and
+#: narrowing the allow list would silently drop a future .md annotation of
+#: his. A 0 is not a reason to remove an entry; it is a reason to keep it
+#: and say why. A new extension is a deliberate addition here,
 #: which is the point -- the old exclusion list admitted everything by default.
 TEXT_SUFFIXES = {".txt", ".rtf", ".md"}
 
@@ -145,7 +158,10 @@ def is_one_of_his_annotated_responses(path: Path) -> bool:
     by prefix, and `.zip` would have been the third patch of the same shape.
     The ALLOW list is decidable. Measured over the folder on 2026-10-20, every
     real annotation lives in 3 extensions -- 425 in .txt, 256 in .rtf, 1 in .md,
-    682 in all -- against 65 in the single .zip and 0 in any .docx.
+    682 in all -- against 65 in the single .zip and 0 in any .docx. CORRECTED
+    2026-11-04: 2 extensions, 425 in .txt and 256 in .rtf, 681 in all. The
+    .md 1 was a 2-hash heading in another model's report and was never his;
+    425 + 256 = 681 exactly, so the total is derived and not adjusted to fit.
     """
     return (is_a_response_file(path)
             and path.suffix.lower() in TEXT_SUFFIXES

@@ -187,6 +187,7 @@ cd "$REPO" || exit 1
 #     one document a post-compaction reader trusts most, precisely because the
 #     guard that would catch it ran only when someone remembered to run it.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
+bench/tests/test_the_gate_board_is_not_the_suite_2026-11-04.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
 bench/tests/test_a_guard_cannot_refuse_his_own_remedy_2026-11-03.py
 bench/tests/test_his_words_are_read_from_both_records_2026-11-03.py
@@ -311,7 +312,8 @@ bench/tests/test_the_structural_role_vocabulary_cannot_fork_silently_2026-11-01.
 bench/tests/test_the_census_counts_only_his_writing_2026-11-04.py
 bench/tests/test_an_entrys_cited_evidence_must_exist_2026-11-04.py
 bench/tests/test_the_parked_reason_is_deterministic_2026-11-04.py
-bench/tests/test_b20s_status_instrument_measures_2026-11-04.py"
+bench/tests/test_b20s_status_instrument_measures_2026-11-04.py
+bench/tests/test_markdown_in_a_tts_file_2026-11-04.py"
 
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
@@ -514,6 +516,31 @@ if [ "$CODE" -ne 0 ]; then
 fi
 
 printf '%s\n' "$OUT" | tail -1
+
+# ── THE BOARD'S SCOPE TRAVELS WITH THE BOARD'S FIGURE ────────────────────────
+#
+# Added 2026-11-04 because the line above was read as the suite and reported to
+# the founder as a fully green board, in answer to his explicit instruction not
+# to cut corners to make it green. It is the GUARDS list only. Measured the same
+# day by `scripts/the_gate_board_is_not_the_suite_2026-11-04.py`: 2,540 of 15,431
+# collected tests AS AT 2026-11-04 08:30 GMT, a share of 0.164604, so 12,891 tests
+# are never run here and a regression outside the list can sit unnoticed. One had
+# -- red for 26 commits. THE PAIR IS A SNAPSHOT AND MOVES WHENEVER A TEST IS ADDED:
+# it read 2,532 of 15,423 two hours earlier. Quote it only with its stamp, or run
+# the producer. The FILE share below is computed live and needs no stamp.
+#
+# This is the `feedback_true_sentence_wrong_frame` shape for the 2nd time: an
+# earlier report of "2,333 passed" was 120 files of 759. A figure whose scope is
+# not attached to it WILL be requoted without the scope, so the scope is printed
+# here, beside the number, where a reader cannot separate them.
+#
+# IT COUNTS FILES, NOT TESTS, DELIBERATELY. A test-count share needs a full
+# collection, which measured 8.45 s -- a cost on every commit, to restate a
+# figure whose producer is named below. The file share is a glob and is free.
+_GUARD_FILES=$(printf '%s\n' "$GUARDS" | grep -c '[^[:space:]]')
+_SUITE_FILES=$(ls bench/tests/test_*.py 2>/dev/null | wc -l | tr -d ' ')
+echo "pre-commit: that board is the gate's ${_GUARD_FILES} guard files of ${_SUITE_FILES} in bench/tests/ -- NOT the suite."
+echo "            For the test-count share: python3 scripts/the_gate_board_is_not_the_suite_2026-11-04.py"
 
 # ── 5th guard: LINT THE NOTES BEING COMMITTED ────────────────────────────────
 #

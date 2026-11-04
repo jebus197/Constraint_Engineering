@@ -184,6 +184,10 @@ def main() -> int:
     print(f"      Clopper-Pearson 95% [{c2l:.6f}, {c2h:.6f}]  (2-tool |diff| {d2:.1e})")
     for k, v in sorted(multi.items())[:6]:
         print(f"        {k}: {len(v)} questions")
+    _withheld = max(0, len(multi) - 6)
+    if _withheld:
+        print(f"        ... and {_withheld} more not shown "
+              f"(of {len(multi)} total)")
 
     print(f"\n  THE PRE-REGISTERED RULE: a forum is indicated if either proxy's")
     print(f"  Wilson LOWER bound exceeds {FORUM_THRESHOLD:.2f}.")

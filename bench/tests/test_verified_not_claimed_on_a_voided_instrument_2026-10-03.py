@@ -153,9 +153,52 @@ def test_both_readers_of_the_flag_still_exist():
     Either one firing differently is an outcome change, which is why the flag
     is left alone.
     """
+    # ★ CONVERTED FROM A SOURCE-TEXT ASSERTION, 2026-11-04, for the same reason
+    # `test_the_halt_bound_still_cannot_see_the_flag` was converted on
+    # 2026-10-28. It asked whether the literal `and entry.get("verified")):`
+    # appeared in the runner. On 2026-11-03 commit a0eb9d00 ADDED a third
+    # conjunct, `and _exec_backed`, so a model-set `verified` can no longer
+    # close a finding on its own. The requirement was STRENGTHENED and the
+    # literal merely lost its closing paren, so this went red on the repair --
+    # exactly what `execute-do-not-grep` warns a text assertion does.
+    #
+    # The claim is now MEASURED on the transition's own output, which no
+    # reformat can fool: an entry WITHOUT `verified` must not reach CLOSED, and
+    # one WITH it and an execution behind it must.
+    import reference_runner_v3 as _R
+
+    def _closes(verified=None, falsifier_verdict=None):
+        reg = _R.FindingRegistry()
+        f = _R.Finding(finding_id="W_F1", model_id="W", round_idx=0,
+                       flaw_class="code_behavioral", severity=0.9,
+                       abstraction_index=0.5, description="critical thing")
+        cid = reg.register(f, "W")
+        e = reg.entries[cid]
+        e["status"] = "CONFIRMED"
+        e["severity"] = 0.9
+        e["proposed_fix"] = ""          # keep the Bugzilla loop out of it
+        if verified is None:
+            e.pop("verified", None)
+        else:
+            e["verified"] = verified
+        if falsifier_verdict is not None:
+            e["falsifier_verdict"] = falsifier_verdict
+        _R._update_finding_statuses(reg, 1, None)
+        return reg.entries[cid]["status"]
+
+    got = _closes(verified=True, falsifier_verdict="CONFIRMED")
+    assert got == "CLOSED", (
+        f"a verified, execution-backed CONFIRMED finding did not reach CLOSED "
+        f"({got}); this test cannot show what withholding `verified` does")
+    for withheld in (None, False):
+        got = _closes(verified=withheld, falsifier_verdict="CONFIRMED")
+        assert got != "CLOSED", (
+            f"the CLOSED transition no longer requires `verified` "
+            f"(verified={withheld!r} reached {got}), so withholding the flag "
+            f"on a voided instrument no longer blocks a close -- which is the "
+            f"founder's open decision, not a wiring choice")
+
     src = RUNNER.read_text(encoding="utf-8")
-    assert 'and entry.get("verified")):' in src, (
-        "the CLOSED transition no longer requires `verified`")
     assert 'and not entry.get("verified")' in src, (
         "the Bugzilla close-the-loop path no longer keys on NOT verified")
 

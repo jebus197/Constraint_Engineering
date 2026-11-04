@@ -222,21 +222,58 @@ class TestABareHeaderClockTimeIsAFutureStamp:
     header makes a claim about the note itself, which is what Rule 1 governs.
     """
 
+    #: ★ THE HEADER DATE IS DERIVED FROM THE CLOCK, NOT TYPED -- repaired
+    #: 2026-11-04, and the repair is to THIS FIXTURE, not to the predicate.
+    #:
+    #: This helper used to hardcode "A NOTE TITLE, 30 October 2026" in the
+    #: header. Commit a0eb9d00 then taught `future_stamp` to prefer a PROSE DATE
+    #: in the header over the file's mtime, which is correct and which fixed a
+    #: real defect: a note edited months later was accused of claiming a time it
+    #: never claimed, 16 of the 53 accused notes carrying an exonerating date in
+    #: the very same header. But under that rule this fixture's "23:59" means
+    #: 30 OCTOBER at 23:59, which is comfortably in the PAST, so the predicate
+    #: correctly returned None and the future-stamp test went red -- a guard
+    #: OUTGROWN by a correct fix rather than a fault in the code.
+    #:
+    #: 2 FURTHER TESTS IN THIS CLASS HAD BEGUN PASSING FOR THE WRONG REASON,
+    #: which is the worse half: the past-time case and the body-only case both
+    #: expect None, and a fixture whose header date is always in the past
+    #: returns None whatever the time says. They were asserting nothing.
+    #:
+    #: Deriving the date from the same datetime as the time keeps every case
+    #: meaningful and cannot drift again, and it does not weaken the rule: the
+    #: claim is still a bare clock time in a header, which is the shape the
+    #: author actually writes and the shape this class exists for.
     def _stamp(self, tmp_path, header_time, body="Some body text long enough to be a "
-                                                 "paragraph of prose for the linter."):
+                                                 "paragraph of prose for the linter.",
+               header_date=None):
         """(claimed, actual) or None, straight from the predicate under test."""
         f = tmp_path / "note.txt"
-        f.write_text(f"A NOTE TITLE, 30 October 2026\n\n"
+        f.write_text(f"A NOTE TITLE, {header_date}\n\n"
                      f"Written overnight, finished at {header_time}. Branch test.\n\n"
                      f"{body}\n", encoding="utf-8")
         return LINT.future_stamp(f)
 
+    @staticmethod
+    def _offset(hours):
+        """(prose date, clock time) for a moment `hours` from now.
+
+        Both come from ONE datetime, so a case near midnight cannot silently
+        become a case about a different day -- the flakiness a fixed "23:59"
+        would reintroduce.
+        """
+        import datetime
+        d = datetime.datetime.now() + datetime.timedelta(hours=hours)
+        return f"{d.day} {d:%B %Y}", f"{d:%H:%M} GMT"
+
     def test_a_header_time_in_the_future_is_reported(self, tmp_path):
-        got = self._stamp(tmp_path, "23:59 GMT")
+        date, clock = self._offset(+2)
+        got = self._stamp(tmp_path, clock, header_date=date)
         assert got is not None, (
-            "a header claiming 23:59 on a file written just now was not reported, "
-            "so the shape the author actually writes is invisible to this check")
-        assert got[0].endswith("23:59"), got
+            f"a header claiming {clock} on {date}, 2 hours ahead of a file "
+            f"written just now, was not reported, so the shape the author "
+            f"actually writes is invisible to this check")
+        assert got[0].endswith(clock.split()[0]), got
 
     def test_a_header_time_already_past_is_left_alone(self, tmp_path):
         """THE DIRECTION THAT MUST NOT BE REFUSED.
@@ -245,16 +282,42 @@ class TestABareHeaderClockTimeIsAFutureStamp:
         refusing that would refuse ordinary work -- the same asymmetry the
         commit-msg hook applies.
         """
-        assert self._stamp(tmp_path, "00:01 GMT") is None, (
+        date, clock = self._offset(-2)
+        assert self._stamp(tmp_path, clock, header_date=date) is None, (
             "an honest past header time was reported as a future stamp")
 
     def test_a_clock_time_in_the_BODY_is_not_a_header_claim(self, tmp_path):
-        """ANTI-OVER-REACH. A measurement is not a claim about the note."""
+        """ANTI-OVER-REACH. A measurement is not a claim about the note.
+
+        The header time is PAST and the body carries a later one; only the
+        header makes a claim about the note.
+        """
+        past_date, past_clock = self._offset(-2)
+        _, future_clock = self._offset(+6)
         assert self._stamp(
-            tmp_path, "00:01 GMT",
-            body="The board finished at 23:43 GMT and the run began at 22:04 GMT, "
-                 "which are facts about the board rather than about this note."
+            tmp_path, past_clock, header_date=past_date,
+            body=f"The board finished at {future_clock} and the run began at "
+                 f"22:04 GMT, which are facts about the board rather than "
+                 f"about this note."
         ) is None, "a time reported in the body was read as the note's own stamp"
+
+    def test_a_prose_date_in_the_header_beats_the_mtime(self, tmp_path):
+        """PINS WHAT a0eb9d00 INTRODUCED, which nothing in this class pinned.
+
+        A note whose header names a date days in the past claims a time on THAT
+        day, however late the clock reads, so it is not a future stamp. Before
+        a0eb9d00 the time was dated from the mtime and a note like this was
+        accused. Without this test the fixture above could drift back to a fixed
+        past date and take the whole class with it, silently.
+        """
+        import datetime
+        old = datetime.datetime.now() - datetime.timedelta(days=5)
+        got = self._stamp(tmp_path, "23:59 GMT",
+                          header_date=f"{old.day} {old:%B %Y}")
+        assert got is None, (
+            f"a header naming {old:%d %B %Y} at 23:59 was reported as a future "
+            f"stamp; the prose date is no longer preferred over the mtime, "
+            f"which re-opens the defect a0eb9d00 closed -- got {got}")
 
     def test_the_dated_form_still_works_and_takes_precedence(self, tmp_path):
         """The original check is unchanged; the new one is a FALLBACK only."""

@@ -276,11 +276,48 @@ def load_effective_policy(
             policy = _deep_merge(policy, model_config)
             _check_monotonicity(policy, f"model/{model}")
         else:
-            available = [p.stem for p in (REGISTRY_DIR / "models").glob("*.toml")]
-            raise FileNotFoundError(
-                f"Model config not found: {model_path}\n"
-                f"Available models: {available}"
-            )
+            # A declared `composer_key` may differ from the config's FILENAME.
+            # `[admission].composer_key` is the key the composer's per-model
+            # tables use, and `model_admission.registration_targets` registers a
+            # seat under BOTH its file stem and that key. For 5 of 6 seats the 2
+            # coincide; `Fable.toml` declares `fable_5_1`, so from commit
+            # b7cf4c13 (2026-11-02) every caller resolving through
+            # `COMPOSER_MODEL_MAP` arrived here with a name no file has ever
+            # carried -- `fable_5_1.toml` appears in 0 commits of the whole
+            # history. That commit closed the phenotype/budget default (C18) and
+            # re-opened the FileNotFoundError that adding `Fable.toml` on
+            # 2026-08-30 had closed, so the seat has dispatched DEGRADED since:
+            # compose raises, every call site falls back to the shared static
+            # text, and it loses its 12000-character cap and 0.020 budget.
+            #
+            # Resolve from the DECLARATION, which `Fable.toml` calls the single
+            # registration point, rather than from a second table that could
+            # drift from it. The loud failure is PRESERVED for a genuinely
+            # missing config, which is the property that must not be lost.
+            declared: dict[str, list[Path]] = {}
+            for p in sorted((REGISTRY_DIR / "models").glob("*.toml")):
+                ckey = str(
+                    _load_toml(p).get("admission", {}).get("composer_key", "")
+                ).strip()
+                if ckey:
+                    declared.setdefault(ckey, []).append(p)
+            hits = declared.get(model, [])
+            if len(hits) > 1:
+                raise FileNotFoundError(
+                    f"Ambiguous composer_key {model!r}: declared by "
+                    f"{[p.name for p in hits]}. A composer key must name 1 config."
+                )
+            if hits:
+                model_config = _load_toml(hits[0])
+                policy = _deep_merge(policy, model_config)
+                _check_monotonicity(policy, f"model/{hits[0].stem}")
+            else:
+                available = [p.stem for p in (REGISTRY_DIR / "models").glob("*.toml")]
+                raise FileNotFoundError(
+                    f"Model config not found: {model_path}\n"
+                    f"Available models: {available}\n"
+                    f"Declared composer keys: {sorted(declared)}"
+                )
 
     # Layer 5: Role-specific
     #

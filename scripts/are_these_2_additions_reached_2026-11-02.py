@@ -160,6 +160,10 @@ def main() -> int:
     print(f"   carrying a NON-EMPTY series           : {present}")
     for w in where[:4]:
         print(f"       {w}")
+    _withheld = max(0, len(where) - 4)
+    if _withheld:
+        print(f"       ... and {_withheld} more not shown "
+              f"(of {len(where)} total)")
     print(f"   the field entered the tree at         : {landed}")
     print(f"   the newest archived run began at      : {newest}")
     if present == 0:
