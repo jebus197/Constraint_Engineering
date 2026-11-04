@@ -230,6 +230,12 @@ He instructed a fully simulated orchestrator run on 2026-11-01 (annotation 12 of
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B20 the bound orchestrator: the only absent component is a loop that acts on watchdog events unattended, which is autonomous action on his machine and needs his authorisation
+
+*Parked 2026-11-04T12:09:29+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

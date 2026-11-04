@@ -258,11 +258,112 @@ class TestTheContractIsReachable:
         import re
         cites = re.findall(r"([a-z_0-9]+\.py):(\d+)", " ".join(A.ASSUMES.values()))
         assert cites, "A2/A3 cite no line, so this test would be vacuous"
+        # RESOLVED EXPLICITLY, NEVER BY SEARCHING THE REPOSITORY.
+        #
+        # This used to be `REPO.rglob(name)` with `hits[0]`. For
+        # `reference_runner_v3.py` that is 75 matches, 74 of them sandbox
+        # copies under `bench/logs/`, so the file this test validated against
+        # was decided by directory traversal order. It happened to pick the
+        # real one; nothing made it do so. A guard whose subject depends on
+        # iteration order can validate a citation against a 5-week-old copy
+        # and report success.
+        KNOWN = {
+            "reference_runner_v3.py": REPO / "bench" / "reference_runner_v3.py",
+            "launch_exp39.py": REPO / "bench" / "launch_exp39.py",
+        }
         for name, ln in cites:
-            hits = list(REPO.rglob(name))
-            hits = [h for h in hits if ".orig" not in h.name]
-            if not hits:
+            path = KNOWN.get(name)
+            assert path is not None, (
+                f"A2/A3 cite {name}, which this test has no explicit path for. "
+                f"Add it to KNOWN rather than searching for it: a repository "
+                f"search finds sandbox copies and picks one by traversal order.")
+            if not path.is_file():
                 pytest.skip(f"{name} is not present here")
-            src = hits[0].read_text(errors="replace").splitlines()
+            src = path.read_text(errors="replace").splitlines()
             assert int(ln) <= len(src), (
                 f"{name}:{ln} is past the end of a {len(src)}-line file")
+
+
+class TestTheDeclaredCitationsStillPointAtWhatTheyName:
+    """`CITATIONS` is checked, because the prose version of it had drifted.
+
+    WHY THIS EXISTS. A2 and A3 used to carry their line numbers as prose. Of
+    the 4 line numbers in A2, 1 was exact, 1 sat a single line off on the
+    comment explaining the gate, and 2 had DRIFTED -- `:21274` by 23 lines
+    onto a `_log("")` call and `:21368` by 7 onto a phase-name log. A3 named
+    `is_hil_paused()`, a symbol which appeared nowhere in the project except
+    in that sentence; the real symbol is the property `hil_paused`. Nothing
+    checked any of it, inside a declaration whose entire purpose is to be
+    checkable.
+
+    So the numbers moved into a dict and this class reads it. Drift is now
+    caught by the commit that causes it rather than by a reader months later.
+    """
+
+    def test_the_citations_dict_exists_and_is_not_empty(self, A):
+        cites = getattr(A, "CITATIONS", None)
+        assert isinstance(cites, dict) and cites, (
+            "CITATIONS is missing or empty, so the declaration's line numbers "
+            "are unverified again and this guard measures nothing")
+        assert len(cites) >= 9, (
+            f"only {len(cites)} citation(s); each was added for a statement "
+            f"the declaration makes, and removing one removes a check")
+
+    def test_every_citation_points_at_a_line_holding_its_substring(self, A):
+        """The whole point: an exact check, not an adjacency allowance.
+
+        An adjacency window is what let `:21298` look acceptable while sitting
+        on a comment. A declaration can afford to be exact, because this test
+        tells it the moment it is not.
+        """
+        wrong = []
+        for label, (rel, lineno, expect) in sorted(A.CITATIONS.items()):
+            path = REPO / rel
+            if not path.is_file():
+                wrong.append(f"{label}: {rel} does not exist")
+                continue
+            lines = path.read_text(encoding="utf-8").splitlines()
+            if not (0 < lineno <= len(lines)):
+                wrong.append(
+                    f"{label}: {rel}:{lineno} is outside the file "
+                    f"({len(lines)} lines)")
+                continue
+            got = lines[lineno - 1]
+            if expect not in got:
+                near = [i + 1 for i, l in enumerate(lines) if expect in l]
+                wrong.append(
+                    f"{label}: {rel}:{lineno} does not hold {expect!r}; "
+                    f"it holds {got.strip()[:50]!r}. "
+                    + (f"That text is now at line(s) {near[:4]}."
+                       if near else "That text is nowhere in the file."))
+        assert not wrong, (
+            f"{len(wrong)} of {len(A.CITATIONS)} declared citation(s) "
+            f"no longer point at what they name:\n  " + "\n  ".join(wrong))
+
+    def test_the_named_symbols_exist_where_claimed(self, A):
+        """A2 and A3 name symbols, not only lines. Check the symbols too.
+
+        `is_hil_paused()` was named by the declaration and existed nowhere.
+        A citation can be line-correct and still name a thing that is not
+        there, so the symbol is checked separately from the line.
+        """
+        must_exist = {
+            "cfg.hil_review": "bench/reference_runner_v3.py",
+            "hil_paused": "bench/launch_exp39.py",
+        }
+        missing = []
+        for sym, rel in must_exist.items():
+            path = REPO / rel
+            if not path.is_file() or sym not in path.read_text(encoding="utf-8"):
+                missing.append(f"{sym!r} is not in {rel}")
+        assert not missing, "; ".join(missing)
+
+        # POSITIVE, not negative. The correction note in the declaration
+        # legitimately mentions the invented name in order to record that it
+        # was invented, so asserting that name's absence would be brittle.
+        # What matters is that the REAL symbol is the one named as the symbol.
+        src = ACT.read_text(encoding="utf-8")
+        assert "`hil_paused`" in src, (
+            "the declaration no longer names the real symbol `hil_paused`")
+        assert "A3.property" in A.CITATIONS, (
+            "A3's symbol is no longer carried as a checkable citation")

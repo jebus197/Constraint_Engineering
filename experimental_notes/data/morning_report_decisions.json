@@ -460,14 +460,17 @@
     "no_ruling_needed": true
   },
   "task:B20": {
-    "title": "B20 — the orchestrator bound inside the harness: specified, nothing built",
-    "what": "Your design for an orchestrator operating from inside the harness is specified and no code exists for it. It is 2 arms rather than 1: a repair-adjudication arm that has an executable criterion today, and a monitoring arm with no defined predicate at all.",
-    "why": "Running both as 1 experiment would confound a measurable arm with an unmeasurable one. Across the 3 shakedown legs, 77 of 79 adjudications were made by tools rather than by assertion, so a bound orchestrator would operate where its own assertions mostly decide nothing.",
-    "evidence_line": "77 of 79 adjudications tool-decided, 97.4684%, interval 91.2314% to 99.3030%. 0 lines of orchestrator code exist.",
-    "ruled": "2026-10-17",
-    "his_words": "Already previously addressed.",
-    "what_the_ruling_means": "RULED on placement. The ambiguity raised 2026-10-19 remains: whether Fable standing in as orchestrator means this bound role or the synthesising seat in panel reviews.",
-    "no_ruling_needed": true
+    "title": "B20 - the bound orchestrator is built, you have ruled the build 3 times, and what has never been asked is whether to turn it on",
+    "spoken_heading": "THE BOUND ORCHESTRATOR IS BUILT AND YOU HAVE RULED THE BUILD 3 TIMES. WHAT HAS NEVER BEEN ASKED IS WHETHER TO TURN IT ON",
+    "what": "All 4 components of your design are built, measured by running each candidate rather than searching for its name: 4 of 4 built, 0 partly built, 0 absent. Two earlier figures of mine are withdrawn, that no code existed and that 3 of 4 were built. The monitoring loop is built and tested but not enabled.",
+    "why": "Because the build is settled and the switching is not. The loop is reachable only through 2 switches and both are shut because nothing passes them: the actuator's own opt-in flag, passed by 3 files of which all 3 are tests or instruments and 0 are production paths, and the runner's review flag, which creates the pause and was recorded as set on 0 of 351 archived runs. A draft of this decision asked you to authorise the build, which you have answered 3 times; that draft was corrected before publication.",
+    "options": [
+      "**Flip neither yet; make the pause reachable and leave the actuator in record-only mode. This is the recommendation.** It produces the evidence the unattended cycle needs, costs nothing irreversible, and keeps a person in the loop.",
+      "**Flip both and let the loop run unattended on supervised runs.** What your design describes, bounded by the actuator's written guarantees. The cost is that something acts on your machine with nobody watching.",
+      "**Flip the actuator's switch only.** Does nothing observable, because the pause it waits for is never created. Stated for completeness.",
+      "**Neither, and keep the deferral.** Your words, quoted exactly: \"It should be built and tested at the appropriate time.\" It is now built and tested, so your own condition is met."
+    ],
+    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]"
   },
   "task:B21": {
     "title": "B21 — the role layer: you have settled its shape, and one definition is still yours because the code cannot settle it",

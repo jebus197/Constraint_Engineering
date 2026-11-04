@@ -19,14 +19,20 @@ have been a second mechanism for a signal that already crosses the boundary.
 ASSUMES (A1-A4). Declared, because a component that does not state what it
 relies on cannot be checked against the thing it relies on.
   A1  The run has a log directory; the actuator writes its decisions there.
-  A2  The run was launched with `--hil-review`. Both pause sites
-      (`bench/reference_runner_v3.py:21298` and `:21368`) sit behind
-      `if cfg.hil_review` at `:21274`, and that field defaults to False at
-      `:2308`. Without the flag the pause is unreachable and this actuator has
-      nothing to drive -- so A2 is a precondition, not a preference.
+  A2  The run was launched with `--hil-review`. There are 2 pause sites and
+      each sits behind its OWN `if cfg.hil_review`: the per-round gate and the
+      phase-boundary gate, which reach `sys.exit(42)` separately. The field
+      defaults to False. Without the flag the pause is unreachable and this
+      actuator has nothing to drive -- so A2 is a precondition, not a
+      preference. EVERY LINE NUMBER FOR THIS LIVES IN `CITATIONS` BELOW AND IS
+      CHECKED BY `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py`,
+      because the 4 numbers previously written into this paragraph drifted: 2
+      of them by 23 and 7 lines, onto a logging call and a phase-name log.
   A3  Exit code 42 means PAUSED FOR REVIEW. This is not a new convention:
-      `bench/launch_exp39.py:86` already reads 42 as `is_hil_paused()` and
-      propagates it at `:457`.
+      `bench/launch_exp39.py` already reads 42, as the property `hil_paused`,
+      and propagates it with `sys.exit(42)`. The earlier wording here named
+      `is_hil_paused()`, which exists nowhere in the project outside this
+      sentence; the real symbol is `hil_paused`.
   A4  The launch command is supplied verbatim, so a resume re-invokes the SAME
       command with `--resume` appended rather than a reconstruction of it.
 
@@ -69,7 +75,9 @@ import time
 ASSUMES = {
     "A1": "the run has a log directory, where decisions are written",
     "A2": ("the run was launched with --hil-review; both pause sites sit behind "
-           "`if cfg.hil_review` (reference_runner_v3.py:21274) and the field "
+           "`if cfg.hil_review` (reference_runner_v3.py:21297), each "
+           "gate reaching sys.exit(42) separately -- every line number "
+           "for this is in CITATIONS and checked -- and the field "
            "defaults to False (:2308), so without the flag the pause is "
            "unreachable"),
     "A3": ("exit code 42 means PAUSED FOR REVIEW; launch_exp39.py:86 already "
@@ -83,6 +91,41 @@ GUARANTEES = {
     "G3": "bounded: at most max_resumes, so it cannot loop for ever",
     "G4": "any state it cannot classify HOLDS, and the record says what it saw",
     "G5": "the decision log is append-only JSONL beside the run",
+}
+
+
+# EVERY LINE NUMBER THIS DECLARATION RELIES ON, AS DATA RATHER THAN PROSE.
+#
+# WHY. The 4 line numbers formerly written into A2's prose drifted: `:21274`
+# by 23 lines onto a `_log("")` call and `:21368` by 7 onto a phase-name log,
+# while `:21298` sat 1 line off on the comment that explains the gate. A2 also
+# named `is_hil_paused()`, a symbol that appeared nowhere in the project except
+# in that sentence. None of it was checked by anything, in a declaration whose
+# entire purpose is to be checkable.
+#
+# Each entry is (path, line, a substring that line MUST contain). The guard
+# `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` reads this
+# dict and fails when a line no longer holds its substring, so drift is caught
+# at the commit that causes it rather than by a reader months later.
+CITATIONS = {
+    "A2.default":      ("bench/reference_runner_v3.py", 2308,
+                        "hil_review: bool = False"),
+    "A2.gate.round":   ("bench/reference_runner_v3.py", 21297,
+                        "if cfg.hil_review and not"),
+    "A2.pause.round":  ("bench/reference_runner_v3.py", 21311,
+                        "if _hil_verdict.should_pause:"),
+    "A2.exit.round":   ("bench/reference_runner_v3.py", 21321,
+                        "sys.exit(42)"),
+    "A2.gate.phase":   ("bench/reference_runner_v3.py", 21361,
+                        "if cfg.hil_review:"),
+    "A2.pause.phase":  ("bench/reference_runner_v3.py", 21366,
+                        "if not _hil_verdict.should_pause:"),
+    "A2.exit.phase":   ("bench/reference_runner_v3.py", 21391,
+                        "sys.exit(42)"),
+    "A3.property":     ("bench/launch_exp39.py", 85,
+                        "def hil_paused"),
+    "A3.propagates":   ("bench/launch_exp39.py", 457,
+                        "sys.exit(42)"),
 }
 
 #: Exit code the runner uses for "paused, checkpoint saved, resume with
