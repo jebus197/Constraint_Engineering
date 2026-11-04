@@ -1,0 +1,272 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 8345,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls /Users/georgejackson/Developer_Projects 2>/dev/null; pwd; ls\", \"description\": \"List project directories and current working directory\"}",
+      "t_offset_s": 6.483
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/reference_runner_v3.py\"}",
+      "t_offset_s": 6.883
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"7.7\\\" docs/MATHEMATICAL_APPENDIX.md | head -20\", \"description\": \"Locate section 7.7 in the appendix\"}",
+      "t_offset_s": 12.884
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"severity_spec_shadow\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 14.11
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1253,1360p' docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Read appendix section 7.7\"}",
+      "t_offset_s": 19.453
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"severity_spec_shadow|_sk_admits|_check_gamma_alt_convergence|class FindingRegistry\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 22.246
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '3860,3990p' bench/reference_runner_v3.py\", \"description\": \"Read severity_spec_shadow implementation\"}",
+      "t_offset_s": 24.557
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '9957,10120p' bench/reference_runner_v3.py\", \"description\": \"Read _check_gamma_alt_convergence\"}",
+      "t_offset_s": 25.297
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_sk_admits\\\\|def _sk_admits\\\" bench/reference_runner_v3.py | head; grep -n 'entry.get(\\\"severity\\\")' bench/reference_runner_v3.py | head\", \"description\": \"Locate _sk_admits and severity read sites\"}",
+      "t_offset_s": 29.89
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn -i \\\"confidence\\\" bench/directives/universal/ | head -30; ls bench/directives/universal/\", \"description\": \"Find confidence admissibility rule in directives\"}",
+      "t_offset_s": 30.817
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '590,620p' bench/directives/universal/cdsfl_operational.md; echo ----; sed -n '760,790p' bench/directives/universal/cdsfl_operational.md\", \"description\": \"Read the confidence-inadmissible directive text\"}",
+      "t_offset_s": 33.732
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"sk_admits\\\\|_sk\\\\b\\\\|def .*sigma\\\\|S_k\\\\|\\\\\\\"sk\\\\\\\"\\\\|'sk'\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Locate sk/sigma machinery in runner\"}",
+      "t_offset_s": 34.896
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_sk_admits\\\" bench/reference_runner_v3.py | head; echo ----; sed -n '7900,7960p' bench/reference_runner_v3.py\", \"description\": \"Find _sk_admits and the severity record site\"}",
+      "t_offset_s": 39.613
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"gamma_critical\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find gamma_critical computation sites\"}",
+      "t_offset_s": 40.486
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"_sk_admits\\\" --include=\\\"*.py\\\" --include=\\\"*.md\\\" . 2>/dev/null | grep -v \\\"bench/logs\\\" | head\", \"description\": \"Search repo for _sk_admits\"}",
+      "t_offset_s": 44.114
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10340,10420p' bench/reference_runner_v3.py; echo ====; sed -n '10580,10640p' bench/reference_runner_v3.py\", \"description\": \"Read severity-related code near lines 10366 and 10598\"}",
+      "t_offset_s": 45.408
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"_sk_admits\\\" bench/ --include=\\\"*.py\\\" | head; echo ---; grep -rn \\\"def _sk_admits\\\" . --include=\\\"*.py\\\" 2>/dev/null | head\", \"description\": \"Find definition of _sk_admits anywhere\"}",
+      "t_offset_s": 53.445
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10640,10760p' bench/reference_runner_v3.py\", \"description\": \"Continue reading severity-as-calculation block\"}",
+      "t_offset_s": 54.386
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find bench/logs -name \\\"runner_state.json\\\" -maxdepth 3 2>/dev/null | head; echo ---; find bench/logs -name \\\"runner_state.json\\\" 2>/dev/null | wc -l\", \"description\": \"Find archived runner_state.json files\"}",
+      "t_offset_s": 111.801
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"novel_critical_history.append\\\\|novel_crit\\\\b\\\\|settled\\\\|def _estimate_gamma\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Find how the critical novelty series is built\"}",
+      "t_offset_s": 113.017
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_settled_novelty_series\\\" bench/reference_runner_v3.py | head; \", \"description\": \"Locate _settled_novelty_series\"}",
+      "t_offset_s": 115.713
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\npaths = sorted(glob.glob('bench/logs/*/runner_state.json'))\\ntotal=0; with_sev=0; with_conf=0; with_class=0; with_verdict=0\\nverdicts=collections.Counter()\\nrefuted_nonzero=0; refuted=0\\nper_run={}\\nfor p in paths:\\n    try:\\n        d=json.load(open(p))\\n    except Exception as e:\\n        continue\\n    entries = d.get('entries') or ",
+      "t_offset_s": 121.411
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' scripts/severity_was_never_computed_from_the_model_2026-10-12.py\", \"description\": \"Read the producer script header\"}",
+      "t_offset_s": 129.538
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10765,10880p' bench/reference_runner_v3.py\", \"description\": \"Read _settled_novelty_series\"}",
+      "t_offset_s": 130.228
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py 2>&1 | tail -30\", \"description\": \"Run the brief's first producer script\"}",
+      "t_offset_s": 143.599
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib, hashlib, collections\\nLOGS = pathlib.Path(\\\"bench/logs\\\")\\nfiles = sorted(LOGS.glob(\\\"**/runner_state.json\\\"))\\nprint(\\\"files found by producer's glob:\\\", len(files))\\nhashes = {}\\ndupes = []\\ntot=0; refuted=0; refuted_nz=0\\nfor fp in files:\\n    try: b = fp.read_bytes()\\n    except Exception: continue\\n    h = hashlib.sha256(b).hexdigest()\\n  ",
+      "t_offset_s": 156.426
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, pathlib\\na=json.load(open(\\\"bench/logs/exp36_evidence_20260407T004931Z/runner_state.json\\\"))\\nb=json.load(open(\\\"bench/logs/exp36_evidence_latest/runner_state.json\\\"))\\nea=((a.get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}); eb=((b.get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {})\\nprint(\\\"entries:\\\", len(ea), len(eb), \\\"same ids:\\\", set(ea)==set(eb))\\n",
+      "t_offset_s": 168.114
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"stamp_sev_f\\\\|sev_f_enabled\\\" bench/reference_runner_v3.py | head -20; echo ---; grep -rn \\\"stamp_sev_f\\\\|sev_f_enabled\\\" bench/tests/*.py scripts/*.py configs/ 2>/dev/null | grep -v logs | head\", \"description\": \"Find callers and tests of stamp_sev_f / sev_f_enabled\"}",
+      "t_offset_s": 255.41
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '7960,8040p' bench/reference_runner_v3.py\", \"description\": \"Read what happens after a REFUTED reverify verdict\"}",
+      "t_offset_s": 256.199
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"awk 'NR>=8040 && NR<=8130' bench/reference_runner_v3.py | grep -n \\\"REFUTED\\\" ; grep -n 'verdict == \\\"REFUTED\\\"' bench/reference_runner_v3.py; grep -n \\\"def unverified_critical_count\\\" bench/reference_runner_v3.py\", \"description\": \"Find REFUTED branch and unverified_critical_count\"}",
+      "t_offset_s": 265.06
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '8091,8130p' bench/reference_runner_v3.py; sed -n '4350,4420p' bench/reference_runner_v3.py\", \"description\": \"Read REFUTED-critical handling and unverified_critical_count\"}",
+      "t_offset_s": 268.246
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '3432,3470p' bench/reference_runner_v3.py; grep -n \\\"gamma_alt_earliest_round\\\\|gamma_alt_consecutive_zero_crit\\\\|gamma_alt_threshold\\\\|max_irreducible_queue\\\\b\\\" bench/reference_runner_v3.py | grep -E \\\":\\\\s+[a-z_]+.*=\\\" | head; sed -n '5277,5320p' bench/reference_runner_v3.py\", \"description\": \"Read FindingRegistry init, config defaults, _estimate_gamma\"}",
+      "t_offset_s": 317.496
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/instruments_sev77.py <<'EOF'\\n\\\"\\\"\\\"Panel instruments: severity_spec_shadow, gamma/gamma_critical under two\\nseverity definitions, _check_gamma_alt_convergence response, novelty separability.\\\"\\\"\\\"\\nimport json, glob, hashlib, sys, pathlib\\nsys.path.insert(0, \\\".\\\")\\nfrom bench import reference_runner_v3 as rr\\n\\nfiles = sorted(glob.glob(\\\"bench/logs/**/runner_state.json\\\",",
+      "t_offset_s": 344.658
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '11380,11395p' bench/reference_runner_v3.py; grep -n '\\\\[\\\"severity_spec_shadow\\\"\\\\]\\\\|severity_spec_shadow' bench/reference_runner_v3.py | grep -v \\\"^3890\\\\|^2048\\\\|^10509\\\\|^5370\\\\|^6092\\\" ; sed -n '15456,15475p' bench/reference_runner_v3.py\", \"description\": \"Confirm shadow is telemetry-only; read compute_sk signature\"}",
+      "t_offset_s": 381.849
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Derivations, tools-decide:\\n# (1) collapse of Sev>=0.7 to HARD & CONFIRMED & conf>=0.7\\ntry:\\n    import z3\\n    W = z3.Real('W'); c = z3.Real('c'); V = z3.Real('V')\\n    dom = z3.And(z3.Or(W==1.0, W==0.5), z3.Or(V==1.0, V==0.5, V==0.0), c>=0, c<=1)\\n    lhs = W*c*V >= 0.7\\n    rhs = z3.And(W==1.0, V==1.0, c>=0.7)\\n    s = z3.Solver(); s.add(dom, lhs != rhs)\\n    ",
+      "t_offset_s": 390.195
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'N[{27/32, (27/32 + 1.959963985^2/(2*32) - 1.959963985*Sqrt[(27/32)*(5/32)/32 + 1.959963985^2/(4*32^2)])/(1 + 1.959963985^2/32), (27/32 + 1.959963985^2/(2*32) + 1.959963985*Sqrt[(27/32)*(5/32)/32 + 1.959963985^2/(4*32^2)])/(1 + 1.959963985^2/32)}, 6]' 2>&1 | head -3\", \"description\": \"Wolfram check of 27/32 Wilson interval\"}",
+      "t_offset_s": 419.089
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, hashlib, pathlib, collections\\nfiles = sorted(glob.glob(\\\"bench/logs/**/runner_state.json\\\", recursive=True))\\nocc = collections.defaultdict(list)\\nfor fp in files:\\n    try: d = json.loads(pathlib.Path(fp).read_text(errors=\\\"ignore\\\"))\\n    except Exception: continue\\n    for cid, e in (((d or {}).get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}).",
+      "t_offset_s": 423.636
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json\\ndups = [\\\"bench/logs/commissioning_arm1_panel_20260929T194414Z/runner_state.json\\\",\\n        \\\"bench/logs/commissioning_arm1_panel_20260929T214647Z/runner_state.json\\\",\\n        \\\"bench/logs/commissioning_arm2_single_20260930T031047Z/runner_state.json\\\",\\n        \\\"bench/logs/commissioning_arm3_contrast_20260930T051219Z/runner_state.json\\\",\\n        \\\"b",
+      "t_offset_s": 436.997
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '80,140p' scripts/severity_was_never_computed_from_the_model_2026-10-12.py\", \"description\": \"Read producer main() body\"}",
+      "t_offset_s": 446.102
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/scripts/severity_was_never_computed_from_the_model_2026-10-12.py\", \"offset\": 66, \"limit\": 12}",
+      "t_offset_s": 450.409
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/scripts/severity_was_never_computed_from_the_model_2026-10-12.py\", \"old_string\": \"def entries():\\n    for fp in LOGS.glob(\\\"**/runner_state.json\\\"):\\n        try:\\n            d = json.loads(fp.read_text(encoding=\\\"utf-8\\\", errors=\\\"ignore\\\"))\\n        except Exception:          ",
+      "t_offset_s": 463.305
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport io\\np = \\\"scripts/severity_was_never_computed_from_the_model_2026-10-12.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nold = '''def entries():\\n    for fp in LOGS.glob(\\\"**/runner_state.json\\\"):\\n        try:\\n            d = json.loads(fp.read_text(encoding=\\\"utf-8\\\", errors=\\\"ignore\\\"))\\n        except Exception:                                 # noqa: B",
+      "t_offset_s": 477.423
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"docs/MATHEMATICAL_APPENDIX.md\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nanchor = \\\"   the class is collected.\\\\n\\\\n### 7.8\\\"\\nassert src.count(anchor) == 1, f\\\"anchor count={src.count(anchor)}\\\"\\namendment = \\\"\\\"\\\"   the class is collected.\\n\\n**Computability in the reference harness (panel, 2026-11-04 \\u2014 executed\\nmeasurements, producers named inline",
+      "t_offset_s": 538.158
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_severity_operational_form_2026-11-04.py <<'EOF'\\n\\\"\\\"\\\"The operational severity form preserves section 7.7's key property, and the\\nkey-property producer counts each distinct registry exactly once.\\n\\nPanel 2026-11-04 (severity_spec_is_uncomputable). Two executed checks:\\n\\n1. KEY PROPERTY under the operational form Sev_op(f) = W(class) \\u00b7\\n   V(verification",
+      "t_offset_s": 556.373
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_specification_shadow_2026-10-12.py bench/tests/test_sev_f_and_queue_membership_2026-10-13.py bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py -q 2>&1 | tail -4\", \"description\": \"Run existing severity-related tests for regression\"}",
+      "t_offset_s": 564.004
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"88\\\\.0952\\\\|37 of 42\\\\|37/42\\\" bench/tests hooks scripts bench/directives 2>/dev/null | head; grep -rn \\\"severity_was_never_computed\\\" bench/tests/*.py 2>/dev/null | head -5\", \"description\": \"Find any asserted dependence on the old figures\"}",
+      "t_offset_s": 565.517
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nd=json.load(open('bench/directives/universal/figure_amendments.json'))\\ns=json.dumps(d)\\nprint('mentions producer:', 'severity_was_never_computed' in s)\\nprint('mentions 88.0952:', '88.0952' in s)\\n\\\" 2>&1; grep -rln \\\"figure:\\\" hooks/ 2>/dev/null | head -3\", \"description\": \"Check figure registry for ties to the producer\"}",
+      "t_offset_s": 573.939
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_severity_definition_moves_the_convergence_verdict_2026-11-04.py <<'EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Does recomputing severity as Sev_op(f) = W(class) . V(verification) move\\nthe two-sided convergence gate on the archive?\\n\\nPanel 2026-11-04 (severity_spec_is_uncomputable). docs/MATHEMATICAL_APPENDIX.md\\nsection 7.7 specifies Sev(f) = W(class) . confidence . V(veri",
+      "t_offset_s": 632.673
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git status --short | head; grep -rln \\\"MATHEMATICAL_APPENDIX\\\" bench/tests/*.py | head\", \"description\": \"List changes and find appendix-reading tests\"}",
+      "t_offset_s": 639.826
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_appendix_reduction_properties_2026-09-05.py bench/tests/test_appendix_inverse_is_executed_2026-09-20.py bench/tests/test_sk_measures_fix_efficacy_2026-09-20.py bench/tests/test_severity_operational_form_2026-11-04.py -q 2>&1 | tail -3\", \"description\": \"Run appendix-coupled tests after the amendment\"}",
+      "t_offset_s": 643.311
+    }
+  ],
+  "n_tool_calls": 50,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 696.2,
+  "response": "All instruments executed, fixes delivered and tested. Final report.\n\n---\n\n`verdict` \u2014 **NOT_AS_SPECIFIED.** The \u00a77.7 product cannot be computed in this harness: `confidence` is inadmissible by binding directive, the HARD/SOFT class has no registry field, and only `V` is collected.\n\n`reasoning` \u2014\n\n**The contradiction is real and one-sided as the brief says, with one correction.** `cdsfl_operational.md` \u00a715 (d_tool: quantities come from tool execution, \"not from self-assessed confidence\") and feedback action-precedence item 1 (\"Self-reported confidence is not accepted\") forbid the `confidence` factor. My independent scan of every distinct archived registry (67 registries, 3,170 entries, content-hash deduplicated) confirms **0 entries carry `confidence` and 0 carry a constraint class** \u2014 the brief's 0-of-3,298 claim survives in direction and substance. Admitting confidence instead (candidate e) is refuted by derivation: z3 returns **unsat** for the negation of `Sev \u2265 0.7 \u27fa HARD \u2227 CONFIRMED \u2227 conf \u2265 0.7`, and inside the surviving cell `Sev = confidence` exactly \u2014 the gate would equal the model's self-assessment, a vote.\n\n**Instruments run (archive paths: `bench/logs/**/runner_state.json`, 77 files read, 67 distinct registries, 3,170 entries):**\n\n- **`severity_spec_shadow`** \u2014 executed on all 67 distinct registries via `FindingRegistry`. Deduped key-property violations: **27 of 32 REFUTED, 84.3750%**, not the brief's 37 of 42. Consumers: exactly one, `telem[\"severity_spec_shadow\"]` at `reference_runner_v3.py:11389` \u2014 telemetry; **gates nothing** (confirmed: no gating-path read exists).\n- **`_check_gamma_alt_convergence`** \u2014 executed per run with both severity definitions. The cut does **not** merely collapse to an inert threshold test: recomputing severity as `Sev_op = compute_sev_f(class, confidence, verdict)` (= `V` on all archived data) **moves the critical partition on 588 entries and flips the convergence verdict True\u2192False in 12 of 46 verdict-bearing runs**. The static collapse claim (producer 2) is simultaneously true \u2014 z3-confirmed \u2014 but the collapsed conjunction selects a *different population* than the asserted float, so the gate verdict moves. Both halves hold.\n- **`gamma` / `gamma_critical`** \u2014 recomputed over all 46 runs: `gamma_all` is byte-identical under both definitions (the severity cut does not enter the all-severity series); `gamma_critical` moves in nearly every run (e.g. leg3_final_shakedown 1.000\u21920.702). The CRITICAL partition is **not stable** under dropping confidence.\n- **`S_k` / `sigma`** \u2014 cannot carry Sev(f). `compute_sk(fix_text, source, \u2026)` scores a **proposed fix** (SEARCH/REPLACE application + hard gates), and \u00a715 \u03c3_measured defines \u03c3 = g(V_pre, V_post) from post-fix re-runs. Sev labels a *finding*; S_k measures a *fix*. Different object, different time.\n- **`nu` / novelty** \u2014 separable at the per-finding layer (\u03b7 is similarity-computed, reads no severity; `all_s`/`gamma_all` provably unchanged), **not** separable at the critical-novelty series, which is a severity-filtered count by construction (`_settled_novelty_series`).\n\n**The brief's evidence, refuted on scope.** The producer's recursive glob counts sandbox_harvest **copies** of `runner_state.json`: 10 of 77 matched files are byte-identical copies, and the 5 REFUTED findings of `commissioning_arm1_panel_20260929T214647Z` (C0002/C0003/C0004/C0016/C0046) each entered the tally **three times**: 42 = 32 + 2\u00d75, 37 = 27 + 2\u00d75. Corrected: **27/32 = 84.3750%, Wilson [68.2459%, 93.1356%], Clopper-Pearson [67.2121%, 94.7249%]** (Wilson endpoints independently confirmed with Wolfram Language, local Wolfram Engine, verbatim `{0.84375, 0.682459\u2026, 0.931356\u2026}`). Direction unchanged; figure mis-scoped.\n\n**The simplest sufficient replacement: `Sev_op(f) = W(class) \u00b7 V(verification)` \u2014 drop confidence, do not proxy it.** \u00a77.8's S_v with the harness's one verifier is a monotone relabel of V (0.9990/0.5/0.0099 at the SymPy-row rates) and S_v(falsified) = 0.0099 \u2260 0, so S_v **alone breaks the key property**; composing W\u00b7S_v\u00b7V preserves it but is a deterministic function of the same verdict V already reads \u2014 no demonstrated advantage, so the founder's composability rule selects the single fix. Critically, the harness **already computes Sev_op**: `compute_sev_f`/`stamp_sev_f` exist, are wired into the round loop (line 20523), tested, default-off \u2014 a fact the brief omits. And the key property must bind **scoring only, never the blocking gate**: CONFIRM-only for criticals stands on Exp 42's measurement that 2 of 3 REFUTED criticals were falsely REFUTED \u2014 \u00a77.7-compliance at the gate would have released real defects, and my 12 measured True\u2192False flips show promotion is replay-invalidating, hence the founder's call.\n\n`fix` \u2014 three files, all in the sandbox tree:\n1. `scripts/severity_was_never_computed_from_the_model_2026-10-12.py` \u2014 `entries()` now deduplicates registries by content hash and **reports** the skip (10 copies). Figures become reproducible per distinct finding.\n2. `docs/MATHEMATICAL_APPENDIX.md` \u2014 \u00a77.7 computability note (4 points: uncomputable as specified; operational form `W\u00b7V` with the S_v refutation; key-property scope = scoring not gate, with the 588/12 measurement; figure scope correction) + \u00a77.10 row correction.\n3. `scripts/the_severity_definition_moves_the_convergence_verdict_2026-11-04.py` \u2014 persisted producer for the 588-flip / 12-verdict-flip measurement (reproduces from the tree).\n4. `bench/tests/test_severity_operational_form_2026-11-04.py` \u2014 executes the key property exhaustively and the producer dedup on a synthetic duplicate tree.\n\n`falsifier` \u2014\n```\npython3 -m pytest bench/tests/test_severity_operational_form_2026-11-04.py -q\npython3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py\npython3 scripts/the_severity_definition_moves_the_convergence_verdict_2026-11-04.py\npython3 -m pytest bench/tests/test_the_severity_specification_shadow_2026-10-12.py bench/tests/test_sev_f_and_queue_membership_2026-10-13.py bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py bench/tests/test_appendix_reduction_properties_2026-09-05.py bench/tests/test_appendix_inverse_is_executed_2026-09-20.py bench/tests/test_sk_measures_fix_efficacy_2026-09-20.py -q\n```\n\n`falsifier_result` \u2014 verbatim tails: `3 passed in 0.61s`; producer: `[scope] skipped 10 duplicate registry copies \u2026 disproved (REFUTED) findings : 32 / NON-ZERO severity : 27 / violation rate : 84.3750% / Wilson [68.2459%, 93.1356%]`; movement producer: `critical-partition flips \u2026 588 / convergence-verdict flips \u2026 12` (12 runs listed, all True \u2192 False); regression suites: `34 passed in 1.51s` and `63 passed in 7.63s`. No failures.\n\n`key_property_preserved` \u2014 **YES.** Executed: `compute_sev_f(cls, conf, \"REFUTED\") == 0.0` asserted over 7 class values \u00d7 8 confidence values \u00d7 3 verdict spellings (168 cases) \u2014 passed. Symbolically: SymPy, `W\u00b7c\u00b70 = 0`.\n\n`disagreement` \u2014 Four, strongest first. (1) **The brief's headline figure is mis-scoped**: 88.0952% triple-counts 5 findings via sandbox_harvest registry copies; the distinct-finding rate is 84.3750% [68.2459%, 93.1356%]. (2) **\"Exactly one of them is collected\" understates the tree**: `compute_sev_f`/`stamp_sev_f` already implement the \u00a77.7 product as a wired, tested, default-off derived field with reader-side support for both missing factors \u2014 the candidate direction \"add the HARD/SOFT field\" needs only a writer, not the from-scratch build the brief implies. (3) **The KEY PROPERTY is not unconditionally desirable**: at the blocking gate it is refuted by the harness's own Exp 42 measurement (2/3 of REFUTED criticals falsely REFUTED); the 84% \"violation\" is a scoring-layer defect only, and full \u00a77.7 gate-compliance would have released real defects. (4) Minor: the brief's artefact list names `_sk_admits` in `bench/reference_runner_v3.py`; no such function exists in the current file (prose references in one test and one script only).\n\n`passes_run` \u2014 5. Pass 5 (regression and consumer sweep: appendix-coupled tests, figure registry, telemetry consumers) produced no new above-threshold findings \u2014 terminated converged, no residual falsification debt on the claims above. Wolfram ran as second falsifier on one computed result (Wilson endpoints); all primary verification is SymPy/z3/statsmodels/scipy.",
+  "t_start_epoch": 1793751290.170764,
+  "t_end_epoch": 1793751986.3329449,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo",
+      "built": false
+    }
+  ]
+}

@@ -24,6 +24,7 @@ touched and written back in a `finally`, with the restoration verified by hash
 before the harness exits.
 """
 from __future__ import annotations
+import argparse
 
 import hashlib
 import json
@@ -47,7 +48,27 @@ def _digest(p: pathlib.Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
+def _summary() -> str:
+    """The harness's own first docstring line, so `--help` needs no new prose."""
+    doc = (__doc__ or "").strip()
+    return doc.splitlines()[0] if doc else "mutation harness; writes and restores"
+
+
 def main() -> int:
+    # ★ `--help` MUST NOT MUTATE ANYTHING, 2026-11-03. This harness WRITES: it
+    # reverses a property in the tree, runs the suite, then restores. With no
+    # parser, `--help` fell straight through to that work, so asking what the
+    # script does would have mutated the repository and then put it back -- a
+    # write that leaves no diff is still a write, and a concurrent reader would
+    # have seen the mutated state. His standing rule is that a `--help` must
+    # never cost money; here it could have cost a tree.
+    #
+    # Measured by `scripts/help_writers_rate_2026-09-17.py`: 5 of 609 scripts
+    # wrote and ignored the flag -- 0.8210%, Wilson 95% [0.3512%, 1.9074%],
+    # Clopper-Pearson [0.2671%, 1.9055%] -- and all 5 were mutation harnesses
+    # written on 2026-11-02, so this is 1 defect made 5 times in 1 day.
+    argparse.ArgumentParser(
+        description=_summary()).parse_args()
     if not LEDGER.is_file():
         print("  no ledger at "
               f"{LEDGER.relative_to(REPO)}; run the task with --update first")

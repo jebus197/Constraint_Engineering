@@ -1,0 +1,97 @@
+# PANEL BRIEF — The severity specification asks for two factors this harness refuses to collect
+
+## REQUIRED SECTION 1 — The question
+
+**Can section 7.7's `Sev(f)` be computed in this harness as specified, and if not, what is the simplest sufficient replacement that preserves its one stated KEY PROPERTY?**
+
+`docs/MATHEMATICAL_APPENDIX.md` section 7.7 specifies
+
+> **Sev(f) = W(class) · confidence · V(verification)**
+
+with the KEY PROPERTY that a disproved finding scores 0 whatever the model claimed. Three factors. Exactly one of them is collected.
+
+**`V(verification)` IS collected.** It is the harness's own falsifier verdict, produced by `bench/falsifier_verify.py` and recorded per finding.
+
+**The other 2 are absent, and for OPPOSITE reasons — that asymmetry is the whole question.**
+
+1. **`confidence` is REFUSED BY POLICY, not missing by oversight.** `bench/directives/universal/cdsfl_operational_*` rules a model's self-reported confidence inadmissible as evidence. So the specification asks for a quantity the operational directive forbids. This is not a gap to be filled by collecting harder; it is a contradiction between 2 documents the harness treats as binding.
+2. **The HARD/SOFT class is instructed on every finding and has nowhere to be recorded.** No field on a registry entry holds it. Measured: **0 of 3,298 archived entries carry either `confidence` or a HARD/SOFT class.**
+
+**What runs today instead.** `bench/reference_runner_v3.py` reads a model-asserted severity float. `FindingRegistry.severity_spec_shadow` applies the section 7.7 product advisory-only and **gates nothing**. The KEY PROPERTY is violated on **37 of 42 disproved findings — 88.0952%, Wilson 95% [74.9996%, 94.8062%], Clopper-Pearson [74.3683%, 96.0194%]** (re-measured 2026-10-29).
+
+<!-- figure: key property violation rate | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 88.0952 -->
+<!-- figure: wilson lower | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 74.9996 -->
+<!-- figure: wilson upper | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 94.8062 -->
+<!-- figure: clopper lower | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 74.3683 -->
+<!-- figure: clopper upper | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 96.0194 -->
+
+**Artefacts under review, by path:**
+- `docs/MATHEMATICAL_APPENDIX.md` section 7.7 and the Reduction Properties table
+- `bench/reference_runner_v3.py` — the severity read and `_sk_admits`
+- `bench/falsifier_verify.py` — the `V` factor's only producer
+- `bench/directives/universal/` — the directive that refuses self-reported confidence
+- `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`
+- `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`
+- `/Users/georgejackson/Developer_Projects/Responses/Orchestrator_Note_Solution_Severity_Residual_Risk_2026-11-02.md`
+
+**WHAT IS ALREADY SETTLED AND IS NOT THE QUESTION.** Whether severity and residual risk are the same quantity. They are not, and 3 independent sources agree: the appendix models residual risk as the recursive `R_k` and severity as the section 7.7 product, with no shared term; an outside model's note of 2026-11-02 states that severity labels a *finding* while residual risk labels the *state of the investigation*; and a scan of 5,026 files in this repository finds the 2 terms equated in code in exactly **1** place, a comment at `scripts/can_the_carry_latch_the_gate_at_one_2026-10-31.py:6`. **Do not spend a pass re-deriving that.** It is given as context so no seat mistakes the conflation for the open problem.
+
+**A DISCLOSURE ABOUT THE EVIDENCE IN THIS BRIEF.** The 88.0952% figure, the 0-of-3,298 figure and the 1-of-5,026 figure were all produced by the same author as this brief. A seat that can show any of them is wrong, mis-scoped, or answering a different question has made a larger contribution than a seat that accepts them.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the named instruments below, not by describing them. Named instruments that bear on this question, each with what it is expected to say:
+
+- **The severity model itself.** Call `FindingRegistry.severity_spec_shadow` on real archived entries under `bench/logs/`. Expected: it returns a value and nothing consumes it. Confirm or refute by finding its consumers in the gating path.
+- **The two-sided convergence gate.** `_check_gamma_alt_convergence` in `bench/reference_runner_v3.py`. Expected: it reads `gamma_critical`, which depends on which findings are CRITICAL, which depends on the severity cut. Establish by execution whether a change to the severity definition changes a convergence verdict, or whether the cut collapses the formula to a threshold test (the second producer above claims it does).
+- **`gamma` and `gamma_critical`.** Recompute both over at least 1 archived run and report whether the CRITICAL partition is stable under a severity definition that drops `confidence`.
+- **`S_k` / `sigma`.** The scorer's sigma slot is the appendix's own home for a severity-like quantity. State whether `sk` can carry `Sev` or whether it measures something else.
+- **`nu`.** Report whether novelty and severity are separable on the archive, or whether a severity change moves the novelty series too.
+
+A seat that returns prose without having run anything has not answered. Report the archive paths you read and how many entries you read.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been **EXECUTED** is a hypothesis.
+
+Write your fix **INTO the sandbox repository tree at its real path, as a file.** A fix described in prose is not delivered. A fix written to scratch space is destroyed when the sandbox is torn down. Report the exact command you ran and the output you saw.
+
+Candidate directions are listed so you can refute them, not so you can adopt any of them unexamined:
+- drop `confidence` and renormalise the remaining 2 factors;
+- replace `confidence` with a harness-measured proxy, and say which, and show it is not the model's own word wearing a new name;
+- add the HARD/SOFT field and collect it, which is additive but needs a writer and a reader;
+- declare section 7.7 advisory and gate on something else;
+- amend the operational directive so `confidence` becomes admissible under stated conditions.
+
+**COMPOSABILITY, AS THE FOUNDER DEFINES IT.** Where more than one repair is in play, compose ONLY on a DEMONSTRATED advantage over each fix alone, where the demonstration is a **MEASUREMENT** and not a judgement, and prefer the single fix wherever it performs as well. If you recommend a composed pair, name the property it dominates on and give the number. 2 repairs that merely sit side by side without interfering have not met this standard, and a reply resting on that reading has not answered the question.
+
+**THE ADDITIVE STANDARD BINDS BOTH WAYS.** Do not remove a capability without a committed measurement showing the replacement dominates on a named property. Equally, do not add a flag, field or gate that no caller reaches and no test executes — in this repository, 11 confirmed defects were additions that did nothing, against 0 removals of something needed.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+At minimum, state: what measurement over this archive would show your replacement severity is WORSE than the model-asserted float in use today, and on what named property.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, so replies can be compared without a parser guessing:
+
+- `verdict` — can section 7.7 be computed as specified: YES / NO / NOT_AS_SPECIFIED, one line.
+- `reasoning` — the derivation, with the instrument outputs it rests on.
+- `fix` — the path(s) you wrote in the sandbox tree, and what each changes.
+- `falsifier` — the command you ran, verbatim.
+- `falsifier_result` — the output you saw, verbatim, including a failure.
+- `key_property_preserved` — does a disproved finding still score 0 under your fix: YES / NO, with the executed check.
+- `disagreement` — your strongest disagreement with this brief's own framing. This field is not optional and "none" is a non-answer: the brief was written by the same author as the evidence in it.
+- `passes_run` — how many.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how many passes you ran. A finding is above threshold if missing it could cause a wrong convergence verdict, a wrong fix admission, or a figure reported to the founder that cannot be reproduced.
+
+Do not converge with the other seats. Disagreement is preserved as information here, not smoothed to consensus.
+
+---
+
+Written under CDSFL note standard v1.9.

@@ -1,0 +1,1142 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-04 00:27:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/.cdsfl_deny_canonical_writes.sb	2026-11-04 00:14:30
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-11-03 02:28:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/bench/reference_runner_v3.py	2026-11-04 00:22:20
+@@ -10599,8 +10599,81 @@
+     if not _SEVERITY_SPEC.get("on"):
+         return asserted
+     return asserted * spec_verification_factor(entry)
++
++
++def spec_critical_severity(entry: dict) -> float:
++    """The severity the CRITICAL PARTITION decides on. Section 7.7, annihilator only.
++
++    Returns the asserted float, except that a finding whose falsifier verdict is
++    REFUTED returns 0.0. Unconditional -- not behind `_SEVERITY_SPEC["on"]` --
++    because what it enforces is the appendix's KEY PROPERTY, which section 7.7
++    states with no configuration attached: *"Disproved findings always receive
++    zero severity, regardless of confidence."*
++
++    WHY THIS IS NOT `effective_severity`, AND THE DIFFERENCE IS DERIVED RATHER
++    THAN PREFERRED. `effective_severity` returns `asserted * V` with the full
++    three-valued `V` (1.0 / 0.5 / 0.0). That is correct AT ITS OWN CALL SITE,
++    which is conjunctive: the A4 door releases only on
++    `_sev < CRITICAL_SEVERITY_THRESHOLD and severity_is_proven(e)`, so a halved
++    `V(None)=0.5` cannot release an entry whose severity was never recomputably
++    proven. The critical partition has NO such guard, and without one the
++    `V(None)` branch is unconditionally de-escalating:
++
++        severity is bounded in [0, 1] and the critical cut is 0.7, so
++        `severity/2 >= 0.7` requires `severity >= 1.4`, which is UNREACHABLE.
++
++    (sympy: `solve(sev/2 - 7/10)` gives `sev = 7/5 > 1`; Wolfram Language
++    confirms `Reduce[sev/2 >= 7/10 && 0 <= sev <= 1, sev, Reals]` is `False`.)
++    So applying the full `V` here would make EVERY finding with an unresolved
++    falsifier sub-critical whatever it asserted -- which is precisely the
++    population the A4 fail-safe exists to block on. The product would remove
++    from the critical count exactly the entries the critical count is for.
+ 
++    MEASURED, AND THIS IS WHY THE FORM IS RESTRICTED RATHER THAN FULL. Over 78
++    archived `runner_state.json` registries (3,691 entries), replaying the REAL
++    `_check_gamma_alt_convergence` under each candidate severity definition
++    (producer:
++    `scripts/does_the_severity_definition_reach_the_convergence_gate_2026-11-04.py`):
+ 
++      * FULL `asserted * V`:  the critical partition moves on 29 of 78 runs,
++        `gamma_critical` moves on 20, and the two-sided gate FLIPS on 11 of 78 --
++        **14.1026%**, Wilson [8.0610%, 23.5140%] -- every one of them
++        False -> True, i.e. MANUFACTURED convergence, and every one of them
++        through the VACUOUS-CURVE branch, whose own comment warns that "a clean
++        target and a broken severity classifier look alike from here". The full
++        product makes the runner look like the second and be read as the first.
++      * THIS form (annihilator only): the partition moves on 1 of 78 runs,
++        `gamma_critical` moves on 1, and the gate flips on **0 of 78**, Wilson
++        [0.0000%, 4.6938%], Clopper-Pearson [0.0000%, 4.6192%].
++
++    So the restricted form DOMINATES the full one on a named property --
++    manufactured convergences, 0 against 11 -- and the two are NOT composed,
++    because the single restricted fix performs strictly better alone. The one
++    run that moves is `bench/logs/shakedown_2026-09-29/arm1_harvest`, critical
++    series [2, 1, 1, 3, 3] -> [2, 1, 1, 3, 2], `gamma_critical` 0.0238 -> 0.0663:
++    a tool-REFUTED finding had been counted as a critical discovery, and removing
++    it STEEPENS the measured depletion. Both values sit far below the 0.41
++    threshold, so no archived verdict is restated.
++
++    WHAT THIS DOES NOT CLAIM. It does not compute section 7.7 as specified.
++    `confidence` is not collected (0 of 3,691 archived entries carry the field)
++    and the HARD/SOFT class has nowhere to be recorded, so `W . confidence` is
++    still standing in as the asserted number here exactly as it does in
++    `effective_severity`. What is restored is the KEY PROPERTY, which z3 shows
++    is invariant to that entire factor: for every `M` in [0, 1], `M * 0 == 0`
++    (z3 returns unsat for the negation; Wolfram Language returns `False` for
++    `Resolve[Exists[{m}, 0 <= m <= 1 && m*0 != 0], Reals]`). The key property
++    never depended on `confidence`, so not collecting `confidence` was never
++    what prevented it from holding.
++    """
++    sev = entry.get("severity") or 0.0
++    if not isinstance(sev, (int, float)):
++        return 0.0
++    if str(entry.get("falsifier_verdict") or "").strip().upper() == "REFUTED":
++        return 0.0
++    return float(sev)
++
++
+ def _apply_severity_calibration(registry, cfg: "RunnerConfig", round_idx: int) -> int:
+     """GATED sweep: demote every demotion-eligible over-rated critical.
+ 
+@@ -10791,7 +10864,15 @@
+         if e.get("status") in _NON_NOVEL_TERMINAL_STATUSES:
+             continue
+         all_s[r] += 1
+-        if (e.get("severity") or 0.0) >= _thr:
++        # KEY PROPERTY REACHES THE CRITICAL PARTITION (2026-11-04). Was
++        # `(e.get("severity") or 0.0) >= _thr`, which read the asserted float raw
++        # and so counted a tool-REFUTED finding as a critical discovery. See
++        # `spec_critical_severity` for the derivation and for the measurement
++        # that chose the restricted form over the full product. `all_s` is
++        # deliberately untouched: it is severity-independent by construction, and
++        # measured so -- 0 of 78 archived runs move their all-severity series
++        # under any severity redefinition.
++        if spec_critical_severity(e) >= _thr:
+             crit_s[r] += 1
+     return all_s, crit_s
+ 
+@@ -10962,7 +11043,15 @@
+         if e.get("canonical_id") in discounts:
+             continue
+         all_s[r] += 1
+-        if (e.get("severity") or 0.0) >= _thr:
++        # KEY PROPERTY REACHES THE CRITICAL PARTITION (2026-11-04). Was
++        # `(e.get("severity") or 0.0) >= _thr`, which read the asserted float raw
++        # and so counted a tool-REFUTED finding as a critical discovery. See
++        # `spec_critical_severity` for the derivation and for the measurement
++        # that chose the restricted form over the full product. `all_s` is
++        # deliberately untouched: it is severity-independent by construction, and
++        # measured so -- 0 of 78 archived runs move their all-severity series
++        # under any severity redefinition.
++        if spec_critical_severity(e) >= _thr:
+             crit_s[r] += 1
+     return all_s, crit_s
+ 
+
+### cc2:attempt-1:bench/tests/test_severity_key_property_critical_partition_2026-11-04.py
+--- /dev/null	2026-11-04 00:27:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/bench/tests/test_severity_key_property_critical_partition_2026-11-04.py	2026-11-04 00:22:52
+@@ -0,0 +1,141 @@
++"""Section 7.7's KEY PROPERTY must hold in the CRITICAL PARTITION, not only at the A4 door.
++
++PANEL 2026-11-04. `docs/MATHEMATICAL_APPENDIX.md` section 7.7 states the key
++property with no configuration attached: "Disproved findings always receive zero
++severity, regardless of confidence." Before this test, two readers of the
++critical partition -- `_settled_novelty_series` and `_corroborated_novelty_series`
++-- read `e.get("severity")` RAW, so a tool-REFUTED finding counted as a critical
++discovery, inflating the series `gamma_critical` is fitted to.
++
++These tests EXECUTE the repaired path. They are not source-text assertions:
++`bench/tests/test_source_text_and_neighbour_audit_2026-09-11.py` caps those and
++tells callers to prefer converting an assertion to one that executes.
++"""
++import os
++import sys
++
++import pytest
++
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
++
++import reference_runner_v3 as R  # noqa: E402
++
++THR = R.CRITICAL_SEVERITY_THRESHOLD
++
++
++class _Reg:
++    """Duck-typed registry; both series functions reach entries via `.entries`."""
++
++    def __init__(self, entries):
++        self.entries = entries
++
++
++def _entry(sev, verdict, rnd=0, cid="C0001"):
++    return {"severity": sev, "falsifier_verdict": verdict,
++            "open_since_round": rnd, "status": "OPEN", "canonical_id": cid}
++
++
++# ---------------------------------------------------------------- the property
++
++@pytest.mark.parametrize("verdict,expected", [
++    ("REFUTED", 0.0),       # V(False) -- the key property
++    ("CONFIRMED", 0.9),     # V(True)  -- untouched
++    ("", 0.9),              # V(None)  -- untouched, DELIBERATELY (see below)
++    ("UNTOOLABLE", 0.9),
++    ("ERROR", 0.9),
++    ("refuted", 0.0),       # case-insensitive
++    ("  REFUTED  ", 0.0),   # whitespace-insensitive
++])
++def test_spec_critical_severity(verdict, expected):
++    assert R.spec_critical_severity(_entry(0.9, verdict)) == expected
++
++
++def test_key_property_annihilates_whatever_was_asserted():
++    """A disproved finding scores 0 for EVERY asserted value, including 1.0."""
++    for sev in (0.0, 0.3, 0.7, 0.9, 1.0):
++        assert R.spec_critical_severity(_entry(sev, "REFUTED")) == 0.0
++
++
++def test_non_numeric_severity_does_not_raise():
++    assert R.spec_critical_severity({"severity": "high"}) == 0.0
++    assert R.spec_critical_severity({}) == 0.0
++
++
++# -------------------------------------------- the property reaches BOTH readers
++
++@pytest.mark.parametrize("fn", [
++    R._settled_novelty_series,
++    R._corroborated_novelty_series,
++])
++def test_refuted_critical_is_not_counted_critical(fn):
++    """The defect this repair closes, executed against each partition reader."""
++    reg = _Reg({"C0001": _entry(0.9, "REFUTED")})
++    all_s, crit_s = fn(reg, 0)
++    assert all_s == [1], "a refuted finding is still a FINDING"
++    assert crit_s == [0], "a refuted finding is NOT a critical discovery"
++
++
++@pytest.mark.parametrize("fn", [
++    R._settled_novelty_series,
++    R._corroborated_novelty_series,
++])
++def test_unresolved_critical_is_still_counted_critical(fn):
++    """V(None) must NOT de-escalate, and this is the load-bearing guard.
++
++    Applying section 7.7's full `asserted * V` here would halve every unresolved
++    finding, and since severity is bounded in [0, 1] while the cut is 0.7,
++    `severity/2 >= 0.7` needs `severity >= 1.4` -- unreachable. Every unresolved
++    finding would become sub-critical, which is exactly the population the A4
++    fail-safe exists to block on. Measured consequence over 78 archived runs: the
++    two-sided gate flips False -> True on 11 of them, all through the
++    vacuous-curve branch. This test pins the restricted form against that.
++    """
++    reg = _Reg({"C0001": _entry(0.9, "")})
++    all_s, crit_s = fn(reg, 0)
++    assert all_s == [1]
++    assert crit_s == [1], "an UNRESOLVED critical must keep blocking"
++
++
++def test_full_product_would_manufacture_a_vacuous_curve():
++    """Executed disproof of the candidate this repair rejected.
++
++    Shows the refuted alternative really is refuted, rather than asserting it.
++    """
++    entries = {"C000%d" % i: _entry(0.9, "", rnd=i) for i in range(4)}
++    reg_restricted = _Reg(entries)
++    _, crit_restricted = R._settled_novelty_series(reg_restricted, 3)
++
++    full = {}
++    for cid, e in entries.items():
++        c = dict(e)
++        c["severity"] = float(e["severity"]) * R.spec_verification_factor(e)
++        full[cid] = c
++    _, crit_full = R._settled_novelty_series(_Reg(full), 3)
++
++    assert crit_restricted == [1, 1, 1, 1], crit_restricted
++    assert crit_full == [0, 0, 0, 0], crit_full
++    # and that all-zero series is what trips the vacuous-curve branch
++    cfg = R.RunnerConfig()
++    conv_full, reason_full = R._check_gamma_alt_convergence(
++        round_idx=3, gamma=0.0, novel_critical_history=crit_full, cfg=cfg,
++        unresolved_critical=0, contested=0,
++        gamma_critical=R._estimate_gamma(crit_full), total_findings=4)
++    conv_res, _ = R._check_gamma_alt_convergence(
++        round_idx=3, gamma=0.0, novel_critical_history=crit_restricted, cfg=cfg,
++        unresolved_critical=0, contested=0,
++        gamma_critical=R._estimate_gamma(crit_restricted), total_findings=4)
++    assert conv_full is True and "VACUOUS CURVE" in reason_full, reason_full
++    assert conv_res is False, "the restricted form must NOT converge here"
++
++
++def test_all_severity_series_is_severity_independent():
++    """`all_s` is untouched by the repair, by construction and by execution."""
++    for verdict in ("REFUTED", "CONFIRMED", ""):
++        all_s, _ = R._settled_novelty_series(_Reg({"C1": _entry(0.9, verdict)}), 0)
++        assert all_s == [1]
++
++
++def test_effective_severity_default_path_unchanged():
++    """The repair must not disturb the other section 7.7 consumer."""
++    assert R._SEVERITY_SPEC.get("on") is False, "module default must stay OFF"
++    assert R.effective_severity(_entry(0.9, "REFUTED")) == 0.9
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-10-29 17:54:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-04 00:24:21
+@@ -1291,7 +1291,41 @@
+    pushes findings toward the critical side of the gate. In the severity context
+    the conservative default is SOFT, and the asymmetry must be stated wherever
+    the class is collected.
++
++3. **`V(None)=0.5` must not be applied to the CRITICAL PARTITION.** The two
++   cautions above concern the gate's *magnitude*; this one concerns *where* the
++   product may be read. Severity is bounded in [0,1] and the critical cut is
++   0.7, so `severity/2 >= 0.7` requires `severity >= 1.4`, which is
++   unreachable (sympy: `solve(sev/2 - 7/10)` gives `7/5 > 1`; Wolfram Language
++   returns `False` for `Reduce[sev/2 >= 7/10 && 0 <= sev <= 1, sev, Reals]`).
++   Applying the full three-valued `V` to the critical partition therefore makes
++   **every** finding with an unresolved falsifier sub-critical whatever it
++   asserted — which is exactly the population the A4 fail-safe exists to block
++   on. Measured over 78 archived registries by replaying the real
++   `_check_gamma_alt_convergence`: the full product `asserted · V` moves the
++   critical partition on 29 of 78 runs, moves `gamma_critical` on 20, and flips
++   the two-sided gate on **11 of 78 — 14.1026%**, Wilson [8.0610%, 23.5140%],
++   **every flip False → True**, i.e. manufactured convergence, and every one
++   through the vacuous-curve branch whose own comment warns that "a clean target
++   and a broken severity classifier look alike from here". The **annihilator
++   alone** (`V=0 ⇒ 0`, other values untouched) flips **0 of 78**, Wilson
++   [0.0000%, 4.6938%], and is what `spec_critical_severity` implements. The
++   difference in admissible form tracks a difference in guard: `effective_severity`
++   is read at a conjunctive door (`severity_is_proven` must also hold), the
++   critical partition is not. Producers:
++   `scripts/does_the_severity_definition_reach_the_convergence_gate_2026-11-04.py`,
++   `scripts/falsifier_key_property_in_the_critical_partition_2026-11-04.py`.
++   (Added 2026-11-04 by panel measurement.)
+ 
++**The KEY PROPERTY never depended on `confidence`.** Writing the product as
++`Sev = M · V` with `M = W · confidence ∈ [0,1]`, the property `V = 0 ⇒ Sev = 0`
++holds for **every** bounded `M` (z3 returns unsat for the negation; Wolfram
++Language returns `False` for `Resolve[Exists[{m}, 0 <= m <= 1 && m*0 != 0], Reals]`).
++So the fact that `confidence` is not collected — 0 of 3,691 archived entries carry
++the field — was never what prevented the key property from holding; the key
++property is invariant to that entire factor. What prevented it was that the
++partition readers read the asserted float raw. (Derived 2026-11-04.)
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+@@ -1356,7 +1390,7 @@
+ | Runner convergence gate (§7.4) | 5-condition gate operational; 2/5 non-contributing in Exp 36 | Implemented; C₆ (churn) pending; ascending abstraction guard pending |
+ | O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
+ | Δ (§7.6) | Verified | Ready for implementation |
+-| Sev(f) (§7.7) | Verified | **NOT implemented.** The product is computed nowhere in the gating path; `bench/reference_runner_v3.py` reads a model-asserted float. `confidence` and the HARD/SOFT class are not collected (0 of 3,298 archived entries carry either), and the §7.7 KEY PROPERTY is violated on **37 of 42** disproved findings — **88.0952%**, Wilson [74.9996%, 94.8062%], Clopper-Pearson [74.3683%, 96.0194%] (re-measured 2026-10-29; the archive has grown since the 35 of 40 / 87.5000% first recorded here, so the earlier figure was stale rather than wrong). Applied advisory-only by `FindingRegistry.severity_spec_shadow`, which GATES NOTHING. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`. (Row corrected 2026-10-13; it read "Implemented in pipeline" and that was false.) |
++| Sev(f) (§7.7) | Verified | **NOT COMPUTABLE AS SPECIFIED; KEY PROPERTY NOW ENFORCED.** `confidence` is not collected (0 of 3,691 archived entries carry the field) and the HARD/SOFT class has nowhere to be recorded, so the full three-factor product cannot be formed and `W · confidence` is stood in for by the asserted float. The **KEY PROPERTY** no longer depends on that gap and is now enforced unconditionally in the critical partition by `spec_critical_severity`, read by BOTH partition readers (`_settled_novelty_series`, `_corroborated_novelty_series`); a tool-REFUTED finding is no longer counted as a critical discovery. The full product is deliberately NOT applied there — see §7.7 caution 3: it flips the two-sided gate on 11 of 78 archived runs, all False → True. `effective_severity` (flag `RunnerConfig.severity_spec_enabled`, default off) applies `asserted · V` at the A4 door only. `FindingRegistry.severity_spec_shadow` remains advisory telemetry and gates nothing. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`, `scripts/does_the_severity_definition_reach_the_convergence_gate_2026-11-04.py`. (Row corrected 2026-10-13 and again 2026-11-04.) |
+ | Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
+ | Fingerprint (§7.9) | Verified | Partially implemented |
+ | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-04 00:17:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-03 23:42:42
+@@ -291,7 +291,7 @@
+ **The finding, and it is unambiguous.** A commit-time guard was discussed on 5 separate occasions between 2026-08-25 and 2026-09-07 and **was never built**. All 4 installed hooks are `UserPromptSubmit` context injectors: they make 0 subprocess calls, emit 0 blocking decisions, and always exit 0. There is no git hook (14 files in `.git/hooks`, all `.sample`), no continuous integration, and `core.hooksPath` is unset. Nothing anywhere inspects repository state before a commit. **Commit `57d5a0e` reached HEAD on 2026-09-09 at 08:16:17 with the suite red**, which is the proof rather than the theory.
+ 
+ **The design, and why it is small.** Run only the files named in the hook's `GUARDS` list and refuse on non-zero exit. **THIRD CORRECTION 2026-09-10 04:20 BST, and this time with an instrument: `scripts/precommit_gate_cost_2026-09-10.py`.** The entry said 4 files; the hook names **7**, having gained `test_done_markers_carry_evidence_2026-09-10.py` (V1) and `test_task_list_markers_2026-09-09.py` (M2) since the sentence was written. The entry said 56 tests; the 7 files collect **277** (see the fifth correction below). **The 2 previous corrections were applied INSIDE each other**, leaving the entry reading "56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: '28 tests in 1.26 s' never reproduced)' never reproduced)" — a sentence quoting its own earlier wording as the figure it refutes, which is no longer a claim about anything. Three prose corrections to one figure and no instrument at any point. **The script reads the file list out of the hook rather than typing it**, so it notices the list changing, which is what all 3 corrections missed; its first version token-scanned and reported 5 of 6, caught by running it against a known case before believing it. **A wall-clock figure is treated differently from a count**: the count is exact, the timing is reported as a median with its full range over repeated runs and with the machine named, because a single number to 2 decimal places implies a precision a wall clock does not have. **Measured 2026-09-10 15:22 BST: median 6.92 s over 3 runs, range 6.53 s to 7.10 s** — an 8th guard was added at 15:20, `test_stated_gate_count_matches_measurement_2026-09-07.py`, after `wilson_interval_consistency.py` caught 2 of this session's own errors within an hour and the hook did not run it, on macOS 26.5.1 arm64 with Python 3.13.3 — and taken while the full suite was running concurrently, so it is an upper bound under load rather than a best case. Against 669.92 s for the full suite, which is what makes it survivable per commit; a full-suite gate would be bypassed within a day. Guarded by `bench/tests/test_precommit_gate_cost_2026-09-10.py`, which pins the file count and the collected count and asserts nothing about the wall clock, because a timing assertion fails on a loaded machine for reasons unconnected to the gate. **FOURTH CORRECTION 2026-09-10 14:20 BST:** the count moved again, 169 to 174, when task V7 added 5 tests to one of the 6 guard files — and `bench/tests/test_precommit_gate_cost_2026-09-10.py` went RED exactly as its own docstring says it should, which is the first time this figure has been caught by a machine rather than by a reader. The 2 sentences that stood here were a duplicate of the preceding one and a stale "These 4 files" left by the third correction. **FIFTH CORRECTION 2026-09-10 20:25 BST, AND THIS ONE HAS A STRUCTURAL CAUSE WORTH NAMING.** The count moved 178 → **277** and the median to **7.09 s over 5 runs, range 6.39 s to 8.51 s** on the same machine. The cause is not another typo: `test_done_markers_carry_evidence_2026-09-10.py` **parametrises one test per DONE entry**, so the gate's cost is a function of the task list, and this evening closed 12 entries. **The figure will go stale every time an entry is closed** — it is not a fixed price, and 4 of the 5 corrections to it were made by readers who assumed it was. That is the diagnosis the previous 4 corrections lacked. The treadmill is kept deliberately rather than removed: `bench/tests/test_precommit_gate_cost_2026-09-10.py` going red on each closure is what has kept the number true since 14:20, and a figure nobody is forced to refresh is exactly how the first 3 corrections became possible. **SIXTH CORRECTION 2026-09-10 23:12 BST, AND IT CHANGES THE SHAPE RATHER THAN THE NUMBER.** The count is **347** over **7** files, median **11.77 s** over 5 runs, range 11.50 s to 14.51 s on macOS 26.5.1 arm64 with Python 3.13.3 under load. The figure had been written TWICE — once in this prose and once as a literal in `bench/tests/test_precommit_gate_cost_2026-09-10.py` — so every correction was 2 edits, and the fifth left the test asserting 277 while the hook collected 347. **Two representations of one truth with no comparator is the shape `execute-do-not-grep` names, and it was inside the test whose whole job is to be the comparator.** The number now lives in exactly 1 place, the declaration on the next line, and the test READS it. Refresh with `python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0`.
+-<!-- gate-cost: files=122 collected=2465 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
++<!-- gate-cost: files=120 collected=2350 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
+ 
+ **Three wiring conditions**, without which the hook is itself an addition nothing reaches: it must live under a versioned `hooks/` directory, `core.hooksPath` must be set by the onboarding script rather than by hand, and a test must execute the hook and prove it refuses a deliberately broken tree.
+ 
+
+### cc2:attempt-1:experimental_notes/data/instrument_inventory.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/instrument_inventory.json	2026-11-01 20:04:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/experimental_notes/data/instrument_inventory.json	2026-11-04 00:25:18
+@@ -11,7 +11,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 13,
++   "naming_tests": 14,
+    "commissioning_candidate": true,
+    "evidence": "test_vacuous_gamma_curve.py",
+    "heuristic_said": true,
+@@ -27,7 +27,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 22,
++   "naming_tests": 24,
+    "commissioning_candidate": true,
+    "evidence": "test_repair_loop_wiring_2026-08-30.py",
+    "heuristic_said": true,
+@@ -75,7 +75,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 22,
++   "naming_tests": 24,
+    "commissioning_candidate": true,
+    "evidence": "test_repair_loop_wiring_2026-08-30.py",
+    "heuristic_said": true,
+@@ -283,7 +283,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 12,
++   "naming_tests": 13,
+    "commissioning_candidate": true,
+    "evidence": "MEASURED: MEASURED 2026-08-28 (both reviewers): silencing CHALLENGE votes in _update_finding_statuses left all 156 tests across the 5 files naming it green. A model disagreeing with a CONFIRMED finding would vanish, `contested` would undercount, and gate condition (c) would open early. CLOSED the same day. **RE-MEASURED 2026-08-30: NOW COMMISSIONED.** Silencing CHALLENGE inside _update_finding_statuses now fails. Note the mutation must target the assignment INSIDE that function: the identical line occurs twice in the file, and patching the first occurrence hits a different function and wrongly exonerates the test.",
+    "heuristic_said": true,
+@@ -507,7 +507,7 @@
+    "flag": "",
+    "file_exists": true,
+    "symbol_resolves": true,
+-   "naming_tests": 10,
++   "naming_tests": 11,
+    "commissioning_candidate": true,
+    "evidence": "test_descriptions_are_not_silently_cut_2026-08-31.py",
+    "heuristic_said": true,
+
+### cc2:attempt-1:hooks/cy_monitor_gate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/cy_monitor_gate.py	2026-11-04 00:27:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/hooks/cy_monitor_gate.py	2026-11-03 02:27:30
+@@ -137,7 +137,7 @@
+         try:
+             d = json.loads(p.read_text(encoding="utf-8"))
+         except Exception:                                    # noqa: BLE001
+-            raise
++            continue
+         age = now - float(d.get("written_at") or 0)
+         if age > MAX_PULSE_AGE_HOURS * 3600:
+             continue                 # long abandoned; not a live run
+
+### cc2:attempt-1:scripts/does_the_severity_definition_reach_the_convergence_gate_2026-11-04.py
+--- /dev/null	2026-11-04 00:27:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/scripts/does_the_severity_definition_reach_the_convergence_gate_2026-11-04.py	2026-11-04 00:18:23
+@@ -0,0 +1,218 @@
++#!/usr/bin/env python3
++"""Does a change to the section 7.7 severity definition reach a convergence verdict?
++
++PANEL BRIEF 2026-11-04 asked each seat to "establish by execution whether a
++change to the severity definition changes a convergence verdict, or whether the
++cut collapses the formula to a threshold test".
++
++THIS SCRIPT ANSWERS A SHARPER QUESTION THAN THE BRIEF ASKED, because the brief's
++own dependency chain does not hold in the code. The brief states:
++
++    "_check_gamma_alt_convergence ... reads `gamma_critical`, which depends on
++     which findings are CRITICAL, which depends on the severity cut."
++
++Every link is true of the ASSERTED severity. What the brief omits is that
++`RunnerConfig.severity_spec_enabled` -- the flag built 2026-10-15 to make
++section 7.7 DECIDE -- cannot travel down that chain. `effective_severity` has
++exactly 2 consumers in the whole runner, and `_settled_novelty_series` (which
++produces the critical series `gamma_critical` is fitted to) is not one of them:
++it reads `e.get("severity")` RAW at line 10794.
++
++So there are TWO severity definitions live in the runner at once:
++
++  * the A4 release door reads `effective_severity` (specification-aware);
++  * the critical-novelty series, and therefore `gamma_critical` and the whole
++    two-sided gate, reads the asserted float (specification-blind).
++
++MEASUREMENTS (all over bench/logs/**/runner_state.json):
++
++  1. `severity_spec_shadow` on real archived entries -- does it return, and does
++     anything in the gating path consume it.
++  2. crit_s and gamma_critical under asserted vs specification severity, per run.
++  3. The REAL `_check_gamma_alt_convergence` called under both, per run, to count
++     verdict flips. The gate is never reimplemented here -- the runner's own
++     comment at line ~11020 records that a prior reimplementation of this gate
++     produced answers about a gate that does not exist, so the real function is
++     called or nothing is reported.
++  4. Whether the promotion flag can reach the critical series at all.
++
++Run:  python3 scripts/does_the_severity_definition_reach_the_convergence_gate_2026-11-04.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++import sys
++
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "bench"))
++
++import reference_runner_v3 as R  # noqa: E402
++
++try:
++    from statsmodels.stats.proportion import proportion_confint
++except ImportError:  # pragma: no cover
++    proportion_confint = None
++
++THR = R.CRITICAL_SEVERITY_THRESHOLD
++
++
++def ci(k, n):
++    if not n or proportion_confint is None:
++        return "n/a"
++    w = proportion_confint(k, n, method="wilson")
++    b = proportion_confint(k, n, method="beta")
++    return ("%.4f%% Wilson [%.4f%%, %.4f%%] Clopper-Pearson [%.4f%%, %.4f%%]"
++            % (100 * k / n, 100 * w[0], 100 * w[1], 100 * b[0], 100 * b[1]))
++
++
++class Reg:
++    """Minimal duck-typed stand-in exposing only `.entries`.
++
++    `severity_spec_shadow` and `_settled_novelty_series` both reach the registry
++    through `.entries` alone (both guard with hasattr), so this is sufficient to
++    call the REAL implementations rather than copies of them.
++    """
++
++    def __init__(self, entries):
++        self.entries = entries
++
++
++def load_runs():
++    out = []
++    for f in sorted(glob.glob("bench/logs/**/runner_state.json", recursive=True)):
++        try:
++            d = json.load(open(f))
++        except Exception:
++            continue
++        e = (d.get("registry") or {}).get("entries") or {}
++        if isinstance(e, dict) and e:
++            out.append((f, e))
++    return out
++
++
++def spec_entries(entries):
++    """Copy with severity replaced by section 7.7's asserted x V."""
++    out = {}
++    for cid, e in entries.items():
++        c = dict(e)
++        sev = e.get("severity")
++        if isinstance(sev, (int, float)):
++            c["severity"] = float(sev) * R.spec_verification_factor(e)
++        out[cid] = c
++    return out
++
++
++def main():
++    runs = load_runs()
++    n_entries = sum(len(e) for _, e in runs)
++    print("=" * 78)
++    print("ARCHIVE READ: %d runner_state.json files with entries, %d entries total"
++          % (len(runs), n_entries))
++    print("=" * 78)
++
++    # ---------------- 1. severity_spec_shadow on real entries ----------------
++    print("\n[1] severity_spec_shadow on real archived entries")
++    tot = {"V_true": 0, "V_none": 0, "V_false": 0, "critical_asserted": 0,
++           "critical_spec": 0, "crossed": 0, "keyviol": 0}
++    ok = 0
++    for f, e in runs:
++        try:
++            s = R.FindingRegistry.severity_spec_shadow(Reg(e))
++        except Exception as ex:
++            print("    ERROR on %s: %s" % (f, ex))
++            continue
++        ok += 1
++        for k in ("V_true", "V_none", "V_false", "critical_asserted", "critical_spec"):
++            tot[k] += s[k]
++        tot["crossed"] += len(s["crossed_downward"])
++        tot["keyviol"] += len(s["key_property_violations"])
++    scored = tot["V_true"] + tot["V_none"] + tot["V_false"]
++    print("    returned a value on %d of %d runs" % (ok, len(runs)))
++    print("    V_true=%d  V_none=%d  V_false=%d  (scored=%d)"
++          % (tot["V_true"], tot["V_none"], tot["V_false"], scored))
++    print("    critical_asserted=%d  critical_spec=%d" % (tot["critical_asserted"], tot["critical_spec"]))
++    print("    crossed downward: %s" % ci(tot["crossed"], scored))
++    print("    KEY PROPERTY violations: %d of %d disproved -- %s"
++          % (tot["keyviol"], tot["V_false"], ci(tot["keyviol"], tot["V_false"])))
++
++    # ---------------- 2/3. gamma_critical and the real gate ----------------
++    print("\n[2+3] crit_s / gamma_critical / REAL two-sided gate under both definitions")
++    cfg = R.RunnerConfig()
++    W = cfg.gamma_alt_consecutive_zero_crit
++    theta = cfg.gamma_alt_threshold
++    print("    cfg: window=%d theta=%.3f earliest_round=%d"
++          % (W, theta, cfg.gamma_alt_earliest_round))
++
++    g_moved = part_moved = verdict_flipped = 0
++    comparable = 0
++    flips = []
++    moves = []
++    for f, e in runs:
++        rounds = [x.get("open_since_round") for x in e.values()
++                  if isinstance(x.get("open_since_round"), int) and x.get("open_since_round") >= 0]
++        if not rounds:
++            continue
++        mx = max(rounds)
++        a_all, a_crit = R._settled_novelty_series(Reg(e), mx)
++        s_all, s_crit = R._settled_novelty_series(Reg(spec_entries(e)), mx)
++        comparable += 1
++        ga = R._estimate_gamma(a_crit)
++        gs = R._estimate_gamma(s_crit)
++        if a_crit != s_crit:
++            part_moved += 1
++        if abs(ga - gs) > 1e-9:
++            g_moved += 1
++            moves.append((f, ga, gs))
++        # The REAL gate, both definitions. A4 count held at 0 and contested at 0
++        # so the ONLY thing varying between the two calls is the severity
++        # definition feeding the critical series.
++        va, ra = R._check_gamma_alt_convergence(
++            round_idx=mx, gamma=ga, novel_critical_history=a_crit, cfg=cfg,
++            unresolved_critical=0, contested=0, gamma_critical=ga,
++            total_findings=sum(a_all))
++        vs, rs = R._check_gamma_alt_convergence(
++            round_idx=mx, gamma=gs, novel_critical_history=s_crit, cfg=cfg,
++            unresolved_critical=0, contested=0, gamma_critical=gs,
++            total_findings=sum(s_all))
++        if va != vs:
++            verdict_flipped += 1
++            flips.append((f, va, vs, ra[:100], rs[:100]))
++
++    print("    runs with a usable round series: %d" % comparable)
++    print("    CRITICAL partition moved:  %d of %d -- %s" % (part_moved, comparable, ci(part_moved, comparable)))
++    print("    gamma_critical moved:      %d of %d -- %s" % (g_moved, comparable, ci(g_moved, comparable)))
++    print("    REAL gate verdict FLIPPED: %d of %d -- %s" % (verdict_flipped, comparable, ci(verdict_flipped, comparable)))
++    for f, ga, gs in moves[:10]:
++        print("      gamma %.4f -> %.4f  %s" % (ga, gs, os.path.basename(os.path.dirname(f))))
++    for f, va, vs, ra, rs in flips[:10]:
++        print("      FLIP %s -> %s  %s" % (va, vs, os.path.basename(os.path.dirname(f))))
++        print("         asserted: %s" % ra)
++        print("         spec    : %s" % rs)
++
++    # ---------------- 4. Can the promotion flag reach any of this? ----------
++    print("\n[4] Can RunnerConfig.severity_spec_enabled reach the critical series?")
++    probe = {"x": {"severity": 0.9, "falsifier_verdict": "REFUTED",
++                   "open_since_round": 0, "status": "OPEN"}}
++    R._SEVERITY_SPEC["on"] = False
++    off_all, off_crit = R._settled_novelty_series(Reg(probe), 0)
++    off_eff = R.effective_severity(probe["x"])
++    R._SEVERITY_SPEC["on"] = True
++    on_all, on_crit = R._settled_novelty_series(Reg(probe), 0)
++    on_eff = R.effective_severity(probe["x"])
++    R._SEVERITY_SPEC["on"] = False
++    print("    probe entry: severity=0.9, falsifier_verdict=REFUTED (V=0, so Sev=0)")
++    print("    flag OFF: effective_severity=%.3f  critical series=%s" % (off_eff, off_crit))
++    print("    flag ON : effective_severity=%.3f  critical series=%s" % (on_eff, on_crit))
++    reached = (off_crit != on_crit)
++    print("    the flag reaches the critical series: %s" % reached)
++    if not reached:
++        print("    => CONFIRMED: the specification can annihilate this finding at the A4")
++        print("       door while the SAME finding still counts as CRITICAL in the series")
++        print("       gamma_critical is fitted to. The promotion flag is wired to 1 of the")
++        print("       2 severity consumers that decide convergence.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/falsifier_key_property_in_the_critical_partition_2026-11-04.py
+--- /dev/null	2026-11-04 00:27:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_rfhkptvr/repo/scripts/falsifier_key_property_in_the_critical_partition_2026-11-04.py	2026-11-04 00:23:41
+@@ -0,0 +1,122 @@
++#!/usr/bin/env python3
++"""FALSIFIER for the 2026-11-04 severity repair. Imports the REAL runner module.
++
++Fails (AssertionError / prints FALSIFIED) IF AND ONLY IF the defect is present,
++and exits cleanly when it is not. Three independent checks:
++
++  A. KEY PROPERTY in the critical partition. A tool-REFUTED finding must not be
++     counted as a critical discovery by EITHER partition reader. This is the
++     defect the repair closes; before it, both read `e.get("severity")` raw.
++  B. V(None) MUST NOT de-escalate. An unresolved critical must still count, or
++     the repair has inverted the A4 fail-safe (derivation: severity/2 >= 0.7
++     needs severity >= 1.4 > 1, so halving makes every unresolved finding
++     sub-critical).
++  C. NO ARCHIVED VERDICT IS RESTATED. Replay the REAL
++     `_check_gamma_alt_convergence` over every archived registry under the
++     pre-repair (raw) and post-repair severity reads and require 0 flips.
++
++Run: python3 scripts/falsifier_key_property_in_the_critical_partition_2026-11-04.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++import sys
++
++sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "bench"))
++
++import reference_runner_v3 as R  # noqa: E402
++
++FAILED = []
++
++
++class Reg:
++    def __init__(self, entries):
++        self.entries = entries
++
++
++def chk(name, cond, detail=""):
++    print("  %-62s %s" % (name, "OK" if cond else "FALSIFIED"))
++    if not cond:
++        FAILED.append("%s %s" % (name, detail))
++
++
++def main():
++    readers = [R._settled_novelty_series, R._corroborated_novelty_series]
++
++    print("[A] KEY PROPERTY: a disproved finding is not a critical discovery")
++    for fn in readers:
++        e = {"C1": {"severity": 0.9, "falsifier_verdict": "REFUTED",
++                    "open_since_round": 0, "status": "OPEN", "canonical_id": "C1"}}
++        all_s, crit_s = fn(Reg(e), 0)
++        chk("%s: REFUTED 0.9 -> crit_s" % fn.__name__, crit_s == [0], str(crit_s))
++        chk("%s: REFUTED 0.9 still counted in all_s" % fn.__name__, all_s == [1], str(all_s))
++
++    print("\n[B] V(None) must NOT de-escalate (A4 fail-safe must stay armed)")
++    for fn in readers:
++        e = {"C1": {"severity": 0.9, "falsifier_verdict": "",
++                    "open_since_round": 0, "status": "OPEN", "canonical_id": "C1"}}
++        _, crit_s = fn(Reg(e), 0)
++        chk("%s: UNRESOLVED 0.9 -> crit_s" % fn.__name__, crit_s == [1], str(crit_s))
++
++    print("\n[C] No archived convergence verdict is restated")
++    cfg = R.RunnerConfig()
++    runs = []
++    for f in sorted(glob.glob("bench/logs/**/runner_state.json", recursive=True)):
++        try:
++            d = json.load(open(f))
++        except Exception:
++            continue
++        ent = (d.get("registry") or {}).get("entries") or {}
++        if isinstance(ent, dict) and ent:
++            runs.append((f, ent))
++    flips = []
++    n = 0
++    for f, ent in runs:
++        rs = [x.get("open_since_round") for x in ent.values()
++              if isinstance(x.get("open_since_round"), int) and x.get("open_since_round") >= 0]
++        if not rs:
++            continue
++        mx = max(rs)
++        n += 1
++        # post-repair: the live reader
++        _, post = R._settled_novelty_series(Reg(ent), mx)
++        all_post, _ = R._settled_novelty_series(Reg(ent), mx)
++        # pre-repair: the raw read this replaced, reconstructed in place
++        pre = [0] * (mx + 1)
++        for x in ent.values():
++            r = x.get("open_since_round")
++            if r is None or r < 0 or r > mx:
++                continue
++            if x.get("status") in R._NON_NOVEL_TERMINAL_STATUSES:
++                continue
++            if (x.get("severity") or 0.0) >= R.CRITICAL_SEVERITY_THRESHOLD:
++                pre[r] += 1
++        va, _ = R._check_gamma_alt_convergence(
++            round_idx=mx, gamma=R._estimate_gamma(pre), novel_critical_history=pre,
++            cfg=cfg, unresolved_critical=0, contested=0,
++            gamma_critical=R._estimate_gamma(pre), total_findings=sum(all_post))
++        vb, _ = R._check_gamma_alt_convergence(
++            round_idx=mx, gamma=R._estimate_gamma(post), novel_critical_history=post,
++            cfg=cfg, unresolved_critical=0, contested=0,
++            gamma_critical=R._estimate_gamma(post), total_findings=sum(all_post))
++        if va != vb:
++            flips.append((f, va, vb))
++    print("  replayed %d archived registries" % n)
++    chk("archived gate verdicts changed by the repair", len(flips) == 0,
++        str(flips[:5]))
++
++    print("\n%s" % ("=" * 70))
++    if FAILED:
++        print("FALSIFIED")
++        for x in FAILED:
++            print("  - %s" % x)
++        raise AssertionError("defect present: %s" % "; ".join(FAILED))
++    print("defect NOT demonstrated: key property holds in the critical partition,")
++    print("V(None) does not de-escalate, and 0 of %d archived verdicts move." % n)
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-04 00:27:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/.cdsfl_deny_canonical_writes.sb	2026-11-04 00:14:50
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_severity_operational_form_2026-11-04.py
+--- /dev/null	2026-11-04 00:27:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/bench/tests/test_severity_operational_form_2026-11-04.py	2026-11-04 00:24:06
+@@ -0,0 +1,79 @@
++"""The operational severity form preserves section 7.7's key property, and the
++key-property producer counts each distinct registry exactly once.
++
++Panel 2026-11-04 (severity_spec_is_uncomputable). Two executed checks:
++
++1. KEY PROPERTY under the operational form Sev_op(f) = W(class) ·
++   V(verification), i.e. `compute_sev_f` with `confidence` identically
++   absent (the only state the archive has ever been in: 0 of 3,170 distinct
++   entries carry the field): a REFUTED finding scores EXACTLY 0.0 for every
++   class value and every confidence value a model could smuggle in,
++   because V(REFUTED) = 0 annihilates the product.
++
++2. PRODUCER SCOPE: `entries()` in
++   scripts/severity_was_never_computed_from_the_model_2026-10-12.py must
++   yield each distinct registry once. Before 2026-11-04 its recursive glob
++   also counted sandbox_harvest copies of runner_state.json — the 5 REFUTED
++   findings of commissioning_arm1_panel_20260929T214647Z each entered the
++   42/37 key-property tally three times (deduplicated: 32/27, 84.3750%).
++"""
++import importlib.util
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++from bench import reference_runner_v3 as rr  # noqa: E402
++
++_PRODUCER = (REPO / "scripts" /
++             "severity_was_never_computed_from_the_model_2026-10-12.py")
++
++
++def _load_producer():
++    spec = importlib.util.spec_from_file_location("sev_producer", _PRODUCER)
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def test_refuted_scores_zero_for_every_class_and_confidence():
++    for cls in (None, "", "HARD", "SOFT", "hard", "soft", "GARBAGE"):
++        for conf in (None, 0.0, 0.3, 0.7, 1.0, 5.0, -1.0, "not-a-number"):
++            for verdict in ("REFUTED", "refuted", " Refuted "):
++                got = rr.compute_sev_f(cls, conf, verdict)
++                assert got == 0.0, (
++                    f"key property violated: compute_sev_f({cls!r}, {conf!r}, "
++                    f"{verdict!r}) = {got!r}, expected 0.0")
++
++
++def test_confirmed_and_unassessed_keep_nonzero_lattice():
++    # The drop of `confidence` must not zero everything: the two
++    # harness-owned factors still span the documented lattice.
++    assert rr.compute_sev_f("HARD", None, "CONFIRMED") == 1.0
++    assert rr.compute_sev_f("SOFT", None, "CONFIRMED") == 0.5
++    assert rr.compute_sev_f("HARD", None, None) == 0.5
++    assert rr.compute_sev_f("SOFT", None, "UNTOOLABLE") == 0.25
++
++
++def test_producer_counts_each_distinct_registry_once(tmp_path):
++    mod = _load_producer()
++    state = {"registry": {"entries": {
++        "C0001": {"severity": 0.9, "falsifier_verdict": "REFUTED"},
++        "C0002": {"severity": 0.2, "falsifier_verdict": "CONFIRMED"},
++    }}}
++    other = {"registry": {"entries": {
++        "C0001": {"severity": 0.1, "falsifier_verdict": "CONFIRMED"},
++    }}}
++    real = tmp_path / "run_a"; real.mkdir()
++    copy = tmp_path / "harvest" / "files" / "bench" / "logs" / "run_a"
++    copy.mkdir(parents=True)
++    distinct = tmp_path / "run_b"; distinct.mkdir()
++    (real / "runner_state.json").write_text(json.dumps(state))
++    (copy / "runner_state.json").write_text(json.dumps(state))   # duplicate
++    (distinct / "runner_state.json").write_text(json.dumps(other))
++    mod.LOGS = tmp_path
++    got = sorted((cid, e.get("severity")) for _fp, cid, e in mod.entries())
++    assert got == [("C0001", 0.1), ("C0001", 0.9), ("C0002", 0.2)], (
++        f"expected the duplicate registry to be skipped; got {got}")
+
+### fable:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-10-29 17:54:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-04 00:23:48
+@@ -1291,7 +1291,58 @@
+    pushes findings toward the critical side of the gate. In the severity context
+    the conservative default is SOFT, and the asymmetry must be stated wherever
+    the class is collected.
++
++**Computability in the reference harness (panel, 2026-11-04 — executed
++measurements, producers named inline):**
+ 
++1. **Sev(f) is NOT computable as specified.** `confidence` is inadmissible
++   by binding directive (`bench/directives/universal/cdsfl_operational.md`
++   §15 d_tool: detection quantities come from tool execution, "not from
++   self-assessed confidence"; feedback action precedence item 1:
++   "Self-reported confidence is not accepted"), and no registry field has
++   ever carried it (0 of 3,170 distinct archived entries). The HARD/SOFT
++   class is instructed per finding but has no registry field (0 of 3,170).
++   `V` alone is collected — it is the harness's own falsifier verdict
++   (`bench/falsifier_verify.py`). Admitting `confidence` instead would not
++   repair this: by caution 1 above, at the 0.7 cut `Sev = confidence`
++   inside the one surviving cell, so the gate would equal the model's
++   self-assessment — a vote, which CDSFL forbids.
++2. **Operational form: `Sev_op(f) = W(class) · V(verification)`** — drop
++   `confidence`; do not proxy it. §7.8's S_v with the harness's single
++   verifier (falsifier re-execution) is a monotone relabel of V (values
++   0.9990 / 0.5 / 0.0099 at the SymPy-row rates) and S_v(falsified) =
++   FNR/(FNR+TNR) > 0, so S_v **alone** breaks this section's key property;
++   composing W·S_v·V preserves it but adds no information over W·V while
++   only one verifier exists (S_v is a deterministic function of the same
++   verdict V reads). The key property survives the drop: V(False) = 0
++   annihilates the product with or without the confidence factor.
++   Implemented by `compute_sev_f` (whose confidence input is identically
++   absent on all archived data and defaults to 1), stamped
++   informative-only by `stamp_sev_f` (default-off, founder promotion
++   pending).
++3. **The key property binds the SCORING layer, not the blocking gate.**
++   CONFIRM-only for criticals stands on Exp 42's measurement (2 of 3
++   REFUTED criticals were falsely REFUTED — a clean exit is passive and
++   fakeable by a broken falsifier); zeroing a REFUTED critical at the gate
++   would have released real defects. Executed 2026-11-04 over the 46
++   distinct archived runs carrying falsifier verdicts: applying Sev_op at
++   the critical cut moves the critical partition on 588 entries and flips
++   `_check_gamma_alt_convergence` from True to False in 12 runs (the
++   all-severity series and gamma_all are unchanged by construction).
++   Promotion to the gate is replay-invalidating and remains a founder
++   decision.
++4. **Figure scope correction.** The 37-of-42 / 88.0952% key-property
++   violation figure was measured over a recursive glob that also counted
++   sandbox_harvest COPIES of runner_state.json: the 5 REFUTED findings of
++   commissioning_arm1_panel_20260929T214647Z (C0002, C0003, C0004, C0016,
++   C0046) each entered the tally three times. Deduplicated by registry
++   content it is **27 of 32 — 84.3750%, Wilson 95% [68.2459%, 93.1356%],
++   Clopper-Pearson [67.2121%, 94.7249%]** (Wilson endpoints independently
++   confirmed with Wolfram Language, local Wolfram Engine). The direction
++   of the finding is unchanged; the producer
++   `scripts/severity_was_never_computed_from_the_model_2026-10-12.py` now
++   deduplicates and reports the skip.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+@@ -1356,7 +1407,7 @@
+ | Runner convergence gate (§7.4) | 5-condition gate operational; 2/5 non-contributing in Exp 36 | Implemented; C₆ (churn) pending; ascending abstraction guard pending |
+ | O_A + S_sync^emp (§7.5) | Verified, edge cases handled, 3-regime discrimination | Ready for implementation |
+ | Δ (§7.6) | Verified | Ready for implementation |
+-| Sev(f) (§7.7) | Verified | **NOT implemented.** The product is computed nowhere in the gating path; `bench/reference_runner_v3.py` reads a model-asserted float. `confidence` and the HARD/SOFT class are not collected (0 of 3,298 archived entries carry either), and the §7.7 KEY PROPERTY is violated on **37 of 42** disproved findings — **88.0952%**, Wilson [74.9996%, 94.8062%], Clopper-Pearson [74.3683%, 96.0194%] (re-measured 2026-10-29; the archive has grown since the 35 of 40 / 87.5000% first recorded here, so the earlier figure was stale rather than wrong). Applied advisory-only by `FindingRegistry.severity_spec_shadow`, which GATES NOTHING. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`. (Row corrected 2026-10-13; it read "Implemented in pipeline" and that was false.) |
++| Sev(f) (§7.7) | Verified | **NOT implemented.** The product is computed nowhere in the gating path; `bench/reference_runner_v3.py` reads a model-asserted float. `confidence` and the HARD/SOFT class are not collected (0 of 3,298 archived entries carry either), and the §7.7 KEY PROPERTY is violated on **37 of 42** disproved findings — **88.0952%**, Wilson [74.9996%, 94.8062%], Clopper-Pearson [74.3683%, 96.0194%] (re-measured 2026-10-29; the archive has grown since the 35 of 40 / 87.5000% first recorded here, so the earlier figure was stale rather than wrong). Applied advisory-only by `FindingRegistry.severity_spec_shadow`, which GATES NOTHING. Producers: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_severity_cut_collapses_the_formula_2026-10-13.py`. (Row corrected 2026-10-13; it read "Implemented in pipeline" and that was false.) Scope correction 2026-11-04: the 37/42 figure triple-counts 5 findings via sandbox_harvest registry copies; deduplicated it is 27/32 — 84.3750%, Wilson [68.2459%, 93.1356%], CP [67.2121%, 94.7249%]. See §7.7 computability note.) |
+ | Multi-verifier (§7.8) | Verified, Λ notation, both approaches | Ready for implementation |
+ | Fingerprint (§7.9) | Verified | Partially implemented |
+ | Manager selection (§7.11) | Defined, uses §7.7/§7.8 | Ready for implementation |
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-04 00:17:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-03 23:42:42
+@@ -291,7 +291,7 @@
+ **The finding, and it is unambiguous.** A commit-time guard was discussed on 5 separate occasions between 2026-08-25 and 2026-09-07 and **was never built**. All 4 installed hooks are `UserPromptSubmit` context injectors: they make 0 subprocess calls, emit 0 blocking decisions, and always exit 0. There is no git hook (14 files in `.git/hooks`, all `.sample`), no continuous integration, and `core.hooksPath` is unset. Nothing anywhere inspects repository state before a commit. **Commit `57d5a0e` reached HEAD on 2026-09-09 at 08:16:17 with the suite red**, which is the proof rather than the theory.
+ 
+ **The design, and why it is small.** Run only the files named in the hook's `GUARDS` list and refuse on non-zero exit. **THIRD CORRECTION 2026-09-10 04:20 BST, and this time with an instrument: `scripts/precommit_gate_cost_2026-09-10.py`.** The entry said 4 files; the hook names **7**, having gained `test_done_markers_carry_evidence_2026-09-10.py` (V1) and `test_task_list_markers_2026-09-09.py` (M2) since the sentence was written. The entry said 56 tests; the 7 files collect **277** (see the fifth correction below). **The 2 previous corrections were applied INSIDE each other**, leaving the entry reading "56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: '28 tests in 1.26 s' never reproduced)' never reproduced)" — a sentence quoting its own earlier wording as the figure it refutes, which is no longer a claim about anything. Three prose corrections to one figure and no instrument at any point. **The script reads the file list out of the hook rather than typing it**, so it notices the list changing, which is what all 3 corrections missed; its first version token-scanned and reported 5 of 6, caught by running it against a known case before believing it. **A wall-clock figure is treated differently from a count**: the count is exact, the timing is reported as a median with its full range over repeated runs and with the machine named, because a single number to 2 decimal places implies a precision a wall clock does not have. **Measured 2026-09-10 15:22 BST: median 6.92 s over 3 runs, range 6.53 s to 7.10 s** — an 8th guard was added at 15:20, `test_stated_gate_count_matches_measurement_2026-09-07.py`, after `wilson_interval_consistency.py` caught 2 of this session's own errors within an hour and the hook did not run it, on macOS 26.5.1 arm64 with Python 3.13.3 — and taken while the full suite was running concurrently, so it is an upper bound under load rather than a best case. Against 669.92 s for the full suite, which is what makes it survivable per commit; a full-suite gate would be bypassed within a day. Guarded by `bench/tests/test_precommit_gate_cost_2026-09-10.py`, which pins the file count and the collected count and asserts nothing about the wall clock, because a timing assertion fails on a loaded machine for reasons unconnected to the gate. **FOURTH CORRECTION 2026-09-10 14:20 BST:** the count moved again, 169 to 174, when task V7 added 5 tests to one of the 6 guard files — and `bench/tests/test_precommit_gate_cost_2026-09-10.py` went RED exactly as its own docstring says it should, which is the first time this figure has been caught by a machine rather than by a reader. The 2 sentences that stood here were a duplicate of the preceding one and a stale "These 4 files" left by the third correction. **FIFTH CORRECTION 2026-09-10 20:25 BST, AND THIS ONE HAS A STRUCTURAL CAUSE WORTH NAMING.** The count moved 178 → **277** and the median to **7.09 s over 5 runs, range 6.39 s to 8.51 s** on the same machine. The cause is not another typo: `test_done_markers_carry_evidence_2026-09-10.py` **parametrises one test per DONE entry**, so the gate's cost is a function of the task list, and this evening closed 12 entries. **The figure will go stale every time an entry is closed** — it is not a fixed price, and 4 of the 5 corrections to it were made by readers who assumed it was. That is the diagnosis the previous 4 corrections lacked. The treadmill is kept deliberately rather than removed: `bench/tests/test_precommit_gate_cost_2026-09-10.py` going red on each closure is what has kept the number true since 14:20, and a figure nobody is forced to refresh is exactly how the first 3 corrections became possible. **SIXTH CORRECTION 2026-09-10 23:12 BST, AND IT CHANGES THE SHAPE RATHER THAN THE NUMBER.** The count is **347** over **7** files, median **11.77 s** over 5 runs, range 11.50 s to 14.51 s on macOS 26.5.1 arm64 with Python 3.13.3 under load. The figure had been written TWICE — once in this prose and once as a literal in `bench/tests/test_precommit_gate_cost_2026-09-10.py` — so every correction was 2 edits, and the fifth left the test asserting 277 while the hook collected 347. **Two representations of one truth with no comparator is the shape `execute-do-not-grep` names, and it was inside the test whose whole job is to be the comparator.** The number now lives in exactly 1 place, the declaration on the next line, and the test READS it. Refresh with `python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0`.
+-<!-- gate-cost: files=122 collected=2465 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
++<!-- gate-cost: files=120 collected=2350 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
+ 
+ **Three wiring conditions**, without which the hook is itself an addition nothing reaches: it must live under a versioned `hooks/` directory, `core.hooksPath` must be set by the onboarding script rather than by hand, and a test must execute the hook and prove it refuses a deliberately broken tree.
+ 
+
+### fable:attempt-1:scripts/severity_was_never_computed_from_the_model_2026-10-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/severity_was_never_computed_from_the_model_2026-10-12.py	2026-10-12 23:27:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/scripts/severity_was_never_computed_from_the_model_2026-10-12.py	2026-11-04 00:22:47
+@@ -64,14 +64,46 @@
+ 
+ 
+ def entries():
+-    for fp in LOGS.glob("**/runner_state.json"):
++    """Yield (path, canonical_id, entry) for each DISTINCT archived registry.
++
++    SCOPE CORRECTION (2026-11-04 panel, severity_spec_is_uncomputable). The
++    recursive glob also matches sandbox_harvest COPIES of runner_state.json
++    (a harvested panel worktree carries the bench/logs tree it saw), and
++    `exp36_evidence_latest/` is an entry-identical copy of its timestamped
++    run. Counting those counts the same finding more than once: measured
++    2026-11-04, 10 of 77 matched files were byte-identical copies, and the 5
++    REFUTED findings of commissioning_arm1_panel_20260929T214647Z (C0002,
++    C0003, C0004, C0016, C0046) each entered the key-property tally THREE
++    times -- 42/37 as previously reported vs 32/27 distinct. Registries are
++    therefore deduplicated on the content hash of their entries object. The
++    skip is REPORTED, never silent.
++    """
++    import hashlib
++    seen_entry_hashes = set()
++    skipped = 0
++    for fp in sorted(LOGS.glob("**/runner_state.json")):
+         try:
+             d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
+         except Exception:                                 # noqa: BLE001
+             continue
+-        for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++        ents = ((d or {}).get("registry") or {}).get("entries") or {}
++        if not ents:
++            continue
++        h = hashlib.sha256(
++            json.dumps(ents, sort_keys=True, default=str).encode("utf-8")
++        ).hexdigest()
++        if h in seen_entry_hashes:
++            skipped += 1
++            continue
++        seen_entry_hashes.add(h)
++        for cid, e in ents.items():
+             if isinstance(e, dict):
+                 yield fp, cid, e
++    if skipped:
++        print(f"[scope] skipped {skipped} duplicate registry cop"
++              f"{'y' if skipped == 1 else 'ies'} (content-identical: "
++              f"sandbox_harvest copies and *_latest mirrors) -- each distinct "
++              f"registry is counted exactly once")
+ 
+ 
+ def main() -> int:
+
+### fable:attempt-1:scripts/the_severity_definition_moves_the_convergence_verdict_2026-11-04.py
+--- /dev/null	2026-11-04 00:27:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ezi7s22h/repo/scripts/the_severity_definition_moves_the_convergence_verdict_2026-11-04.py	2026-11-04 00:25:22
+@@ -0,0 +1,122 @@
++#!/usr/bin/env python3
++"""Does recomputing severity as Sev_op(f) = W(class) . V(verification) move
++the two-sided convergence gate on the archive?
++
++Panel 2026-11-04 (severity_spec_is_uncomputable). docs/MATHEMATICAL_APPENDIX.md
++section 7.7 specifies Sev(f) = W(class) . confidence . V(verification);
++`confidence` is inadmissible under cdsfl_operational.md section 15 (d_tool)
++and the HARD/SOFT class is uncollected (0 of 3,170 distinct archived entries
++carry either), so the operational form is the two harness-ownable factors,
++exactly what `compute_sev_f` returns on every archived entry (its confidence
++input is identically absent and defaults to 1).
++
++THE MEASUREMENT. Over every DISTINCT archived registry (content-hash
++deduplicated -- sandbox_harvest copies and *_latest mirrors counted once),
++rebuild the settled critical-novelty series twice: once with the
++model-asserted severity float at the 0.7 cut (production), once with
++Sev_op >= 0.7 (which, by the z3-checked collapse in section 7.7 caution 1,
++is `falsifier_verdict == CONFIRMED` while class defaults HARD). Then call
++`_check_gamma_alt_convergence` with each series and its own gamma_critical.
++The all-severity series and gamma_all are UNCHANGED BY CONSTRUCTION -- the
++severity cut does not enter them -- which is the novelty-separability half
++of the answer.
++
++Measured 2026-11-04: 67 distinct registries, 3,170 entries; 46 runs carry
++falsifier verdicts; the critical partition moves on 588 entries and the
++convergence verdict flips True -> False in 12 runs. GATES NOTHING -- this is
++the non-distortion evidence the founder's promotion decision needs.
++
++Usage: python3 scripts/the_severity_definition_moves_the_convergence_verdict_2026-11-04.py
++"""
++import glob
++import hashlib
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++from bench import reference_runner_v3 as rr  # noqa: E402
++
++
++def main() -> int:
++    files = sorted(glob.glob(str(REPO / "bench/logs/**/runner_state.json"),
++                             recursive=True))
++    seen, regs = set(), []
++    for fp in files:
++        try:
++            d = json.loads(pathlib.Path(fp).read_text(errors="ignore"))
++        except Exception:                                 # noqa: BLE001
++            continue
++        ents = ((d or {}).get("registry") or {}).get("entries") or {}
++        if not ents:
++            continue
++        h = hashlib.sha256(json.dumps(ents, sort_keys=True,
++                                      default=str).encode()).hexdigest()
++        if h in seen:
++            continue
++        seen.add(h)
++        regs.append((fp, ents))
++    cfg = rr.RunnerConfig()
++    thr = rr.CRITICAL_SEVERITY_THRESHOLD
++    runs_verdict = flips_total = 0
++    conv_flips = []
++    for fp, ents in regs:
++        if not any(isinstance(e, dict) and e.get("falsifier_verdict")
++                   for e in ents.values()):
++            continue
++        runs_verdict += 1
++        reg = rr.FindingRegistry()
++        reg.entries = ents
++        rounds = [e.get("open_since_round") for e in ents.values()
++                  if isinstance(e, dict)
++                  and e.get("open_since_round") is not None]
++        if not rounds:
++            continue
++        mx = max(rounds)
++        all_s, crit_base = rr._settled_novelty_series(reg, mx)
++        crit_op = [0] * (mx + 1)
++        flips = 0
++        for e in ents.values():
++            if not isinstance(e, dict):
++                continue
++            r = e.get("open_since_round")
++            if r is None or r < 0 or r > mx:
++                continue
++            if e.get("status") in rr._NON_NOVEL_TERMINAL_STATUSES:
++                continue
++            sev_op = rr.compute_sev_f(e.get("constraint_class"),
++                                      e.get("confidence"),
++                                      e.get("falsifier_verdict"))
++            if sev_op >= thr:
++                crit_op[r] += 1
++            if ((e.get("severity") or 0.0) >= thr) != (sev_op >= thr):
++                flips += 1
++        flips_total += flips
++        g_all = rr._estimate_gamma(all_s)
++        conv_base, _ = rr._check_gamma_alt_convergence(
++            mx, g_all, crit_base, cfg, unresolved_critical=0, contested=0,
++            gamma_critical=rr._estimate_gamma(crit_base),
++            total_findings=sum(all_s))
++        conv_op, _ = rr._check_gamma_alt_convergence(
++            mx, g_all, crit_op, cfg, unresolved_critical=0, contested=0,
++            gamma_critical=rr._estimate_gamma(crit_op),
++            total_findings=sum(all_s))
++        if conv_base != conv_op:
++            conv_flips.append((fp, conv_base, conv_op))
++    print(f"distinct registries: {len(regs)}  "
++          f"entries: {sum(len(e) for _, e in regs)}")
++    print(f"runs with falsifier verdicts: {runs_verdict}")
++    print(f"critical-partition flips (asserted float vs Sev_op): {flips_total}")
++    print(f"convergence-verdict flips at _check_gamma_alt_convergence: "
++          f"{len(conv_flips)}")
++    for fp, a, b in conv_flips:
++        print(f"  {pathlib.Path(fp).parent.name}: {a} -> {b}")
++    print("\ngamma_all / all-severity novelty: unchanged by construction "
++          "(the severity cut does not enter the all-severity series).")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

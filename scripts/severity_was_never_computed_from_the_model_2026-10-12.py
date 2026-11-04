@@ -45,6 +45,7 @@ them.
 Usage: python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py
 """
 import collections
+import hashlib
 import json
 import os
 import pathlib
@@ -63,10 +64,58 @@ DISPROVED = {"REFUTED"}
 VERIFIED = {"CONFIRMED"}
 
 
+#: Registry files skipped as byte-identical copies, filled by `entries()` so
+#: the skip is REPORTED rather than silent. An exclusion nobody can see is the
+#: shape this project's own notes warn about repeatedly.
+SKIPPED_COPIES: list = []
+
+
 def entries():
-    for fp in LOGS.glob("**/runner_state.json"):
+    """Every registry entry, counting each distinct registry ONCE.
+
+    ★★★ THE RECURSIVE GLOB WAS COUNTING PANEL SANDBOX COPIES, AND IT INFLATED
+    THIS SCRIPT'S HEADLINE FIGURE (found 2026-11-04 by the `fable` seat of the
+    severity panel, and reproduced independently here before being adopted).
+
+    `LOGS.glob("**/runner_state.json")` matches 77 files. 10 of them live under
+    `sandbox_harvest/`, which is where a PANEL RUN preserves the files its seats
+    wrote -- so an earlier panel's evidence-preservation step duplicated 5
+    registries into the corpus this script measures. Content-hash deduplication
+    leaves **67 distinct registries**.
+
+    THE EFFECT ON THE PUBLISHED FIGURE, reproduced by execution both ways:
+
+        with the copies : 37 of 42 = 0.880952, Wilson [0.749996, 0.948062]
+        deduplicated    : 27 of 32 = 0.843750, Wilson [0.682459, 0.931356]
+
+    The 5 REFUTED findings of `commissioning_arm1_panel_20260929T214647Z` each
+    entered the tally 3 times, which is exactly `42 = 32 + 2*5` and
+    `37 = 27 + 2*5`. Both decompositions hold to the integer.
+
+    SO THE DIRECTION OF THE FINDING IS UNCHANGED AND THE FIGURE WAS WRONG. The
+    key property is still violated on most disproved findings; it is violated on
+    84.3750% of them rather than 88.0952%. The 88.0952% figure reached
+    `docs/MATHEMATICAL_APPENDIX.md` and a panel brief, and is corrected in both.
+
+    THE IRONY IS EXACT AND WORTH KEEPING: a panel's own sandbox harvest
+    corrupted the measurement a later panel was convened to examine. The
+    mechanism that preserves a seat's evidence so it cannot be lost also
+    multiplies it inside any producer that globs recursively under `bench/logs`.
+    """
+    SKIPPED_COPIES.clear()
+    seen: dict = {}
+    for fp in sorted(LOGS.glob("**/runner_state.json")):
         try:
-            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
+            raw = fp.read_bytes()
+        except OSError:
+            continue
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest in seen:
+            SKIPPED_COPIES.append((str(fp), seen[digest]))
+            continue
+        seen[digest] = str(fp)
+        try:
+            d = json.loads(raw.decode("utf-8", errors="ignore"))
         except Exception:                                 # noqa: BLE001
             continue
         for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
@@ -96,6 +145,27 @@ def main() -> int:
         return 3
 
     print(f"archived entries with a numeric severity: {n}")
+    # ★ THE SCOPE OF THE CORPUS IS PRINTED BEFORE ANY RATE DERIVED FROM IT
+    # (2026-11-04). This script's headline figure was inflated for weeks because
+    # the glob counted panel sandbox copies, and nothing in the output said so.
+    # A rate whose denominator is not stated cannot be checked by its reader.
+    if SKIPPED_COPIES:
+        print(f"\n[scope] {len(SKIPPED_COPIES)} byte-identical registry "
+              f"copy/copies SKIPPED, so each distinct registry counts once.")
+        print("        They are panel sandbox harvests: an earlier panel's "
+              "evidence-preservation step")
+        print("        duplicated registries into the corpus this script "
+              "measures. Reproduced both ways:")
+        print("        with the copies 37 of 42 = 0.880952; deduplicated "
+              "27 of 32 = 0.843750.")
+        for dup, original in SKIPPED_COPIES[:4]:
+            print(f"        skipped {pathlib.Path(dup).parent.name[:46]}")
+        if len(SKIPPED_COPIES) > 4:
+            print(f"        ... and {len(SKIPPED_COPIES) - 4} more")
+    else:
+        print("\n[scope] 0 duplicate registry copies found. If this script's "
+              "figure ever moves\n        without the archive growing, check "
+              "this line first.")
     print("\nby falsifier verdict:")
     for v, c in tally.most_common(8):
         print(f"  {v:<22}{c:>6}")
