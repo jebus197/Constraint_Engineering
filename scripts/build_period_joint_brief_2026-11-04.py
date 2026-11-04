@@ -40,7 +40,8 @@ Seats are referred to by position, not by vendor, per the standing instruction t
 describe measured capability rather than model names.
 
 Usage: python3 scripts/build_period_joint_brief_2026-11-04.py
-Writes to bench/briefs/joint_<round>_BRIEF.md. Takes no arguments.
+Writes to bench/logs/joint_<round>/BRIEF.md, where the dispatcher reads it.
+Takes no arguments.
 """
 import json
 import os
@@ -98,8 +99,19 @@ def main() -> int:
         "Both replies landed at 05:08. The complete collection in `bench/tests/`",
         "then ran 06:19 to 08:22, 2 hours 3 minutes: **44 failed, 15,350 passed,",
         "37 skipped**, against the commit gate's own board of **0 failed** -- the",
-        "gate runs 128 of 811 files. It also reported **24 task entries marked DONE",
+        "gate runs 128 of 812 files. It also reported **24 task entries marked DONE",
         "whose named evidence was failing**.",
+        "",
+        "**A FIGURE IN AN EARLIER VERSION OF THIS BRIEF WAS WRONG AND IS",
+        "WITHDRAWN.** It said this was the first complete board since 2026-09-29,",
+        "36 days earlier. `resources/suite_record.json` records a COMPLETED full",
+        "suite at 2026-11-01T22:08:07, commit 8e00f791: 14,378 passed, 11 failed",
+        "node ids, 2 errors. The real gap is **2.426 days**, and task entries B35",
+        "and B36 record a third run on 2026-10-18. **THE CORRECTION MATTERS TO",
+        "YOUR ANSWER: 42 of the 44 failures are NEW since 2026-11-01** --",
+        "0.954545, Wilson [0.848650, 0.987445] -- and only 2 persisted from that",
+        "record. So the period under review introduced roughly 17 failures per",
+        "day, rather than inheriting them from 5 weeks of neglect.",
         "",
         "The 44 reduced to 18 root causes. The distribution is the part that bears",
         "on PART B of the brief you answered:",
@@ -118,6 +130,18 @@ def main() -> int:
         "  byte-identical to its baseline, and a protocol check scoring 6 real",
         "  disagreements as misses because its pattern did not admit a backtick.",
         "* **19 were bookkeeping staled by this period's own work.**",
+        "",
+        "**WHERE THESE FIGURES COME FROM, because a number typed in a brief is",
+        "not re-executed and this project has had one reach 2 seats wrong.** The",
+        "board totals are from a complete execution whose log is NOT in the",
+        "repository, so they are not checkable by you directly. Every derived",
+        "figure above IS, through the task-list entries that carry it with its",
+        "producer: B116 for the gate-versus-collection share, with",
+        "`scripts/the_gate_board_is_not_the_suite_2026-11-04.py`; B117 for the",
+        "model-config regression; B118 for the 6 of 350 sweep closures; B119 for",
+        "the 7 of 21 false positives; B120 for the 3 further instruments. If any",
+        "figure here matters to your answer, read the entry rather than trusting",
+        "the sentence, and say so if the 2 disagree.",
         "",
         "**THE QUESTION THIS PUTS TO YOU BOTH.** You each returned PARTIAL on",
         "whether the period's work is wrong. The board says the period's",
@@ -171,7 +195,7 @@ def main() -> int:
         "Cross-check every computational claim with at least 2 independent tools,",
         "and give every proportion a confidence interval.",
         "",
-        "## Required sections",
+        "## OUTPUT -- what to return, field by field",
         "",
         "Return all of: `verdict`, `per_part`, `severity_and_residual_risk`,",
         "`reasoning`, `commands_run`, `strongest_falsification`,",
@@ -198,8 +222,12 @@ def main() -> int:
                   f"reply survives in the brief; the dispatcher would refuse it.")
             return 3
 
-    out = OUT if OUT is not None else (REPO / "bench" / "briefs" /
-                                       f"joint_{PARENT}_BRIEF.md")
+    # THE DISPATCHER READS `bench/logs/<round>/BRIEF.md` and nothing else, so
+    # that is the default rather than a briefs/ directory it never looks in.
+    # A brief written where the dispatcher does not read it is an artefact
+    # nothing reaches.
+    out = OUT if OUT is not None else (REPO / "bench" / "logs" /
+                                       f"joint_{PARENT}" / "BRIEF.md")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text, encoding="utf-8")
     print(f"brief written: {out}")

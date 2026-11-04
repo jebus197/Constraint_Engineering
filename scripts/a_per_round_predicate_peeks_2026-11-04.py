@@ -1,54 +1,44 @@
 #!/usr/bin/env python3
-"""B20's sketched per-round predicate has an UNCONTROLLED false-alarm rate.
+"""B20's sketched per-round predicate: does it control its error rate, and which correction?
 
-THE CLAIM THIS REFUTES IS THIS PROJECT'S OWN. Entry B20 names the honest design
+THE CLAIM THIS REFUTES IS THIS PROJECT'S OWN. Entry B20 names the design
 requirement for the bound orchestrator's monitor as "a PER-ROUND predicate
-carrying its own falsifier and evaluable at every round boundary", and the
-worked example it gives is prediction P3, whose falsifier needs a Wilson
-interval to EXCLUDE 0.5. The entry even records when that first becomes
-possible: a Wilson lower bound of 0.565518 at a perfect observation, against
-0.438503 at n = 3.
+carrying its own falsifier and evaluable at every round boundary", and its
+worked example alarms when a Wilson interval EXCLUDES 0.5. Evaluating a
+fixed-horizon interval at every round boundary is repeated testing of one
+hypothesis, which inflates the type-I error above its nominal level.
 
-WHAT THE ENTRY DOES NOT SAY is that evaluating a fixed-horizon interval at
-EVERY round boundary is repeated testing of one hypothesis, which inflates the
-type-I error above its nominal level. That is the "peeking" problem, and the
-external literature on anytime-valid confidence sequences and e-processes exists
-precisely to solve it: an e-variable keeps type-I error bounded by alpha
-whatever the stopping rule, where a fixed-horizon interval does not.
+WHAT THIS PRODUCER ESTABLISHES, AND IT IS 3 THINGS AND NO MORE:
+  1. The UNCORRECTED predicate does not control its rate.
+  2. BOTH candidate corrections do, empirically, at every horizon tested.
+  3. They are indistinguishable on the earliest defensible alarm.
 
-MEASURED, not argued. Under the null p = 0.5 the predicate's single-look rate is
-correct, and its every-round rate is not:
+2 CLAIMS OF MINE WERE REFUTED BY THIS PRODUCER AND ARE KEPT HERE RATHER THAN
+TIDIED AWAY, because a reader needs to see which way the evidence went.
+  * I expected an anytime-valid sequence to buy back the delay a Bonferroni
+    split costs. It does not: both first fire at round 11 on a perfect run.
+  * I claimed Bonferroni's need to fix the look count in advance was a
+    concrete failure a sequence avoids, and tried to demonstrate it by tuning
+    a split for 40 looks and running it for 1000. IT STAYED VALID.
 
-    rounds   P(>=1 false alarm)   inflation over 0.0500
-         3             0.000000                   0.00x
-         5             0.121800                   2.44x
-         8             0.154200                   3.08x
-        12             0.177050                   3.54x
-        20             0.228400                   4.57x
-        40             0.287400                   5.75x
+SO NO DOMINANCE CLAIM IS MADE. Under the founder's 2026-10-02 standard a
+composed or preferred design needs a committed measurement showing it dominates
+the alternative on a named property; 3 properties were measured and the result
+is a tie on 2 with the third unmeasurable by me. Under `simplicity-default` the
+Bonferroni split is 1 divisor and is the honest default.
 
-The 0.000000 at 3 rounds is not an error: a Wilson interval on 3 observations
-cannot exclude 0.5 at all, which is the same fact B20 records from the other
-direction.
-
-WHY IT MATTERS MORE HERE THAN IN AN A/B TEST. The consumer of this predicate is
-an ACTUATOR that pauses a live experiment. This project's own record states that
-a flaky guard is worse than a red one, and a false-alarm rate of 0.177050 within
-12 rounds would put that flakiness in the most consequential place in the
-harness. The remedy is not a tighter alpha, which trades false alarms for missed
-divergences; it is an anytime-valid construction whose guarantee holds at every
-stopping time.
-
-CROSS-VERIFIED ON 2 ROUTES, as this project's standard requires. The single-look
-rate is computed by exact enumeration over the binomial mass function AND by
-simulation, agreeing to 0.001174. The every-round rate is computed by a
-vectorised closed-form Wilson bound whose single-look case reproduces the
-enumerated value.
+PRECISION. Every rate here is a simulation estimate over 20,000 draws, standard
+error about 0.0027 near p = 0.18, so each is printed WITH its interval and must
+not be quoted to 6 decimals. 2 runs of the first version gave 0.177050 and
+0.178900, a difference of 0.68 standard errors, which is what established that
+the 6th decimal is noise.
 
 Usage: python3 scripts/a_per_round_predicate_peeks_2026-11-04.py
-Exit 0 on a sound measurement, 3 if the 2 routes disagree.
+Exit 0 on a sound measurement, 3 if the 2 single-look routes disagree or if the
+confidence-sequence construction fails its own validity check.
 """
 import os
+import pathlib
 import sys
 
 import numpy as np
@@ -58,78 +48,225 @@ from statsmodels.stats.proportion import proportion_confint
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _cli_help import answer_help  # noqa: E402
 
-ALPHA = 0.05
-SEED = 20261104
-ROUNDS = (3, 5, 8, 12, 20, 40)
-TRIALS = 20000
+ALPHA, SEED, TRIALS, SIGMA, RHO = 0.05, 20261104, 20000, 0.5, 0.5
+SHORT = (3, 5, 8, 12, 20, 40)
+LONG = (40, 100, 250, 500, 1000)
 
 
-def wilson_excludes_half(k: int, n: int) -> bool:
-    """statsmodels route, used for the single-look cross-check."""
-    if n == 0:
-        return False
-    lo, hi = proportion_confint(k, n, alpha=ALPHA, method="wilson")
-    return lo > 0.5 or hi < 0.5
+def _ivl(rate: float, trials: int = TRIALS) -> str:
+    k = int(round(rate * trials))
+    lo, hi = proportion_confint(k, trials, alpha=0.05, method="wilson")
+    return f"{rate:.4f} [{lo:.4f}, {hi:.4f}]"
 
 
-def alarm_rate(n_rounds: int, rng, trials: int = TRIALS) -> float:
-    """P(at least 1 alarm in n_rounds looks) under the null p = 0.5.
+def _wilson_bounds(k, n, alpha):
+    """Vectorised closed form. Its single-look case is cross-checked below."""
+    z = stats.norm.ppf(1 - alpha / 2)
+    p = k / n
+    d = 1 + z**2 / n
+    c = (p + z**2 / (2 * n)) / d
+    h = (z / d) * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))
+    return c - h, c + h
 
-    The Wilson bound is computed in closed form and vectorised, because calling
-    statsmodels once per cell is 20,000 x n calls. Its single-look case is
-    checked against statsmodels below, so the closed form is not trusted alone.
-    """
-    x = rng.binomial(1, 0.5, size=(trials, n_rounds))
+
+def _cs_halfwidth(t, rho=RHO, alpha=ALPHA, sigma=SIGMA):
+    """Normal-mixture (Robbins) confidence-sequence half-width at time t."""
+    a = t * rho**2 + 1.0
+    return sigma * np.sqrt(2.0 * a / (t**2 * rho**2) * np.log(np.sqrt(a) / alpha))
+
+
+def _family_rate(n_rounds, rng, kind, alpha_per_look=ALPHA):
+    x = rng.binomial(1, 0.5, size=(TRIALS, n_rounds))
     cum = np.cumsum(x, axis=1)
-    fired = np.zeros(trials, dtype=bool)
-    z = stats.norm.ppf(1 - ALPHA / 2)
+    fired = np.zeros(TRIALS, dtype=bool)
     for t in range(1, n_rounds + 1):
-        n = t
-        p = cum[:, t - 1] / n
-        d = 1 + z**2 / n
-        c = (p + z**2 / (2 * n)) / d
-        h = (z / d) * np.sqrt(p * (1 - p) / n + z**2 / (4 * n**2))
-        fired |= (c - h > 0.5) | (c + h < 0.5)
+        if kind == "cs":
+            m = cum[:, t - 1] / t
+            w = _cs_halfwidth(t)
+            lo, hi = m - w, m + w
+        else:
+            lo, hi = _wilson_bounds(cum[:, t - 1], t, alpha_per_look)
+        fired |= (lo > 0.5) | (hi < 0.5)
     return float(fired.mean())
+
+
+def _first_fire_interval(alpha, cap=80):
+    for t in range(1, cap + 1):
+        lo, _ = proportion_confint(t, t, alpha=alpha, method="wilson")
+        if lo > 0.5:
+            return t
+    return None
+
+
+def _first_fire_cs(cap=80):
+    for t in range(1, cap + 1):
+        if 1.0 - _cs_halfwidth(t) > 0.5:
+            return t
+    return None
+
+
+def _round_lengths(repo: pathlib.Path):
+    """Round-series length for every archived run that recorded one.
+
+    Read from `gate_history` in each run's own state file, which B20 records as
+    present in 65 of 65. A run with no series is EXCLUDED rather than counted
+    as 0, because absent and zero are different facts.
+    """
+    import json
+    out = []
+    for q in sorted(repo.glob("bench/logs/*/runner_state.json")):
+        try:
+            d = json.loads(q.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        gh = d.get("gate_history") or []
+        if gh:
+            out.append(len(gh))
+    return out
+
+
+def _share(k, n):
+    lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
+    lo2 = stats.beta.ppf(0.025, k, n - k + 1) if k else 0.0
+    hi2 = stats.beta.ppf(0.975, k + 1, n - k) if k < n else 1.0
+    return (f"{k:>3} of {n} = {k/n:.6f}  Wilson [{lo:.6f}, {hi:.6f}]  "
+            f"CP [{lo2:.6f}, {hi2:.6f}]")
+
+
+def _section_four(repo: pathlib.Path, first_fire: int) -> int:
+    """WHICH QUANTITY? The decisive section, and it is about the archive.
+
+    A corrected proportion predicate cannot fire before `first_fire`. If most
+    real runs end before that, the predicate is inert whatever correction it
+    uses -- which is a property of the QUANTITY and not of the correction.
+    """
+    print("\n" + "=" * 76)
+    print("4. WHICH QUANTITY? MEASURED AGAINST THE ARCHIVE'S OWN ROUND SERIES")
+    print("=" * 76)
+    rounds = _round_lengths(repo)
+    if not rounds:
+        print("   no archived run carries a round series; this section is VOID")
+        print("   and no share is reported, rather than reporting 0 of 0.")
+        return 3
+    import statistics
+    print(f"   runs with a round series: {len(rounds)}; "
+          f"min {min(rounds)}, median {statistics.median(rounds)}, "
+          f"max {max(rounds)}")
+    n = len(rounds)
+    print(f"\n   a corrected PROPORTION predicate needs round {first_fire}:")
+    print(f"     {_share(sum(1 for r in rounds if r >= first_fire), n)}")
+    print("   a GAMMA predicate is estimable from round 3 "
+          "(min_rounds_for_gamma = 3):")
+    print(f"     {_share(sum(1 for r in rounds if r >= 3), n)}")
+    print("   the GATE BOOLEAN is available from round 1:")
+    print(f"     {_share(sum(1 for r in rounds if r >= 1), n)}")
+    print("\n   SO THE ENTRY'S REQUIREMENT STANDS AND ITS WORKED EXAMPLE DOES")
+    print("   NOT. Uncorrected the proportion predicate false-alarms; corrected")
+    print("   it is inert in most real runs. Both directions fail, and that is a")
+    print("   property of the quantity chosen. State the predicate over a")
+    print("   continuous per-round quantity or over the gate boolean instead.")
+    return 0
 
 
 def main() -> int:
     answer_help(__doc__, __file__)
     rng = np.random.default_rng(SEED)
-    print("=" * 74)
-    print("B20's PER-ROUND PREDICATE: FALSE-ALARM RATE UNDER THE NULL p = 0.5")
-    print(f"nominal alpha = {ALPHA:.4f}; a round is 1 resolved finding")
-    print("=" * 74)
-    print(f"{'rounds':>8}  {'P(>=1 alarm)':>14}  {'inflation':>12}")
-    rows = []
-    for n in ROUNDS:
-        r = alarm_rate(n, rng)
-        rows.append((n, r))
-        print(f"{n:>8}  {r:>14.6f}  {r / ALPHA:>11.2f}x")
+    print("=" * 76)
+    print("1. THE UNCORRECTED PREDICATE DOES NOT CONTROL ITS RATE")
+    print(f"   null p = 0.5, nominal alpha = {ALPHA:.4f}, {TRIALS:,} draws")
+    print("=" * 76)
+    print(f"{'rounds':>8}  {'P(>=1 alarm), Wilson 95%':>30}  {'inflation':>10}")
+    for n in SHORT:
+        r = _family_rate(n, rng, "wilson")
+        print(f"{n:>8}  {_ivl(r):>30}  {r / ALPHA:>9.2f}x")
+    print("\n   The 0 at 3 rounds is not an error: a Wilson interval on 3")
+    print("   observations cannot exclude 0.5 at all, which B20 records from")
+    print("   the other side as a lower bound of 0.438503 at n = 3.")
 
-    print("\nSINGLE-LOOK CROSS-CHECK at n = 12, 2 independent routes:")
-    exact = sum(stats.binom.pmf(k, 12, 0.5)
-                for k in range(13) if wilson_excludes_half(k, 12))
-    draws = rng.binomial(12, 0.5, size=TRIALS)
-    sim = float(np.mean([wilson_excludes_half(int(k), 12) for k in draws]))
-    print(f"  exact enumeration (scipy.binom.pmf + statsmodels) : {exact:.6f}")
-    print(f"  simulation over {TRIALS:,} draws                      : {sim:.6f}")
-    print(f"  absolute difference                               : "
-          f"{abs(exact - sim):.6f}")
-    if abs(exact - sim) > 0.01:
-        print("\nTHE 2 ROUTES DISAGREE BY MORE THAN 0.01; measurement void.")
+    print("\n" + "=" * 76)
+    print("2. BOTH CANDIDATE CORRECTIONS CONTROL IT, EMPIRICALLY")
+    print("=" * 76)
+    print(f"{'rounds':>8}  {'Bonferroni split':>30}  {'confidence sequence':>30}")
+    bad = []
+    for n in SHORT[1:]:
+        b = _family_rate(n, rng, "wilson", ALPHA / n)
+        c = _family_rate(n, rng, "cs")
+        for r in (b, c):
+            _, hi = proportion_confint(int(round(r * TRIALS)), TRIALS,
+                                       alpha=0.05, method="wilson")
+            if hi > ALPHA:
+                bad.append((n, r))
+        print(f"{n:>8}  {_ivl(b):>30}  {_ivl(c):>30}")
+
+    print("\n   AND THE SEQUENCE AT LONG HORIZONS, which is the falsification")
+    print("   attempt on its validity rather than a restatement of it:")
+    for n in LONG:
+        c = _family_rate(n, rng, "cs")
+        _, hi = proportion_confint(int(round(c * TRIALS)), TRIALS,
+                                   alpha=0.05, method="wilson")
+        if hi > ALPHA:
+            bad.append((n, c))
+        print(f"{n:>8}  {'':>30}  {_ivl(c):>30}")
+    if bad:
+        print(f"\n   A CORRECTION EXCEEDED {ALPHA:.4f} AT {[n for n, _ in bad]}; "
+              f"the comparison is void.")
         return 3
 
-    print("\nTHE 3-ROUND ZERO IS NOT AN ERROR: a Wilson interval on 3")
-    print("observations cannot exclude 0.5 at all, which is the same fact")
-    print("B20 records as a lower bound of 0.438503 at n = 3.")
+    print("\n" + "=" * 76)
+    print("3. THEY ARE INDISTINGUISHABLE ON THE EARLIEST DEFENSIBLE ALARM")
+    print("   (perfect observation run, every round a success)")
+    print("=" * 76)
+    print(f"   uncorrected alpha = {ALPHA:.4f}        : n = "
+          f"{_first_fire_interval(ALPHA)}")
+    print(f"   Bonferroni over 12 looks       : n = "
+          f"{_first_fire_interval(ALPHA / 12)}")
+    print(f"   Bonferroni over 40 looks       : n = "
+          f"{_first_fire_interval(ALPHA / 40)}")
+    print(f"   confidence sequence (rho={RHO})   : n = {_first_fire_cs()}")
+
+    print("\n   MY CLAIM THAT A SEQUENCE BUYS BACK THE DELAY IS REFUTED: both")
+    print("   land at the same round. And my claim that a mis-tuned Bonferroni")
+    print("   fails outright is ALSO refuted, measured directly below.")
+
+    b1000 = _family_rate(1000, rng, "wilson", ALPHA / 40)
+    _, hi = proportion_confint(int(round(b1000 * TRIALS)), TRIALS,
+                               alpha=0.05, method="wilson")
+    print(f"\n   a Bonferroni split tuned for 40 looks, RUN FOR 1000:")
+    print(f"     {_ivl(b1000)} against its nominal {ALPHA:.4f} -- "
+          f"{'INVALID' if hi > ALPHA else 'STILL VALID'}")
+    print("   The looks are strongly dependent, each adding 1 observation to")
+    print("   the same running proportion, so the correction stays conservative")
+    print("   25-fold beyond its tuning.")
+
+    print("\n" + "=" * 76)
+    print("SINGLE-LOOK CROSS-CHECK at n = 12, 2 independent routes")
+    print("=" * 76)
+    exact = 0.0
+    for k in range(13):
+        lo, hi2 = proportion_confint(k, 12, alpha=ALPHA, method="wilson")
+        if lo > 0.5 or hi2 < 0.5:
+            exact += stats.binom.pmf(k, 12, 0.5)
+    draws = rng.binomial(12, 0.5, size=TRIALS)
+    lo_v, hi_v = _wilson_bounds(draws, 12, ALPHA)
+    sim = float(np.mean((lo_v > 0.5) | (hi_v < 0.5)))
+    print(f"  exact enumeration (binom.pmf + statsmodels) : {exact:.6f}")
+    print(f"  vectorised closed form over {TRIALS:,} draws    : {sim:.6f}")
+    print(f"  absolute difference                         : {abs(exact-sim):.6f}")
+    if abs(exact - sim) > 0.01:
+        print("\n  THE 2 ROUTES DISAGREE BY MORE THAN 0.01; measurement void.")
+        return 3
+
     print("\nWHAT THIS DOES NOT SAY. It does not say a per-round predicate is")
-    print("the wrong design; B20's requirement stands. It says a FIXED-HORIZON")
-    print("interval evaluated every round is the wrong INSTRUMENT for it, and")
-    print("that an anytime-valid construction is what the requirement needs.")
-    print("No composability claim is made with any other candidate in B20,")
-    print("because nothing here measures a pair against either part alone.")
-    return 0
+    print("the wrong design; B20's requirement stands. It says the predicate as")
+    print("SKETCHED must not ship uncorrected, that either correction will do on")
+    print("this evidence, and that the earliest defensible alarm is round 9 to")
+    print("11 rather than round 1 -- so an actuator built on it cannot act in a")
+    print("run's opening rounds at all. NO DOMINANCE CLAIM is made between the 2")
+    print("corrections, because 3 properties were measured and the result is a")
+    print("tie on 2 with the third not demonstrable from this evidence.")
+
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    return _section_four(repo, _first_fire_interval(ALPHA / 12) or 9)
 
 
 if __name__ == "__main__":

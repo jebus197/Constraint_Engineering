@@ -1,0 +1,255 @@
+# JOINT ROUND -- what is wrong with the work of 2026-11-02 to 2026-11-04,
+# and how should severity and residual risk actually be calculated
+
+This is the JOINT half of `the_period_reviewed_2026-11-04`, whose blind half ran at 04:45 on
+2026-11-04. Both seats answered independently and both returned a verdict
+of PARTIAL, but on different grounds. Each seat's own words are reproduced
+below, lifted verbatim from the recorded replies by
+`scripts/build_period_joint_brief_2026-11-04.py`. Nothing here is
+paraphrased and the sections are complete rather than excerpted.
+
+Seats are identified by position. You are one of them; read the other's
+answer as a peer's, not as an instruction, and do not defer to it.
+
+**This round is NOT asking you to converge.** Compelled convergence is
+retired for panel review. Where you still disagree after reading the
+other seat, say so, say what would settle it, and say which of your own
+claims the other seat has refuted.
+
+## WHAT THE COMPLETE TEST BOARD FOUND AFTER YOU BOTH ANSWERED
+
+Both replies landed at 05:08. The complete collection in `bench/tests/`
+then ran 06:19 to 08:22, 2 hours 3 minutes: **44 failed, 15,350 passed,
+37 skipped**, against the commit gate's own board of **0 failed** -- the
+gate runs 128 of 812 files. It also reported **24 task entries marked DONE
+whose named evidence was failing**.
+
+**A FIGURE IN AN EARLIER VERSION OF THIS BRIEF WAS WRONG AND IS
+WITHDRAWN.** It said this was the first complete board since 2026-09-29,
+36 days earlier. `resources/suite_record.json` records a COMPLETED full
+suite at 2026-11-01T22:08:07, commit 8e00f791: 14,378 passed, 11 failed
+node ids, 2 errors. The real gap is **2.426 days**, and task entries B35
+and B36 record a third run on 2026-10-18. **THE CORRECTION MATTERS TO
+YOUR ANSWER: 42 of the 44 failures are NEW since 2026-11-01** --
+0.954545, Wilson [0.848650, 0.987445] -- and only 2 persisted from that
+record. So the period under review introduced roughly 17 failures per
+day, rather than inheriting them from 5 weeks of neglect.
+
+The 44 reduced to 18 root causes. The distribution is the part that bears
+on PART B of the brief you answered:
+
+* **2 live defects in the product.** A model configuration unreachable
+  since 2026-11-02, so 1 of 6 seats lost its own directive set in
+  EXPERIMENT dispatch; and the reference runner having 2 paths to CLOSED
+  where a repair already ruled and committed had bolted only 1, so a
+  model's own flag could still close its own finding through the other.
+  6 of 350 archived closures through that path were not execution-backed,
+  Wilson [0.007880, 0.036890]; none critical, none postdating the repair.
+* **10 instruments accusing CORRECT work.** 7 of 21 findings in 1 file
+  were its own false positives, 0.333333, Wilson [0.171948, 0.546265];
+  plus a duplicate-decision detector firing on dates inside producer
+  filenames, a loss detector reporting a lost annotation where the file is
+  byte-identical to its baseline, and a protocol check scoring 6 real
+  disagreements as misses because its pattern did not admit a backtick.
+* **19 were bookkeeping staled by this period's own work.**
+
+**WHERE THESE FIGURES COME FROM, because a number typed in a brief is
+not re-executed and this project has had one reach 2 seats wrong.** The
+board totals are from a complete execution whose log is NOT in the
+repository, so they are not checkable by you directly. Every derived
+figure above IS, through the task-list entries that carry it with its
+producer: B116 for the gate-versus-collection share, with
+`scripts/the_gate_board_is_not_the_suite_2026-11-04.py`; B117 for the
+model-config regression; B118 for the 6 of 350 sweep closures; B119 for
+the 7 of 21 false positives; B120 for the 3 further instruments. If any
+figure here matters to your answer, read the entry rather than trusting
+the sentence, and say so if the 2 disagree.
+
+**THE QUESTION THIS PUTS TO YOU BOTH.** You each returned PARTIAL on
+whether the period's work is wrong. The board says the period's
+INSTRUMENTS were wrong about 10 things and its PRODUCT was wrong about 2.
+Does that change your verdict, and if so in which direction? A reading
+that the instruments are the weak point is already in the project's
+record; say whether this board supports it, and what would refute it.
+
+---
+
+# THE FIRST SEAT'S ANSWER (verbatim)
+
+## `verdict`
+**PARTIAL** — the period's instruments are mostly sound, but Part A's specification is wrong in a way the project has not identified, Part B's unifying framing is wrong for half its instances, and two of Part C's six recommendations are contradicted by the project's own producers.
+
+## `per_part`
+| part | verdict | the decisive thing |
+|---|---|---|
+| **A** | **REFUTED** | §7.7's product is the right arithmetic under the wrong name, and the brief's own claim that residual risk "has no severity term" fails for the aggregate `R_n` |
+| **B** | **PARTIAL** | only 3 of 6 are reporting/deciding mismatches; B111 is not closed; and B108's own producer still carried that exact shape, exit 1, until I repaired it |
+| **C** | **PARTIAL** | (b)(c)(d)(f) hold; (a) is contradicted by its own producer and inverts a causal claim; (e) is not in the named document |
+
+---
+
+## `severity_and_residual_risk`
+
+Run: `python3 scripts/severity_is_an_expectation_not_a_magnitude_2026-11-04.py` → **exit 0**, four derivations discharge. Constants are **read from the appendix**, not typed in.
+
+**R1 — §7.7 does not define a severity.** Let `D` = "the defect is real", `h>0` the consequence if `D` holds, `b = P(D|evidence)`. A consequence *magnitude* is `h`: at `b=0` it is still `h`. An *expectation* is `b·h`: zero exactly when `b=0`. SymPy: `h|_{b=0} → h` (nonzero), `b·h|_{b=0} → 0`. And `W(HARD)·confidence·V(False) = 0` for **all** confidence. §7.7's score vanishes with the *belief* factor, not the consequence factor — so **its celebrated KEY PROPERTY is the proof that it is an expectation mislabelled a severity.** The founder's suspected conflation is in the specification, not only in his conversation.
+
+**R2 — the two belief factors are multiplied, which is not a fusion rule.** `confidence` and `V` estimate the *same* proposition. §7.8 Approach B, in the same document, fuses in log-odds. z3: `∃p∈(0,1): p² ≥ p` → **unsat**, so agreeing evidence *always* weakens under the product rule. Two verifiers each reading 0.9 give **0.810000** under §7.7 and **0.987805** under §7.8 — opposite directions. §7.7 and §7.8 are incompatible treatments of one quantity in one document.
+
+**R3 — at the 0.7 cut the formula collapses.** Supremum over confidence: only `(HARD, True)` reaches 0.7; the other five cells cap at 0.5. z3 returns **unsat** on the negation of `Sev ≥ 0.7 ⟺ HARD ∧ True ∧ c ≥ 0.7`. Inside the surviving cell `Sev = c` exactly — the harness factors are a pre-filter, the magnitude is the model's own number.
+
+**R4 — and this is the part the brief gets wrong.** `cdsfl_operational.md:174` aggregates `R_n = Σ_k w_k · R_k(n)`; **:176 defines `w_k` as "the consequence weight for flaw class k."** So the aggregate residual risk already carries a severity term. Appendix §4 offers `L_n = Σ_k s_k·R_{n,k}` as an *extension* and states it reduces to `R_n` when `s_k = w_k` — which the operational file has already made true by definition. **The severity separation is not an available option; it is a distinction the deployed spec has already spent.** Worse: with no normalisation requirement (I checked — my first regex falsely matched "normalised token sets" at :889 and I tightened it; the answer is **False**), `R_n ∉ [0,1]`. z3 witness, confirmed in SymPy: `w=(3,4), R=(½,½) → R_n = 3.5`. §3's instruction *"If R_k > 0.5"* compares a harm-weighted loss against a probability.
+
+**My answer — three quantities, one job each, no factor in two of them:**
+
+```
+Sev(f) = W(class)              consequence ONLY. A disproved finding keeps its
+                               class; it stops being a finding.
+P(f)   = σ(Λ_total)            belief, from TOOL receipts, by §7.8 Approach B.
+                               Already specified; already clears the d_tool bar
+                               B87 shows refuses self-asserted confidence.
+                               V(False) enters as Λ = −∞.
+EL(f)  = Sev(f) · P(f)         expected loss. What §7.7 actually defines and
+                               what its KEY PROPERTY describes. Gate on this.
+
+R_k(n) ∈ [0,1]                 per-class residual risk. A probability. 0.5 is fine.
+L_n = Σ_k Sev_k · R_k(n)       expected residual loss. NOT a probability.
+                               Rename R_n → L_n, OR require Σw_k = 1 and give up
+                               the consequence reading of w_k. One, not both.
+```
+
+**Do they depend on each other?** Only through `Sev`. `R_k(n)` is severity-free and must stay so; the coupling belongs in `L_n` and nowhere else. The repair **deletes a factor** rather than adding machinery — this is a **fourth option B87 does not list**, and B87's recommendation **(b)** is *necessary but not sufficient*: it makes the second factor admissible and leaves the category error and the double-count untouched.
+
+**On the 84.375%:** the producer's `[scope]` line is correct and I quote it from its own output — 10 byte-identical sandbox-harvest copies skipped, `42 = 32 + 2·5`. But the attribution is loose: nothing computes the product, so there is no implementation of the key property to violate. What is measured is the rate at which *model-asserted* severities are non-zero on REFUTED findings. Direction unchanged; the figure is a property of the models' assertions, not of §7.7's implementation.
+
+---
+
+## `reasoning`
+
+Ran all five named producers first. The severity producer's scope line, B20's status, the decisions count, the census and the gate. Then read §7.7, §4, B87 and `cdsfl_operational.md` §3 directly rather than from the brief — which is how I found `w_k`'s definition line. Derived A with SymPy + z3 + mpmath, cross-checked R2/R3 on Wolfram. Dispatched two agents in parallel for the Part B entry audit and the Part C/repetition census, then verified every load-bearing claim myself: I re-ran the census producer (`EXIT=1`), re-read its lines 83–101 and 185–190, and re-ran the asterisk producer and read STEP 6 and STEP 8 in my own tool output.
+
+**Part B, the framing attack.** The brief's shared assumption is that these are 6 instances of 1 shape. **Only 3 are.** B108 (reporting `_responses_label` vs deciding `annotations()`), B109 (`compaction_resume_brief:brief()` vs `task_list_markers:summarise()`), and B20's third constant fit. **B110 is a missing check** — no reporter/decider pair exists; nothing was disagreeing, nothing was looking. **B112 is nondeterminism** — set iteration order; the flaky guard was a symptom. **B111 is not closed at all**: its marker reads `state: OPEN | status: PROPOSED` and the entry itself says `[NEEDS YOUR RULING]`. Calling it one of "6 defects closed in this window" is wrong, and if he reasons from a 6-of-a-kind pattern he will generalise a fix that only addresses half.
+
+**And the shape recurred inside its own evidence.** `scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py` — B108's producer, which the entry records as *"4 steps, exit 0"* — **exited 1** and printed `the census over-reports his verdicts by 1114, a factor of 1.0000. All structural checks held: False.` Cause, classified **CODE-DEFECT, not corpus-dependent** (the corpus is present and intact, 1953 = 839 + 1114 reproduces): B108's repair moved the residue to `annotations_excluded_as_not_his`, the producer still asserted the pre-repair identity `annotations_total == his + spurious` (now `839 == 839 + 1114`), and the VERDICT was an **unconditional f-string with the check flag appended rather than gating it**. It survived because the only test touching it reads its *source text* for `def` lines. That is B108's own defect, in B108's own evidence, uncaught by B108's own guard.
+
+**Part C.** (f) holds verbatim but the numbers moved: **126 of 810 guard files (0.155556, exactly 7/45), 2512 of 15393 tests (0.163191)** — the document pre-empts this and redirects to the script, which is correct practice. (b), (c), (d) all check out; (d)'s negative claim is right, no producer for 0.8333 exists anywhere in `scripts/`. **(a) is contradicted by its own producer.** The document says *"would the asterisks help? No, not measurably"*; the producer's STEP 8 reads: *"the composed pair DOMINATES either part alone… Neither is redundant, which is the condition his standard sets"* — asterisk alone 583/583 on future files, marker alone 578/583, both 583/583 and 36/41 on the backlog. STEP 5 adds that **299 of 348 files (0.859195)** have no oracle at all, where the format needs none. The countervailing cost — whether Read Aloud speaks a lone asterisk — is explicitly untested and untestable without his ears. The honest answer is *undecided pending a listening test*, not *no*. **And the closing-hash argument inverts cause and remedy**: the document says *"A trailing marker is what caused 36 of the 41 losses"*; STEP 6, in my own run, says the marker **recovers** 36 of 41 and is what *settles* the case. The cause is the markdown-heading shape heuristic. **(e) does not exist** in `Answers_Still_Owed_2026-11-04.md` — `grep -i truncat` returns 0 matches; where the subject is recorded (`Your_Questions_And_The_Branch_2026-11-03.md:89`) the recommendation is the opposite: *"The simplest sufficient repair for the harm actually observed is the first."*
+
+---
+
+## `strongest_falsification`
+
+**Against my Part A verdict.** §7.7 may be a deliberate *scoring* function, not an estimator — a ranking key for triage, where monotonicity is all that is required and the probabilistic reading I impose is my own. Under that reading R1 and R2 dissolve: a score that zeroes disproved findings is sound triage design, and multiplying two sub-unit factors is a penalty, not a fusion. **What blunts this:** the document calls it a severity, puts it in a gate at a numeric cut, and supplies §7.8 as a *Bayesian* treatment of the same quantity. A pure ranking key would not need §7.8 and would not be thresholded. But if the founder rules it a ranking key, R1/R2 are my error and only R3/R4 survive.
+
+**Against R4, more sharply.** I assert `R_n ∉ [0,1]` from the *absence* of a normalisation requirement in `cdsfl_operational.md`. Absence of a stated constraint is not presence of a violation. If `w_k` is normalised in the code that computes `R_n` — which I did not trace into `reference_runner_v3.py` — then the 0.5 gate is sound and R4's scale half collapses, leaving only the naming point. **This is the weakest leg of my answer and I am flagging it rather than burying it.**
+
+**Against my Part C (a) attack.** The document may be weighing the untested comfort cost at infinity — if a lone asterisk is spoken aloud, the format destroys the thing it exists to protect, and no accuracy gain redeems that. That would make "no" correct and my "undecided" precious. I still hold that an untested cost cannot be asserted as decisive, but a reasonable seat lands the other way here.
+
+---
+
+## `refutation_condition`
+
+- **A:** a trace showing `w_k` is normalised where `R_n` is computed (kills R4's scale leg); or a founder ruling that §7.7 is a ranking key not an estimator (kills R1/R2); or a demonstration that `confidence` and `V` are evidentially independent, which would make the product a legitimate joint.
+- **B:** a concrete reporter/decider pair named in code for B110 or B112 (I claim none exists); or evidence B111 is closed.
+- **C:** a listening test showing Read Aloud speaks lone asterisks (vindicates (a)); or a line in `Answers_Still_Owed_2026-11-04.md` containing a truncation recommendation (kills my (e) finding — `grep -i truncat` returns 0).
+- **My own fixes:** any run where the repaired census producer exits 0 while `broad_total ≠ his + residue`, or exits 1 while printing the asserted claim.
+
+---
+
+## `fix`
+
+Three files, in the sandbox tree at real paths, all executed:
+
+1. **`scripts/severity_is_an_expectation_not_a_magnitude_2026-11-04.py`** *(new)* — the Part A derivation. Reads the factor tables **from the appendix** so it goes red if the spec moves; gates its verdict on all four flags; exit 0.
+2. **`scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py`** *(repaired, 3 sites)* — recomputes `broad_total` by walking the files rather than reading a key whose meaning B108 changed; fixes STEP 3's numerator (`0 of 839` → `1114 of 1953`); **gates the VERDICT sentence on the checks instead of appending the flag to it**. Exit 1 → 0.
+3. **`bench/tests/test_the_census_producer_actually_runs_2026-11-04.py`** *(new)* — **executes** the producer, requires exit 0, requires the verdict be asserted XOR withheld, and re-derives the identity by an independent route. Skips visibly if the Responses folder is absent. 3 passed.
+
+**On composability, in his strong sense:** these address two unrelated defects (a specification error and a producer error). **I make no composed claim and claim no composition advantage** — they are not a pair, and asserting one would be exactly the weak reading he rejected. Fix 3 is not an addition nothing reaches: pytest reaches it, and the measured difference is `EXIT=1` before versus `EXIT=0` after, so it would have caught the defect it exists for.
+
+---
+
+## `disagreement`
+
+1. **The brief's Part A premise is wrong.** *"Residual risk is `R_k`, a different quantity with no severity term."* True of per-class `R_k(i)`; **false of the aggregate `R_n = Σ_k w_k·R_k(n)`**, where `cdsfl_operational.md:176` defines `w_k` as the consequence weight. The brief reproduces the very conflation it asks me to reject.
+2. **"6 instances of 1 shape" is wrong for half the set.** 3 fit; B110 is a missing check, B112 is nondeterminism. The brief invited me to attack this and the attack lands.
+3. **"6 defects were closed in this window" is wrong.** B111 is `state: OPEN | status: PROPOSED`.
+4. **Recommendation (e) does not exist** in the artefact the brief attributes it to, and where the subject is recorded the recommendation is inverted. If this brief was built from a summary, that summary invented a recommendation and reversed its polarity — which is itself the period's signature defect, occurring in the document that reports it.
+5. **Minor:** gate figures are 126/810, not 125/809. The brief pre-warned; noted for completeness only.
+
+---
+
+---
+
+# THE SECOND SEAT'S ANSWER (verbatim)
+
+## `verdict` — PARTIAL
+
+The period's work is substantially sound and unusually well-guarded, but it contains one live regression the guards do not reach (the B108 producer contradicting the fix it documents), two count defects in the deliverable the founder reads, one over-generalised framing, and an incompleteness in the severity answer (the key property is silently lost if §7.7's `confidence·V` is replaced by `S_v` alone).
+
+## `per_part`
+
+**A: PARTIAL.** The project's present answer is directionally right and the violation-rate measurement is real, reproduced, and measures what it is attributed to. What no document states: B87's recommended route (b), realised as `confidence := S_v`, **loses the key property unless V's hard zero is retained** — derivation below.
+
+**B: PARTIAL.** All five closed fixes verified by executing their guards (13 + 13 + 5 + 4 + 9 tests, all green). But: (1) `scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py` — B108's own named producer, whose entry claims "exit 0" — **exits 1 on the committed tree and prints "the census over-reports his verdicts by 1114 … All structural checks held: False"**, because its `step_2` still asserts the pre-fix identity `annotations_total == his + spurious`. The fix inverted its oracle. That is "a fix introduced a regression the guards do not reach" (the guard tests the census function, not the producer), and it is the period's own shape — a reporting layer disagreeing with the layer that decides — recurring inside the instrument built for that shape. Fixed and falsified both ways (below). (2) The brief's "6 defects were closed" is wrong on one: **B111 is OPEN** (`state: OPEN | status: PROPOSED`, and it appears in the producer's list of 20 owed decisions). (3) The "6 instances of 1 shape" framing over-generalises: B108, B109 and B20's third constant are the reporting/deciding shape and the record says so; **B110 is a missing verifier** (no second layer existed to disagree), **B111 is a provenance gap** (a figure with no deciding layer at all), and **B112 is nondeterminism** (per-process hash order; the record frames it as flakiness). 3–4 of 6, not 6 of 6. Conclusions drawn from "one shape" (e.g. that one class of guard covers them) would be wrong for B110–B112.
+
+**C: PARTIAL.** Confirmed: the asterisk/closing-hash refusal (36 of 41 losses were *caused* by trailing markers; the recovery was reader-side; nothing shows asterisks recover anything the marker repair does not); the separate-runs recommendation (the refutation route fails: the DVs are not separably measurable in one run because the orchestrator intervenes in the very run generating the severity statistics — attribution is lost even though the variables are nominally disjoint); the 3-of-20 claim (decisions 3, 8, 9 exist in the register and map into the producer's owed list); the commit-gate claim (producer: **126 of 810 guard files = 0.1556, 2512 of 15393 tests = 0.1632** — the brief's 125/809 is already stale, exactly as it warned). Contested: the depth-over-breadth retirement — the incumbent figure is genuinely irreproducible, but the named replacements (0.888889 instrument-share; 0 of 7 unaided) measure a **different axis**, which B111 itself admits; retiring removes the only datum on the rule's own axis (catchable-before-running), so the removal clause is satisfied only by choosing the property to fit the preferred outcome. Option (1), produce it from the transcript, preserves the axis. **Nonexistent: the truncation-hook recommendation.** `Answers_Still_Owed_2026-11-04.md` has 5 sections and never mentions a truncation hook; the truncation repair recommendation lives in `PARKED_FOR_THE_FOUNDER.md` and is "mark the truncation wherever a cut occurs" — a marking repair, with no hook proposed or refused. The brief attributes to the file a sixth recommendation it does not make.
+
+## `severity_and_residual_risk` — my own answer, with derivation
+
+**They are different dimensions and neither should be computed from the other.** Severity is a loss magnitude (consequence if the defect ships — the objective section's materiality, V(f)); residual risk is a probability (that an undetected flaw of class k remains). The conflation is rejected because a probability-weighted magnitude is only meaningful as a *product at the decision layer*, never as one quantity.
+
+**Residual risk.** `R_{n,k} = π_k·m_k / ((1−π_k) + π_k·m_k)` with `m_k = Π_i(1−q_ik)` is the exact Bayes posterior P(flaw remains | no detection) — SymPy-verified against the appendix §4 form, and at π=1/2, q=p it equals `(1−p)^n/(1+(1−p)^n) = (1−C)/(2−C)` (SymPy: both identities simplify to 0; Wolfram Language, local kernel, secondary: `0`). **R_k is the right construction and must carry no severity term**: inserting one would break its range semantics ([0, π_k]) and double-count once expected loss is formed. Severity enters linearly and only at the loss layer: `L_n = Σ_k s_k·R_{n,k}`, `∂L/∂s_k = R_k` (SymPy-verified). One prose quarrel with the appendix: §4's "the conflation is appropriate" for non-safety work should read "the reduction s_k = w_k is a deliberate choice of loss units" — "appropriate conflation" is the phrase that produced the founder's confusion.
+
+**Per-finding severity.** The appendix's *form* is right — it is expected consequence = consequence × credence — but its instantiation is not implementable admissibly: `confidence` is self-asserted and the `d_tool` gate refuses it (B87 is correct), and at the 0.7 cut the product collapses to a conjunction (verified: cell suprema are 1.0, 0.5, 0.5, 0.25, 0, 0 — only HARD∧V=True reaches 0.7, where Sev = confidence exactly). The correct instantiation is:
+
+> **Sev(f) = W(class) · S_v(f) · 1{runner falsifier verdict ≠ REFUTED}**
+
+where S_v is §7.8 Approach B (tool-derived log-odds credence — B87's option (b) made concrete) and the indicator is the runner's independent falsifier re-run, which is the layer that already decides under "tools decide, not votes". **The indicator is not optional**: with S_v alone, SymPy-falsified + others-verified gives S_v = 0.273 ≠ 0 (computed: Λ = −4.60+2.08+1.54 = −0.98), so the soft veto does not annihilate and the key property would be lost. No document in the record states this; it is my seat's addition. **Dependency between the two: none in either direction** — Sev is per-finding and post-hoc, R_k per-class and prospective; they share only the class partition and the admissibility rule that both d (in R) and credence (in Sev) be tool-derived. The violation-rate measurement (27/32 = 84.3750%, Wilson [68.2459%, 93.1356%] — reproduced by statsmodels, hand-rolled mpmath Wilson, and Wolfram, all agreeing to 10+ digits) measures exactly the key property it is attributed to: stored effective severity violating V(False)-annihilation.
+
+## `reasoning`
+
+I ran the five named instruments first, read the artefacts against their producers, executed every period guard, and derived the Part A mathematics with SymPy before confirming with Wolfram. The census producer's self-contradictory output ("over-reports by 1114, a factor of 1.0000 … checks held: False") was the thread: reading its source showed `step_2` asserting the defect-era identity against the fixed census. The inventory defects fell out of reading the deliverable against its own enumerations (header 8 over a 9-item list; "19 decisions" against "20" twice in the same note — both surfaces carry 20 today, verified by diff modulo heading markers). The decisions register's statistics (0.207053 two-sided exact binomial, Wilson [0.386582, 0.781193] for 12/20, power 0.2412) all reproduced independently.
+
+## `strongest_falsification`
+
+That the census producer was intended as a frozen pre-fix demonstration — its 1114/1953 narrative quoted into B108 — in which case its exit-1 is not a regression and my edit rewrites a historical instrument. Against this: its own docstring states a live contract ("The census must consult the narrow predicate … **which is what this script measures**"), B108 cites it as "4 steps, **exit 0**" (false on the committed tree), and this brief instructs seats to run it today — a seat quoting its output tonight carries a false verdict. If the frozen-snapshot reading were documented anywhere, my Part B severity drops and the correct fix would instead be renaming/annotating the script.
+
+## `refutation_condition`
+
+(1) A committed record designating the census producer a pre-fix snapshot with its post-fix exit-1 documented — overturns my principal Part B finding. (2) A derivation showing the runner falsifier indicator is redundant — i.e. an admissible S_v construction in which REFUTED forces S_v = 0 exactly — overturns my Part A addition (note Approach B cannot do it: finite log-odds never reach 0). (3) A measurement showing the two simulated experiments' outcome variables are unaffected by orchestrator intervention mid-run — overturns my endorsement of the separate-runs recommendation. (4) Evidence that `Answers_Still_Owed_2026-11-04.md` ever carried a truncation-hook section — overturns my brief-misattribution claim.
+
+## `fix`
+
+- `scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py` — step_2 now asserts the B108 contract (census quotes only his; residue named; the census's 2 figures reconstruct the independent broad-pass recount, SymPy identity on `a + e = h + s`); verdict line states the true relation; exit 0 iff the contract holds, red on reversion either way.
+- `scripts/falsifier_the_census_producer_tracks_the_fixed_state_2026-11-04.py` — executed, both halves hold (output pasted above).
+- `experimental_notes/Inventory_Since_His_First_Message_2026-11-04.md` — refuted-list header corrected 8→9 with a marked correction; item 5's "19 decisions" annotated with the current 20 and the recount producer.
+- `scripts/recount_the_inventorys_refuted_list_2026-11-04.py` — committed recount, exit 0.
+
+No composition claim is made: each fix stands alone, none dominates another on any measured property, and none removes anything.
+
+## `disagreement` (with the brief)
+
+1. **"6 defects were closed in this window" is false on B111** — it is OPEN, awaiting his ruling, and appears in the producer's owed list. 2. **The truncation-hook recommendation does not exist in the cited file**; the truncation repair recommendation (marking, not a hook) lives in the parked file. 3. **"6 instances of 1 shape" is the brief's framing, not the record's** — the record claims the shape for B108/B109/B20-constant-3 only, and B110/B111/B112 are demonstrably other shapes. 4. The brief's gate figure (125/809) was stale at dispatch, which the brief itself predicted — the producer reads 126/810. Where I expect the other seat may disagree: on whether editing the committed census producer (rather than freezing it and writing a successor) is the simplest sufficient repair; my position is that a producer whose docstring states a live contract should enforce that contract, and the mutation half of my falsifier shows nothing of its detection power was removed.
+
+**Termination:** stopping because the last pass produced no new above-threshold findings — every quantitative claim I could reach reproduced from its producer with 2 independent tools, all period guards executed green, and the one remaining named mechanism (the archive cut-transfer) was run and reproduced exactly. Residual, below threshold: I did not re-derive the archive's Youden scan or the Mann-Whitney from raw registries (its producer reproduces the register's figures and carries its own shuffle control), and I did not audit `bench/fix_comparator.py` internals (built, imports, reached by its named test, nothing in the window changed it).
+
+---
+
+## Use the harness
+
+Answer with the harness, not around it. Use the STEM tools the project
+already depends on -- SymPy, z3, SciPy, NumPy, statsmodels, mpmath --
+rather than reasoning in prose. The tool output is the evidence;
+reasoning selects and interprets it but never substitutes for it.
+Cross-check every computational claim with at least 2 independent tools,
+and give every proportion a confidence interval.
+
+## OUTPUT -- what to return, field by field
+
+Return all of: `verdict`, `per_part`, `severity_and_residual_risk`,
+`reasoning`, `commands_run`, `strongest_falsification`,
+`refutation_condition`, `fix`, `disagreement`, `termination`.
+
+`disagreement` is NOT optional and `none` is a non-answer: state your
+strongest disagreement with this brief's own framing, or with the other
+seat's answer, and say what evidence would settle it.
+

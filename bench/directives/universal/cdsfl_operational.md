@@ -175,6 +175,23 @@ model's estimates are inconsistent and must be revised.
 
 where w_k is the consequence weight for flaw class k.
 
+**Scale note, added 2026-11-04 from the panel joint round: what R_n returns,
+and what it may not be compared to.** The w_k are NOT required to sum to 1.
+Nothing in this file or in `docs/MATHEMATICAL_APPENDIX.md` states any
+normalisation; the producer named below recounts both on every run, rather
+than carrying a figure here that this note's own wording would change. So
+R_n is an expected-loss SCALE with range [0, Σ_k w_k], not a probability,
+and it can exceed 1 — witness w = (3, 4) with R_k = (1/2, 1/2), giving R_n =
+7/2. Proved rather than asserted: z3 returns `sat` for R_n > 1 under
+non-convex weights, `unsat` under convex ones, and `sat` for R_n tripping
+0.5 while EVERY per-class R_k passes 0.5. R_n is the appendix §4 quantity
+L_n = Σ_k s_k · R_{n,k} in the special case s_k = w_k.
+
+**So: the §3 CORROBORATION gate reads the PER-CLASS R_k, which is a
+probability bounded in [0, 1] as stated above, and is right to. Never carry
+R_n into that gate or compare it to a probability threshold such as 0.5.**
+Producer: `scripts/the_weighted_risk_is_not_a_probability_2026-11-04.py`.
+
 ---
 
 ## 4. The Break-Even Threshold (S* and the Valley of Bad Fixes)
