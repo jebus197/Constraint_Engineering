@@ -704,4 +704,26 @@ The third option. Require a re-issued message to name every staged path. Mechani
 
 Why no mechanism is obviously right. The gate cannot know which of several staged changes a message ought to describe. That is a judgement about what matters, and a rule that forced every prior message into the next one would make the commit log less readable rather than more honest.
 
+## DECISION 29. THE MEMORY INDEX IS 3 ENTRIES FROM REFUSING A SAVE, AND BOTH MECHANISMS BUILT TO PREVENT THAT NOW FREE NOTHING
+
+What it is. The index of persistent memory, MEMORY.md, is loaded at the start of every session. It has 2 limits: the loader truncates it over 25,000 characters or over 200 lines, and the save tool refuses at 95 per cent of either. Today it stands at 23,198 characters against a refuse line of 23,750. That is 3 or 4 more entries before a save is refused, and which it is depends on the kind of entry: a dated session entry starts its own line and costs about 143 characters, giving 3, while a new lesson is added to an existing grouped line and costs about 128, giving 4. 2 of my own instruments disagreed on this and both were right, because they model different additions, so both figures are given rather than a single one chosen. The line budget is not the problem: 91 of a 190 line limit.
+
+How fast it fills is now measured rather than estimated, at 286 characters in 1 session. The backup written automatically before today's archive run records the index at 23,752 characters, which is 2 over the refuse line and exactly the refusal the save tool issued. The run freed 840 characters. 286 of those 840 were used again in the same session, by 2 new index lines, which is about a third of the gain spent before the session ended.
+
+Both mechanisms that exist for this now free nothing, and neither is broken. The first moves dated session entries older than 30 days into a sibling archive file. Run today it moves 0, because nothing in the dated section is that old. The second merges same-date entries onto 1 line. Run today it frees 0 lines and 0 characters, because the dated section is already merged. They are working exactly as written and both have run out of slack at the same time.
+
+Where the growth actually is, which is the part that makes this a decision. The index has 194 pointers. 154 of them, just under 80 per cent, sit in the Feedback section, which holds 17,070 of the file's 23,198 characters. That section carries 0 dated entries, because it is standing guidance and ages by design never. Only 585 characters, about 2 and a half per cent of the file, sit on dated lines, and that is everything either mechanism can touch. So 190 of the 194 pointers are out of reach of both, against 116 of 149 when this was last measured on 29 October.
+
+A correction of mine belongs here. A note I wrote earlier today described the first mechanism's default as a new kind of failure, a mechanism that is built and wired and still never fires. That framing is withdrawn. The condition was already named in the code on 29 October, in the docstring of the second mechanism, which was built precisely because the first one could free nothing. I found that comment only by tracing the callers before proposing a fix I would otherwise have rebuilt from scratch. What is new today is narrower and worse: the second mechanism is exhausted as well.
+
+What you decide. How the index stays inside its limits now that age and date-merging cannot help. 3 options, and the reason I am not simply fixing this is that retiring a standing lesson is a judgement about whether the failure it names has stopped happening, and no counting rule can make that judgement. Counting recurrences would retire exactly the lessons that worked, because a lesson being followed stops producing the failure it warns about.
+
+The first option, and the recommendation. Raise the character limit, and leave the retirement judgement to you as it arises. The limit is a loader budget rather than a physical constraint, and the index is doing real work at its current size. This costs a larger block of context at the start of every session, which is the honest price, and it buys the simplest possible answer: nothing is retired, nothing is lost, and no new mechanism needs maintaining.
+
+The second option. Archive standing guidance by recurrence rather than by age, with you ruling each candidate. A lesson that has not recurred in a named number of intensive periods becomes a candidate, the archive keeps it readable and the index keeps a pointer to the archive. The cost is that the candidate list needs your attention periodically, and the risk is that a lesson stops recurring because it is working.
+
+The third option. Accept the refusal and handle it by hand each time it fires. This is what happened today: the save was refused, I ran the first mechanism with a 5-day window instead of its 30-day default, and it freed 840 characters. That works and it is not a mechanism, it is me remembering. It will fail the first time I do not.
+
+What is not in question. Nothing is deleted under any option. The archive file sits beside the index in the same folder and every pointer in it still resolves, which is why moving an entry there costs nothing but a reader's extra step.
+
 Written under CDSFL note standard v1.9 (1 November 2026).
