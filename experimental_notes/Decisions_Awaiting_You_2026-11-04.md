@@ -686,4 +686,22 @@ The fourth option. Neither, and keep the deferral. Your words still govern, quot
 
 A small defect found in the same pass, and already repaired, so it needs nothing from you. The actuator carries the project's first explicit statement of what it assumes and what it guarantees. Its line references were prose, and 2 of the 4 pointing into the runner had drifted, 1 by 23 lines and 1 by 7, landing on a logging call and a phase-name log. A third statement named a function that exists nowhere in the project outside that sentence. My first count of this said 1 of 3 and was wrong, because the extraction missed one form of reference and misfiled another. The repair is structural rather than a set of corrected numbers: the references now live as data, 9 of them, each carrying the text its line must contain, and the guard beside the declaration reads them and fails when a line stops holding its text. Corrected numbers in prose would simply have drifted again. A further correction of my own: I said the guard checked none of the references. It checked 1 of them, and only that the line number was inside the file, which a drift of 23 lines passes without complaint. It also found the file by searching the whole repository for its name and taking the first of 75 matches, 74 of which are old copies kept inside panel records. It happened to pick the right one. A check that was attempted and was too weak is a more useful thing to know than a check nobody wrote.
 
+## DECISION 28. WHETHER A RE-ISSUED COMMIT MESSAGE NEEDS ANY MECHANISM, OR WHETHER THE HABIT IS ENOUGH
+
+What it is. A commit was refused by the gate today on a single failure, a help flag that ran its whole measurement instead of answering. The staged files stayed staged. The failure was fixed and the commit re-issued with a new message describing only that fix. So 12 files landed under a message that accounts for 2 of them. The files include the amendment to the orchestrator entry, the new decision about turning it on, that entry's authored detail, and the correction to the depth-and-breadth figures in both instruction files.
+
+What was actually lost, and what was not. The substance is not lost. The task list carries the sentence that the build is already ruled 3 times, and the decisions file carries the decision about the 2 switches, both inside the same commit. What was lost is the message's own account of why those files changed. 2 corrections survive nowhere else: the withdrawal of a wrong inference about empty decision headings, and a note that a compound command's exit code masked a refusal.
+
+How it came to light, which is the part worth keeping. A script written to measure something entirely different, your untested hypothesis about depth going blind, verifies every attribution it reports by locating the quoted words in the record rather than trusting its own prose. 2 of its 23 quoted attributions could not be found, and both turned out to exist only in the refused message. A producer that refuses to trust itself detected a gap nothing else was looking for.
+
+What you decide. Only whether this is worth any mechanism. It may be a decision to take no action, which is still a decision.
+
+The first option, and the recommendation. Take no action beyond the habit, which is now written down: when a gated commit is refused, the next message covers everything still staged, and the refused message is kept rather than overwritten so it can be merged in. No code, nothing to maintain, and the failure mode is recorded where it will be read.
+
+The second option. Have the gate print the staged file paths alongside its refusal. Cheap and purely informational, and it would have made the mismatch visible at the moment of re-issuing. The cost is extra output on every refusal, most of which do not need it.
+
+The third option. Require a re-issued message to name every staged path. Mechanical and complete, and it would produce long, mostly boilerplate messages. Not recommended, and stated so the option set is complete.
+
+Why no mechanism is obviously right. The gate cannot know which of several staged changes a message ought to describe. That is a judgement about what matters, and a rule that forced every prior message into the next one would make the commit log less readable rather than more honest.
+
 Written under CDSFL note standard v1.9 (1 November 2026).

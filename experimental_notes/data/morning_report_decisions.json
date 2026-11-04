@@ -1009,5 +1009,17 @@
       "**Leave it to discipline: do not edit a referenced file between the 2 halves.** No code at all. This is the weakest of the 4 because this session broke that discipline twice without noticing, which is how the defect was found."
     ],
     "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md"
+  },
+  "task:B128": {
+    "title": "B128 - a refused commit's message was replaced rather than merged, so 12 files landed under a message describing 2 of them",
+    "spoken_heading": "WHETHER A RE-ISSUED COMMIT MESSAGE NEEDS ANY MECHANISM, OR WHETHER THE HABIT IS ENOUGH",
+    "what": "A commit was refused by the gate on 1 failure. The staged files stayed staged, the failure was fixed, and the commit was re-issued with a new message describing only that fix. So 12 files landed under a message that accounts for 2 of them. The substance is not lost: the task list and the decisions file carry it, inside the same commit. What was lost is the message's own account of why those files changed, and 2 corrections survive nowhere else.",
+    "why": "It needs a ruling only on whether it is worth any mechanism. The gate cannot know which of several staged changes a message ought to describe, and a rule that a re-issued message must contain every prior message would make commits unreadable. The habit costs nothing and is already recorded, so this may be a decision to take no action, which is still a decision.",
+    "options": [
+      "**Take no action beyond the recorded habit. This is the recommendation.** When a gated commit is refused, the next message covers everything still staged and the refused message is kept rather than overwritten. No code, nothing to maintain, and the failure mode is now written down where it will be read.",
+      "**Have the gate print the staged paths alongside its refusal.** Cheap and purely informational: it would have made the mismatch visible at the moment of re-issuing. It adds output to every refusal, most of which do not need it.",
+      "**Require a re-issued message to name every staged path.** Mechanical and complete, and it would produce long, mostly boilerplate messages. Not recommended."
+    ],
+    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message."
   }
 }
