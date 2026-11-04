@@ -1,0 +1,153 @@
+# PANEL BRIEF — What is wrong with the work of 2026-11-02 to 2026-11-04, and how should severity and residual risk actually be calculated?
+
+## REQUIRED SECTION 1 — The question
+
+**This output was produced by another system and has not been independently verified.** It may
+contain errors at interfaces between subsystems, unstated assumptions that conflict across
+components, constraint violations visible only at system level, and conclusions that are
+internally consistent but wrong. **Your task is to find what is wrong, not to confirm what is
+right.** Examine it as an integrated system, and focus on cross-module interactions, shared
+assumptions and emergent contradictions that component-level review would miss.
+
+**The founder asked for this panel in these terms:** a careful reading of all resources
+generated since the morning of 2026-11-02, expecting *"a considerable degree of repetition"*,
+and he named the substantive topic himself: *"the discussion I had with Grok and my unhelpful
+conflation of residual risk and severity and how these should be calculated in reality, which
+you have also partially addressed"*. He asked for **as few panels as necessary to cover
+everything**, so this is 1 brief with 3 named parts.
+
+**PART A — SEVERITY AND RESIDUAL RISK. How should each actually be calculated, and is the
+project's present answer right?** He believes he conflated them and wants the conflation
+rejected rather than reproduced. What the record says: the per-finding severity section of
+`docs/MATHEMATICAL_APPENDIX.md` specifies `Sev(f) = W(class) · confidence · V(verification)`.
+**Read the weights and verification factors from the appendix itself rather than from this
+brief** — restating a source's constants in a brief is how a wrong number reaches a seat. Its
+KEY PROPERTY is that a disproved finding carries severity of exactly zero, because the
+verification factor for a disproved finding annihilates the product. **The implementation does not compute that
+product**: `bench/reference_runner_v3.py` reads a model-asserted float. Measured by
+`scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, whose own output is quoted
+here rather than converted: **violation rate 84.3750%, Wilson 95% [68.2459%, 93.1356%]** over
+27 of 32 disproved findings — a figure that was itself wrong until a panel seat found that a
+panel's own sandbox harvest had triple-counted 5 findings, so read the producer's `[scope]`
+line before quoting it.
+
+<!-- figure: severity key-property violation rate | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 84.3750% -->
+<!-- figure: its Wilson interval | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | [68.2459%, 93.1356%] --> Residual risk is `R_k`, a different quantity with no severity term.
+**Entry `B87` in `experimental_notes/CDSFL_MASTER_TASK_LIST.md` holds that the severity
+specification asks for a quantity the operational directive rules inadmissible.** Attack all of
+that: is the appendix's product the right formula at all, is `R_k` the right residual-risk construction,
+and does either depend on the other?
+
+**PART B — THE PERIOD'S WORK. Is any of it wrong?** 6 defects were closed in this window and
+each was a REPORTING layer disagreeing with the layer that DECIDES. They are entries `B108`
+(the verdict census counting 1,114 markers he never wrote), `B109` (the word *open* meaning 2
+things in 1 turn), `B110` (an entry able to cite evidence that does not exist), `B111` (the
+depth-over-breadth error figure having no producer), `B112` (the parked file's reason line
+decided by set iteration order), and the 3 constants found in `B20`'s own status instrument.
+**The shared assumption worth attacking is that these are 6 instances of 1 shape rather than 6
+unrelated bugs** — if that framing is wrong, the conclusions drawn from it are too.
+
+**PART C — THE RECOMMENDATIONS DELIVERED TO HIM.** `experimental_notes/Answers_Still_Owed_2026-11-04.md`
+makes 6, and he will act on them: that the asterisk format should NOT be adopted and he should
+not add a closing hash; that the orchestrator experiment and the Grok questions must be
+SEPARATE runs with a third broad regression run; that 3 of the 20 owed decisions would change
+what a run measures; that the depth-over-breadth figure should be retired; that a truncation
+hook should not be built; and that the commit gate is a gated rather than a verified point.
+**Each is falsifiable. Attack the ones you can.**
+
+**Artefacts under review, by path:** `experimental_notes/Inventory_Since_His_First_Message_2026-11-04.md`;
+`experimental_notes/Answers_Still_Owed_2026-11-04.md`;
+`experimental_notes/Decisions_Awaiting_You_2026-11-03.txt`;
+`experimental_notes/CDSFL_MASTER_TASK_LIST.md` entries `B20`, `B87`, `B108` to `B112`;
+`docs/MATHEMATICAL_APPENDIX.md`, its per-finding severity and severity-row sections; `bench/reference_runner_v3.py`;
+`bench/fix_comparator.py`.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING things, not describing them. The instruments that exist and bear
+on this:
+
+- `python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py` — the severity
+  key-property violation, with its own corpus-scope line. Read that line before quoting its
+  rate: its denominator is 32, not 42, and the difference was a panel's own sandbox copies.
+- `python3 scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py` — B20's status.
+- `python3 scripts/how_many_decisions_actually_need_him_2026-11-01.py` — what he is owed. Do
+  NOT hand-count it.
+- `python3 scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py` and
+  `python3 scripts/what_fraction_of_the_board_the_gate_runs_2026-11-04.py`.
+- `python3 -m pytest bench/tests/ -q -k '<pattern>'` for a specific guard. **Do NOT run the full
+  board.** You work in your own sandbox copy so there is no cached board in it, a full run costs
+  about 11 minutes on the founder's machine — a fixed 8-core, 8-GiB resource the other seat is
+  using at the same time — and a separate entry already reports the gate exceeding its own cost
+  limit.
+- SymPy, z3, SciPy, statsmodels, NumPy and mpmath for every quantitative claim: 2 independent
+  tools per computational claim, and an interval on every proportion. Wolfram is on your PATH
+  through the serial gate as a SECONDARY falsifier only, never primary, and a call that errored
+  or printed no `Out[` line verified nothing.
+
+A seat that returns prose about severity without having run the severity producer has not
+answered.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without an EXECUTED falsifier is a hypothesis.
+Write the fix INTO the sandbox tree at its real path as a file, write the falsifier, run it, and
+paste what it printed. For a quantitative claim the falsifier is a committed script that
+recomputes the figure from the archive rather than restating it.
+
+**On composability, in the founder's strong sense and not the weak one:** 2 repairs may be
+recommended TOGETHER only with a measurement showing the composed fix dominates either alone on
+a NAMED property. That 2 fixes can coexist without conflicting is explicitly NOT the standard.
+Where a single fix performs as well or better, the single fix is preferred. His words:
+*"Composability doesn't mean composing two solutions just because they can be composed. It means
+this principle should be applied where two composed solutions demonstrably provide a better,
+more robust and/or more efficient solution than either fix in isolation."* The same applies to
+`additive-standard` — a removal needs a committed measurement showing the replacement dominates
+— and to `simplicity-default`.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, BEFORE you conclude, what evidence would overturn your own answer. A verdict with no
+refutation condition is an opinion.
+
+**What would refute the work under review, stated so you can aim at it:**
+
+- For PART A: a derivation showing the appendix's product is the wrong form, or that `R_k` must
+  carry a severity term, or that the violation rate measures something other than the
+  key property it is attributed to.
+- For PART B: a demonstration that any of the 6 defects was NOT a reporting/deciding mismatch,
+  or that a fix introduced a regression the guards do not reach.
+- For PART C: for the experiment recommendation, a demonstration that the 2 experiments have
+  DISJOINT dependent variables separately measurable in 1 run, which would make combining them
+  strictly cheaper. For the asterisk recommendation, evidence that the format would recover
+  annotations the marker repair does not. For the gate claim, note before attacking it that the
+  gate runs **125 of 809 guard files, roughly 1 test in 6** — take exact counts from the
+  producer, they move with every guard added.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields:
+
+- `verdict` — CONFIRMED, REFUTED, PARTIAL or UNDECIDED, on the body of work as a whole.
+- `per_part` — a verdict on A, B and C separately.
+- `severity_and_residual_risk` — your own answer to how each should be calculated, with its
+  derivation.
+- `reasoning` — how you reached it, naming what you ran.
+- `commands_run` — the actual commands with the output you relied on.
+- `strongest_falsification` — the best argument AGAINST your own verdict.
+- `refutation_condition` — what would overturn you.
+- `repetition` — he predicted considerable repetition across the period's artefacts. Say
+  whether you found it, with counts, because he asked for that specifically.
+- `fix` — paths of files you wrote in the sandbox tree, or `none`.
+- `disagreement` — anything in this brief you believe is wrong, including its framing.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a further pass produces no new above-threshold findings, and say how you know. A
+finding is above threshold if missing it could cause the founder to spend money on a run whose
+result cannot be attributed, to act on a recommendation that is wrong, or to carry a figure that
+no script reproduces.
+
+**Do not converge with the other seat.** Disagreement is preserved as information here. There is
+no compelled consensus and no vote: an independent verdict with its strongest falsification is
+worth more than agreement. If you believe the other seat would disagree with you, say where.

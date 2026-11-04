@@ -83,15 +83,42 @@ def step_2_the_decomposition(m) -> dict:
     census = m.claim_a_naive_grep_is_blind_to_some_of_them()
     his = len(m.annotations())
     spurious = sum(r["annotations"] for r in residue)
-    # TWO ROUTES on the arithmetic: plain integers, and SymPy on the identity.
+
+    # ★ THE IDENTITY CHECKED HERE IS ABOUT THE CORPUS, NOT ABOUT THE BUG —
+    # corrected 2026-11-04 after the `cc2` seat of the period panel ran this
+    # producer and found it EXITING 1 with a self-contradictory verdict:
+    # "the census over-reports his verdicts by 1114, a factor of 1.0000".
+    #
+    # The first version asserted `census_total == his + spurious`. That was the
+    # DEFECT'S SIGNATURE: before B108's repair the census reported 1953 and the
+    # identity read 1953 == 839 + 1114. After the repair it reports 839, so the
+    # identity read 839 == 839 + 1114 and failed — the producer was measuring a
+    # defect that no longer existed. `feedback_a_producer_outlives_its_defect_
+    # 2026-10-15` records this exact shape ("fixing B7 broke B7's producer") and
+    # it recurred here inside B108's own evidence, in the same night.
+    #
+    # The BROAD total is the durable quantity: what a readability-wide count
+    # yields, which is what the census used to report and what a future
+    # regression would report again. `broad == narrow + residue` holds BEFORE
+    # the repair and AFTER it, because it is a statement about the folder.
+    broad = 0
+    for q in sorted(m.RESPONSES.glob("*")):
+        if m.is_a_response_file(q):
+            broad += len(m._annotations_in(q))
+
     import sympy
-    a, h, s = sympy.symbols("a h s", integer=True)
-    identity = sympy.Eq(a, h + s)
-    holds = bool(identity.subs({a: census["annotations_total"], h: his, s: spurious}))
+    b_, h_, s_ = sympy.symbols("b h s", integer=True)
+    identity = sympy.Eq(b_, h_ + s_)
+    holds = bool(identity.subs({b_: broad, h_: his, s_: spurious}))
+    # The census must now report HIS count and name the residue separately.
+    census_is_narrow = census["annotations_total"] == his
+    residue_is_named = census.get("annotations_excluded_as_not_his") == spurious
     return {"census_total": census["annotations_total"], "his_total": his,
-            "spurious": spurious, "residue": residue,
-            "exact_python": census["annotations_total"] == his + spurious,
-            "exact_sympy": holds}
+            "spurious": spurious, "residue": residue, "broad_total": broad,
+            "exact_python": broad == his + spurious,
+            "exact_sympy": holds,
+            "census_reports_his_count": census_is_narrow,
+            "residue_is_named_by_the_census": residue_is_named}
 
 
 def step_3_the_share(m) -> dict:
@@ -184,10 +211,31 @@ def main() -> int:
 
     ok = (s1["narrow_is_subset"] and s1["z3_narrow_implies_broad"]
           and s2["exact_python"] and s2["exact_sympy"])
-    print(f"\nVERDICT: the census over-reports his verdicts by "
-          f"{s2['spurious']}, a factor of "
-          f"{s2['census_total']/s2['his_total']:.4f}. "
-          f"All structural checks held: {ok}.")
+    # ★ THE VERDICT IS GATED ON THE CHECKS, NOT PRINTED BESIDE THEM. The first
+    # version was an unconditional f-string with `All structural checks held:
+    # {ok}` appended, so it asserted an over-report of 1114 and a factor of
+    # 1.0000 in one sentence — 2 statements that cannot both be true. A verdict
+    # that prints regardless of its own checks is the fail-safe-recorded-as-fact
+    # shape this project already names.
+    if s2["census_reports_his_count"] and s2["residue_is_named_by_the_census"]:
+        print(f"\nVERDICT: the census is CORRECT. It reports his "
+              f"{s2['his_total']} annotations and names {s2['spurious']} "
+              f"excluded markers separately. A readability-wide count would "
+              f"report {s2['broad_total']}, which is what it reported before "
+              f"the repair — a factor of "
+              f"{s2['broad_total']/s2['his_total']:.4f} too high.")
+    else:
+        print(f"\nVERDICT: the census is WRONG. It reports "
+              f"{s2['census_total']} where he wrote {s2['his_total']}, "
+              f"over-reporting by {s2['broad_total'] - s2['his_total']}, a "
+              f"factor of {s2['census_total']/s2['his_total']:.4f}.")
+    print(f"  structural checks: nesting {s1['narrow_is_subset']}, "
+          f"z3 {s1['z3_narrow_implies_broad']}, "
+          f"corpus identity {s2['exact_python']}/{s2['exact_sympy']}, "
+          f"census narrow {s2['census_reports_his_count']}, "
+          f"residue named {s2['residue_is_named_by_the_census']}")
+    ok = ok and s2["census_reports_his_count"] and s2["residue_is_named_by_the_census"]
+    print(f"  ALL HELD: {ok}")
     return 0 if ok else 1
 
 

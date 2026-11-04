@@ -167,4 +167,43 @@ gate's count side being blind to the roster; and the 3 of 6 seats carrying a phe
 naming a version they are not. Running before you rule on those risks measuring the gate's own
 disagreement instead of the orchestrator behaviour under test.
 
+## 6. On being alerted when you make an error — mostly not mechanisable, and here is the measurement
+
+You asked whether the instruction could be *"strengthened somehow, so that when I make an error
+I am alerted loudly (but politely) and an explanation is offered for where I may be wrong before
+proceeding"*.
+
+**Where it stands: `orchestrate-the-founder-too` is stated in both instruction files and enforced
+by 0 hooks and 0 guards.** Most of what it asks needs a judgement about what you meant, which no
+predicate can make. But your own words name 1 part that looks mechanical: *"A message that ends
+mid-sentence is always worth flagging, because the missing half may carry the operative clause."*
+So I measured whether a hook could catch that.
+
+**The obvious predicate is unusable.** Flagging any message of yours that does not end in
+terminal punctuation fires on **681 of 1,421**, because you routinely close with a command line —
+`a, f, sy, d` — which has no full stop. A detector firing on nearly half your messages
+that gets switched off within a day, and this project has already recorded a false-positive rate
+as the reason a rule goes unenforced.
+
+**Excluding trailing command lines brings it to 40 of 1,421 — 0.028149, Wilson 95% [0.020740,
+0.038103].** Small enough to read, so I read the 12 most recent and labelled them. **3 are
+genuine mid-word truncations**, ending *"and it gets d"*, *"it can be ' us"*, and, from
+yesterday morning, *"Bugzilla/ mechan"*. The other 9 are file paths, an XML tag, or complete
+sentences with no full stop. **Precision 3 of 12 = 0.250000, Wilson [0.088942, 0.532305]**, and
+that interval is wide because 12 is a small number.
+
+**So: about 3 false alarms for every genuine catch, which is why I am not building it.** A hook
+that interrupts you wrongly 3 times out of 4 teaches you to ignore it, and then it catches
+nothing. **What I will do instead is what the directive already asks for** — ask 1 specific
+question naming the 2 readings, at the point the answer is needed — and that is already in
+force. **But I should be exact about what caught your experiment-design question tonight: it
+was the INVENTORY, not the directive.** I found it by reading your 21 messages of the period and
+triaging them, not by any alarm firing at the time you asked. That is an argument for the
+inventory being worth repeating, and it is also the honest limit of the directive: it depends on
+my noticing in the moment, which is what failed twice.
+
+**A final limit, stated plainly:** none of this says how often you are ACTUALLY truncated. That needs your
+judgement per message and 0 labels exist. The 3 above are mine, carried as data in the producer
+rather than asserted, so you can disagree with any of them.
+
 Written under CDSFL note standard v1.9 (1 November 2026).

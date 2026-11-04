@@ -1,0 +1,910 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-04 05:08:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/.cdsfl_deny_canonical_writes.sb	2026-11-04 04:46:51
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_the_census_producer_actually_runs_2026-11-04.py
+--- /dev/null	2026-11-04 05:08:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/bench/tests/test_the_census_producer_actually_runs_2026-11-04.py	2026-11-04 05:04:45
+@@ -0,0 +1,101 @@
++"""The B108 census producer must EXECUTE, not merely exist.
++
++Added 2026-11-04 by the panel. The producer
++`scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py` was the
++evidence behind task entry B108, and the entry records it as "4 steps, exit 0".
++It exited 1 and printed a verdict that contradicted its own checks, for four
++months' worth of a single root cause: B108's repair landed in
++`read_founder_responses_2026-10-11.py`, the producer still asserted the
++PRE-repair identity, and nothing ever ran it. The only test touching it,
++`test_the_census_counts_only_his_writing_2026-11-04.py::
++test_the_producer_exists_and_is_reachable`, reads its SOURCE TEXT for `def`
++lines. A source-text check cannot see a producer that runs and is wrong.
++
++This file executes it. That is the whole point, and it is deliberately the
++smallest thing that would have caught the defect.
++"""
++from __future__ import annotations
++
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++PRODUCER = REPO / "scripts" / "the_census_counts_what_the_reader_excludes_2026-11-04.py"
++
++
++def _run():
++    return subprocess.run([sys.executable, str(PRODUCER)], cwd=str(REPO),
++                          capture_output=True, text=True, timeout=600)
++
++
++def _corpus_present() -> bool:
++    """The producer reads the founder's response folder, which lives outside
++    the repository. Absent it, there is nothing to measure and skipping is the
++    honest outcome -- but the skip must be visible, never a silent pass."""
++    # The module name carries dashes, so load it by path rather than by import.
++    import importlib.util
++    spec = importlib.util.spec_from_file_location(
++        "_rfr", REPO / "scripts" / "read_founder_responses_2026-10-11.py")
++    if spec is None or spec.loader is None:
++        return False
++    mod = importlib.util.module_from_spec(spec)
++    try:
++        spec.loader.exec_module(mod)
++    except Exception:
++        return False
++    return bool(getattr(mod, "RESPONSES", None) and mod.RESPONSES.is_dir())
++
++
++pytestmark = pytest.mark.skipif(
++    not _corpus_present(),
++    reason="the founder's Responses folder is not on this machine; "
++           "the producer has nothing to read and the check is vacuous here")
++
++
++def test_the_producer_exits_zero():
++    r = _run()
++    assert r.returncode == 0, (
++        "the producer behind entry B108 did not discharge its own checks.\n"
++        f"--- stdout tail ---\n{r.stdout[-2000:]}\n--- stderr ---\n{r.stderr[-2000:]}")
++
++
++def test_the_verdict_is_gated_on_the_checks_not_appended_to_them():
++    """The original VERDICT line was an unconditional f-string with the check
++    flag appended, so a failed check still shipped the assertion. Either the
++    checks hold and the claim is made, or they do not and it is withheld."""
++    r = _run()
++    out = r.stdout
++    assert "VERDICT:" in out, "the producer printed no verdict at all"
++    claimed = "over-reported his verdicts by" in out
++    withheld = "NOT ESTABLISHED" in out
++    assert claimed != withheld, (
++        "the verdict must be EITHER asserted OR withheld, never both and never "
++        f"neither. asserted={claimed} withheld={withheld}")
++    if claimed:
++        assert "All structural checks held: False" not in out, (
++            "a failed structural check shipped alongside an asserted claim -- "
++            "this is the exact defect the 2026-11-04 repair removed")
++
++
++def test_the_decomposition_identity_holds_by_an_independent_route():
++    """broad == his + residue, recomputed here from the reader rather than
++    parsed out of the producer's own printing."""
++    import importlib.util
++    spec = importlib.util.spec_from_file_location(
++        "_rfr2", REPO / "scripts" / "read_founder_responses_2026-10-11.py")
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++
++    broad = [p for p in sorted(mod.RESPONSES.glob("*")) if mod.is_a_response_file(p)]
++    broad_total = sum(len(mod._annotations_in(p)) for p in broad)
++    his = len(mod.annotations())
++    residue = sum(len(mod._annotations_in(p)) for p in broad
++                  if not mod.is_one_of_his_annotated_responses(p))
++    assert broad_total == his + residue, (
++        f"{broad_total} != {his} + {residue}")
++    assert broad_total > his, (
++        "if the two predicates agree there is no over-count to report and "
++        "entry B108 would be describing a defect that is not there")
+
+### cc2:attempt-1:experimental_notes/Answers_Still_Owed_2026-11-04.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Answers_Still_Owed_2026-11-04.md	2026-11-04 04:49:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/experimental_notes/Answers_Still_Owed_2026-11-04.md	2026-11-04 04:34:54
+@@ -167,43 +167,4 @@
+ naming a version they are not. Running before you rule on those risks measuring the gate's own
+ disagreement instead of the orchestrator behaviour under test.
+ 
+-## 6. On being alerted when you make an error — mostly not mechanisable, and here is the measurement
+-
+-You asked whether the instruction could be *"strengthened somehow, so that when I make an error
+-I am alerted loudly (but politely) and an explanation is offered for where I may be wrong before
+-proceeding"*.
+-
+-**Where it stands: `orchestrate-the-founder-too` is stated in both instruction files and enforced
+-by 0 hooks and 0 guards.** Most of what it asks needs a judgement about what you meant, which no
+-predicate can make. But your own words name 1 part that looks mechanical: *"A message that ends
+-mid-sentence is always worth flagging, because the missing half may carry the operative clause."*
+-So I measured whether a hook could catch that.
+-
+-**The obvious predicate is unusable.** Flagging any message of yours that does not end in
+-terminal punctuation fires on **681 of 1,421**, because you routinely close with a command line —
+-`a, f, sy, d` — which has no full stop. A detector firing on nearly half your messages
+-that gets switched off within a day, and this project has already recorded a false-positive rate
+-as the reason a rule goes unenforced.
+-
+-**Excluding trailing command lines brings it to 40 of 1,421 — 0.028149, Wilson 95% [0.020740,
+-0.038103].** Small enough to read, so I read the 12 most recent and labelled them. **3 are
+-genuine mid-word truncations**, ending *"and it gets d"*, *"it can be ' us"*, and, from
+-yesterday morning, *"Bugzilla/ mechan"*. The other 9 are file paths, an XML tag, or complete
+-sentences with no full stop. **Precision 3 of 12 = 0.250000, Wilson [0.088942, 0.532305]**, and
+-that interval is wide because 12 is a small number.
+-
+-**So: about 3 false alarms for every genuine catch, which is why I am not building it.** A hook
+-that interrupts you wrongly 3 times out of 4 teaches you to ignore it, and then it catches
+-nothing. **What I will do instead is what the directive already asks for** — ask 1 specific
+-question naming the 2 readings, at the point the answer is needed — and that is already in
+-force. **But I should be exact about what caught your experiment-design question tonight: it
+-was the INVENTORY, not the directive.** I found it by reading your 21 messages of the period and
+-triaging them, not by any alarm firing at the time you asked. That is an argument for the
+-inventory being worth repeating, and it is also the honest limit of the directive: it depends on
+-my noticing in the moment, which is what failed twice.
+-
+-**A final limit, stated plainly:** none of this says how often you are ACTUALLY truncated. That needs your
+-judgement per message and 0 labels exist. The 3 above are mine, carried as data in the producer
+-rather than asserted, so you can disagree with any of them.
+-
+ Written under CDSFL note standard v1.9 (1 November 2026).
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-04 05:07:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-04 04:21:52
+@@ -1108,10 +1108,8 @@
+ ★ **THE ACTUATOR IS BUILT AND TESTED, 2026-11-03T06:36:16+00:00, AND IT IS THE ONE THING THIS ENTRY SAID RELEASING THE HOLD WOULD MEAN.** Status per Rule 20: BUILT and TESTED, **NOT ENABLED**. The actuator is `bench/tools/cy_actuator_2026-11-03.py`, 328 lines, a thin OUTER supervisor that classifies what happened when a run stopped, records that classification with its evidence, and under `--act` re-invokes the same launch command with `--resume`. It changes 0 lines of the runner. **WHY OUTER, AND IT WAS TRACED BEFORE IT WAS WRITTEN RATHER THAN ASSUMED.** The simulated runner calls `R.run_experiment(...)` IN-PROCESS at `bench/tools/run_simulated_experiment.py:1066`, inside a `try` whose only companion clause is `finally` -- there is no `except`. So the pause's `sys.exit(42)` raises `SystemExit`, which is not an `Exception`, propagates out through `main()` and becomes the PROCESS exit code, while the `finally` still harvests the panel worktree first. The pause is therefore observable from outside with no runner change at all, and anything built inside the runner would have been a second mechanism for a signal that already crosses the boundary. **THE CONTRACT IS DECLARED AS DATA, NOT AS PROSE**: `ASSUMES` holds A1 to A4 and `GUARANTEES` holds G1 to G5, and both have 2 callers -- the guard ITERATES `GUARANTEES` and fails if one is declared with no test class naming it, and `--contract` prints them, which costs nothing and dispatches nothing. A declaration living only in a docstring would have been the addition-nothing-reaches shape the additive standard names. **G4 HOLDS BY CONSTRUCTION AND THAT IS VERIFIED STRUCTURALLY, NOT SAMPLED.** An `ast` pass over `classify` finds it compares `exit_code` exactly twice, against the pause code and against 0, and its final statement is an UNCONDITIONAL return of HOLD -- so every exit code outside those 2 reaches HOLD by construction. Executing it against 75 non-permitting codes, 0 of which reached RESUME, Wilson 95% [0.000000, 0.048724], Clopper-Pearson [0.000000, 0.047995], corroborates a structural fact rather than sampling an open space. **GUARD:** `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py`, 19 assertions, all passing. **MUTATIONS:** `scripts/the_actuator_contract_mutations_2026-11-03.py`, **7 of 7 red**, Wilson 95% [0.645670, 1.000000], with the actuator restored byte-for-byte, sha256 unchanged -- and that figure is a detection rate on 7 reversions I chose, so it may not be read as coverage. **PROVEN END-TO-END AGAINST A REAL SUBPROCESS, not only against the test seam**: without `--act` it classifies a real exit 42 and drives nothing; with `--act` it drives 1 resume and the resumed process completes, final DONE. **AND THE PRECONDITION BUILT EARLIER THE SAME NIGHT NOW HAS A CONSUMER**: the watchdog's `events` field, which this entry named as the 1 change the actuator could not be built without, appears in the recorded decisions as STALLED on the pause and CLOSED on completion -- so a reader learns WHICH condition fired, which was the whole gap. **2 P-PASS FINDINGS, BOTH AGAINST MY OWN WORK.** (1) With no pulse on disk the decision was right (HOLD) and the recorded REASON asserted the process was still alive, which was never measured: `_pid_alive(None)` returns True as a fail-safe so the refusal errs toward holding, and the reason reported that fail-safe as a fact. The known-alive and unknown cases now carry separate reasons and M5 guards the separation, because a right decision with a false record still corrupts G1. (2) The budget mutation M3 first went red by pytest TIMING OUT rather than by an assertion, since removing the bound makes the drive loop for ever -- the same timeout-dependent red that killed a sibling Stop hook in 153 of 360 invocations. The fake runner now refuses past a hard cap, so a missing bound fails immediately and legibly -- the same mutation now reports 4 failed, 15 passed in 0.38 s. **AND THE FIRST ATTEMPT AT THAT REPAIR FAILED, WHICH IS THE ACTUAL LESSON:** the 2 tests in the budget class were capped first, because the mutation removes the budget and those tests are named for it, and the timeout persisted unchanged. The tests actually looping were in the RECORDING class and had nothing to do with the budget by name. Capping by name instead of reading which test failed to finish is FOLLOW skipped on my own repair. **WHAT IS STILL NOT DONE, STATED PLAINLY: no product code path invokes the actuator.** It is the outermost layer, so there is no code caller by design, but the end-to-end that would wire it into a real run is the simulated experiment, and that is paused on his own recommendation of 2026-11-03 that a pause precede running it so he can read the morning report first. **AND HIS OWN RULED ORDER PUTS A DIFFERENT RUN AHEAD OF IT:** ticket `72f1d6095d83`, still OPEN, ruled 2026-11-01, is 1 simulated run under full `cy` on the severity mechanics, explicitly AFTER the severity bounds are set and BEFORE the orchestrator work. Its predecessor's parts exist -- `scripts/the_severity_bounds_from_the_archive_2026-11-01.py`, the shadow measure at `bench/reference_runner_v3.py:3890`, and the pre-registration `experimental_notes/data/severity_bounds_prereg_2026-11-02.json` -- and the run itself has not happened. So the orchestrator experiment is not the next experiment by his own ruling, whatever the actuator's readiness.
+ 
+ ★ **THE SANDBOX HIS ORCHESTRATOR SPEC REQUIRES IS ALREADY BUILT; THE CONCEALMENT IS NOT, AND THAT IS A DESIGN QUESTION RATHER THAN A DEFECT.** Measured 2026-11-03 before anything was drafted, because this entry's own history is that taking it at its word would have rebuilt a 395-line comparator and a UX backend that already existed. **HIS SPEC, 2026-11-03:** the orchestrator experiment should run *"within its own sandbox (which the orchestrator model shouldn't know about), with its own isolated copy of the repo, since it will have the authority to significantly change code"*. **THE ISOLATED COPY IS DONE AND IS BETTER THAN A FRESH BUILD WOULD HAVE BEEN.** `bench/tools/run_simulated_experiment_sandboxed.sh`, 237 lines, already runs a simulated experiment against a disposable copy on his 2026-09-01 ruling that *"A simulation is exactly that. It runs in its own sandbox with a copy of the current/most recent repo to work on, not the live repo itself."* It launches the runner from INSIDE the copy, which redirects the target, the panel's inherited working directory and every derived path in 1 move, because both harnesses derive their root from `__file__`. It REFUSES a dirty tree, so the sandbox is a copy of what is actually being run. And it uses PATHSPEC STAGING rather than a plain worktree, because a plain `git worktree add` carries every tracked file: measured on this repository, a reviewer's sandbox exposed 149 run directories, 54 report JSONs, 325 experimental_notes files and 29,899 severity values, including exp45's 12 criticals with their exact severities, to agents armed with Bash, Read, Grep and Glob. `bench/panel_sandbox.py` supplies `build`, `changes`, `fingerprint`, secret scrubbing, bytecode purging, round-evidence purging and canonical-touch attribution, and 2 guards hold it: `bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py` and `bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py`. **SO NOTHING SHOULD BE BUILT FOR THE SANDBOX.** **WHAT IS ABSENT IS THE CONCEALMENT, AND IT IS ABSENT BY CONSTRUCTION RATHER THAN BY OVERSIGHT.** The sandbox is created as `mktemp -d -t cdsfl_sim` in the launcher and `tempfile.mkdtemp(prefix="cdsfl_sim_panel_")` in the runner, so its path NAMES the simulation, and a seat with Bash can read its own working directory. Searching `bench/panel_sandbox.py` and the launcher for any concealment mechanism returns **0 matches**. **AND FULL CONCEALMENT FROM A BASH-ARMED MODEL IS PROBABLY NOT ACHIEVABLE**, which is why this is recorded as a question rather than repaired: a model that can run shell commands can inspect its filesystem, its process tree and its git state, so concealment can only ever be best-effort. **THE 3 OPTIONS, SPELLED OUT, AND THE CHOICE IS HIS.** (1) BEST-EFFORT: rename the sandbox to a neutral path with no `cdsfl` or `sim` token, which costs 2 lines and removes the most obvious telltale while leaving the orchestrator's own `git` state and its own process listing readable. (2) ACCEPT DISCOVERABILITY: state in the experiment's pre-registration that the orchestrator may determine it is sandboxed, and treat any behaviour change as part of what the arm measures rather than as a confound to be hidden. (3) REMOVE THE SHELL from the orchestrator seat, which would conceal the sandbox and also remove the tool use that this project exists to measure, so it is named for completeness and not recommended. **NO COMPOSABILITY CLAIM IS MADE between 1 and 2**: they are independent, no measurement shows that doing both beats either alone, and under his standard that claim requires a measurement before it may be made. **WHAT WAS BUILT FOR THE ARM, AND IT IS DELIBERATELY NOT REGISTERED OR RUN.** A pre-registration carrying 3 predictions with explicit falsifiers, of which **2 of 3 are round-decidable** -- which matters, because the existing pre-registration files were measured on 2026-11-02 as **6 of 8 terminal or not scorable**, 0.750000 Wilson 95% [0.409275, 0.928521], so a monitor reading them could speak only at the end, which is not monitoring. And a scorer, written BEFORE the run because the 2026-09-02 blind audit holds 286 first-pass and 108 second-pass verdicts and names NO SCORER, so a result there is attributed to nobody. The scorer takes `--survey` and runs against every archived run directory, so each of its predicates is exercised today rather than having its first use be its first trial. **O1'S THRESHOLD IS THE 1 NUMBER IN IT THAT IS A JUDGEMENT:** 0.80, chosen to sit below the prior measurement's Wilson lower bound of 0.912314 so that a pass does not merely restate the prior. It is his to set or reject, and the pre-registration says so in its own text. **AND HIS RULED ORDER STILL PUTS THIS SECOND:** ticket `72f1d6095d83` is OPEN and places 1 simulated run under full `cy` on the severity mechanics before the orchestrator work, so none of this is run.
+-
+-★ **THE ACTUATOR'S CONTRACT IS SATISFIABLE TODAY, SO HIS ENABLEMENT RULING NEEDS NO FURTHER BUILD. Verified 2026-11-04T05:01:46+00:00.** `bench/tools/cy_actuator_2026-11-03.py --contract` declares 4 assumptions and 5 guarantees, and the 2 assumptions that cite a specific line were checked by reading those lines rather than trusting the citation. **A2 is EXACT:** `bench/reference_runner_v3.py:21274` reads `if cfg.hil_review and not (burst_plan and burst_state):`, and the second pause site sits at `:21338`; a 3rd `hil_review` reference at `:22494` is argument plumbing and not a pause site, so *both pause sites* is the right count. **A3 HOLDS WITH A 1-LINE IMPRECISION worth fixing when the file is next touched:** it cites `bench/launch_exp39.py:86`, which is the docstring *"HIL review gate: runner paused for operator review (exit 42)"*, while the predicate `return self.exit_code == 42` is at `:87`. The property holds; the pointer is off by 1. **AND THE FLAG THE CONTRACT ASSUMES EXISTS ON BOTH LAUNCHERS**, which was the link most likely to be missing: `--hil-review` is declared at `bench/launch_exp39.py:396` and at `bench/tools/run_simulated_experiment.py:280`, and exit 42 is propagated rather than treated as a failure at `bench/launch_exp39.py:452`. **WHAT THIS CHANGES FOR HIM: nothing is owed by me before he can rule.** Enabling the loop means launching a run with `--hil-review` and passing `--act` to the actuator, both of which exist. **WHAT IT DOES NOT CLAIM:** that the loop has ever RUN unattended. It has not, and the run itself is the runway item that costs money.
+ 
+-★ **B20's OWN STATUS INSTRUMENT COULD NOT SEE THE ACTUATOR IT SAID WAS MISSING, AND ITS EVENT-VOCABULARY FIGURE READ THE WRONG FUNCTION. Both fixed 2026-11-04T04:20:09+00:00.** **STATUS: 2 INSTRUMENT DEFECTS FIXED. Nothing about the build or the hold changes, and his deferral still governs both of the things that remain.** **(1) THE VERDICT WAS A HARDCODED STRING.** `scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py` set `monitoring_loop` to *"PARTLY BUILT: the detector and its event vocabulary exist and arm automatically; what is absent is a loop that ACTS on them unattended"* whenever `cy_watchdog_2026-10-02.py` and `hooks/cy_monitor_gate.py` both exist — a conditional expression over 2 file-existence checks, with **0 references to anything that might act**. So it could not change when the actuator was built, and it went on reporting `monitoring_loop` as PARTLY BUILT while `bench/tools/cy_actuator_2026-11-03.py` sat in the tree. The run's own output asserted the absence of something that imports and exposes `classify` and `main`, which is the instrument contradicting the filesystem rather than measuring it. A verdict that is a constant measures nothing: the same shape as `boundary_band_sensitivity`, which shipped as an unconditional constant and was vacuous in 41 of 41 reports. The actuator is now PROBED the way the other 3 components already were — imported, its exposed names listed, and the tests that reach it named. **THE VERDICT IT NOW PRODUCES, and Rule 20's distinction is the operative half:** **BUILT AND TESTED, NOT ENABLED.** 14,923 bytes, imports, exposes `classify` and `main`, reached by `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` with `scripts/the_actuator_contract_mutations_2026-11-03.py` beside it, and it touches **0 lines of `bench/reference_runner_v3.py`**, checked against that commit's own file list. It acts only under `--act`, and **0 production callers pass it** — the only 2 references in the whole project outside the tool itself are its test and its mutation harness. So every part of the loop now exists and the cycle is still not unattended, which is a DIFFERENT statement from the one the instrument was making. **(2) THE EVENT VOCABULARY WAS COUNTED OVER THE WRONG FUNCTION.** The instrument read `say("UPPERCASE")` by regex and printed **4** kinds as *the watchdog's EVENT VOCABULARY*. The watchdog's events are emitted by **`ev()`**, a different function with **10** distinct literal kinds — BACKLOG, BACKLOG LINE, LOG TRUNCATED, PROCESS GONE, PROGRESS, QUEUE, QUIET BUT WORKING, STALLED, TROUBLE and WATCHDOG — and `say()` adds ARMED, CLOSED and HEARTBEAT with WATCHDOG shared, giving a **union of 13**. Counted 2 ways, a regex and an AST walk, which agreed at 4 on `say()` and at 10 on `ev()`. Now read from the syntax tree over both emitters, which cannot name the wrong function silently because the function is the key it groups by. **★ AND THIS ENTRY'S OWN FIGURE OF 13 WAS RIGHT ALL ALONG.** The instrument contradicted it by a factor of more than 3 and the ENTRY was correct; this entry already explains the union in its own words, *"the other 3 being ARMED, CLOSED and HEARTBEAT"*. I went looking for a wrong number in the record and found it in the measuring tool instead, which is the night's pattern rather than an exception: 16 of 18 of a night's recorded errors were in instruments rather than subjects, 0.888889, Wilson [0.672002, 0.968980]. **2 HYPOTHESES OF MINE WERE REFUTED IN THE SAME PASS AND ARE RECORDED BECAUSE THE CHECKING IS THE POINT.** First, that the never-run evidence overstated itself: this entry calls a quoted `orchestrator` in a report body *the WIDEST predicate* returning 0, and an unquoted substring search returns **5** reports. All 5 are model-written finding prose using the word to mean a generic caller — exp33, exp34, exp38 and 2 exp42 runs — so **the conclusion that 0 runs DECLARE the arm is unaffected** and only the word *widest* is too strong. Recounted today: **349** run directories and **79** report files, against the 347 and 78 recorded here. Second, that 39,141 characters across 14 paragraphs of this entry were ORPHANED, because they sit after the marker at line 1084 and `e.text` returns only the 25,797-character first line. **That is wrong**: `task_list_markers.body_bounds` runs a body to the NEXT ENTRY'S HEADING and its docstring calls itself *"THE one definition"*, so the paragraphs are reachable and `e.text` is simply the summary. 150 of 251 entries follow the same convention, 531,731 characters in all, which is the convention and not an accident. **(3) A THIRD CONSTANT, AND I CREATED THE CONTRADICTION BEFORE I FOUND IT.** The closing summary printed *WHAT REMAINS ... a loop that ACTS* and *So an absent component here is a DEFERRAL he ordered* unconditionally. Repairing the verdict without them left the output self-contradictory for 1 run: **4 of 4 built** followed by a paragraph saying the acting loop is missing, and an excuse for absent components when 0 were absent. That is the fixed-the-deciding-layer-left-the-reporting-layer shape found in the verdict census the same night and repeated here within the hour. Both now DERIVE from the verdicts. **GUARD:** `bench/tests/test_b20s_status_instrument_measures_2026-11-04.py`, 9 tests, 2.25 s. It EXECUTES the instrument twice — once against the real repository and once against a planted tree holding the watchdog and the gate but NO actuator — and requires the verdict to DIFFER, which a constant cannot do. **P-PASS: 3 mutations restoring each constant, 3 red** (`scripts/the_b20_instrument_mutations_2026-11-04.py`), subject restored byte-identical by sha256. **AND THE GUARD'S OWN FIRST VERSION FAILED AGAINST ITSELF:** `answer_help` reads `sys.argv`, which under pytest holds pytest's arguments, so the capture was EMPTY and 5 tests failed against the harness rather than the subject. The harness now cleans argv and REFUSES an empty capture, so it cannot pass vacuously. **WHAT REMAINS ON THIS ENTRY, AND NEITHER HALF IS A BUILD.** 4 of 4 components are now built, so this entry's own condition — *"Releasing it would mean building an actuator and nothing else"* — is discharged. **★ AND WHAT I WROTE HERE 20 MINUTES AGO WAS WRONG IN BOTH HALVES. Corrected 2026-11-04T05:07:58+00:00.** It read that enabling the actuator *"changes run behaviour and so is his"* and that running the experiment *"costs money and is a runway item"*, with his deferral still governing both. **HE HAD ALREADY INSTRUCTED BOTH, ON 2026-11-01, and the instruction is in his own annotation rather than in chat** — annotation 12 of `Closing_Report_2026-11-01.txt`, verbatim: *"I originally listed this as a fully simulated experiment in its own right. I am clearly not going to burn money on a live run until I know how this might function. Has that experiment ever been run? Has this design ever been built? If not you should do both."* **So it is a SIMULATED experiment by his own framing, it costs NO money, and *do both* is an instruction to build it and run it.** The build is now complete at 4 of 4 components, so **the run is MINE and is not waiting on him.** His deferral of 2026-10-17 placed it after the rest of the list; it does not withhold it. **HOW THE ERROR HAPPENED, because the route matters more than the slip.** I set out to check whether this entry had misquoted him, searched `scripts/his_messages.py` — which reads CHAT — found 0 matches for *If not you should do both*, and was about to report a fabricated quotation in his name. The phrase is genuine and sits in his ANNOTATIONS, a separate record that chat search cannot see. That is exactly the failure `feedback_read_his_responses_with_the_reader_2026-10-11` records, where 221 of 691 of his words were invisible to a naive search. **The entry's 3-rulings count is therefore CORRECT and my suspicion was not**; the 2026-10-20 quote *"I already ruled on the orchestrator build"* also reproduces exactly from chat. **WHAT REMAINS, RESTATED CORRECTLY: the simulated orchestrator run, and it is mine to do under full `cy`.** What is genuinely his is only a LIVE run that spends money, which he has refused until the simulated one shows how it functions.
++★ **B20's OWN STATUS INSTRUMENT COULD NOT SEE THE ACTUATOR IT SAID WAS MISSING, AND ITS EVENT-VOCABULARY FIGURE READ THE WRONG FUNCTION. Both fixed 2026-11-04T04:20:09+00:00.** **STATUS: 2 INSTRUMENT DEFECTS FIXED. Nothing about the build or the hold changes, and his deferral still governs both of the things that remain.** **(1) THE VERDICT WAS A HARDCODED STRING.** `scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py` set `monitoring_loop` to *"PARTLY BUILT: the detector and its event vocabulary exist and arm automatically; what is absent is a loop that ACTS on them unattended"* whenever `cy_watchdog_2026-10-02.py` and `hooks/cy_monitor_gate.py` both exist — a conditional expression over 2 file-existence checks, with **0 references to anything that might act**. So it could not change when the actuator was built, and it went on reporting `monitoring_loop` as PARTLY BUILT while `bench/tools/cy_actuator_2026-11-03.py` sat in the tree. The run's own output asserted the absence of something that imports and exposes `classify` and `main`, which is the instrument contradicting the filesystem rather than measuring it. A verdict that is a constant measures nothing: the same shape as `boundary_band_sensitivity`, which shipped as an unconditional constant and was vacuous in 41 of 41 reports. The actuator is now PROBED the way the other 3 components already were — imported, its exposed names listed, and the tests that reach it named. **THE VERDICT IT NOW PRODUCES, and Rule 20's distinction is the operative half:** **BUILT AND TESTED, NOT ENABLED.** 14,923 bytes, imports, exposes `classify` and `main`, reached by `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` with `scripts/the_actuator_contract_mutations_2026-11-03.py` beside it, and it touches **0 lines of `bench/reference_runner_v3.py`**, checked against that commit's own file list. It acts only under `--act`, and **0 production callers pass it** — the only 2 references in the whole project outside the tool itself are its test and its mutation harness. So every part of the loop now exists and the cycle is still not unattended, which is a DIFFERENT statement from the one the instrument was making. **(2) THE EVENT VOCABULARY WAS COUNTED OVER THE WRONG FUNCTION.** The instrument read `say("UPPERCASE")` by regex and printed **4** kinds as *the watchdog's EVENT VOCABULARY*. The watchdog's events are emitted by **`ev()`**, a different function with **10** distinct literal kinds — BACKLOG, BACKLOG LINE, LOG TRUNCATED, PROCESS GONE, PROGRESS, QUEUE, QUIET BUT WORKING, STALLED, TROUBLE and WATCHDOG — and `say()` adds ARMED, CLOSED and HEARTBEAT with WATCHDOG shared, giving a **union of 13**. Counted 2 ways, a regex and an AST walk, which agreed at 4 on `say()` and at 10 on `ev()`. Now read from the syntax tree over both emitters, which cannot name the wrong function silently because the function is the key it groups by. **★ AND THIS ENTRY'S OWN FIGURE OF 13 WAS RIGHT ALL ALONG.** The instrument contradicted it by a factor of more than 3 and the ENTRY was correct; this entry already explains the union in its own words, *"the other 3 being ARMED, CLOSED and HEARTBEAT"*. I went looking for a wrong number in the record and found it in the measuring tool instead, which is the night's pattern rather than an exception: 16 of 18 of a night's recorded errors were in instruments rather than subjects, 0.888889, Wilson [0.672002, 0.968980]. **2 HYPOTHESES OF MINE WERE REFUTED IN THE SAME PASS AND ARE RECORDED BECAUSE THE CHECKING IS THE POINT.** First, that the never-run evidence overstated itself: this entry calls a quoted `orchestrator` in a report body *the WIDEST predicate* returning 0, and an unquoted substring search returns **5** reports. All 5 are model-written finding prose using the word to mean a generic caller — exp33, exp34, exp38 and 2 exp42 runs — so **the conclusion that 0 runs DECLARE the arm is unaffected** and only the word *widest* is too strong. Recounted today: **349** run directories and **79** report files, against the 347 and 78 recorded here. Second, that 39,141 characters across 14 paragraphs of this entry were ORPHANED, because they sit after the marker at line 1084 and `e.text` returns only the 25,797-character first line. **That is wrong**: `task_list_markers.body_bounds` runs a body to the NEXT ENTRY'S HEADING and its docstring calls itself *"THE one definition"*, so the paragraphs are reachable and `e.text` is simply the summary. 150 of 251 entries follow the same convention, 531,731 characters in all, which is the convention and not an accident. **(3) A THIRD CONSTANT, AND I CREATED THE CONTRADICTION BEFORE I FOUND IT.** The closing summary printed *WHAT REMAINS ... a loop that ACTS* and *So an absent component here is a DEFERRAL he ordered* unconditionally. Repairing the verdict without them left the output self-contradictory for 1 run: **4 of 4 built** followed by a paragraph saying the acting loop is missing, and an excuse for absent components when 0 were absent. That is the fixed-the-deciding-layer-left-the-reporting-layer shape found in the verdict census the same night and repeated here within the hour. Both now DERIVE from the verdicts. **GUARD:** `bench/tests/test_b20s_status_instrument_measures_2026-11-04.py`, 9 tests, 2.25 s. It EXECUTES the instrument twice — once against the real repository and once against a planted tree holding the watchdog and the gate but NO actuator — and requires the verdict to DIFFER, which a constant cannot do. **P-PASS: 3 mutations restoring each constant, 3 red** (`scripts/the_b20_instrument_mutations_2026-11-04.py`), subject restored byte-identical by sha256. **AND THE GUARD'S OWN FIRST VERSION FAILED AGAINST ITSELF:** `answer_help` reads `sys.argv`, which under pytest holds pytest's arguments, so the capture was EMPTY and 5 tests failed against the harness rather than the subject. The harness now cleans argv and REFUSES an empty capture, so it cannot pass vacuously. **WHAT REMAINS ON THIS ENTRY, AND NEITHER HALF IS A BUILD.** 4 of 4 components are now built, so this entry's own condition — *"Releasing it would mean building an actuator and nothing else"* — is discharged. What is left is to ENABLE the actuator, which changes run behaviour and so is his, and to RUN the experiment, which costs money and is a runway item. **HIS DEFERRAL IS UNTOUCHED AND STILL GOVERNS BOTH.**
+ 
+ ★ **EXERCISING THAT SCORER AGAINST THE ARCHIVE BEFORE THE ARM EXISTED FOUND 2 DEFECTS IN THE PRE-REGISTRATION ITSELF, WHICH IS THE WHOLE ARGUMENT FOR WRITING A SCORER FIRST.** Both were found by `--survey`, which scores every archived run directory so that no predicate's first use is also its first trial. **(1) THE PRIMARY PREDICTION WAS UNSCORABLE AND THE PROBE WAS WHY.** O1 returned NOT SCORABLE in **347 of 347** archived runs. Its predicate read a `mechanism` field out of `*_report.json`; the fields are `status_adjudicator` and `status_mechanism` and they live in `runner_state.json`. Worse, it treated anything not naming a quorum as tool-made -- and `scripts/were_the_shakedown_adjudications_tool_made_2026-10-17.py` RECORDS ITS OWN FIRST VERSION MAKING THAT EXACT ERROR, which returned 79 of 79 and failed to reproduce the 77 this entry quotes, because carrying a tool's output is not the same as having been DECIDED by one. So the repair was not to re-derive the predicate but to EXTRACT it: `classify_adjudication` is now a function in that producer, `main()` calls it, and the committed figure still reproduces at **77 of 79 = 97.4684%**, which is what makes the extraction behaviour-preserving rather than hopeful. The scorer imports it, so 1 predicate has 2 callers instead of 2 predicates drifting. **(2) THE VERDICT RULE FALSIFIED RUNS FOR BEING SMALL.** O1 first read HOLDS when the Wilson lower bound cleared 0.80 and FALSIFIED otherwise. Across the archive that called **10 of 28** scorable runs FALSIFIED -- and **7 of those 10 have a point estimate of EXACTLY 1.0**, with sample sizes of 8, 9, 10, 10, 10, 13 and 15. A run whose every adjudication is tool-made first clears a 0.80 Wilson floor at **n = 16**, so the rule was measuring sample size and calling it evidence. The corrected rule is one-sided and 3-valued: FALSIFIED only when the Wilson UPPER bound falls below the floor, HOLDS when the lower bound clears it, INDETERMINATE when the interval straddles it -- the same form `study_run1b`'s P3 prediction already uses when it requires its interval to exclude 0.5. Under it the archive gives **18 HOLDS, 9 INDETERMINATE and 1 FALSIFIED**. **THE 1 GENUINE FALSIFICATION IS A REAL SIGNAL AND IS NAMED RATHER THAN BUCKETED:** `sim45_memory_20260830T161215Z`, **0 of 16 tool-made**, the only archived run whose interval excludes the floor from above. **AND THE ARCHIVE AGREES WITH THE PRIOR, which is the result that was NOT flattering-measure risk because it could have gone the other way:** archive-wide **769 of 803 = 0.957659**, Wilson 95% [0.941416, 0.969544], Clopper-Pearson [0.941332, 0.970502], against the shakedown legs' 0.974684 at Fisher exact **p = 0.763617**, odds ratio 1.7022 -- not distinguishable, so the prior is representative at the entry level. **THE COVERAGE CAVEAT IS LARGER THAN THE SPLIT ITSELF AND MUST TRAVEL WITH THE FIGURE: 2508 registry entries across the archive carry NO adjudicator field at all**, against the 803 that do. The remaining entries are not assertion-made, they are UNRECORDED, so the share is a statement about the roughly 24% of entries that record an adjudicator and may not be stated as a property of the harness's adjudications in general. Producer: `scripts/score_the_orchestrator_arm_2026-11-03.py`; pre-registration, explicitly NOT registered: `experimental_notes/data/bound_orchestrator_arm_prereg_DRAFT_2026-11-03.json`; guard `bench/tests/test_the_orchestrator_scorer_rule_2026-11-03.py`, 22 assertions, with `scripts/the_orchestrator_scorer_mutations_2026-11-03.py` turning it red on **3 of 3** reversions, each by assertion in about 1.4 s rather than by a timeout, and the scorer restored byte-for-byte. **THE CONCEALMENT QUESTION IS RAISED AS A TICKET RATHER THAN LEFT IN PROSE:** `qs:a7e64483f941`, OPEN, `task_ref` B20, raised through `propose_from_chat` so its anchor is derived rather than remembered -- 5 questions raised by hand on 2026-10-27 collided on 1 shared identifier because that route was bypassed.
+ 
+
+### cc2:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-11-04 05:02:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/resources/MEMORY_EXCLUSIONS.md	2026-11-04 02:21:12
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-11-04 05:02 GMT)
++## Accounting (counted 2026-11-04 02:21 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **305 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **304 individual memory files**. They partition as:
++The directory holds **303 files**, of which one is `MEMORY.md` itself
++(the index), leaving **302 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 247 |
++| Mirrored (in summarised form) in `MEMORY.md` | 245 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 304 |
++| total | 302 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### cc2:attempt-1:scripts/severity_is_an_expectation_not_a_magnitude_2026-11-04.py
+--- /dev/null	2026-11-04 05:08:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/scripts/severity_is_an_expectation_not_a_magnitude_2026-11-04.py	2026-11-04 05:00:35
+@@ -0,0 +1,242 @@
++#!/usr/bin/env python3
++"""
++PRODUCER: how severity and residual risk should actually be calculated, derived
++rather than asserted. Written for the 2026-11-04 panel, PART A.
++
++Four results, each derived with two independent tools. Nothing here restates a
++figure: the factor tables are READ FROM the appendix, never typed in, so this
++producer goes red if the specification moves under it.
++
++  R1. `Sev(f) = W(class).confidence.V(verification)` is not a severity. Its own
++      stated KEY PROPERTY -- disproved findings score 0 -- is the defining
++      property of an EXPECTATION over "the defect is real", not of a
++      consequence magnitude.
++  R2. The two belief factors are multiplied. Multiplying two estimates of the
++      SAME proposition is not a fusion rule, and section 7.8 Approach B in the
++      same document gives the opposite direction on agreeing evidence.
++  R3. At the 0.7 cut the formula collapses to a conjunction (re-derived here so
++      the chain does not rest on an unexecuted citation).
++  R4. cdsfl_operational.md:176 defines w_k as "the consequence weight for flaw
++      class k" and :174 aggregates R_n = sum_k w_k . R_k(n). So the AGGREGATE
++      residual risk already carries a consequence term, and is not on a
++      probability scale unless the w_k are convex.
++
++Exit 0 iff every derivation discharges. The printed verdict is GATED on that
++flag rather than appended to it.
++"""
++from __future__ import annotations
++import pathlib, re, sys, math
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++OPERATIONAL = REPO / "bench" / "directives" / "universal" / "cdsfl_operational.md"
++W_ROW = re.compile(r"\|\s*W\((HARD|SOFT)\)\s*\|\s*([0-9.]+)\s*\|")
++V_ROW = re.compile(r"\|\s*V\((True|None|False)\)\s*\|\s*([0-9.]+)\s*\|")
++
++def read_spec_constants():
++    txt = APPENDIX.read_text(encoding="utf-8")
++    W = {m.group(1): float(m.group(2)) for m in W_ROW.finditer(txt)}
++    V = {m.group(1): float(m.group(2)) for m in V_ROW.finditer(txt)}
++    m = re.search(r">\s*\*\*Sev\(f\)\s*=\s*([^*]+)\*\*", txt)
++    return W, V, (m.group(1).strip() if m else "(formula line not found)")
++
++def main() -> int:
++    import sympy as sp, z3, mpmath
++    ok = {}
++    W, V, form = read_spec_constants()
++    print("=" * 78)
++    print("SEVERITY IS AN EXPECTATION, NOT A MAGNITUDE -- a derivation")
++    print("=" * 78)
++    print(f"\n[scope] constants READ from {APPENDIX.relative_to(REPO)}, not typed into this file.")
++    print(f"        Sev(f) = {form}")
++    print(f"        W = {W}")
++    print(f"        V = {V}")
++    if sorted(W) != ["HARD", "SOFT"] or sorted(V) != ["False", "None", "True"]:
++        print("        SPEC TABLE DID NOT PARSE -- refusing to derive against assumed constants.")
++        return 1
++
++    print("\n" + "-" * 78)
++    print("R1. THE KEY PROPERTY IDENTIFIES AN EXPECTATION, NOT A SEVERITY")
++    print("-" * 78)
++    print("""
++  Let D = "the claimed defect is real"; h > 0 the consequence if D holds and
++  the defect ships; b = P(D | evidence) in [0,1].
++
++  A CONSEQUENCE MAGNITUDE is a property of the defect: it is h, independent of
++  b. At b = 0 it is still h -- a disproved claim about a buffer overflow still
++  names a class whose consequence is high; what changed is that no such defect
++  is there.
++  An EXPECTATION over D is E = b.h, and is 0 exactly when b = 0.
++
++  Section 7.7's score vanishes with the BELIEF factor, not the consequence
++  factor. By those two definitions it is E, not h.""")
++    h, b = sp.symbols("h b", positive=True, real=True)
++    mag_at_zero = sp.simplify(h.subs(b, 0))
++    exp_at_zero = sp.simplify((b * h).subs(b, 0))
++    conf = sp.Symbol("confidence", nonnegative=True)
++    sev_expr = sp.simplify(sp.Rational(str(W["HARD"])) * conf * sp.Rational(str(V["False"])))
++    r1 = bool(mag_at_zero != 0) and bool(exp_at_zero == 0) and bool(sev_expr == 0)
++    print(f"\n  magnitude   h  at b=0 -> {mag_at_zero}  (nonzero: {mag_at_zero != 0})")
++    print(f"  expectation b.h at b=0 -> {exp_at_zero}  (zero:    {exp_at_zero == 0})")
++    print(f"  W(HARD).confidence.V(False) = {sev_expr}   -> vanishes for ALL confidence")
++    print(f"\n  => the quantity 7.7 names a SEVERITY behaves as an EXPECTATION.  [{r1}]")
++    ok["R1_key_property_identifies_an_expectation"] = r1
++
++    print("\n" + "-" * 78)
++    print("R2. MULTIPLYING confidence BY V IS NOT A FUSION RULE")
++    print("-" * 78)
++    print("""
++  `confidence` and `V` are two estimates of the SAME proposition D. Section 7.7
++  combines them by multiplication. Section 7.8 Approach B, in the same
++  document, combines evidence on D in log-odds: S_v = 1/(1+exp(-Lambda)).
++  Bayes composes evidence by ADDING log-likelihood-ratios -- multiplying ODDS,
++  not probabilities. A product of two probabilities is P(A and B) for
++  independent A,B, which is the wrong event: one posterior on D is wanted, not
++  the joint of two readings of D.
++
++  Derived consequence: the product rule is not idempotent under AGREEING
++  evidence. Two verifiers each reading "0.9 likely real" must not yield a
++  posterior BELOW either input. Under multiplication they always do.""")
++    p = sp.Symbol("p", positive=True)
++    gap = sp.factor(sp.simplify(p - p * p))
++    zp = z3.Real("p"); s = z3.Solver(); s.add(zp > 0, zp < 1, zp * zp >= zp)
++    z3_res = s.check()
++    lo = 1.0 / (1.0 + math.exp(-(2 * math.log(0.9 / 0.1))))
++    lo_mp = 1 / (1 + mpmath.e ** (-(2 * mpmath.log(mpmath.mpf(9)))))
++    r2 = (z3_res == z3.unsat) and bool(gap.subs(p, sp.Rational(9, 10)) > 0) and abs(lo - float(lo_mp)) < 1e-12
++    print(f"\n  p - p*p = {gap}   -> strictly positive on 0<p<1")
++    print(f"  z3: exists p in (0,1) with p*p >= p ?  {z3_res}   (unsat = agreeing evidence ALWAYS weakens)")
++    print(f"  0.9 and 0.9  ->  7.7 product rule : {0.9*0.9:.6f}   (BELOW either input)")
++    print(f"               ->  7.8 log-odds    : {lo:.6f}   (mpmath agrees: {abs(lo-float(lo_mp))<1e-12})")
++    print(f"\n  => 7.7 and 7.8 give OPPOSITE directions on agreeing evidence.  [{r2}]")
++    ok["R2_product_rule_contradicts_section_7_8"] = r2
++
++    print("\n" + "-" * 78)
++    print("R3. AT THE 0.7 CUT THE FORMULA COLLAPSES TO A CONJUNCTION")
++    print("-" * 78)
++    sup = {(cn, vn): wv * 1.0 * vv for cn, wv in W.items() for vn, vv in V.items()}
++    survivors = sorted(k for k, v in sup.items() if v >= 0.7)
++    print("  supremum of Sev over confidence in [0,1], per cell:")
++    for k in sorted(sup):
++        flag = "   <-- only cell able to reach 0.7" if sup[k] >= 0.7 else ""
++        print(f"    W({k[0]:<4}) . V({k[1]:<5}) -> sup = {sup[k]:.4f}{flag}")
++    zc, zw, zv = z3.Real("c"), z3.Real("w"), z3.Real("v")
++    s2 = z3.Solver()
++    s2.add(zc >= 0, zc <= 1)
++    s2.add(z3.Or(zw == W["HARD"], zw == W["SOFT"]))
++    s2.add(z3.Or(zv == V["True"], zv == V["None"], zv == V["False"]))
++    s2.add(z3.Not((zw * zc * zv >= 0.7) == z3.And(zw == W["HARD"], zv == V["True"], zc >= 0.7)))
++    z3_collapse = s2.check()
++    r3 = (survivors == [("HARD", "True")]) and z3_collapse == z3.unsat
++    print(f"\n  cells able to reach the cut: {survivors}")
++    print(f"  z3: negation of the equivalence -> {z3_collapse}   (unsat = the collapse holds)")
++    print(f"  inside the surviving cell Sev = {W['HARD']} . c . {V['True']} = c exactly.")
++    print(f"\n  => the two harness-owned factors are a PRE-FILTER on eligibility; the")
++    print(f"     magnitude is the model's own number.  [{r3}]")
++    ok["R3_cut_collapses_to_conjunction"] = r3
++
++    print("\n" + "-" * 78)
++    print("R4. THE AGGREGATE RESIDUAL RISK ALREADY CARRIES A CONSEQUENCE TERM")
++    print("-" * 78)
++    op = OPERATIONAL.read_text(encoding="utf-8")
++    agg = re.search(r"R_n\s*=\s*.{0,6}_k\s*w_k\s*.\s*R_k\(n\)", op)
++    wdef = re.search(r"where\s+w_k\s+is\s+the\s+([a-z ]+?)\s+for\s+flaw\s+class\s+k", op)
++    gate = re.search(r"If\s+R_k\s*>\s*(0\.\d+)", op)
++    print(f"  {OPERATIONAL.relative_to(REPO)}")
++    print(f"    aggregate line found : {bool(agg)}  -> {agg.group(0) if agg else None!r}")
++    print(f"    w_k is defined as    : {wdef.group(1) if wdef else None!r}")
++    print(f"    section 3 gate       : {('R_k > ' + gate.group(1)) if gate else None!r}")
++    carries = bool(wdef and "consequence" in wdef.group(1))
++    print("""
++  So w_k IS a consequence weight by the directive's own words. The panel
++  brief's statement that residual risk is "a different quantity with no
++  severity term" holds for the per-class R_k(i) and FAILS for the aggregate
++  R_n the same directive defines one line above it.
++
++  Appendix section 4 defines L_n = sum_k s_k . R_(n,k) and states "when
++  s_k = w_k ... L_n reduces to R_n". The operational file defines w_k AS the
++  consequence weight. Substituting, s_k = w_k identically, so L_n == R_n: the
++  "severity separation" the appendix offers as an available EXTENSION is
++  already collapsed in the deployed model. It is not an option on the table;
++  it is a distinction the operational spec has already spent.""")
++    w1, w2, R1s, R2s = sp.symbols("w1 w2 R1 R2", nonnegative=True)
++    witness = (w1 * R1s + w2 * R2s).subs({w1: 3, w2: 4, R1s: sp.Rational(1, 2), R2s: sp.Rational(1, 2)})
++    zw1, zw2, zr1, zr2 = z3.Reals("w1 w2 R1 R2")
++    s3 = z3.Solver()
++    s3.add(zw1 > 0, zw2 > 0, zr1 >= 0, zr1 <= 1, zr2 >= 0, zr2 <= 1, zw1 + zw2 != 1, zw1 * zr1 + zw2 * zr2 > 1)
++    z3_scale = s3.check()
++    # NOTE: this pattern was initially written as `...|normalis` and matched
++    # "Jaccard over normalised token sets" at :889, an unrelated line. A loose
++    # pattern reporting a constraint that is not there is the same defect class
++    # this producer is reporting, so it is anchored on w_k.
++    normalised = re.search(r"w_k[^\n]{0,80}(sum|add)[^\n]{0,20}(to\s*)?1\b"
++                           r"|(sum|\u03a3)_k\s*w_k\s*=\s*1"
++                           r"|w_k[^\n]{0,60}normalis", op)
++    print(f"  SCALE: R_n = w1.R1 + w2.R2 with consequence weights need not lie in [0,1].")
++    print(f"    w=(3,4), R=(1/2,1/2)  ->  R_n = {witness} = {float(witness)}   (> 1)")
++    print(f"    z3: such a witness exists -> {z3_scale}")
++    print(f"    does the directive require sum_k w_k = 1 anywhere? {bool(normalised)}")
++    print("""
++    With no normalisation requirement in the file, R_n is not confined to
++    [0,1], so a 0.5 threshold is meaningful ONLY on the per-class R_k.
++    Applied to R_n it compares a harm-weighted loss against a probability.
++    That is the conflation, in the gating path, with a number on it.""")
++    r4 = carries and bool(agg) and z3_scale == z3.sat and float(witness) > 1
++    print(f"\n  [{r4}]")
++    ok["R4_aggregate_residual_risk_is_a_loss_not_a_probability"] = r4
++
++    print("\n" + "=" * 78)
++    print("WHAT THE SEPARATION SHOULD BE")
++    print("=" * 78)
++    print("""
++  Three quantities, one job each, no factor appearing in two of them:
++
++    Sev(f) = W(class)            consequence ONLY, no belief term. A disproved
++                                 finding keeps its class; it simply stops
++                                 being a finding.
++    P(f)   = sigma(Lambda_total) belief that f is real, from TOOL receipts, by
++                                 section 7.8 Approach B. Already specified,
++                                 and already clears the d_tool admissibility
++                                 bar that entry B87 shows refuses
++                                 self-asserted confidence. V(False) enters as
++                                 Lambda = -infinity.
++    EL(f)  = Sev(f) . P(f)       expected loss. THIS is what 7.7 actually
++                                 defines and what its KEY PROPERTY describes.
++                                 Gate on it.
++
++  And for the process rather than the finding:
++
++    R_k(n) in [0,1]              per-class residual risk. A probability.
++                                 Threshold it at 0.5.
++    L_n = sum_k Sev_k . R_k(n)   expected residual loss. NOT a probability.
++                                 Never threshold it at 0.5. Either rename R_n
++                                 to L_n, or require sum_k w_k = 1 and give up
++                                 the consequence reading of w_k. One or the
++                                 other, not both.
++
++  So the appendix's product is the RIGHT ARITHMETIC UNDER THE WRONG NAME with
++  one redundant factor. The repair DELETES a factor rather than adding
++  machinery: drop `confidence` as a free-standing multiplicand, let 7.8 supply
++  the belief, re-attach the key property to EL.
++
++  This is a FOURTH option entry B87 does not list. B87 offers (a) amend 7.7's
++  second factor, (b) narrow the directive to admit tool-derived confidence,
++  (c) adopt the shadow's substitution; it recommends (b). (b) is NECESSARY BUT
++  NOT SUFFICIENT: it makes the second factor admissible and leaves both the
++  category error and the double-count untouched.""")
++    print("=" * 78)
++    allok = all(ok.values())
++    for k, v in ok.items():
++        print(f"  {'PASS' if v else 'FAIL'}  {k}")
++    if allok:
++        print("\nVERDICT: all four derivations discharge. Section 7.7 defines an expected")
++        print("  loss and names it a severity; the operational aggregate R_n defines a")
++        print("  loss and names it a risk. The conflation the founder attributes to")
++        print("  himself is present in BOTH specification files.")
++    else:
++        print("\nVERDICT: NOT ESTABLISHED -- at least one derivation did not discharge, so")
++        print("  no claim above is asserted. See the FAIL lines.")
++    return 0 if allok else 1
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py	2026-11-04 02:35:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_24gvbv_e/repo/scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py	2026-11-04 05:01:21
+@@ -83,22 +83,44 @@
+     census = m.claim_a_naive_grep_is_blind_to_some_of_them()
+     his = len(m.annotations())
+     spurious = sum(r["annotations"] for r in residue)
+-    # TWO ROUTES on the arithmetic: plain integers, and SymPy on the identity.
++    # CORRECTED 2026-11-04 (panel). This block asserted
++    # `census["annotations_total"] == his + spurious`, which was the identity
++    # BEFORE B108's repair. B108 moved the annotation counts to the narrow
++    # predicate, so `annotations_total` now means HIS 839 and the residue moved
++    # to the new key `annotations_excluded_as_not_his`. The old identity
++    # therefore evaluated 839 == 839 + 1114 and reported False, while the
++    # VERDICT line went on asserting the finding -- the reporting layer left
++    # behind by a repair to the deciding layer, which is the exact shape B108
++    # and B20's item (3) describe, occurring inside B108's own producer.
++    # The broad total is recomputed HERE by walking every response file, so
++    # the identity does not depend on the reader's key names at all.
++    broad_total = sum(len(m._annotations_in(p)) for p in broad)
+     import sympy
+     a, h, s = sympy.symbols("a h s", integer=True)
+     identity = sympy.Eq(a, h + s)
+-    holds = bool(identity.subs({a: census["annotations_total"], h: his, s: spurious}))
+-    return {"census_total": census["annotations_total"], "his_total": his,
++    holds = bool(identity.subs({a: broad_total, h: his, s: spurious}))
++    return {"broad_total": broad_total,
++            "census_total": census["annotations_total"], "his_total": his,
+             "spurious": spurious, "residue": residue,
+-            "exact_python": census["annotations_total"] == his + spurious,
+-            "exact_sympy": holds}
++            "exact_python": broad_total == his + spurious,
++            "exact_sympy": holds,
++            # the post-fix contract B108 installed, checked rather than assumed
++            "census_total_is_his": census["annotations_total"] == his,
++            "census_excluded_is_spurious":
++                census.get("annotations_excluded_as_not_his") == spurious}
+ 
+ 
+ def step_3_the_share(m) -> dict:
+     """How much of the banner's figure is not his writing, with 2 intervals."""
+     census = m.claim_a_naive_grep_is_blind_to_some_of_them()
+     his = len(m.annotations())
+-    k, n = census["annotations_total"] - his, census["annotations_total"]
++    # CORRECTED 2026-11-04 (panel): same root cause as step_2. Read post-fix,
++    # `annotations_total - his` is 0, so this printed "0 of 839 = 0.000000" and
++    # wrapped a faithful Wilson interval around the wrong numerator. The broad
++    # total is recomputed from the files.
++    broad = [q for q in sorted(m.RESPONSES.glob("*")) if m.is_a_response_file(q)]
++    n = sum(len(m._annotations_in(q)) for q in broad)
++    k = n - his
+     from statsmodels.stats.proportion import proportion_confint
+     from scipy import stats
+     lo, hi = proportion_confint(k, n, alpha=0.05, method="wilson")
+@@ -183,11 +205,27 @@
+               f"Wilson [{s4['wilson'][0]:.6f}, {s4['wilson'][1]:.6f}]")
+ 
+     ok = (s1["narrow_is_subset"] and s1["z3_narrow_implies_broad"]
+-          and s2["exact_python"] and s2["exact_sympy"])
+-    print(f"\nVERDICT: the census over-reports his verdicts by "
+-          f"{s2['spurious']}, a factor of "
+-          f"{s2['census_total']/s2['his_total']:.4f}. "
+-          f"All structural checks held: {ok}.")
++          and s2["exact_python"] and s2["exact_sympy"]
++          and s2["census_total_is_his"] and s2["census_excluded_is_spurious"])
++    # CORRECTED 2026-11-04 (panel): the claim sentence was unconditional and
++    # `ok` was appended to the end of it, so a FAILED structural check still
++    # shipped the assertion. The sentence is now GATED on the check.
++    if ok:
++        print(f"\nVERDICT: a reader selecting by READABILITY counts "
++              f"{s2['broad_total']} annotations where the authorship predicate "
++              f"finds {s2['his_total']}, so the pre-B108 census over-reported "
++              f"his verdicts by {s2['spurious']}, a factor of "
++              f"{s2['broad_total'] / s2['his_total']:.4f}. "
++              f"Post-B108 the reader returns {s2['census_total']}, which equals "
++              f"the authorship count, so the repair holds on this corpus.")
++    else:
++        print("\nVERDICT: NOT ESTABLISHED. A structural check did not hold, so "
++              "no figure above is asserted:")
++        for name in ("exact_python", "exact_sympy", "census_total_is_his",
++                     "census_excluded_is_spurious"):
++            print(f"    {'ok  ' if s2[name] else 'FAIL'}  {name}")
++        for name in ("narrow_is_subset", "z3_narrow_implies_broad"):
++            print(f"    {'ok  ' if s1[name] else 'FAIL'}  {name}")
+     return 0 if ok else 1
+ 
+ 
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-04 05:08:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/.cdsfl_deny_canonical_writes.sb	2026-11-04 04:47:11
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:experimental_notes/Answers_Still_Owed_2026-11-04.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Answers_Still_Owed_2026-11-04.md	2026-11-04 04:49:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/experimental_notes/Answers_Still_Owed_2026-11-04.md	2026-11-04 04:34:54
+@@ -167,43 +167,4 @@
+ naming a version they are not. Running before you rule on those risks measuring the gate's own
+ disagreement instead of the orchestrator behaviour under test.
+ 
+-## 6. On being alerted when you make an error — mostly not mechanisable, and here is the measurement
+-
+-You asked whether the instruction could be *"strengthened somehow, so that when I make an error
+-I am alerted loudly (but politely) and an explanation is offered for where I may be wrong before
+-proceeding"*.
+-
+-**Where it stands: `orchestrate-the-founder-too` is stated in both instruction files and enforced
+-by 0 hooks and 0 guards.** Most of what it asks needs a judgement about what you meant, which no
+-predicate can make. But your own words name 1 part that looks mechanical: *"A message that ends
+-mid-sentence is always worth flagging, because the missing half may carry the operative clause."*
+-So I measured whether a hook could catch that.
+-
+-**The obvious predicate is unusable.** Flagging any message of yours that does not end in
+-terminal punctuation fires on **681 of 1,421**, because you routinely close with a command line —
+-`a, f, sy, d` — which has no full stop. A detector firing on nearly half your messages
+-that gets switched off within a day, and this project has already recorded a false-positive rate
+-as the reason a rule goes unenforced.
+-
+-**Excluding trailing command lines brings it to 40 of 1,421 — 0.028149, Wilson 95% [0.020740,
+-0.038103].** Small enough to read, so I read the 12 most recent and labelled them. **3 are
+-genuine mid-word truncations**, ending *"and it gets d"*, *"it can be ' us"*, and, from
+-yesterday morning, *"Bugzilla/ mechan"*. The other 9 are file paths, an XML tag, or complete
+-sentences with no full stop. **Precision 3 of 12 = 0.250000, Wilson [0.088942, 0.532305]**, and
+-that interval is wide because 12 is a small number.
+-
+-**So: about 3 false alarms for every genuine catch, which is why I am not building it.** A hook
+-that interrupts you wrongly 3 times out of 4 teaches you to ignore it, and then it catches
+-nothing. **What I will do instead is what the directive already asks for** — ask 1 specific
+-question naming the 2 readings, at the point the answer is needed — and that is already in
+-force. **But I should be exact about what caught your experiment-design question tonight: it
+-was the INVENTORY, not the directive.** I found it by reading your 21 messages of the period and
+-triaging them, not by any alarm firing at the time you asked. That is an argument for the
+-inventory being worth repeating, and it is also the honest limit of the directive: it depends on
+-my noticing in the moment, which is what failed twice.
+-
+-**A final limit, stated plainly:** none of this says how often you are ACTUALLY truncated. That needs your
+-judgement per message and 0 labels exist. The 3 above are mine, carried as data in the producer
+-rather than asserted, so you can disagree with any of them.
+-
+ Written under CDSFL note standard v1.9 (1 November 2026).
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-04 05:07:58
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-04 04:21:52
+@@ -1108,10 +1108,8 @@
+ ★ **THE ACTUATOR IS BUILT AND TESTED, 2026-11-03T06:36:16+00:00, AND IT IS THE ONE THING THIS ENTRY SAID RELEASING THE HOLD WOULD MEAN.** Status per Rule 20: BUILT and TESTED, **NOT ENABLED**. The actuator is `bench/tools/cy_actuator_2026-11-03.py`, 328 lines, a thin OUTER supervisor that classifies what happened when a run stopped, records that classification with its evidence, and under `--act` re-invokes the same launch command with `--resume`. It changes 0 lines of the runner. **WHY OUTER, AND IT WAS TRACED BEFORE IT WAS WRITTEN RATHER THAN ASSUMED.** The simulated runner calls `R.run_experiment(...)` IN-PROCESS at `bench/tools/run_simulated_experiment.py:1066`, inside a `try` whose only companion clause is `finally` -- there is no `except`. So the pause's `sys.exit(42)` raises `SystemExit`, which is not an `Exception`, propagates out through `main()` and becomes the PROCESS exit code, while the `finally` still harvests the panel worktree first. The pause is therefore observable from outside with no runner change at all, and anything built inside the runner would have been a second mechanism for a signal that already crosses the boundary. **THE CONTRACT IS DECLARED AS DATA, NOT AS PROSE**: `ASSUMES` holds A1 to A4 and `GUARANTEES` holds G1 to G5, and both have 2 callers -- the guard ITERATES `GUARANTEES` and fails if one is declared with no test class naming it, and `--contract` prints them, which costs nothing and dispatches nothing. A declaration living only in a docstring would have been the addition-nothing-reaches shape the additive standard names. **G4 HOLDS BY CONSTRUCTION AND THAT IS VERIFIED STRUCTURALLY, NOT SAMPLED.** An `ast` pass over `classify` finds it compares `exit_code` exactly twice, against the pause code and against 0, and its final statement is an UNCONDITIONAL return of HOLD -- so every exit code outside those 2 reaches HOLD by construction. Executing it against 75 non-permitting codes, 0 of which reached RESUME, Wilson 95% [0.000000, 0.048724], Clopper-Pearson [0.000000, 0.047995], corroborates a structural fact rather than sampling an open space. **GUARD:** `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py`, 19 assertions, all passing. **MUTATIONS:** `scripts/the_actuator_contract_mutations_2026-11-03.py`, **7 of 7 red**, Wilson 95% [0.645670, 1.000000], with the actuator restored byte-for-byte, sha256 unchanged -- and that figure is a detection rate on 7 reversions I chose, so it may not be read as coverage. **PROVEN END-TO-END AGAINST A REAL SUBPROCESS, not only against the test seam**: without `--act` it classifies a real exit 42 and drives nothing; with `--act` it drives 1 resume and the resumed process completes, final DONE. **AND THE PRECONDITION BUILT EARLIER THE SAME NIGHT NOW HAS A CONSUMER**: the watchdog's `events` field, which this entry named as the 1 change the actuator could not be built without, appears in the recorded decisions as STALLED on the pause and CLOSED on completion -- so a reader learns WHICH condition fired, which was the whole gap. **2 P-PASS FINDINGS, BOTH AGAINST MY OWN WORK.** (1) With no pulse on disk the decision was right (HOLD) and the recorded REASON asserted the process was still alive, which was never measured: `_pid_alive(None)` returns True as a fail-safe so the refusal errs toward holding, and the reason reported that fail-safe as a fact. The known-alive and unknown cases now carry separate reasons and M5 guards the separation, because a right decision with a false record still corrupts G1. (2) The budget mutation M3 first went red by pytest TIMING OUT rather than by an assertion, since removing the bound makes the drive loop for ever -- the same timeout-dependent red that killed a sibling Stop hook in 153 of 360 invocations. The fake runner now refuses past a hard cap, so a missing bound fails immediately and legibly -- the same mutation now reports 4 failed, 15 passed in 0.38 s. **AND THE FIRST ATTEMPT AT THAT REPAIR FAILED, WHICH IS THE ACTUAL LESSON:** the 2 tests in the budget class were capped first, because the mutation removes the budget and those tests are named for it, and the timeout persisted unchanged. The tests actually looping were in the RECORDING class and had nothing to do with the budget by name. Capping by name instead of reading which test failed to finish is FOLLOW skipped on my own repair. **WHAT IS STILL NOT DONE, STATED PLAINLY: no product code path invokes the actuator.** It is the outermost layer, so there is no code caller by design, but the end-to-end that would wire it into a real run is the simulated experiment, and that is paused on his own recommendation of 2026-11-03 that a pause precede running it so he can read the morning report first. **AND HIS OWN RULED ORDER PUTS A DIFFERENT RUN AHEAD OF IT:** ticket `72f1d6095d83`, still OPEN, ruled 2026-11-01, is 1 simulated run under full `cy` on the severity mechanics, explicitly AFTER the severity bounds are set and BEFORE the orchestrator work. Its predecessor's parts exist -- `scripts/the_severity_bounds_from_the_archive_2026-11-01.py`, the shadow measure at `bench/reference_runner_v3.py:3890`, and the pre-registration `experimental_notes/data/severity_bounds_prereg_2026-11-02.json` -- and the run itself has not happened. So the orchestrator experiment is not the next experiment by his own ruling, whatever the actuator's readiness.
+ 
+ ★ **THE SANDBOX HIS ORCHESTRATOR SPEC REQUIRES IS ALREADY BUILT; THE CONCEALMENT IS NOT, AND THAT IS A DESIGN QUESTION RATHER THAN A DEFECT.** Measured 2026-11-03 before anything was drafted, because this entry's own history is that taking it at its word would have rebuilt a 395-line comparator and a UX backend that already existed. **HIS SPEC, 2026-11-03:** the orchestrator experiment should run *"within its own sandbox (which the orchestrator model shouldn't know about), with its own isolated copy of the repo, since it will have the authority to significantly change code"*. **THE ISOLATED COPY IS DONE AND IS BETTER THAN A FRESH BUILD WOULD HAVE BEEN.** `bench/tools/run_simulated_experiment_sandboxed.sh`, 237 lines, already runs a simulated experiment against a disposable copy on his 2026-09-01 ruling that *"A simulation is exactly that. It runs in its own sandbox with a copy of the current/most recent repo to work on, not the live repo itself."* It launches the runner from INSIDE the copy, which redirects the target, the panel's inherited working directory and every derived path in 1 move, because both harnesses derive their root from `__file__`. It REFUSES a dirty tree, so the sandbox is a copy of what is actually being run. And it uses PATHSPEC STAGING rather than a plain worktree, because a plain `git worktree add` carries every tracked file: measured on this repository, a reviewer's sandbox exposed 149 run directories, 54 report JSONs, 325 experimental_notes files and 29,899 severity values, including exp45's 12 criticals with their exact severities, to agents armed with Bash, Read, Grep and Glob. `bench/panel_sandbox.py` supplies `build`, `changes`, `fingerprint`, secret scrubbing, bytecode purging, round-evidence purging and canonical-touch attribution, and 2 guards hold it: `bench/tests/test_a_simulation_runs_on_a_copy_2026-09-01.py` and `bench/tests/test_the_sandbox_fallback_does_not_unlock_the_live_repo_2026-09-21.py`. **SO NOTHING SHOULD BE BUILT FOR THE SANDBOX.** **WHAT IS ABSENT IS THE CONCEALMENT, AND IT IS ABSENT BY CONSTRUCTION RATHER THAN BY OVERSIGHT.** The sandbox is created as `mktemp -d -t cdsfl_sim` in the launcher and `tempfile.mkdtemp(prefix="cdsfl_sim_panel_")` in the runner, so its path NAMES the simulation, and a seat with Bash can read its own working directory. Searching `bench/panel_sandbox.py` and the launcher for any concealment mechanism returns **0 matches**. **AND FULL CONCEALMENT FROM A BASH-ARMED MODEL IS PROBABLY NOT ACHIEVABLE**, which is why this is recorded as a question rather than repaired: a model that can run shell commands can inspect its filesystem, its process tree and its git state, so concealment can only ever be best-effort. **THE 3 OPTIONS, SPELLED OUT, AND THE CHOICE IS HIS.** (1) BEST-EFFORT: rename the sandbox to a neutral path with no `cdsfl` or `sim` token, which costs 2 lines and removes the most obvious telltale while leaving the orchestrator's own `git` state and its own process listing readable. (2) ACCEPT DISCOVERABILITY: state in the experiment's pre-registration that the orchestrator may determine it is sandboxed, and treat any behaviour change as part of what the arm measures rather than as a confound to be hidden. (3) REMOVE THE SHELL from the orchestrator seat, which would conceal the sandbox and also remove the tool use that this project exists to measure, so it is named for completeness and not recommended. **NO COMPOSABILITY CLAIM IS MADE between 1 and 2**: they are independent, no measurement shows that doing both beats either alone, and under his standard that claim requires a measurement before it may be made. **WHAT WAS BUILT FOR THE ARM, AND IT IS DELIBERATELY NOT REGISTERED OR RUN.** A pre-registration carrying 3 predictions with explicit falsifiers, of which **2 of 3 are round-decidable** -- which matters, because the existing pre-registration files were measured on 2026-11-02 as **6 of 8 terminal or not scorable**, 0.750000 Wilson 95% [0.409275, 0.928521], so a monitor reading them could speak only at the end, which is not monitoring. And a scorer, written BEFORE the run because the 2026-09-02 blind audit holds 286 first-pass and 108 second-pass verdicts and names NO SCORER, so a result there is attributed to nobody. The scorer takes `--survey` and runs against every archived run directory, so each of its predicates is exercised today rather than having its first use be its first trial. **O1'S THRESHOLD IS THE 1 NUMBER IN IT THAT IS A JUDGEMENT:** 0.80, chosen to sit below the prior measurement's Wilson lower bound of 0.912314 so that a pass does not merely restate the prior. It is his to set or reject, and the pre-registration says so in its own text. **AND HIS RULED ORDER STILL PUTS THIS SECOND:** ticket `72f1d6095d83` is OPEN and places 1 simulated run under full `cy` on the severity mechanics before the orchestrator work, so none of this is run.
+-
+-★ **THE ACTUATOR'S CONTRACT IS SATISFIABLE TODAY, SO HIS ENABLEMENT RULING NEEDS NO FURTHER BUILD. Verified 2026-11-04T05:01:46+00:00.** `bench/tools/cy_actuator_2026-11-03.py --contract` declares 4 assumptions and 5 guarantees, and the 2 assumptions that cite a specific line were checked by reading those lines rather than trusting the citation. **A2 is EXACT:** `bench/reference_runner_v3.py:21274` reads `if cfg.hil_review and not (burst_plan and burst_state):`, and the second pause site sits at `:21338`; a 3rd `hil_review` reference at `:22494` is argument plumbing and not a pause site, so *both pause sites* is the right count. **A3 HOLDS WITH A 1-LINE IMPRECISION worth fixing when the file is next touched:** it cites `bench/launch_exp39.py:86`, which is the docstring *"HIL review gate: runner paused for operator review (exit 42)"*, while the predicate `return self.exit_code == 42` is at `:87`. The property holds; the pointer is off by 1. **AND THE FLAG THE CONTRACT ASSUMES EXISTS ON BOTH LAUNCHERS**, which was the link most likely to be missing: `--hil-review` is declared at `bench/launch_exp39.py:396` and at `bench/tools/run_simulated_experiment.py:280`, and exit 42 is propagated rather than treated as a failure at `bench/launch_exp39.py:452`. **WHAT THIS CHANGES FOR HIM: nothing is owed by me before he can rule.** Enabling the loop means launching a run with `--hil-review` and passing `--act` to the actuator, both of which exist. **WHAT IT DOES NOT CLAIM:** that the loop has ever RUN unattended. It has not, and the run itself is the runway item that costs money.
+ 
+-★ **B20's OWN STATUS INSTRUMENT COULD NOT SEE THE ACTUATOR IT SAID WAS MISSING, AND ITS EVENT-VOCABULARY FIGURE READ THE WRONG FUNCTION. Both fixed 2026-11-04T04:20:09+00:00.** **STATUS: 2 INSTRUMENT DEFECTS FIXED. Nothing about the build or the hold changes, and his deferral still governs both of the things that remain.** **(1) THE VERDICT WAS A HARDCODED STRING.** `scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py` set `monitoring_loop` to *"PARTLY BUILT: the detector and its event vocabulary exist and arm automatically; what is absent is a loop that ACTS on them unattended"* whenever `cy_watchdog_2026-10-02.py` and `hooks/cy_monitor_gate.py` both exist — a conditional expression over 2 file-existence checks, with **0 references to anything that might act**. So it could not change when the actuator was built, and it went on reporting `monitoring_loop` as PARTLY BUILT while `bench/tools/cy_actuator_2026-11-03.py` sat in the tree. The run's own output asserted the absence of something that imports and exposes `classify` and `main`, which is the instrument contradicting the filesystem rather than measuring it. A verdict that is a constant measures nothing: the same shape as `boundary_band_sensitivity`, which shipped as an unconditional constant and was vacuous in 41 of 41 reports. The actuator is now PROBED the way the other 3 components already were — imported, its exposed names listed, and the tests that reach it named. **THE VERDICT IT NOW PRODUCES, and Rule 20's distinction is the operative half:** **BUILT AND TESTED, NOT ENABLED.** 14,923 bytes, imports, exposes `classify` and `main`, reached by `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` with `scripts/the_actuator_contract_mutations_2026-11-03.py` beside it, and it touches **0 lines of `bench/reference_runner_v3.py`**, checked against that commit's own file list. It acts only under `--act`, and **0 production callers pass it** — the only 2 references in the whole project outside the tool itself are its test and its mutation harness. So every part of the loop now exists and the cycle is still not unattended, which is a DIFFERENT statement from the one the instrument was making. **(2) THE EVENT VOCABULARY WAS COUNTED OVER THE WRONG FUNCTION.** The instrument read `say("UPPERCASE")` by regex and printed **4** kinds as *the watchdog's EVENT VOCABULARY*. The watchdog's events are emitted by **`ev()`**, a different function with **10** distinct literal kinds — BACKLOG, BACKLOG LINE, LOG TRUNCATED, PROCESS GONE, PROGRESS, QUEUE, QUIET BUT WORKING, STALLED, TROUBLE and WATCHDOG — and `say()` adds ARMED, CLOSED and HEARTBEAT with WATCHDOG shared, giving a **union of 13**. Counted 2 ways, a regex and an AST walk, which agreed at 4 on `say()` and at 10 on `ev()`. Now read from the syntax tree over both emitters, which cannot name the wrong function silently because the function is the key it groups by. **★ AND THIS ENTRY'S OWN FIGURE OF 13 WAS RIGHT ALL ALONG.** The instrument contradicted it by a factor of more than 3 and the ENTRY was correct; this entry already explains the union in its own words, *"the other 3 being ARMED, CLOSED and HEARTBEAT"*. I went looking for a wrong number in the record and found it in the measuring tool instead, which is the night's pattern rather than an exception: 16 of 18 of a night's recorded errors were in instruments rather than subjects, 0.888889, Wilson [0.672002, 0.968980]. **2 HYPOTHESES OF MINE WERE REFUTED IN THE SAME PASS AND ARE RECORDED BECAUSE THE CHECKING IS THE POINT.** First, that the never-run evidence overstated itself: this entry calls a quoted `orchestrator` in a report body *the WIDEST predicate* returning 0, and an unquoted substring search returns **5** reports. All 5 are model-written finding prose using the word to mean a generic caller — exp33, exp34, exp38 and 2 exp42 runs — so **the conclusion that 0 runs DECLARE the arm is unaffected** and only the word *widest* is too strong. Recounted today: **349** run directories and **79** report files, against the 347 and 78 recorded here. Second, that 39,141 characters across 14 paragraphs of this entry were ORPHANED, because they sit after the marker at line 1084 and `e.text` returns only the 25,797-character first line. **That is wrong**: `task_list_markers.body_bounds` runs a body to the NEXT ENTRY'S HEADING and its docstring calls itself *"THE one definition"*, so the paragraphs are reachable and `e.text` is simply the summary. 150 of 251 entries follow the same convention, 531,731 characters in all, which is the convention and not an accident. **(3) A THIRD CONSTANT, AND I CREATED THE CONTRADICTION BEFORE I FOUND IT.** The closing summary printed *WHAT REMAINS ... a loop that ACTS* and *So an absent component here is a DEFERRAL he ordered* unconditionally. Repairing the verdict without them left the output self-contradictory for 1 run: **4 of 4 built** followed by a paragraph saying the acting loop is missing, and an excuse for absent components when 0 were absent. That is the fixed-the-deciding-layer-left-the-reporting-layer shape found in the verdict census the same night and repeated here within the hour. Both now DERIVE from the verdicts. **GUARD:** `bench/tests/test_b20s_status_instrument_measures_2026-11-04.py`, 9 tests, 2.25 s. It EXECUTES the instrument twice — once against the real repository and once against a planted tree holding the watchdog and the gate but NO actuator — and requires the verdict to DIFFER, which a constant cannot do. **P-PASS: 3 mutations restoring each constant, 3 red** (`scripts/the_b20_instrument_mutations_2026-11-04.py`), subject restored byte-identical by sha256. **AND THE GUARD'S OWN FIRST VERSION FAILED AGAINST ITSELF:** `answer_help` reads `sys.argv`, which under pytest holds pytest's arguments, so the capture was EMPTY and 5 tests failed against the harness rather than the subject. The harness now cleans argv and REFUSES an empty capture, so it cannot pass vacuously. **WHAT REMAINS ON THIS ENTRY, AND NEITHER HALF IS A BUILD.** 4 of 4 components are now built, so this entry's own condition — *"Releasing it would mean building an actuator and nothing else"* — is discharged. **★ AND WHAT I WROTE HERE 20 MINUTES AGO WAS WRONG IN BOTH HALVES. Corrected 2026-11-04T05:07:58+00:00.** It read that enabling the actuator *"changes run behaviour and so is his"* and that running the experiment *"costs money and is a runway item"*, with his deferral still governing both. **HE HAD ALREADY INSTRUCTED BOTH, ON 2026-11-01, and the instruction is in his own annotation rather than in chat** — annotation 12 of `Closing_Report_2026-11-01.txt`, verbatim: *"I originally listed this as a fully simulated experiment in its own right. I am clearly not going to burn money on a live run until I know how this might function. Has that experiment ever been run? Has this design ever been built? If not you should do both."* **So it is a SIMULATED experiment by his own framing, it costs NO money, and *do both* is an instruction to build it and run it.** The build is now complete at 4 of 4 components, so **the run is MINE and is not waiting on him.** His deferral of 2026-10-17 placed it after the rest of the list; it does not withhold it. **HOW THE ERROR HAPPENED, because the route matters more than the slip.** I set out to check whether this entry had misquoted him, searched `scripts/his_messages.py` — which reads CHAT — found 0 matches for *If not you should do both*, and was about to report a fabricated quotation in his name. The phrase is genuine and sits in his ANNOTATIONS, a separate record that chat search cannot see. That is exactly the failure `feedback_read_his_responses_with_the_reader_2026-10-11` records, where 221 of 691 of his words were invisible to a naive search. **The entry's 3-rulings count is therefore CORRECT and my suspicion was not**; the 2026-10-20 quote *"I already ruled on the orchestrator build"* also reproduces exactly from chat. **WHAT REMAINS, RESTATED CORRECTLY: the simulated orchestrator run, and it is mine to do under full `cy`.** What is genuinely his is only a LIVE run that spends money, which he has refused until the simulated one shows how it functions.
++★ **B20's OWN STATUS INSTRUMENT COULD NOT SEE THE ACTUATOR IT SAID WAS MISSING, AND ITS EVENT-VOCABULARY FIGURE READ THE WRONG FUNCTION. Both fixed 2026-11-04T04:20:09+00:00.** **STATUS: 2 INSTRUMENT DEFECTS FIXED. Nothing about the build or the hold changes, and his deferral still governs both of the things that remain.** **(1) THE VERDICT WAS A HARDCODED STRING.** `scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py` set `monitoring_loop` to *"PARTLY BUILT: the detector and its event vocabulary exist and arm automatically; what is absent is a loop that ACTS on them unattended"* whenever `cy_watchdog_2026-10-02.py` and `hooks/cy_monitor_gate.py` both exist — a conditional expression over 2 file-existence checks, with **0 references to anything that might act**. So it could not change when the actuator was built, and it went on reporting `monitoring_loop` as PARTLY BUILT while `bench/tools/cy_actuator_2026-11-03.py` sat in the tree. The run's own output asserted the absence of something that imports and exposes `classify` and `main`, which is the instrument contradicting the filesystem rather than measuring it. A verdict that is a constant measures nothing: the same shape as `boundary_band_sensitivity`, which shipped as an unconditional constant and was vacuous in 41 of 41 reports. The actuator is now PROBED the way the other 3 components already were — imported, its exposed names listed, and the tests that reach it named. **THE VERDICT IT NOW PRODUCES, and Rule 20's distinction is the operative half:** **BUILT AND TESTED, NOT ENABLED.** 14,923 bytes, imports, exposes `classify` and `main`, reached by `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` with `scripts/the_actuator_contract_mutations_2026-11-03.py` beside it, and it touches **0 lines of `bench/reference_runner_v3.py`**, checked against that commit's own file list. It acts only under `--act`, and **0 production callers pass it** — the only 2 references in the whole project outside the tool itself are its test and its mutation harness. So every part of the loop now exists and the cycle is still not unattended, which is a DIFFERENT statement from the one the instrument was making. **(2) THE EVENT VOCABULARY WAS COUNTED OVER THE WRONG FUNCTION.** The instrument read `say("UPPERCASE")` by regex and printed **4** kinds as *the watchdog's EVENT VOCABULARY*. The watchdog's events are emitted by **`ev()`**, a different function with **10** distinct literal kinds — BACKLOG, BACKLOG LINE, LOG TRUNCATED, PROCESS GONE, PROGRESS, QUEUE, QUIET BUT WORKING, STALLED, TROUBLE and WATCHDOG — and `say()` adds ARMED, CLOSED and HEARTBEAT with WATCHDOG shared, giving a **union of 13**. Counted 2 ways, a regex and an AST walk, which agreed at 4 on `say()` and at 10 on `ev()`. Now read from the syntax tree over both emitters, which cannot name the wrong function silently because the function is the key it groups by. **★ AND THIS ENTRY'S OWN FIGURE OF 13 WAS RIGHT ALL ALONG.** The instrument contradicted it by a factor of more than 3 and the ENTRY was correct; this entry already explains the union in its own words, *"the other 3 being ARMED, CLOSED and HEARTBEAT"*. I went looking for a wrong number in the record and found it in the measuring tool instead, which is the night's pattern rather than an exception: 16 of 18 of a night's recorded errors were in instruments rather than subjects, 0.888889, Wilson [0.672002, 0.968980]. **2 HYPOTHESES OF MINE WERE REFUTED IN THE SAME PASS AND ARE RECORDED BECAUSE THE CHECKING IS THE POINT.** First, that the never-run evidence overstated itself: this entry calls a quoted `orchestrator` in a report body *the WIDEST predicate* returning 0, and an unquoted substring search returns **5** reports. All 5 are model-written finding prose using the word to mean a generic caller — exp33, exp34, exp38 and 2 exp42 runs — so **the conclusion that 0 runs DECLARE the arm is unaffected** and only the word *widest* is too strong. Recounted today: **349** run directories and **79** report files, against the 347 and 78 recorded here. Second, that 39,141 characters across 14 paragraphs of this entry were ORPHANED, because they sit after the marker at line 1084 and `e.text` returns only the 25,797-character first line. **That is wrong**: `task_list_markers.body_bounds` runs a body to the NEXT ENTRY'S HEADING and its docstring calls itself *"THE one definition"*, so the paragraphs are reachable and `e.text` is simply the summary. 150 of 251 entries follow the same convention, 531,731 characters in all, which is the convention and not an accident. **(3) A THIRD CONSTANT, AND I CREATED THE CONTRADICTION BEFORE I FOUND IT.** The closing summary printed *WHAT REMAINS ... a loop that ACTS* and *So an absent component here is a DEFERRAL he ordered* unconditionally. Repairing the verdict without them left the output self-contradictory for 1 run: **4 of 4 built** followed by a paragraph saying the acting loop is missing, and an excuse for absent components when 0 were absent. That is the fixed-the-deciding-layer-left-the-reporting-layer shape found in the verdict census the same night and repeated here within the hour. Both now DERIVE from the verdicts. **GUARD:** `bench/tests/test_b20s_status_instrument_measures_2026-11-04.py`, 9 tests, 2.25 s. It EXECUTES the instrument twice — once against the real repository and once against a planted tree holding the watchdog and the gate but NO actuator — and requires the verdict to DIFFER, which a constant cannot do. **P-PASS: 3 mutations restoring each constant, 3 red** (`scripts/the_b20_instrument_mutations_2026-11-04.py`), subject restored byte-identical by sha256. **AND THE GUARD'S OWN FIRST VERSION FAILED AGAINST ITSELF:** `answer_help` reads `sys.argv`, which under pytest holds pytest's arguments, so the capture was EMPTY and 5 tests failed against the harness rather than the subject. The harness now cleans argv and REFUSES an empty capture, so it cannot pass vacuously. **WHAT REMAINS ON THIS ENTRY, AND NEITHER HALF IS A BUILD.** 4 of 4 components are now built, so this entry's own condition — *"Releasing it would mean building an actuator and nothing else"* — is discharged. What is left is to ENABLE the actuator, which changes run behaviour and so is his, and to RUN the experiment, which costs money and is a runway item. **HIS DEFERRAL IS UNTOUCHED AND STILL GOVERNS BOTH.**
+ 
+ ★ **EXERCISING THAT SCORER AGAINST THE ARCHIVE BEFORE THE ARM EXISTED FOUND 2 DEFECTS IN THE PRE-REGISTRATION ITSELF, WHICH IS THE WHOLE ARGUMENT FOR WRITING A SCORER FIRST.** Both were found by `--survey`, which scores every archived run directory so that no predicate's first use is also its first trial. **(1) THE PRIMARY PREDICTION WAS UNSCORABLE AND THE PROBE WAS WHY.** O1 returned NOT SCORABLE in **347 of 347** archived runs. Its predicate read a `mechanism` field out of `*_report.json`; the fields are `status_adjudicator` and `status_mechanism` and they live in `runner_state.json`. Worse, it treated anything not naming a quorum as tool-made -- and `scripts/were_the_shakedown_adjudications_tool_made_2026-10-17.py` RECORDS ITS OWN FIRST VERSION MAKING THAT EXACT ERROR, which returned 79 of 79 and failed to reproduce the 77 this entry quotes, because carrying a tool's output is not the same as having been DECIDED by one. So the repair was not to re-derive the predicate but to EXTRACT it: `classify_adjudication` is now a function in that producer, `main()` calls it, and the committed figure still reproduces at **77 of 79 = 97.4684%**, which is what makes the extraction behaviour-preserving rather than hopeful. The scorer imports it, so 1 predicate has 2 callers instead of 2 predicates drifting. **(2) THE VERDICT RULE FALSIFIED RUNS FOR BEING SMALL.** O1 first read HOLDS when the Wilson lower bound cleared 0.80 and FALSIFIED otherwise. Across the archive that called **10 of 28** scorable runs FALSIFIED -- and **7 of those 10 have a point estimate of EXACTLY 1.0**, with sample sizes of 8, 9, 10, 10, 10, 13 and 15. A run whose every adjudication is tool-made first clears a 0.80 Wilson floor at **n = 16**, so the rule was measuring sample size and calling it evidence. The corrected rule is one-sided and 3-valued: FALSIFIED only when the Wilson UPPER bound falls below the floor, HOLDS when the lower bound clears it, INDETERMINATE when the interval straddles it -- the same form `study_run1b`'s P3 prediction already uses when it requires its interval to exclude 0.5. Under it the archive gives **18 HOLDS, 9 INDETERMINATE and 1 FALSIFIED**. **THE 1 GENUINE FALSIFICATION IS A REAL SIGNAL AND IS NAMED RATHER THAN BUCKETED:** `sim45_memory_20260830T161215Z`, **0 of 16 tool-made**, the only archived run whose interval excludes the floor from above. **AND THE ARCHIVE AGREES WITH THE PRIOR, which is the result that was NOT flattering-measure risk because it could have gone the other way:** archive-wide **769 of 803 = 0.957659**, Wilson 95% [0.941416, 0.969544], Clopper-Pearson [0.941332, 0.970502], against the shakedown legs' 0.974684 at Fisher exact **p = 0.763617**, odds ratio 1.7022 -- not distinguishable, so the prior is representative at the entry level. **THE COVERAGE CAVEAT IS LARGER THAN THE SPLIT ITSELF AND MUST TRAVEL WITH THE FIGURE: 2508 registry entries across the archive carry NO adjudicator field at all**, against the 803 that do. The remaining entries are not assertion-made, they are UNRECORDED, so the share is a statement about the roughly 24% of entries that record an adjudicator and may not be stated as a property of the harness's adjudications in general. Producer: `scripts/score_the_orchestrator_arm_2026-11-03.py`; pre-registration, explicitly NOT registered: `experimental_notes/data/bound_orchestrator_arm_prereg_DRAFT_2026-11-03.json`; guard `bench/tests/test_the_orchestrator_scorer_rule_2026-11-03.py`, 22 assertions, with `scripts/the_orchestrator_scorer_mutations_2026-11-03.py` turning it red on **3 of 3** reversions, each by assertion in about 1.4 s rather than by a timeout, and the scorer restored byte-for-byte. **THE CONCEALMENT QUESTION IS RAISED AS A TICKET RATHER THAN LEFT IN PROSE:** `qs:a7e64483f941`, OPEN, `task_ref` B20, raised through `propose_from_chat` so its anchor is derived rather than remembered -- 5 questions raised by hand on 2026-10-27 collided on 1 shared identifier because that route was bypassed.
+ 
+
+### fable:attempt-1:experimental_notes/Inventory_Since_His_First_Message_2026-11-04.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/Inventory_Since_His_First_Message_2026-11-04.md	2026-11-04 04:34:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/experimental_notes/Inventory_Since_His_First_Message_2026-11-04.md	2026-11-04 04:57:52
+@@ -132,7 +132,7 @@
+ ## What the cross-check refuted
+ 
+ He asked for the inventory to be cross-verified or refuted against every printed and saved
+-source. 8 figures or claims did not survive that check, and all 8 were mine.
++source. 9 figures or claims did not survive that check, and all 9 were mine. (This sentence itself first said 8 over a 9-item list — the 9th was appended without the count moving, the same shape as the defects it catalogues; corrected 2026-11-04 by the panel seat, recounted by `scripts/recount_the_inventorys_refuted_list_2026-11-04.py`.)
+ 
+ 1. **A claim that 13 of 23 live entries are genuine blockers.** Produced by calling an internal
+    function of the triage tool, which answers whether a *new* item is blocked by the existing
+@@ -147,7 +147,7 @@
+    he forwarded that document rather than annotating it, and the reader was right.
+ 5. **A report that the 2 decision surfaces differ.** The comparison had been pointed at a
+    path where no file exists, so the tool reported a difference because the file was absent.
+-   The real mirror is byte-identical, both carrying 19 decisions.
++   The real mirror is byte-identical, both carrying 19 decisions at the time of that check. (Both surfaces carry 20 since decision 20 was added later the same night; this note's other 2 mentions of 20 postdate that addition, recounted by the same script.)
+ 6. **A claim that the real obstacle to searching his annotations is the rich-text share, and
+    that calling them binary was wrong.** Half right. Both obstacles are real and together they
+    partition the corpus exactly, which is a stronger statement than either half.
+
+### fable:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-11-04 05:02:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/resources/MEMORY_EXCLUSIONS.md	2026-11-04 02:21:12
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-11-04 05:02 GMT)
++## Accounting (counted 2026-11-04 02:21 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **305 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **304 individual memory files**. They partition as:
++The directory holds **303 files**, of which one is `MEMORY.md` itself
++(the index), leaving **302 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 247 |
++| Mirrored (in summarised form) in `MEMORY.md` | 245 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 304 |
++| total | 302 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### fable:attempt-1:scripts/falsifier_the_census_producer_tracks_the_fixed_state_2026-11-04.py
+--- /dev/null	2026-11-04 05:08:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/scripts/falsifier_the_census_producer_tracks_the_fixed_state_2026-11-04.py	2026-11-04 04:57:01
+@@ -0,0 +1,67 @@
++#!/usr/bin/env python3
++"""FALSIFIER for the 2026-11-04 repair of
++`scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py`.
++
++CLAIM UNDER TEST: the producer now (1) exits 0 on the repaired tree, where the
++census quotes only his annotations and names the residue; and (2) still goes
++red if the B108 fix reverts -- i.e. if `claim_a_naive_grep_is_blind_to_some_of_them`
++again folds the residue into `annotations_total` or stops naming it.
++
++FAILS (raises AssertionError / prints FALSIFIED) iff either half is false.
++"""
++import importlib.util
++import pathlib
++import subprocess
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++PRODUCER = REPO / "scripts" / "the_census_counts_what_the_reader_excludes_2026-11-04.py"
++
++
++def load(path, name):
++    spec = importlib.util.spec_from_file_location(name, path)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++def main() -> int:
++    # Half 1: the producer passes on the repaired tree.
++    r = subprocess.run([sys.executable, str(PRODUCER)],
++                       capture_output=True, text=True, timeout=600)
++    if r.returncode != 0 or "All structural checks held: True" not in r.stdout:
++        print("FALSIFIED: producer does not pass on the repaired tree "
++              f"(exit {r.returncode})")
++        print(r.stdout[-600:])
++        return 1
++    print(f"half 1: producer exit 0, verdict line: "
++          f"{[l for l in r.stdout.splitlines() if l.startswith('VERDICT')][0]}")
++
++    # Half 2: a reverted census (pre-fix shape) must turn step_2 red.
++    producer = load(PRODUCER, "_census_producer")
++    m = producer._reader()
++    real = m.claim_a_naive_grep_is_blind_to_some_of_them
++
++    class Reverted:
++        """Proxy over the real reader module simulating the PRE-FIX census:
++        the residue folded into `annotations_total` and not reported."""
++        def __getattr__(self, k):
++            return getattr(m, k)
++        def claim_a_naive_grep_is_blind_to_some_of_them(self):
++            c = dict(real())
++            c["annotations_total"] = (c["annotations_total"]
++                                      + c["annotations_excluded_as_not_his"])
++            c["annotations_excluded_as_not_his"] = 0
++            return c
++
++    s2 = producer.step_2_the_decomposition(Reverted())
++    red = not (s2["quotes_only_his"] and s2["residue_named"])
++    assert red, "FALSIFIED: step_2 stayed green on a reverted census"
++    print(f"half 2: reverted census -> quotes_only_his={s2['quotes_only_his']}, "
++          f"residue_named={s2['residue_named']} (red as required)")
++    print("NOT FALSIFIED: both halves hold.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/recount_the_inventorys_refuted_list_2026-11-04.py
+--- /dev/null	2026-11-04 05:08:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/scripts/recount_the_inventorys_refuted_list_2026-11-04.py	2026-11-04 04:57:53
+@@ -0,0 +1,36 @@
++#!/usr/bin/env python3
++"""Recounts 2 figures in `Inventory_Since_His_First_Message_2026-11-04.md`
++from the artefacts rather than restating them: (1) the number of enumerated
++items in its what-the-cross-check-refuted list, which the header must match;
++(2) the number of DECISION headings on each decision surface, which the
++note's register section quotes. Exit 1 on any mismatch."""
++import pathlib
++import re
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++NOTE = REPO / "experimental_notes" / "Inventory_Since_His_First_Message_2026-11-04.md"
++TXT = REPO / "experimental_notes" / "Decisions_Awaiting_You_2026-11-03.txt"
++MD = REPO / "experimental_notes" / "Decisions_Awaiting_You_2026-11-03.md"
++
++
++def main() -> int:
++    body = NOTE.read_text()
++    sect = body.split("## What the cross-check refuted", 1)[1]
++    sect = sect.split("## ", 1)[0]
++    items = re.findall(r"^\d+\.\s", sect, flags=re.M)
++    m = re.search(r"(\d+) figures or claims did not survive", sect)
++    header = int(m.group(1))
++    txt_n = len(re.findall(r"^DECISION \d+\.", TXT.read_text(), flags=re.M))
++    md_n = len(re.findall(r"DECISION \d+\.", MD.read_text()))
++    print(f"enumerated refuted items : {len(items)}")
++    print(f"header claims            : {header}")
++    print(f"decision headings .txt   : {txt_n}")
++    print(f"decision headings .md    : {md_n}")
++    ok = header == len(items) and txt_n == md_n
++    print(f"header matches list AND surfaces agree: {ok}")
++    return 0 if ok else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py	2026-11-04 02:35:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4wumqyq1/repo/scripts/the_census_counts_what_the_reader_excludes_2026-11-04.py	2026-11-04 04:56:45
+@@ -69,7 +69,19 @@
+ 
+ 
+ def step_2_the_decomposition(m) -> dict:
+-    """1,953 = 839 + 1,114, exactly, and the 1,114 are named."""
++    """The folder decomposes exactly (839 his + 1,114 not his); the census must
++    QUOTE only his and NAME the residue, which is the B108 contract.
++
++    PRE-FIX this step asserted `annotations_total == his + spurious`, the
++    defect-era identity: the census folded the residue into the banner figure.
++    After the 2026-11-04 repair `claim_a_naive_grep_is_blind_to_some_of_them`
++    counts annotations over the narrow predicate and reports the residue in
++    `annotations_excluded_as_not_his`, so the old assertion inverted and this
++    script exited 1 on the very tree whose fix it documents. The 3 claims now
++    checked are the contract itself: (1) the census quotes only his writing;
++    (2) the residue is reported by name, not dropped; (3) the census's own 2
++    figures jointly reconstruct this script's independent broad-pass recount.
++    """
+     broad = [p for p in sorted(m.RESPONSES.glob("*")) if m.is_a_response_file(p)]
+     residue = []
+     for p in broad:
+@@ -83,14 +95,23 @@
+     census = m.claim_a_naive_grep_is_blind_to_some_of_them()
+     his = len(m.annotations())
+     spurious = sum(r["annotations"] for r in residue)
+-    # TWO ROUTES on the arithmetic: plain integers, and SymPy on the identity.
++    excluded = census.get("annotations_excluded_as_not_his")
++    # TWO ROUTES on the arithmetic: plain integers, and SymPy on the identity
++    # census_quoted + census_excluded == independent recount (his + residue).
+     import sympy
+-    a, h, s = sympy.symbols("a h s", integer=True)
+-    identity = sympy.Eq(a, h + s)
+-    holds = bool(identity.subs({a: census["annotations_total"], h: his, s: spurious}))
++    a, e, h, s = sympy.symbols("a e h s", integer=True)
++    identity = sympy.Eq(a + e, h + s)
++    holds = bool(identity.subs({a: census["annotations_total"],
++                                e: excluded if excluded is not None else -1,
++                                h: his, s: spurious}))
+     return {"census_total": census["annotations_total"], "his_total": his,
+             "spurious": spurious, "residue": residue,
+-            "exact_python": census["annotations_total"] == his + spurious,
++            "census_excluded": excluded,
++            "quotes_only_his": census["annotations_total"] == his,
++            "residue_named": excluded == spurious,
++            "exact_python": (excluded is not None
++                             and census["annotations_total"] + excluded
++                             == his + spurious),
+             "exact_sympy": holds}
+ 
+ 
+@@ -156,9 +177,12 @@
+ 
+     s2 = step_2_the_decomposition(m)
+     print("\nSTEP 2 -- the decomposition, exact to the integer")
+-    print(f"  census reports          : {s2['census_total']}")
++    print(f"  census quotes (his)     : {s2['census_total']}")
+     print(f"  he actually wrote       : {s2['his_total']}")
+-    print(f"  counted but not his     : {s2['spurious']}")
++    print(f"  residue, not his        : {s2['spurious']}")
++    print(f"  named by the census     : {s2['census_excluded']}")
++    print(f"  quotes only his / residue named : "
++          f"{s2['quotes_only_his']} / {s2['residue_named']}")
+     print(f"  exact (python / sympy)  : {s2['exact_python']} / {s2['exact_sympy']}")
+     for r in sorted(s2["residue"], key=lambda r: -r["annotations"]):
+         print(f"    {r['annotations']:>5}  {r['bytes']/1048576:>7.2f} MiB  "
+@@ -175,7 +199,8 @@
+ 
+     s4 = step_4_the_blind_figure(m)
+     print("\nSTEP 4 -- the second banner figure, his files only")
+-    print(f"  reported as blind       : {s4['blind_as_reported']}")
++    print(f"  blind over broad predicate (pre-fix banner figure) : "
++          f"{s4['blind_as_reported']}")
+     print(f"  blind among HIS         : {s4['blind_his_only']} of {s4['his_total']}")
+     if s4["share_of_his_that_is_blind"] is not None:
+         print(f"  share                   : "
+@@ -183,10 +208,12 @@
+               f"Wilson [{s4['wilson'][0]:.6f}, {s4['wilson'][1]:.6f}]")
+ 
+     ok = (s1["narrow_is_subset"] and s1["z3_narrow_implies_broad"]
++          and s2["quotes_only_his"] and s2["residue_named"]
+           and s2["exact_python"] and s2["exact_sympy"])
+-    print(f"\nVERDICT: the census over-reports his verdicts by "
+-          f"{s2['spurious']}, a factor of "
+-          f"{s2['census_total']/s2['his_total']:.4f}. "
++    print(f"\nVERDICT: the census quotes {s2['census_total']} annotations, all "
++          f"his, and names {s2['census_excluded']} excluded as not his; the "
++          f"pre-fix banner folded them in and would have read "
++          f"{s2['his_total'] + s2['spurious']}. "
+           f"All structural checks held: {ok}.")
+     return 0 if ok else 1
+ 

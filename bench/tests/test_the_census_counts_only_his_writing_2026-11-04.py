@@ -225,11 +225,49 @@ def test_the_banner_names_the_exclusion_when_there_is_one(banner, census):
 
 # ------------------------------------------------------------------ the producer
 
+PRODUCER = (REPO / "scripts"
+            / "the_census_counts_what_the_reader_excludes_2026-11-04.py")
+
+
 def test_the_producer_exists_and_is_reachable():
-    p = REPO / "scripts" / "the_census_counts_what_the_reader_excludes_2026-11-04.py"
-    assert p.is_file()
-    src = p.read_text(encoding="utf-8")
+    assert PRODUCER.is_file()
+    src = PRODUCER.read_text(encoding="utf-8")
     assert "parse_args" in src, "a script with no usage line is unreachable"
     for step in ("step_1_the_predicates_nest", "step_2_the_decomposition",
                  "step_3_the_share", "step_4_the_blind_figure"):
         assert f"def {step}" in src and f"{step}(m)" in src, step
+
+
+def test_the_producer_ACTUALLY_RUNS_AND_EXITS_ZERO():
+    """★ THE TEST ABOVE READ ITS SOURCE AND MISSED IT EXITING 1.
+
+    Found 2026-11-04 by the `cc2` seat of the period panel, which RAN the
+    producer. It was exiting **1** and printing a verdict that contradicted
+    itself — *"the census over-reports his verdicts by 1114, a factor of
+    1.0000"* — because B108's repair falsified the identity the producer
+    asserted. `annotations_total == his + spurious` was the DEFECT'S signature
+    (1953 == 839 + 1114); once the census reported 839 it read 839 == 839 +
+    1114 and failed. The producer had outlived its defect, the shape
+    `feedback_a_producer_outlives_its_defect_2026-10-15` already records.
+
+    The source-text test above passed throughout, because every `def` it looks
+    for was present and every description of the module was individually
+    correct. That is `execute-do-not-grep` exactly: a test asserting on source
+    text cannot see a producer and its subject disagree. So this one EXECUTES
+    it and requires exit 0.
+    """
+    import subprocess
+    import sys
+    r = subprocess.run([sys.executable, str(PRODUCER)], capture_output=True,
+                       text=True, cwd=str(REPO), timeout=300)
+    assert r.returncode == 0, (
+        f"the producer exits {r.returncode}; its own checks do not hold:\n"
+        f"{r.stdout[-900:]}\n{r.stderr[-400:]}")
+    out = r.stdout
+    assert "ALL HELD: True" in out, f"checks did not all hold:\n{out[-700:]}"
+    # The verdict must not assert an over-report and a factor of 1 at once,
+    # which is what the broken version did in a single sentence.
+    assert not ("over-reports his verdicts by" in out
+                and "a factor of 1.0000" in out), (
+        "the verdict is self-contradictory again: it claims an over-report and "
+        "a factor of 1.0000 in the same sentence")

@@ -218,6 +218,12 @@ The brief at bench/logs/the_role_layer_b21_2026-10-30/BRIEF.md validates at exit
 
 B20 patches are written and verified in the scratchpad; applying them means writing scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py and experimental_notes/CDSFL_MASTER_TASK_LIST.md while the running board reads them. Resolves in minutes when the board finishes.
 
+## The orchestrator experiment he instructed cannot be run simulated: the paid-dispatch block in run_simulated_experiment.py is an in-process getaddrinfo patch, and a resumable run must be a subprocess
+
+*Parked 2026-11-04T05:19:07+00:00.*
+
+He instructed a fully simulated orchestrator run on 2026-11-01 (annotation 12 of Closing_Report_2026-11-01.txt). The actuator drives resume by re-invoking a launch command with --resume. Only reference_runner_v3.py run --config accepts --resume; run_simulated_experiment.py declares 0 and calls run_experiment in-process, because its paid-dispatch protection is a getaddrinfo monkeypatch that cannot survive a subprocess boundary. So no invocation is both simulated and resumable. Fix: a thin subprocess shim that installs the _no_paid seam and then runs the runner run subcommand.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

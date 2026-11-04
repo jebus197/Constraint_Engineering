@@ -48,9 +48,13 @@ can be trusted.
 
 ## The fixes of the final session, and whether the issue is now closed
 
-3 defects were found and closed in the hours before this note, each a **reporting layer
-disagreeing with the layer that decides** — the same shape 3 times, in 3 different
-files.
+3 defects were found and closed in the hours before this note. **The free panel refuted my
+framing of them, and both seats did so independently, so this now states what survives.** I had
+called them the same shape 3 times — a reporting layer disagreeing with the layer that decides.
+**2 of the 3 are that shape**, B108's verdict census and B109's open count. **B110's evidence
+check is a MISSING VERIFIER**: no second layer existed, so nothing was disagreeing and nothing
+was looking. The distinction matters, because a fix aimed at the reporting/deciding shape would
+not have found B110, and reasoning from 1 pattern across all 3 generalises a remedy covering 2.
 
 **The verdict census counted 1,114 markers he never wrote. CLOSED.** The first line read after
 a restore told every session he had written 1,953 verdicts, of which 1,688 were invisible to a
