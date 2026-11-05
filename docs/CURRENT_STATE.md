@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 5 November 2026 22:44 GMT (2026-11-05T22:44:39+00:00)
+Generated: 5 November 2026 23:01 GMT (2026-11-05T23:01:31+00:00)
 
 ---
 
@@ -18,23 +18,20 @@ Generated: 5 November 2026 22:44 GMT (2026-11-05T22:44:39+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `4d363c52` The figure withdrawn from B120 now has a producer, and it says the withdrawn number overstated the evidence by 9 orders of magnitude
-- **Committed:** 2026-11-04 18:21:05 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 15
+- **Last commit (the PARENT of the commit containing this file):** `da38d9ac` The independent check he ordered never ran: a 2-seat pair stood in for a 5-seat panel, and the cause is the dispatcher's own default
+- **Committed:** 2026-11-05 22:44:39 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 16
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
 - `M  bench/tickets/sv_completions.jsonl`
 - `M  experimental_notes/CDSFL_Agent_Operational_Plan.md`
-- `M  experimental_notes/Decisions_Awaiting_You_2026-11-04.md`
-- `M  experimental_notes/Decisions_Awaiting_You_2026-11-04.txt`
-- `M  resources/NEW_SESSION_HANDOVER.md`
 
 ---
 
 ## Tests
 
-**15634 tests collected** at 5 November 2026 22:44 GMT, HEAD `4d363c52` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**15634 tests collected** at 5 November 2026 23:01 GMT, HEAD `da38d9ac` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -64,6 +61,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `da38d9ac The independent check he ordered never ran: a 2-seat pair stood in for a 5-seat panel, and the cause is the dispatcher's own default`
 - `4d363c52 The figure withdrawn from B120 now has a producer, and it says the withdrawn number overstated the evidence by 9 orders of magnitude`
 - `ee1f89df The second complete board found 20 failures my own repairs had introduced, and the canonical interval helper carried a crash that no test could reach`
 - `c4553e95 The mypy question deferred for machine cost takes 1.1 seconds, and the figure it yields is half config noise and a third one idiomatic line`
@@ -73,4 +71,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `e9c5d587 A panel seat found the weighted risk is not a probability, 3 surfaces said it was, and the detector I wrote to count them matched its own remedy 3 times`
 - `a22ff0cb The first complete board since 29 September found 44 failures where the gate showed 0; 40 are fixed and the 4 that remain are his to rule`
 - `e6857344 The cy gate refused 5 stops for a run that did not exist, because it matched the git commit shell whose message named the runner - and its repair needs his permission`
-- `ed92ccfe Six reporting layers disagreed with the layers that decide, three of them in B20's own status instrument, plus the inventory and the answers still owed`
