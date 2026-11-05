@@ -31,7 +31,7 @@ In his order: the orchestrator test, together with research into Meta-Agent Arch
 
 ## What is waiting on the founder, and must NOT be worked around
 
-**29 decisions** sit in `experimental_notes/Decisions_Awaiting_You_2026-11-04.md`. 2 of them are blocking a green board, and the project's own instrument says so rather than my judgement:
+**30 decisions** sit in `experimental_notes/Decisions_Awaiting_You_2026-11-04.md`. 2 of them are blocking a green board, and the project's own instrument says so rather than my judgement:
 
 - **Decision 24.** The task list's branching ratio is **0.9502 with a 95% interval of [0.7869, 1.1475]**. The upper bound has reached 1, so the list can no longer be said to terminate. He asked to be told if that happened. Entries B11 and C29 rest on it.
 - **Decision 23.** The generated morning report breaks the line caps he set: **637 markdown lines against 300, and 691 spoken lines against 400**, up from 616 and 673 before decision 30 was raised. Entry B41 rests on it.
@@ -40,13 +40,13 @@ In his order: the orchestrator test, together with research into Meta-Agent Arch
 
 Also awaiting him and recorded, not to be inferred:
 - The edit to `~/.claude/hooks/cy_monitor_gate.py` was **refused as self-modification** and both hook copies are unmodified. It needs his permission. Entry B113, decision 21.
-- **The push.** The local branch is **540 commits ahead of `origin/main` and 1 behind**, and the remote commit touches `.claude/CLAUDE.md`, so it needs a merge rather than a fast-forward. His standing policy is that the remote holds the project's best work and the local repository is where things are built and tested. **Do not push without asking him.**
+- **The push.** The local branch is **542 commits ahead of `origin/main` and 1 behind**, and it is `sim/shakedown-2026-09-29` rather than `main`, which his standing ruling makes the only branch that gets updated absent a stated reason, and the remote commit touches `.claude/CLAUDE.md`, so it needs a merge rather than a fast-forward. His standing policy is that the remote holds the project's best work and the local repository is where things are built and tested. **Do not push without asking him.**
 
 ## What is NOT owed, so no time is spent re-deriving it
 
 - **No memory was ever at risk.** The 331 memory files live at `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory`, outside the repository, outside the session scratchpad and outside the session directory. A restart does not touch them.
 - A full read-only copy of every recovery resource, including all the memory files, sits at **`~/Desktop/CDSFL_recovery_snapshot_2026-11-04/`** with a README. It is not canonical; the repository is. If they disagree, the repository wins.
-- The staged corrections of 2026-11-04 at `~/Desktop/CDSFL_staged_corrections_2026-11-04/` are **applied or superseded except `fix_decision27.py`**, which is still owed and whose premise was re-verified against the live text on 2026-11-04.
+- The staged corrections of 2026-11-04 at `~/Desktop/CDSFL_staged_corrections_2026-11-04/` are **all applied or superseded**. `fix_decision27.py` was the last outstanding one and it was applied on 2026-11-04 after its premise was re-verified against the live text; decision 27's first option now reads *flip the review switch only*.
 
 ## One thing that cost 3 reports today, so do not repeat it
 

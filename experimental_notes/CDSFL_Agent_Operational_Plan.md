@@ -1,3 +1,13 @@
+## ★ RESUME POINTER — 2026-11-05T22:42:33+00:00. SUPERSEDES EVERY POINTER BELOW.
+
+**WHERE TO RESUME: NOTHING IS BUILDABLE WITHOUT A RULING OF HIS, AND THE 1 THING OWED IS A FULL-PANEL REVIEW HE MUST AUTHORISE.** Branch `sim/shakedown-2026-09-29`, HEAD `4d363c52`, 542 commits ahead of `origin/main` and 1 behind, nothing pushed. **ALL 32 OPEN ENTRIES AWAIT HIM**: 29 name a ruling explicitly and B22, C0001 and B131 are his on reading. B20, B21 and B131 are PARKED by `scripts/blocker_triage.py` with its own verdict, carry them to him as decisions rather than as work.
+
+**THE INDEPENDENT CHECK HE ORDERED HAS NOT HAPPENED, AND THIS POINTER EXISTS MAINLY TO SAY SO.** What ran on 2026-11-04 was a 2-seat pair, `the_period_reviewed` blind at 05:08 and joint at 11:06, both seats `claude_cli`. His `pr` specifies 5 seats. Measured over all 151 archived rounds: 10 meet that definition and the newest is `final_review_2026-09-21`, 45 days old; 117 of 151 used only cc2 and fable, 0.774834, Wilson [0.701874, 0.834158]. The cause is mechanical rather than an omission: `bench/confer_maths_panel_2026-09-05.py:602` sets `FREE_SEATS = frozenset({"cc2", "fable"})` and line 754 defaults `MODELS` to that set unless `PANEL_ONLY` overrides it, and a paid seat is refused unless the ledger authorises the named round. `bench/directives/universal/paid_dispatch_authorisations.json` holds 3 authorisations over 8 rounds, all 2026-09-20 to 2026-09-22, so **nothing after 2026-09-22 is authorised and a full panel cannot be dispatched until he names a round and a cap in his own words.**
+
+**DECISION 25 IS STALE AND SHOULD BE CLOSED RATHER THAN RULED.** It asks whether to run the joint half of the period-reviewed round. That joint half ran at 11:06 on 2026-11-04 with 24,412 and 13,143 characters of reply, 6 hours after the decision was written.
+
+**AND THERE IS NO POST-REPAIR FULL-SUITE MEASUREMENT.** `resources/suite_record.json` records 28 failed at `c4553e95`, 2 commits behind HEAD, predating every repair made after that suite finished. So any claim that the board improved is an inference from individually re-run tests, not a measured board. Re-run with `python3 -m pytest bench/tests/ -q --netguard-strict` and record it with `python3 scripts/suite_record.py record --log <log> --exit-code <N> --clean`.
+
 ## ★ RESUME POINTER — 2026-11-02T03:20:23+00:00. SUPERSEDES EVERY POINTER BELOW.
 
 **WHERE TO RESUME: NOTHING IS BLOCKING AND THE NEXT ACTIONS ARE HIS 3 DECISIONS, THEN B20.** Branch `sim/shakedown-2026-09-29`, HEAD `4832fedd`. The board stands at 215 entries, 12 open. The full suite is GREEN: **2346 passed, 9 skipped, 0 failed** in 429.50 s, which is the commit gate's own board and not a selected subset.
