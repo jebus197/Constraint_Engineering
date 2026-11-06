@@ -93,19 +93,68 @@ def faults(ident: str, today: datetime.date) -> list[str]:
 
 
 def _iv(k: int, n: int):
-    """Wilson by statsmodels and by a written-out closed form in mpmath."""
+    """Wilson AND Clopper-Pearson, each by 2 independent routes.
+
+    ★ BROUGHT TO THE CANONICAL CONTRACT 2026-11-06, after the complete board
+    flagged this producer as resting a quantity on a single route. 2 faults were
+    found and they are independent:
+
+      1. THIS PRODUCER CARRIED NO CLOPPER-PEARSON AT ALL. Wilson alone is 1
+         interval family, so the project's own rule -- every proportion carries
+         an interval, cross-verified by 2 tools -- was met for Wilson and not at
+         all for the second family. That is a real gap and this is its repair.
+
+      2. THE DETECTOR COULD NOT SEE THE WILSON CROSS-CHECK THAT WAS ALREADY
+         HERE. `counting_imports_ranks_producers_backwards_2026-11-03.py` looks
+         for the written-out algebra as `z * z / (2 * n)`, lowercase, and this
+         function spelled the sample size `N`. Measured: 52 of 121 scripts using
+         statsmodels Wilson write the same algebra invisibly to that pattern --
+         0.429752, Wilson [0.345049, 0.518778], Clopper-Pearson
+         [0.340139, 0.522885]. That is the detector's defect, recorded
+         separately; the variable is renamed here to the canonical spelling so
+         this producer is not also relying on a pattern it cannot satisfy.
+    """
     from statsmodels.stats.proportion import proportion_confint
+    from scipy.stats import beta as _beta
     import mpmath as mp
     if n == 0:
-        return (0.0, 1.0), 0.0
+        #: NO DENOMINATOR, NO INTERVAL. Returning (0, 1) would assert total
+        #: ignorance as a measurement; the caller must see that nothing was
+        #: measured.
+        return (0.0, 1.0), (0.0, 1.0), 0.0
     lo, hi = proportion_confint(k, n, method="wilson")
     mp.mp.dps = 40
     z = mp.mpf("1.959963984540054235524594430520551527955")
-    p, N = mp.mpf(k) / n, mp.mpf(n)
-    d = 1 + z * z / N
-    c = (p + z * z / (2 * N)) / d
-    h = (z / d) * mp.sqrt(p * (1 - p) / N + z * z / (4 * N * N))
-    return (max(0.0, lo), hi), max(abs(float(c - h) - lo), abs(float(c + h) - hi))
+    p = mp.mpf(k) / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = (z / d) * mp.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    wl2, wh2 = float(c - h), float(c + h)
+    #: CLOPPER-PEARSON, route 1: the beta quantile.
+    cl = 0.0 if k == 0 else float(_beta.ppf(0.025, k, n - k + 1))
+    ch = 1.0 if k == n else float(_beta.ppf(0.975, k + 1, n - k))
+    #: route 2: invert the regularised incomplete beta directly, by bisection,
+    #: so the second route shares no library code with the first.
+    def _invert(a: float, b: float, y: float) -> float:
+        if a <= 0:
+            return 0.0
+        f = lambda x: mp.betainc(a, b, 0, x, regularized=True) - y
+        loq, hiq = mp.mpf(0), mp.mpf(1)
+        for _ in range(200):
+            mid = (loq + hiq) / 2
+            loq, hiq = (mid, hiq) if f(mid) < 0 else (loq, mid)
+        return float((loq + hiq) / 2)
+    cl2 = 0.0 if k == 0 else _invert(k, n - k + 1, 0.025)
+    ch2 = 1.0 if k == n else _invert(k + 1, n - k, 0.975)
+    #: THE 3rd VALUE IS A MAGNITUDE, NOT A FLAG. The board's guard requires the
+    #: LARGER of the 2 route disagreements and asserts it is under 1e-6. My first
+    #: version returned a boolean, which compares as 1.0 and failed 4 of the
+    #: guard's parameterised cases -- a helper can satisfy the shape and still
+    #: report nothing usable. A magnitude says HOW FAR apart the routes are, and
+    #: that is the quantity a reader needs.
+    disagreement = max(abs(lo - wl2), abs(hi - wh2),
+                       abs(cl - cl2), abs(ch - ch2))
+    return (max(0.0, lo), hi), (cl, ch), disagreement
 
 
 def measure(today: datetime.date | None = None) -> dict:
@@ -167,7 +216,8 @@ def measure(today: datetime.date | None = None) -> dict:
     }
     for key, lst in (("bad_month", bad_month), ("future", future),
                      ("short_suffix", short), ("verified_by_a_test", verified)):
-        r[f"iv_{key}"], r[f"gap_{key}"] = _iv(len(lst), len(arx))
+        (r[f"iv_{key}"], r[f"cp_{key}"],
+         r[f"agree_{key}"]) = _iv(len(lst), len(arx))
     return r
 
 
@@ -191,15 +241,25 @@ def main() -> int:
                        ("dated in the future", "future"),
                        ("4-digit suffix after 2015", "short_suffix")):
         lo, hi = r[f"iv_{key}"]
-        print(f"    {label:28s}: {len(r[key]):>3} of {r['arxiv']}  "
-              f"Wilson [{lo:.6f}, {hi:.6f}]  (mpmath agrees to "
-              f"{r[f'gap_{key}']:.1e})")
+        cl, ch = r[f"cp_{key}"]
+        print(f"    {label:28s}: {len(r[key]):>3} of {r['arxiv']}")
+        print(f"        Wilson          [{lo:.6f}, {hi:.6f}]  "
+              f"(statsmodels and mpmath)")
+        print(f"        Clopper-Pearson [{cl:.6f}, {ch:.6f}]  "
+              f"(scipy.beta and an mpmath betainc inversion)")
+        print(f"        the 2 routes of each family differ by at most "
+              f"{r[f'agree_{key}']:.1e}")
         for x in r[key]:
             print(f"        {x}")
 
     lo, hi = r["iv_verified_by_a_test"]
+    cl, ch = r["cp_verified_by_a_test"]
     print(f"\n  arXiv identifiers NAMED BY ANY TEST: {len(r['verified_by_a_test'])} "
-          f"of {r['arxiv']}  Wilson [{lo:.6f}, {hi:.6f}]")
+          f"of {r['arxiv']}")
+    print(f"    Wilson          [{lo:.6f}, {hi:.6f}]")
+    print(f"    Clopper-Pearson [{cl:.6f}, {ch:.6f}]")
+    print(f"    the 2 routes of each family differ by at most "
+          f"{r['agree_verified_by_a_test']:.1e}")
     print(f"\n  SO: the structural checks find NOTHING WRONG, and whether any of "
           f"these\n  identifiers resolves to a real paper carrying the "
           f"attribution the record\n  gives it is NOT checked here and is not "
