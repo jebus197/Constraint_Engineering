@@ -258,6 +258,12 @@ B21 is OPEN with status TESTED. Its 2 remaining items are both [NEEDS YOUR RULIN
 
 B131 measures that 43 arXiv identifiers, 44 DOIs and 260 links sit in the record with exactly 1 named by any test, and that all 14 citation-guarding test files guard internal citations only. What is decidable with no network access finds 0 faults in 43. Whether an identifier resolves to a real paper carrying the attribution the record gives it needs 1 network lookup each, and verify-supersession-boundary makes the external check his and not mine. The entry carries 3 options and a recommendation downgraded to the cheap check alone, because 4 of my own detectors on that surface produced false positives in one pass.
 
+## commit 6 pre-commit board is running; the tree must not be edited until it reports
+
+*Parked 2026-11-06T20:26:18+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

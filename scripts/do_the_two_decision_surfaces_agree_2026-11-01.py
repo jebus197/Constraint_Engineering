@@ -83,6 +83,38 @@ def spoken() -> tuple[pathlib.Path, list[tuple[int, str]]]:
     return newest, [(int(n), h.upper()) for n, h in _HEADING.findall(text)]
 
 
+#: ★ DATE-BOUNDED EXEMPTION, 2026-11-06. The spoken file is a DATED deliverable
+#: and the derived set is LIVE, so every ruling he makes turns the heading he
+#: was handed into an orphan and this checker returned 3 for it. A heading is
+#: forgiven ONLY where the file could not have known: the decision carrying it
+#: has a `ruled` date strictly later than the file's own date. A heading the
+#: record never tracked, or one ruled before the file was written, is still
+#: caught -- that is the defect this checker was built for and it is untouched.
+def ruled_after(head: str, cutoff, detail: dict):
+    """(exempt, ident, ruled) for the decision whose spoken_heading is `head`."""
+    import datetime as _dt
+    for k, v in detail.items():
+        if not isinstance(v, dict):
+            continue
+        if (v.get("spoken_heading") or "").upper() == head.upper():
+            r = v.get("ruled")
+            if not r:
+                return False, k, None
+            try:
+                return _dt.date.fromisoformat(str(r)[:10]) > cutoff, k, r
+            except ValueError:
+                return False, k, r
+    return False, None, None
+
+
+def spoken_file_date(path):
+    """The date in the spoken file's NAME, which is what he was handed."""
+    import datetime as _dt
+    import re as _re
+    m = _re.search(r"(\d{4}-\d{2}-\d{2})", path.name)
+    return _dt.date.fromisoformat(m.group(1)) if m else None
+
+
 def main() -> int:
     import sympy as sp
     import z3
@@ -102,6 +134,30 @@ def main() -> int:
     no_join = [i for i, h in d if not h]
     dset = {h for _, h in d if h}
     sset = {h for _, h in s}
+
+    # ★ A RULING HE MAKES AFTER THE FILE WAS WRITTEN IS NOT A DIVERGENCE.
+    # The spoken file is dated; the derived set is live. Without this, the
+    # check returns 3 the moment he rules anything, which is failing with the
+    # passage of his rulings rather than with any defect -- the same shape a
+    # sibling guard carried until 2026-10-19, when a frozen date made it fail
+    # with the passage of time. The exemption is BOUNDED by the file's own
+    # date, so an untracked heading, or one ruled BEFORE the file was written,
+    # is still caught. That is the defect this comparator exists for.
+    detail_now = json.loads(DETAIL.read_text(encoding="utf-8"))
+    cutoff = spoken_file_date(path) if path else None
+    exempted = []
+    if cutoff is not None:
+        for head in sorted(sset - dset):
+            ok, ident, ruled = ruled_after(head, cutoff, detail_now)
+            if ok:
+                exempted.append((head, ident, ruled))
+        for head, _i, _r in exempted:
+            sset.discard(head)
+    if exempted:
+        print(f"\nexempted, ruled AFTER {cutoff} so the file could not know "
+              f"({len(exempted)}):")
+        for head, ident, ruled in exempted:
+            print(f"    {ident} ruled {ruled} -> {head[:58]}")
 
     # ── z3: a total injective map from derived headings into spoken headings ──
     names = sorted(dset | sset)

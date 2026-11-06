@@ -88,6 +88,21 @@ def section(body: str, name: str) -> str:
     return m.group(0).rstrip()
 
 
+#: ★ THE STAMPER IS IMPORTED, NOT COPIED. A second copy of the hashing logic
+#: would be a second place for it to disagree with itself, which is the shape
+#: `execute-do-not-grep` names.
+def _stamp_block(text: str) -> str:
+    import importlib.util as _ilu
+    #: BESIDE THIS FILE, which is `scripts/` in production and the review copy's
+    #: own directory under test -- one rule, not a test-only switch.
+    _p = pathlib.Path(__file__).resolve().parent / "stamp_the_brief_artefacts_2026-11-06.py"
+    if not _p.is_file():
+        return ""
+    _s = _ilu.spec_from_file_location("_brief_stamper", _p)
+    _m = _ilu.module_from_spec(_s); _s.loader.exec_module(_m)
+    return _m.stamp_block(text, REPO)
+
+
 def main() -> int:
     answer_help(__doc__, __file__)
     bodies = {s: reply(s) for s in SEATS}
@@ -208,6 +223,34 @@ def main() -> int:
     ]
 
     text = "\n".join(parts) + "\n"
+
+    # ★ B125's FIX, WIRED HERE. Specified by a free panel seat on 2026-11-04 and
+    # never built: the brief refers to artefacts by path, while each seat's
+    # sandbox is a photograph taken when its copy was staged. The joint round of
+    # 2026-11-04 tested both seats against a state that postdated their answers
+    # by 5 hours, which "converts two *correct* findings into apparent
+    # fabrications". The stamp lets a reader tell what a seat was GIVEN.
+    #
+    # COMPUTED FROM THE TEXT BEFORE INSERTION, so the block cannot stamp itself,
+    # and INSERTED AFTER THE TITLE so it is a header rather than an appendix.
+    # The dispatcher's reply-span precondition below runs on the final text, so
+    # an insertion that destroyed a span would be caught there rather than here.
+    _stamp = _stamp_block(text)
+    if _stamp:
+        _lines = text.splitlines()
+        #: ★ AFTER THE WHOLE TITLE BLOCK, not after its first line. The first
+        #: rule inserted after the first `# ` line and SPLIT THE TITLE IN HALF,
+        #: because this brief's title spans 2 `# ` lines -- caught by the test,
+        #: not by reading. The stamp goes immediately before the first `## `
+        #: subsection, which is after any title however many lines it occupies.
+        _at = next((i for i, l in enumerate(_lines) if l.startswith("## ")), None)
+        if _at is None:
+            #: no subsection at all: fall in after the last leading `# ` line
+            _at = 0
+            while _at < len(_lines) and (_lines[_at].startswith("#")
+                                         or not _lines[_at].strip()):
+                _at += 1
+        text = "\n".join(_lines[:_at] + ["", _stamp] + _lines[_at:]) + "\n"
 
     # THE DISPATCHER'S OWN PRECONDITION, CHECKED HERE RATHER THAN DISCOVERED AT
     # DISPATCH: a 240-character contiguous span of each parent reply must be

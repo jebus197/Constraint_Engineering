@@ -535,12 +535,42 @@ def _heading_line(body: str, ident: str) -> str:
     return ""
 
 
+def _strip_presentation(text: str) -> str:
+    """Remove marks that are presentation, never substance.
+
+    ★ ADDED 2026-11-06. 197 settled entries were struck through and stamped
+    `**[COMPLETED <date> - DONE/COMMITTED]**` on his instruction so they would
+    stop reading as live work. Both marks are presentation. The title feeds the
+    KIND heuristic and the verbatim feeds the reworded-match tier, so leaving
+    them in moved records off their canonical identity, dropped 11 verbatims to
+    a stub, and made the harvester attempt a retitle on every stamped entry --
+    which crashed on a historical record whose stored identity predates the
+    2026-10-17 scheme. A title is the entry's subject, not its decoration.
+    """
+    t = re.sub(r"\*+", "", str(text).strip()).replace("~~", "")
+    t = re.sub(r"\[COMPLETED [^\]]*\]\s*", "", t)
+    return " ".join(t.split())
+
+
 def _title_for(body: str, ident: str) -> str:
     """This entry's own heading where it has one, else the block's opening."""
+    #: ★ THE STRIPPING MUST HAPPEN ON BOTH PATHS, and my first attempt put it
+    #: only on the fallback below -- which is unreachable for any entry that has
+    #: a heading, so the fix executed 0 times. Patching the wrong branch of an
+    #: early return is the same shape as a default inverted 87 lines from its
+    #: signature. 1 helper, applied twice.
     own = _heading_line(body, ident)
     if own:
-        return own[:160]
-    return " ".join(re.sub(r"\*+", "", body.strip()).split())[:160]
+        return _strip_presentation(own)[:160]
+    #: ★ PRESENTATION IS STRIPPED HERE TOO, 2026-11-06. The verbatim path was
+    #: fixed first and this one was missed, which is the same fault one function
+    #: apart. 197 settled entries were struck through and stamped
+    #: `**[COMPLETED <date> - DONE/COMMITTED]**`; this function stripped only
+    #: asterisks, so the stamp entered the TITLE -- and the title feeds the KIND
+    #: heuristic below, so 4 records moved off their canonical identity and the
+    #: register's counting invariant broke. A title is the entry's subject, not
+    #: its presentation.
+    return _strip_presentation(body)[:160]
 
 
 def from_task_list() -> list[dict]:
@@ -617,7 +647,22 @@ def from_task_list() -> list[dict]:
             # rewrote the verbatim -- which would have changed the hashed
             # identity of 95 of 141 entries and minted a duplicate for each.
             # Measured before the fix, which is why the migration never ran.
+            #: ★ PRESENTATION IS STRIPPED BEFORE SUBSTANCE IS TAKEN, added
+            #: 2026-11-06. On that date 197 settled entries were struck through
+            #: and stamped `**[COMPLETED <date> - DONE/COMMITTED]**` on his
+            #: instruction, so they would stop reading as live work. Both marks
+            #: are PRESENTATION and neither is the entry's substance -- but the
+            #: verbatim is derived from the body and the identity is hashed from
+            #: the verbatim, so leaving them in drifted the identity of 100 of
+            #: 274 entries, 0.364964, Wilson [0.310192, 0.423469], and dropped
+            #: 11 verbatims to a stub. On the next harvest that would have
+            #: minted 100 duplicate tickets, which is the exact failure this
+            #: function's own comment below warns about for the asterisk case.
+            #: Stripping them here makes the verbatim INVARIANT under stamping,
+            #: so an entry keeps the identity it already has.
             stem = re.sub(r"\*+", "", body.strip())
+            stem = stem.replace("~~", "")
+            stem = re.sub(r"\[COMPLETED [^\]]*\]\s*", "", stem)
             stem = re.sub(r"^(?:★\s*)?" + re.escape(ident) + r"[.)]?\s*", "", stem)
             # A LEADING STATUS STAMP IS NOT THE ENTRY'S SUBSTANCE. 22 of 141
             # headings open `<ref>. DONE 2026-09-10.`, so once the reference is

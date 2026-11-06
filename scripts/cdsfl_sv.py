@@ -2248,7 +2248,8 @@ def _memory_line_newest_date(line: str):
 
 def archive_stale_memory_entries(mem_dir: Path, today=None,
                                  window_days: int = _MEMORY_WINDOW_DAYS,
-                                 dry_run: bool = False) -> dict:
+                                 dry_run: bool = False,
+                                 dormant_sections: tuple = ()) -> dict:
     """Move aged session entries out of the index into MEMORY_ARCHIVE.md.
 
     THIS IS THE FIRST FUNCTION IN THIS FILE THAT WRITES UNDER `mem_dir`, and the
@@ -2267,6 +2268,22 @@ def archive_stale_memory_entries(mem_dir: Path, today=None,
     the index is written before any change.
 
     Returns a report dict; `dry_run=True` computes it and writes nothing.
+
+    DORMANT SECTIONS, added 2026-11-06. Ageing is BY DATE and scoped to
+    `_MEMORY_AGEING_SECTIONS`, which is `('Project State',)` alone. That
+    leaves whole sections no mechanism can reach: on 2026-11-06 the index
+    stood 47 characters over the 23,750 refuse line while `Session Handoffs`
+    (March 2026, marked "read only if relevant") and `Metis` (a separate,
+    blocked project) sat undated and so un-ageable, and a dry run at every
+    window from 30 days down to 7 moved 0. Tightening the window to 5 days
+    DID fire -- by proposing to archive the 2 FRESHEST session entries, which
+    is the opposite of the point. Grouping cannot help either: it joins lines
+    and ADDS separators, so it buys line headroom and costs characters.
+
+    A section named here empties wholesale and its heading goes with it, since
+    a heading left standing over nothing reads as a section whose entries were
+    lost. Undated entries sort after dated ones. Nothing is deleted; both
+    routes write the same backup and append to the same archive file.
     """
     today = today or date.today()
     index = mem_dir / _MEMORY_INDEX_NAME
@@ -2286,10 +2303,25 @@ def archive_stale_memory_entries(mem_dir: Path, today=None,
     cutoff = today - timedelta(days=window_days)
     section = None
     keep, moved = [], []
+    #: `head_at` remembers where a dormant section's heading was written, so
+    #: the heading can be withdrawn if every bullet beneath it moved out.
+    head_at, dormant_kept = None, 0
     for line in lines:
         if line.startswith("## "):
+            if head_at is not None and dormant_kept == 0:
+                del keep[head_at:]
             section = line[3:].strip()
+            head_at = len(keep) if section in dormant_sections else None
+            dormant_kept = 0
             keep.append(line)
+            continue
+        if section in dormant_sections:
+            if _MEMORY_BULLET_RE.match(line):
+                moved.append((None, line))
+            else:
+                keep.append(line)
+                if line.strip():
+                    dormant_kept += 1
             continue
         ageing = section in _MEMORY_AGEING_SECTIONS
         if not ageing or not _MEMORY_BULLET_RE.match(line):
@@ -2305,16 +2337,27 @@ def archive_stale_memory_entries(mem_dir: Path, today=None,
         else:
             keep.append(line)
 
+    if head_at is not None and dormant_kept == 0:
+        del keep[head_at:]
+
+    def _order(item):
+        when, line = item
+        return (when is None, when or date.min, line)
+
     report["moved"] = len(moved)
     report["freed_chars"] = sum(len(l) + 1 for _w, l in moved)
     report["moved_titles"] = [
-        (w.isoformat(), (_MEMORY_LINK_RE.search(l).group(1)
-                         if _MEMORY_LINK_RE.search(l) else l[:40]))
-        for w, l in sorted(moved)]
+        (w.isoformat() if w is not None else "undated",
+         (_MEMORY_LINK_RE.search(l).group(1)
+          if _MEMORY_LINK_RE.search(l) else l[:40]))
+        for w, l in sorted(moved, key=_order)]
     if not moved:
         report["ok"] = True
+        scoped = ", ".join(_MEMORY_AGEING_SECTIONS)
+        if dormant_sections:
+            scoped += f"; and no bullets in {', '.join(dormant_sections)}"
         report["reason"] = (f"nothing older than {window_days} days in "
-                            f"{', '.join(_MEMORY_AGEING_SECTIONS)}")
+                            f"{scoped}")
         return report
     if dry_run:
         report["ok"] = True
@@ -2323,12 +2366,14 @@ def archive_stale_memory_entries(mem_dir: Path, today=None,
 
     archive = mem_dir / _MEMORY_ARCHIVE_NAME
     stamp = datetime.now().astimezone().isoformat(timespec="seconds")
-    header = (f"\n## Archived {today.isoformat()} — entries older than "
-              f"{window_days} days\n\n"
+    what = f"entries older than {window_days} days"
+    if dormant_sections:
+        what += f", and the dormant section(s) {', '.join(dormant_sections)}"
+    header = (f"\n## Archived {today.isoformat()} — {what}\n\n"
               f"Moved out of {_MEMORY_INDEX_NAME} by `archive_stale_memory_entries`"
               f" at {stamp}. Nothing was deleted; every pointer below still "
               f"resolves in this folder.\n\n")
-    body = "\n".join(l for _w, l in sorted(moved)) + "\n"
+    body = "\n".join(l for _w, l in sorted(moved, key=_order)) + "\n"
     try:
         backup = index.with_suffix(
             f".backup-{datetime.now().strftime('%Y%m%dT%H%M%S')}.md")
@@ -2358,8 +2403,7 @@ def archive_stale_memory_entries(mem_dir: Path, today=None,
         return report
 
     report["ok"] = True
-    report["reason"] = (f"moved {len(moved)} entry/entries older than "
-                        f"{window_days} days")
+    report["reason"] = f"moved {len(moved)} entry/entries — {what}"
     return report
 
 

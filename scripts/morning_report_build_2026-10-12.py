@@ -19,7 +19,11 @@ report was hand-written and measurably wrong in 2 ways a derived list cannot be:
 
 And it was 6,659 words of which only 1,089 -- 0.1695, Wilson [0.1605, 0.1788] -- sat in
 decision sections, so 5 words in 6 were narrative about finished work. The markdown ran
-to 435 lines against the note standard's 40-300 limit, over by 135.
+to 435 lines against a 40-300 limit, over by 135. ★ THAT LIMIT WAS NEVER THE NOTE
+STANDARD'S AND NEVER HIS (corrected 2026-11-06). It is item 10 of note standard v1,
+the archival first version; the current v1.9 carries no length rule. 0 of 1,678 of his
+recorded annotation blocks state a numeric length limit. The live check is now a
+DERIVED per-item budget, not a total. See `scripts/the_line_caps_were_never_his_2026-11-06.py`.
 
 THE SEPARATION THAT MAKES BOTH HALVES POSSIBLE. A pure generator would print "A19
 OPEN/TESTED" and leave him guessing what to decide. Hand-writing produced the errors
@@ -451,8 +455,10 @@ def _session_start() -> str:
     ★ IT WAS A HARD-CODED DATE AND IT WENT STALE (2026-10-15). The default was
     2026-10-11T12:00, so "Work done this session" listed **67 commits spanning 4
     days** -- 72 of the report's 376 lines -- and pushed the whole report past
-    the note standard's 300-line ceiling (Rule 10). A session boundary that is
-    typed once is a session boundary that is wrong from the next session on.
+    a 300-line ceiling then attributed to "Rule 10" -- a label defined in 0 of the
+    10 note-standard files, corrected 2026-11-06. A session boundary that is typed
+    once is a session boundary that is wrong from the next session on, and so is a
+    length ceiling: the live check derives a per-item budget instead.
 
     `sv` IS THIS PROJECT'S OWN SESSION MARKER, so the last `sv:` commit is the
     boundary rather than a guess. Falls back to the old constant if no `sv:`
@@ -776,7 +782,7 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
     A("## 1. Decisions that need you")
     A("")
     for i, d in enumerate(decs, 1):
-        A(f"### {i}. {d.get('title') or d['ident']}")
+        A(f"### {i}. {d.get('title') or d['ident']}{ticket_tag(d['ident'])}")
         A("")
         A(f"**What it is.** {d.get('what', d.get('headline',''))}")
         A("")
@@ -829,7 +835,7 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         # further down, because only section 1 rendered the state.
         if o.get("already_built"):
             extra += f" — already BUILT and TESTED (`{o.get('status')}`)"
-        A(f"- **{o['ident']}** ({o['source']}){extra}")
+        A(f"- **{o['ident']}**{ticket_tag(o['ident'])} ({o['source']}){extra}")
         A(f"  {o['headline']}")
     A("")
     A(_VE)
@@ -925,7 +931,8 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         _subj = it["subject"].strip()
         if _subj:
             _subj = _subj[0].upper() + _subj[1:]
-        A(f"- {_subj}{ref}{seen}")
+        _tids = "".join(ticket_tag(c) for c in it["codes"]) if it.get("codes") else ""
+        A(f"- {_subj}{ref}{_tids}{seen}")
         if it.get("ruled"):
             A(f"  You ruled on this on {it['ruled']}; what is left is work.")
     A("")
@@ -1137,6 +1144,49 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
     A("")
     A(f"Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.")
     return "\n".join(L) + "\n"
+
+
+#: ★ B132, 2026-11-06. THE IDENTIFIER THE STORE ALREADY ISSUED, PRINTED.
+#: His 3 stated purposes for the hash are duplicate detection, tying a verdict of
+#: his to the issue it addresses, and giving researchers and agents a surface on
+#: which to see emerging issues. None of them is served by an identifier that
+#: never leaves the store. This reads the committed store and returns nothing
+#: when no ticket exists, so it can never invent one.
+#: ANNOTATED WITH THE BUILT-IN, because this module imports no typing
+#: names and `Dict` would have raised at import. Caught by the patch
+#: refusing on a missing anchor rather than by the module failing.
+_TICKET_IDS: dict[str, str] = {}
+
+
+def ticket_id(ident: str) -> str:
+    """The newest ticket identifier for a task-list entry, or the empty string."""
+    if not _TICKET_IDS:
+        import json as _json
+        path = REPO / "bench" / "tickets" / "tickets.jsonl"
+        if not path.is_file():
+            _TICKET_IDS["__loaded__"] = ""
+            return ""
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = _json.loads(line)
+            except Exception:                                  # noqa: BLE001
+                continue
+            ref = str(row.get("task_ref") or "").split(":")[-1].strip()
+            tid = str(row.get("tid") or "").strip()
+            if ref and tid:
+                #: LAST WINS, because the store is append-only and the newest
+                #: row is the current state of that ticket.
+                _TICKET_IDS[ref] = tid
+        _TICKET_IDS["__loaded__"] = ""
+    return _TICKET_IDS.get(str(ident).strip(), "")
+
+
+def ticket_tag(ident: str) -> str:
+    """` [tid]` for rendering, or the empty string when no ticket exists."""
+    t = ticket_id(ident)
+    return f" `[{t}]`" if t else ""
 
 
 def main(argv: list[str]) -> int:

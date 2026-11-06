@@ -218,12 +218,59 @@ class TestTheTwoHalvesCannotDisagree:
 
 
 class TestItStaysInsideTheStandard:
+    """★ THE CEILING IS DERIVED, NOT TYPED — his ruling 2026-11-06.
+
+    HE WAS ASKED TO RULE ON A CAP HE NEVER SET. The report of 2026-11-06 put
+    "your cap of 300" to him. His reply: *"I never specified a cap. I said to
+    avoid over-narration and to present things in such a way that enabled me
+    to make quick, coherent logical decisions nevertheless. That is a sytle
+    and presentation choice rather than a hard cap."* And the record agrees
+    with him: 0 of 1,678 of his recorded annotation blocks state a numeric
+    length limit, Clopper-Pearson 95% upper bound 0.002196, 2 routes agreeing
+    to 4.3e-19. Producer: `scripts/the_line_caps_were_never_his_2026-11-06.py`.
+
+    WHERE 40-300 AND 60-400 CAME FROM. Item 10 of note standard **v1**, the
+    archival first version: "TTS: 60 to 400 lines (median near 150).
+    Markdown: 40 to 300." 1 of 10 standard files carries it; the CURRENT
+    standard, v1.9, has no length rule at all and its Rule 34 is titled
+    "AVOID OVER-NARRATION, AND THIS RULE IS NOT ENFORCED". The label this
+    test used to cite, "Rule 10", is defined in 0 of the 10.
+
+    A FIXED CEILING FAILED FOR THE WRONG REASON. It bound on TOTAL length, so
+    it went red because he owed more verdicts — the report grows one section
+    per live item, and that is the report working. Raising it to another typed
+    number would only move the date of the next failure, which is the
+    objection he himself raised on 13-14 October to a cap with no measurement
+    behind it.
+
+    SO THE BUDGET IS PER ITEM, which is the property that distinguishes
+    padding from work. Measured on the live render, 2026-11-06: markdown is
+    649 lines = 149 of non-item overhead + 30 item blocks at min 16, median
+    17.0, max 18 — reproducing B122's independently measured median of 17.
+    The spoken form is 720 lines = about 310 of overhead + 30 blocks at min
+    13, median 14, max 16. The budgets below carry roughly 35% headroom over
+    those maxima, so the check still goes red on genuine bloat and no longer
+    goes red on his queue.
+    """
+
+    #: 149 measured overhead, 18 measured worst item; ~35% headroom on each.
+    OVERHEAD_BUDGET = 220
+    PER_ITEM_BUDGET = 25
+
     def test_the_report_is_within_the_line_limit(self):
         md = _run(expect=0).stdout
         n = len(md.splitlines())
-        assert 40 <= n <= 300, (
-            f"{n} lines, outside the note standard's 40-300 for markdown "
-            f"(Rule 10). The hand-written report was 435.")
+        items = len(re.findall(r"(?m)^### ", md))
+        ceiling = self.OVERHEAD_BUDGET + self.PER_ITEM_BUDGET * items
+        assert n >= 40, (
+            f"{n} lines — under the 40-line floor, which catches a truncated "
+            f"or empty report. The floor is NOT the disputed half.")
+        assert items > 0, "no item blocks found; the derivation would be vacuous"
+        assert n <= ceiling, (
+            f"{n} lines over a derived ceiling of {ceiling} "
+            f"({self.OVERHEAD_BUDGET} overhead + {self.PER_ITEM_BUDGET} x "
+            f"{items} items) = {n / items:.1f} lines per item against a "
+            f"measured median of 17. That is padding, not more work.")
 
     def test_the_decisions_section_is_the_bulk_of_it(self):
         """The hand-written report of 2026-10-12 was 6,659 words of which only
@@ -425,9 +472,27 @@ class TestTheTTSVersionIsSpeakable:
         assert head.count("The options.") >= n, "options are missing"
         assert "What it is." in head and "Why it needs a decision." in head
 
+    #: ~310 measured overhead, 16 measured worst block; see
+    #: TestItStaysInsideTheStandard for the full provenance of these numbers
+    #: and why the ceiling they replace was never his.
+    TTS_OVERHEAD_BUDGET = 440
+    TTS_PER_ITEM_BUDGET = 24
+
     def test_it_is_within_the_tts_line_limit(self):
-        n = len(self._tts().splitlines())
-        assert 60 <= n <= 400, f"{n} lines, outside the standard's 60-400 for TTS"
+        t = self._tts()
+        n = len(t.splitlines())
+        items = t.count("What it is.")
+        ceiling = self.TTS_OVERHEAD_BUDGET + self.TTS_PER_ITEM_BUDGET * items
+        assert n >= 60, (
+            f"{n} lines — under the 60-line floor, which catches a truncated "
+            f"spoken file. The floor is NOT the disputed half.")
+        assert items > 0, "no spoken item blocks found; the derivation is vacuous"
+        assert n <= ceiling, (
+            f"{n} spoken lines over a derived ceiling of {ceiling} "
+            f"({self.TTS_OVERHEAD_BUDGET} overhead + "
+            f"{self.TTS_PER_ITEM_BUDGET} x {items} items) = {n / items:.1f} "
+            f"lines per item against a measured median of 14. He listens to "
+            f"this end to end, so padding costs him directly.")
 
 
 class TestItIsReproducibleRatherThanCommitted:

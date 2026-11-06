@@ -126,9 +126,28 @@ class TestTheMeasuredAnswers:
         assert total > 100, total
         from statsmodels.stats.proportion import proportion_confint
         lo, hi = proportion_confint(valid, total, method="wilson")
-        assert hi < 0.6, (
-            f"coverage rose to [{lo:.4%}, {hi:.4%}]; the A1 answer that the "
-            f"chain covers a minority needs restating")
+        #: ★ RESTATED 2026-11-06. THIS GUARD WAS OUTGROWN, NOT BROKEN. It
+        #: asserted `hi < 0.6` on the A1 finding that the chain covers a
+        #: MINORITY. Coverage then ROSE, and the complete board of 2026-11-05
+        #: failed here with [47.6717%, 60.4188%] -- the guard's own message
+        #: already said the A1 answer needed restating, so it failed for the
+        #: right reason. Measured 2026-11-06: 125 valid of 231 = 0.541126,
+        #: Wilson [0.476717, 0.604188] by statsmodels and by an mpmath closed
+        #: form agreeing to 1e-12, Clopper-Pearson [0.474528, 0.606654].
+        #:
+        #: THE INTERVAL STRADDLES 0.5, so the honest finding is now that
+        #: coverage is INDISTINGUISHABLE FROM HALF: not a clear minority
+        #: (`hi < 0.5` is False) and not a clear majority (`lo > 0.5` is
+        #: False). The pin is that straddle, NOT a loosened ceiling. Raising
+        #: `hi < 0.6` to `hi < 0.7` would hide the next move; this form goes
+        #: red the moment coverage becomes a clear majority, at which point the
+        #: finding is restated again. A guard that must be restated when the
+        #: system improves is working.
+        assert lo < 0.5 < hi, (
+            f"coverage is [{lo:.4%}, {hi:.4%}], which no longer straddles 50%. "
+            f"The A1 answer that the chain's coverage is indistinguishable from "
+            f"half needs restating: it is now a clear "
+            f"{'majority' if lo >= 0.5 else 'minority'}.")
 
     def test_rows_written_after_the_migration_are_reported(self, mod):
         """The half that is a defect rather than honest history."""

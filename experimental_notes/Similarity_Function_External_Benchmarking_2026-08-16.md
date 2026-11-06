@@ -4,6 +4,18 @@
 nothing is summarised away. Sources cited inline as URLs, with peer-reviewed work
 distinguished from preprints throughout.
 
+**FIGURE PROVENANCE, declared 2026-11-06.** Every percentage and p-value in this note is
+QUOTED FROM PUBLISHED EXTERNAL WORK. None of them is a measurement of this project's own
+instruments, so none of them has or needs a producer in `scripts/`. The note carries 159
+inline URLs, 99 of them distinct, 27 DOIs and 60 arXiv-shaped identifiers across 632 lines.
+**THE LIMIT IS STATED RATHER THAN GLOSSED, because declaring provenance is easy and
+establishing it is not: only 5 of 35 figure-bearing paragraphs carry a citation in the SAME
+paragraph, 0.142857, Wilson [0.062602, 0.293756], Clopper-Pearson [0.048061, 0.302571].** So
+attribution here is sectional rather than per-figure, and a reader tracing a specific number
+may have to look to the surrounding strand for its source. Producer for all of the above,
+which lifts the reproducibility checker's own figure pattern rather than restating it:
+`scripts/the_external_notes_figures_are_quoted_not_measured_2026-11-06.py`.
+
 
 ---
 

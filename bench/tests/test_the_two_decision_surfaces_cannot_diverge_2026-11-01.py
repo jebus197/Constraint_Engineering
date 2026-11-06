@@ -183,7 +183,13 @@ class TestTheInverseDirectionAlsoHolds:
     #: the default path on his ruling of 2026-10-13, so what remains is 1 word on
     #: whether this list should say OPEN or DEFERRED. Raising it as a decision
     #: would ask him to decide again what he has already decided.
-    RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = ("C0001",)
+    #: B122 -- he RULED it on 2026-11-06 ("I never specified a cap"), so its
+    #: substance is settled and only its state is open: it moves to DONE and
+    #: COMMITTED when the commit carrying the repair lands. Rendering it as a
+    #: decision would ask him to rule again what he has already ruled, which is
+    #: the complaint he has now made 5 times. `test_the_pin_is_not_stale`
+    #: removes it from here automatically if it is ever rendered again.
+    RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = ("C0001", "B122")
 
     @staticmethod
     def _authored() -> set[str]:

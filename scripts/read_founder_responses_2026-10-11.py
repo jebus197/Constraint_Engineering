@@ -1071,9 +1071,26 @@ def main() -> int:
                     help="report lines of CONTEXT to show above each annotation, "
                          "so the subject it attaches to is visible (default 6; "
                          "0 restores the old counts-only output)")
+    #: ★ THE DEFAULT WAS INVERTED 2026-11-06, ON HIS OBSERVATION THAT I WAS
+    #: READING HIS ANNOTATIONS WITHOUT THE TEXT THEY ANSWERED. He was right and
+    #: the cause was this default, not any single turn: printing the annotations
+    #: with their context was opt-in, so the reader's default output was a tally
+    #: of counts carrying none of his words. Measured over 1 session: 572
+    #: invocations, 12 passing `--text`, 0.020979, Wilson [0.012041, 0.036308].
+    #:
+    #: `--text` IS RETAINED AND ACCEPTED, deliberately. It now names the
+    #: default rather than requesting it, so every recorded command and every
+    #: test that passes it keeps working. Removing it would break callers to no
+    #: purpose, and `additive-standard` forbids removing a feature when nothing
+    #: replaces it.
+    ap.add_argument("--counts", action="store_true",
+                    help="print ONLY the per-file tally, without the "
+                         "annotations. This was the default until 2026-11-06 "
+                         "and is now opt-in.")
     ap.add_argument("--text", action="store_true",
-                    help="print every annotation in full with its context, "
-                         "rather than a per-file tally")
+                    help="accepted and no longer needed: printing every "
+                         "annotation with its context is the default. Retained "
+                         "so existing callers do not break.")
     args = ap.parse_args()
 
     if not RESPONSES.is_dir():
@@ -1104,7 +1121,9 @@ def main() -> int:
             by_file[(a["date"], a["file"])] += 1
         for (d, f), n in sorted(by_file.items()):
             print(f"     {d}  {n:>3}  {f}")
-        if args.text:
+        #: CONTENT BY DEFAULT. `--counts` is the only way to get the old
+        #: tally-only output, and `--text` is accepted as a no-op.
+        if not args.counts:
             print("\n== every annotation, with the report lines it attaches to ==")
             for k, a in enumerate(anns, 1):
                 print(f"\n--- [{k}] {a['file']} line {a.get('line_index')} "
