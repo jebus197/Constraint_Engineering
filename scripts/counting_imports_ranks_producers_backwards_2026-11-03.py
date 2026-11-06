@@ -95,7 +95,22 @@ def population(rev: str | None) -> list[str]:
 QUANTITY_ROUTES = {
     "Wilson": {
         "statsmodels proportion_confint": r"proportion_confint\([^)]*wilson",
-        "written-out algebra": r"z \* z / \(2 \* n\)|z\*z/\(2\*n\)",
+        #: ★ WIDENED 2026-11-06. The same algebra written `z**2 / (2 * n)`
+        #: was invisible, so producers carrying a genuine second route were
+        #: classified single-route -- a guard accusing correct code. Measured:
+        #: of 265 producers using the statsmodels Wilson call the old pattern
+        #: saw a second route in 71 and this one sees 139, so 68 were FALSE
+        #: ACCUSATIONS; coverage 139 of 265 = 0.524528, Wilson [0.464481,
+        #: 0.583875], Clopper-Pearson [0.462531, 0.585971]. The blindness was
+        #: already recorded on 2026-11-04 at 52 of 121 and this session
+        #: enlarged it by writing producers in the invisible spelling.
+        #: IT CANNOT CREATE A FALSE PASS: 2 DISTINCT routes to the SAME
+        #: quantity are still required, so a text carrying only the
+        #: statsmodels call matches neither alternative. Checked by execution.
+        "written-out algebra": (
+            r"z\s*\*\s*z\s*/\s*\(\s*2\s*\*\s*[nN]\s*\)"
+            r"|z\s*\*\*\s*2\s*/\s*\(\s*2\s*\*\s*[nN]\s*\)"
+        ),
     },
     "Clopper-Pearson": {
         "scipy beta quantile": r"stats\.beta\.ppf|beta\.ppf",

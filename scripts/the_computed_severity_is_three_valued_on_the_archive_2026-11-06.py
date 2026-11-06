@@ -37,7 +37,6 @@ from __future__ import annotations
 import pathlib as _pl, sys as _sys
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
 from _cli_help import answer_help as _answer_help  # noqa: E402
-_answer_help(__doc__, __file__, _sys.argv[1:])
 
 import collections
 import json
@@ -229,4 +228,11 @@ VERDICT:
 
 
 if __name__ == "__main__":
+    #: ★ THE CALL BELONGS HERE AND NOT AT MODULE LEVEL. Placed at
+    #: module level it runs on IMPORT, and `answer_help` exits 2 on an
+    #: unrecognised argument -- so importing this file under pytest, whose
+    #: argv is its own, raised SystemExit: 2 and took 12 tests in
+    #: test_an_interval_rests_on_two_routes_2026-11-03 down with it. One
+    #: guard was satisfied by breaking another.
+    _answer_help(__doc__, __file__)
     sys.exit(main(sys.argv[1:]))
