@@ -92,10 +92,27 @@ He has also proposed, on 2026-11-01: run the current severity measure live and t
 because a shadow never decides.** Adjudicate that against his proposal. He is entitled to
 either answer; what he is not entitled to is silence.
 
-## REQUIRED SECTION 4 -- Produce a fix, and test it
+## REQUIRED SECTION 4 -- Produce a fix, deliver it as a file, and test it
 
 Name files by path, state what you executed, and paste the output. A fix you have not tried to
-break is a hypothesis. Where the staged tree refuses a write, deliver an exact diff and say so.
+break is a hypothesis.
+
+**DELIVER EACH FIX AS A FILE, WRITTEN INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH.** A fix
+left in prose, in a scratch directory, or in this reply alone is destroyed at teardown and never
+reaches the project: on 2026-10-15 a seat's finding sat in a sandbox for 10 days and existed
+nowhere else. Write the edited file where it actually lives, for example
+`docs/MATHEMATICAL_APPENDIX.md`, and not a copy beside it. Where the tree genuinely refuses a
+write, name the path that refused and deliver an exact diff as well.
+
+**IF YOU RECOMMEND A COMPOSED FIX, THE STANDARD IS THE FOUNDER'S AND IT REQUIRES A MEASUREMENT.**
+His words, verbatim: *"Composability doesn't mean composing two solutions just because they can be
+composed. It means this principle should be applied where two composed solutions demonstrably
+provide a better, more robust and/or more efficient solution than either fix in isolation. Where
+a single fix out performs a composed one, that fix should continue to be preferred."* So compose
+ONLY on a demonstrated advantage over each part alone, where the demonstration is a MEASUREMENT
+and not a judgement, and prefer the single fix where it performs as well. Stating that the
+repairs do not conflict is the weak sense his definition explicitly excludes.
+
 
 ## REQUIRED SECTION 5 -- What would refute you
 

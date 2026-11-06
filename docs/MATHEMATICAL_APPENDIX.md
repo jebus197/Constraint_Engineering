@@ -1281,7 +1281,19 @@ with SymPy and independently with z3; producer
    this way is therefore **not** "the opposite of a vote" — it is the same vote
    taken over a smaller population. Making it tool-decided requires replacing
    `confidence` with a harness-computed quantity; §7.8 Approach B
-   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified.
+   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified. **That substitution
+   replaces `confidence` ALONE.** `V` is retained as a separate factor, so the
+   KEY PROPERTY below survives it: a disproved finding scores
+   `W · S_v · V(False) = 0` exactly (z3: unsat for a result above 0; SymPy
+   simplifies the product to 0). Do **not** read this sentence as licensing
+   `Sev = W · S_v` with the `V` column removed — `S_v = 1/(1+exp(−Λ_total))`
+   has no zero (SymPy returns no real solution; z3 unsat; Wolfram Language
+   `Solve` returns `{}`; the Λ → −∞ limit is 0 and unattained), so that form
+   cannot represent `V(False) = 0` at all and the key property would become
+   unrepresentable rather than merely unstated. Note also that this is a
+   **provenance** repair — it changes who computed the belief factor, from the
+   model to the harness — and it does **not** discharge the magnitude
+   deficiency this caution opens with. See caution 3.
 
 2. **Do not import §1's default rule into W.** `cdsfl_core.txt` §1 sets
    `class(c) = HARD if c is ambiguous`, which is conservative where it is
@@ -1291,6 +1303,54 @@ with SymPy and independently with z3; producer
    pushes findings toward the critical side of the gate. In the severity context
    the conservative default is SOFT, and the asymmetry must be stated wherever
    the class is collected.
+
+3. **No cut above W(SOFT) is a bound on consequence magnitude, under any
+   candidate formula — so caution 1's provenance repair does not discharge
+   caution 1's own objection.** (Added 2026-11-06; producer
+   `scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py`,
+   which parses the factor tables above at run time rather than restating
+   them.) The general statement, quantified over the cut as a free real rather
+   than sampled at chosen values: for any severity of the **shape**
+   `Sev = W · B` with `W ∈ {W(SOFT), W(HARD)}` and `B ∈ [0,1]`, where `B` is
+   any composition of belief factors whatsoever,
+
+   > `Sev ≥ c`  ⇔  `W = W(HARD) ∧ B ≥ c`,  for every `c ∈ (W(SOFT), W(HARD)]`
+
+   (z3 returns unsat for the negation over all three variables at once; SymPy
+   gives `max_B W(SOFT)·B = 1/2`, which cannot reach any such `c`;
+   independently corroborated with Wolfram Language, `Resolve[ForAll[...]]`
+   returning `True` on each `W` branch and `Reduce` finding no counterexample).
+   Because the statement is about the shape and not about a particular `B`, it
+   covers every repair on the table: `W·confidence·V` (as written),
+   `W·S_v·V` (caution 1), `W·σ(Λ_total)` alone, and `W·S_v` with `V`
+   deleted. All four collapse identically.
+
+   Consequence magnitude enters `Sev` through `W` alone, and `W` has **two**
+   values. A cut above `W(SOFT)` therefore tests the class (binary) and the
+   belief (continuous) and constrains impact not at all. The honest name for
+   such a cut is **a bound on belief conditional on `class = HARD`**, and
+   moving it — 0.7 to 0.8, say — tightens the belief requirement while leaving
+   impact untouched. A cut that genuinely bounds magnitude needs a consequence
+   scale with more than two levels; `cdsfl_core.txt` §10 already enumerates
+   five material-defect categories, which is the existing vocabulary for one.
+   Specifying such a scale is not done here and is not implied by this
+   caution.
+
+   **Measured consequence of this, on the archive** (producer
+   `scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py`,
+   run 2026-11-06, exit 0, over 3,170 archived entries carrying a severity). **The figures here are the DECLARED-FRAME ones and differ from the delivering seat's own reply, which used a bare recursive glob and counted every harvest copy: 3,474 against 3,170.** 4 populations exist on this archive -- **3,170 authoritative**, by the whole-file digest dedup that `scripts/severity_was_never_computed_from_the_model_2026-10-12.py` has used since 2026-10-12; 3,474 with no dedup at all, which is what the brief told the seats; 3,311 at 1 directory level, where the `exp36_evidence_latest` and `experiment_18` symlinks are followed and 1 run is counted twice; and 3,101 under a name-based exclusion that is WITHDRAWN as over-aggressive, since it drops run state that is not a byte-identical copy. The frame defect is not a finding of this round: it is recorded in that 2026-10-12 producer's own docstring and it RECURRED here in 3 places. The THREE-VALUED result holds in all 4; only the counts move. Frames measured side by side by `scripts/the_severity_census_has_three_frames_2026-11-06.py`.
+   `constraint_class` and `confidence` are present on **0** entries each
+   (Wilson 95% [0.000000, 0.001210]), and `compute_sev_f` defaults both to
+   their stricter readings, so the **computed** severity reduces to
+   `V(verification)` alone and is **three-valued** on the whole archive:
+   `0.0` on 32 entries, `0.5` on 1,980, `1.0` on 1,158. Every cut in
+   `(0.5, 1.0]` therefore induces the *same* partition, and moving
+   `CRITICAL_SEVERITY_THRESHOLD` from 0.7 to 0.8, 0.9 or 0.95 reclassifies
+   **0** entries. On the model-asserted `severity` float the release door reads
+   today the same moves reclassify 522, 1,060 and 1,270 entries respectively,
+   but whether any of that movement is impact-related is **unmeasurable**,
+   because the class is recorded nowhere. Collecting the two missing inputs is
+   therefore prior to choosing a bound, and is the open question of entry B87.
 
 ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
 
@@ -1319,6 +1379,18 @@ Where Λ_prior = 0 (uniform prior: P(claim true) = 0.5 before any verification).
 **Veto property:** SymPy negative weight magnitude (4.60) exceeds sum of other positive weights (3.62). SymPy falsification overwhelms other verifications — a mathematically grounded veto. (Table corrected during 5-model meta-test, 27 March 2026 — original Dimensional and Numerical negative weights were computed as ln(FNR/TPR) instead of the correct ln(FNR/TNR). Veto property is strengthened by the correction since correct negative weights are more negative.)
 
 **Verified:** SymPy falsified + others verified → S_v = 0.272 (below 0.5 threshold). All verified → S_v = 0.9999. All indeterminate → S_v = 0.5 (neutral).
+
+**`S_v` is a credence, not a severity** (clarified 2026-11-06). Despite this
+section's heading, the quantity derived here is the posterior probability that
+the **claim is true**: `Λ_prior = 0` is set above from "uniform prior:
+P(claim true) = 0.5", and the 0.5 comparison in the Verified line is §7.11's
+*selection* threshold. `S_v` carries no consequence term, so it is not `Sev(f)`
+and the two are not competing specifications of one quantity. Its role is to be
+the belief factor that §7.7 caution 1 substitutes for the model's self-reported
+`confidence`. Reading `S_v = 0.273` as "the severity of a disproved finding" and
+contrasting it with §7.7's `0` compares a credence with a severity: under
+§7.7's formula with that substitution the disproved finding scores
+`1 · 0.27289178365887046 · 0 = 0`, and the KEY PROPERTY holds.
 
 ### 7.9 Capability Fingerprint
 

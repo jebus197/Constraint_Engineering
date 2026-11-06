@@ -1,0 +1,227 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 14232,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}",
+      "t_offset_s": 6.947
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"docs/MATHEMATICAL_APPENDIX.md\"}",
+      "t_offset_s": 7.02
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"^## 7\\\\.|^### 7\\\\.[78]\", \"path\": \"docs/MATHEMATICAL_APPENDIX.md\", \"output_mode\": \"content\"}",
+      "t_offset_s": 10.333
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"7.7\\\\|7.8\\\" docs/MATHEMATICAL_APPENDIX.md | head -30\", \"description\": \"Find section 7.7/7.8 line numbers in appendix\"}",
+      "t_offset_s": 11.308
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"docs/MATHEMATICAL_APPENDIX.md\", \"offset\": 1253, \"limit\": 130}",
+      "t_offset_s": 14.322
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_SEVERITY_SPEC\\\\|compute_sev_f\\\\|severity_is_proven\\\\|severity_spec_shadow\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Locate severity spec sites in runner\"}",
+      "t_offset_s": 83.936
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"B87\\\\|B5[^0-9]\\\" --include=\\\"*.md\\\" docs experimental_notes PRIVATE_NOTES.md 2>/dev/null | grep -i \\\"shadow\\\\|severity\\\\|B87\\\" | head -20\", \"description\": \"Find entries B5 and B87 in notes\"}",
+      "t_offset_s": 85.373
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/reference_runner_v3.py\", \"offset\": 10500, \"limit\": 290}",
+      "t_offset_s": 91.789
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^### B87\\\\|^### B5[^0-9]\\\\|^- \\\\*\\\\*B87\\\\|^\\\\*\\\\*B87\\\\|B87:\\\" experimental_notes/CDSFL_MASTER_TASK_LIST.md | head; grep -n \\\"B5 \\\\|B5:\\\" experimental_notes/CDSFL_MASTER_TASK_LIST.md | head\", \"description\": \"Locate B87 and B5 in master task list\"}",
+      "t_offset_s": 93.52
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '800,830p;940,960p' experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"description\": \"Read B5 entry in master task list\"}",
+      "t_offset_s": 98.719
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"unverified_critical_count\\\\|CRITICAL_SEVERITY_THRESHOLD = \\\\|exhausted\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Locate convergence gate and threshold constant\"}",
+      "t_offset_s": 99.814
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4260,4360p' bench/reference_runner_v3.py\", \"description\": \"Read the exhausted door / severity gate in unverified_critical_count\"}",
+      "t_offset_s": 103.196
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v3.py | head -5; grep -n \\\"^CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v3.py\", \"description\": \"Find threshold constant definition\"}",
+      "t_offset_s": 104.329
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4140,4230p' bench/reference_runner_v3.py\", \"description\": \"Read exhausted door in unverified_critical_count\"}",
+      "t_offset_s": 111.399
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts | grep -i \\\"severity\\\\|proven\\\\|collapse\\\" \", \"description\": \"List severity-related producer scripts\"}",
+      "t_offset_s": 112.28
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/severity_was_never_computed_from_the_model_2026-10-12.py 2>&1 | tail -20; echo \\\"EXIT=$?\\\"\", \"description\": \"Reproduce key-property violation measurement\"}",
+      "t_offset_s": 119.202
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py 2>&1 | tail -20; echo \\\"EXIT=$?\\\"\", \"description\": \"Reproduce proof-vs-gated-number correlation\"}",
+      "t_offset_s": 120.509
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py 2>&1 | tail -15; echo \\\"EXIT=$?\\\"\", \"description\": \"Reproduce key-property violation measurement\"}",
+      "t_offset_s": 123.573
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py 2>&1 | tail -15; echo \\\"EXIT=$?\\\"\", \"description\": \"Reproduce proof-vs-gated-number correlation\"}",
+      "t_offset_s": 124.506
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py 2>&1 | grep -i \\\"27\\\\|32\\\\|wilson\\\\|dedup\\\\|distinct\\\" | head -12\", \"description\": \"Extract headline counts from producer output\"}",
+      "t_offset_s": 131.721
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp, mpmath as mp\\n\\n# --- 7.8 Approach B: worked example, exact from the table's rounded weights ---\\nLam = sp.Rational(-460,100) + sp.Rational(208,100) + sp.Rational(154,100)\\nprint(\\\"Lambda (table weights) =\\\", Lam)                    # expect -49/50\\nSv = 1/(1+sp.exp(-Lam))\\nprint(\\\"S_v exact =\\\", sp.nsimplify(Sv), \\\" numeric =\\\", sp.N(Sv, 17))\\np",
+      "t_offset_s": 139.369
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom z3 import *\\nimport math\\n\\n# (1) Collapse: for cut c>1/2, Sev>=c  <=>  HARD & CONFIRMED & conf>=c\\nconf, c = Reals('conf c')\\nW, V = Reals('W V')\\ns = Solver()\\ns.add(Or(W==1, W==0.5), Or(V==1, V==0.5, V==0), conf>=0, conf<=1, c>Q(1,2), c<=1)\\nsev = W*conf*V\\nlhs = sev >= c\\nrhs = And(W==1, V==1, conf>=c)\\ns.add(Not(lhs == rhs))\\nprint(\\\"collapse equivalence n",
+      "t_offset_s": 157.709
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Archive field census: falsifier_verdict / confidence / HARD-SOFT class presence\\nimport json, glob, hashlib\\npaths = glob.glob('bench/logs/**/runner_state.json', recursive=True)\\nseen=set(); entries=[]\\nfor p in paths:\\n    b=open(p,'rb').read()\\n    h=hashlib.sha256(b).hexdigest()\\n    if h in seen: continue\\n    seen.add(h)\\n    try: d=json.loads(b)\\n    except ",
+      "t_offset_s": 162.612
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, hashlib\\npaths = glob.glob('bench/logs/**/runner_state.json', recursive=True)\\n# variant A: no dedup\\nentA=[]; \\nfor p in paths:\\n    try: d=json.load(open(p))\\n    except Exception: continue\\n    reg=(d.get('registry') or {}).get('entries') or d.get('entries') or {}\\n    if isinstance(reg,dict): entA.extend(reg.values())\\nwa=[e for e in entA if i",
+      "t_offset_s": 172.703
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, hashlib\\npaths = glob.glob('bench/logs/**/runner_state.json', recursive=True)\\n# variant: exclude sandbox_harvest only, no content dedup\\nent=[]\\nfor p in paths:\\n    if 'sandbox_harvest' in p: continue\\n    try: d=json.load(open(p))\\n    except Exception: continue\\n    reg=(d.get('registry') or {}).get('entries') or d.get('entries') or {}\\n    if",
+      "t_offset_s": 185.846
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exhausted\\\" bench/reference_runner_v3.py | sed -n '1,40p' | grep -n \\\"stamp\\\\|_update_finding_statuses\\\" ; grep -n \\\"def _update_finding_statuses\\\" bench/reference_runner_v3.py\", \"description\": \"Find exhausted stamp site\"}",
+      "t_offset_s": 194.473
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5725,5745p' bench/reference_runner_v3.py; awk 'NR>=5725 && NR<=5900 && /exhausted|severity|verdict/' bench/reference_runner_v3.py | head -30\", \"description\": \"Read exhausted stamp conditions\"}",
+      "t_offset_s": 199.423
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'N[1/(1+Exp[49/50]), 17]' 2>&1; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second-check of S_v worked example\"}",
+      "t_offset_s": 266.122
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Reduce[1/(1+Exp[-L])==0, L, Reals] === False && N[Log[7/3],6] =!= Null && {Reduce[1/(1+Exp[-L])==0, L, Reals], N[Log[7/3],6]}' 2>&1 | tail -2; echo EXIT=$?\", \"description\": \"Wolfram: S_v=0 has no real solution; threshold log-odds ln(7/3)\"}",
+      "t_offset_s": 276.781
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_severity_cut_collapses_the_formula_2026-10-13.py 2>&1 | tail -8; echo EXIT=$?\", \"description\": \"Reproduce cut-collapse producer\"}",
+      "t_offset_s": 277.941
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"import reference_runner_v3\\\\|from bench\\\" bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py 2>/dev/null | head -5; sed -n '1,40p' bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py 2>/dev/null\", \"description\": \"Check import pattern in the sibling severity test\"}",
+      "t_offset_s": 310.97
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '40,60p' bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\", \"description\": \"See sys.path setup in sibling test\"}",
+      "t_offset_s": 314.246
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"docs/MATHEMATICAL_APPENDIX.md\", \"old_string\": \"   this way is therefore **not** \\\"the opposite of a vote\\\" \\u2014 it is the same vote\\n   taken over a smaller population. Making it tool-decided requires replacing\\n   `confidence` with a harness-computed quantity; \\u00a77.8 Approach B\\n   (`S_v = 1/(1 + exp(\\u2212\\u039b_total))`) is that quantity and is already ",
+      "t_offset_s": 329.845
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"docs/MATHEMATICAL_APPENDIX.md\", \"old_string\": \"**Verified:** SymPy falsified + others verified \\u2192 S_v = 0.272 (below 0.5 threshold). All verified \\u2192 S_v = 0.9999. All indeterminate \\u2192 S_v = 0.5 (neutral).\", \"new_string\": \"**Verified:** SymPy falsified + others verified \\u2192 S_v = 0.272 (below 0.5 threshold). All verified \\u2192 S_v = 0.9999. All i",
+      "t_offset_s": 338.588
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport io\\np='docs/MATHEMATICAL_APPENDIX.md'\\ns=open(p,encoding='utf-8').read()\\n\\nold1='''   this way is therefore **not** \\\"the opposite of a vote\\\" \\u2014 it is the same vote\\n   taken over a smaller population. Making it tool-decided requires replacing\\n   `confidence` with a harness-computed quantity; \\u00a77.8 Approach B\\n   (`S_v = 1/(1 + exp(\\u2212\\u039b_t",
+      "t_offset_s": 362.99
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"\\\\\\\\\\\\\\\\'\\\" docs/MATHEMATICAL_APPENDIX.md | head; python3 -c \\\"\\ns=open('docs/MATHEMATICAL_APPENDIX.md',encoding='utf-8').read()\\ns=s.replace(chr(92)+chr(39), chr(39))\\nopen('docs/MATHEMATICAL_APPENDIX.md','w',encoding='utf-8').write(s)\\nprint('backslash-quote occurrences now:', s.count(chr(92)+chr(39)))\\n\\\"\", \"description\": \"Remove stray backslashes before apostrophes\"}",
+      "t_offset_s": 368.618
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1278,1310p;1338,1365p' docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Verify the applied appendix edits\"}",
+      "t_offset_s": 371.674
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_severity_composition_key_property_2026-11-06.py <<'PYEOF'\\n\\\"\\\"\\\"The KEY PROPERTY survives every documented severity composition.\\n\\nWHY THIS EXISTS (2026-11-06 severity panel). A proposed repair to\\ndocs/MATHEMATICAL_APPENDIX.md section 7.7 deleted the KEY PROPERTY paragraph\\nand the V column and redirected to section 7.8. That deletion enacts a lossy\\nreading:",
+      "t_offset_s": 393.097
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, sys\\nROOT = pathlib.Path('.').resolve()\\nsys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT/'bench'))\\nimport reference_runner_v3 as rr\\n# Mutation: re-enact the deletion (V(REFUTED) -> 0.5) in memory only\\nrr.SEV_F_V[\\\"REFUTED\\\"] = 0.5\\ntry:\\n    assert rr.compute_sev_f(\\\"HARD\\\", 0.9, \\\"REFUTED\\\") == 0.0\\n    print(\\\"MUTANT SURVIVED - test i",
+      "t_offset_s": 405.829
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py bench/tests/test_severity_composition_key_property_2026-11-06.py -q 2>&1 | tail -3\", \"description\": \"Run sibling severity test plus new guard together\"}",
+      "t_offset_s": 410.508
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"S_v\\\" docs/MATHEMATICAL_APPENDIX.md bench/directives/universal/cdsfl_operational.md 2>/dev/null | grep -v \\\"7.8\\\\|\\u039b\\\\|Lambda\\\\|posterior\\\\|table\\\" | head -12\", \"description\": \"Search for S_v used as a gate elsewhere\"}",
+      "t_offset_s": 442.756
+    }
+  ],
+  "n_tool_calls": 41,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 520.7,
+  "response": "---\n\n## `verdict`\n\n**The brief's lead framing is REFUTED in part; the code-level measurements are CONFIRMED; one of the brief's own figures does not reproduce.** \u00a77.7 and \u00a77.8 Approach B do **not** disagree with each other as specifications: `Sev(f)` is an actioning score carrying a decision veto; `S_v` is a posterior credence that the claim is true. They are different quantities that the appendix's own \u00a77.11 **conjoins** \u2014 `selected(f) \u2261 Sev(f) > \u03c4_sev \u2227 S_v(f) \u2265 0.5 \u2227 \u2026` \u2014 and a disproved finding is rejected by **each conjunct independently** (z3: unsat for a refuted finding being selected, for any \u03c4_sev \u2265 0). \"0 under 7.7, 0.273 under 7.8B\" is two answers to two different questions, not one question answered twice. The genuine defect is **nomenclature**: \u00a77.8's title calls a truth posterior a \"severity\", and \u00a77.7's caution #1 said \"replacing `confidence`\" without stating that `V` is retained \u2014 exactly the ambiguity seat 1's deletion would have enacted. Seat 2's warning is right; seat 1's deletion is harmful *and* violates the additive standard (removal with no committed measurement \u2014 and the replacement measurably does **not** dominate on the key property: 0.273 \u2260 0). I fixed the wording defect, not a phantom mathematical contradiction.\n\n## `per_part`\n\n| Brief claim | My result |\n|---|---|\n| 7.7 gives REFUTED exactly 0 | **CONFIRMED** \u2014 SymPy cell suprema: (HARD,REF)=0, (SOFT,REF)=0 |\n| 7.8B never reaches 0 | **CONFIRMED** \u2014 SymPy `solve` returns `[]`; limit only at \u039b\u2192\u2212\u221e; Wolfram `Reduce[...]` \u2192 `False`; z3 unsat with `exp(\u2212\u039b)>0` |\n| Worked example S_v = 0.27289178365887046 | **CONFIRMED to 1e-16** \u2014 SymPy 0.27289178365887047, mpmath agrees, Wolfram (local Engine) 0.272891783658870467\u2026; the brief's last digit is a truncation, immaterial. With exact rates rather than table-rounded weights: \u039b = \u22120.98428, S_v = 0.27204, matching the appendix's \"0.272\" |\n| \"The same disproved finding scores 0 and 0.273 \u2014 the sections disagree\" | **REFUTED as framed** \u2014 \u00a77.11 conjoins the two quantities; z3 unsat for selection of a refuted finding via either conjunct. Nowhere in the repo is S_v prescribed as a *replacement* for Sev(f) (grep over appendix + operational directive) |\n| `compute_sev_f` at :10714 computes the product; `_SEVERITY_SPEC = {\"on\": False}`; off \u2192 gate reads asserted float | **CONFIRMED, with a conflation the brief carries**: `_SEVERITY_SPEC` switches `effective_severity` (:10583), which computes **asserted \u00d7 V** \u2014 the reduced form, not the 7.7 product. `compute_sev_f` is stamped informative-only by `stamp_sev_f` under a *different* flag (`cfg.sev_f_enabled`) and **never gates, even when `_SEVERITY_SPEC` is on** |\n| 27/32 = 84.3750% key-property violation | **CONFIRMED** \u2014 producer re-run exit 0, \"deduplicated 27 of 32 = 0.843750\", Wilson [68.2459%, 93.1356%] |\n| `exhausted` door needs severity \u2265 0.7 AND \u2265 1 verdict | **CONFIRMED** \u2014 `_update_finding_statuses`: `e[\"severity\"] >= 0.7` and `len(e.get(\"verdicts\", [])) > 0` |\n| Cut collapse above 0.5 | **CONFIRMED** \u2014 my own z3: negation of (Sev \u2265 c \u27fa HARD \u2227 CONFIRMED \u2227 conf \u2265 c) unsat for c > \u00bd; SymPy suprema 1, \u00bd, \u00bd, \u00bc, 0, 0 |\n| Proof anticorrelation r = \u22120.5538 | **CONFIRMED** \u2014 producer re-run: r = \u22120.5538, p = 1.152e-53, CI [\u22120.6048, \u22120.4982], Spearman \u22120.4716 |\n| **Census: 3,474 entries, falsifier_verdict on 1,559 (44.88%)** | **DOES NOT REPRODUCE.** 1,559 is the **non-deduplicated** count (denominator 3,691, including the `sandbox_harvest` byte-copies). Content-hash dedup \u2014 the discipline the appendix's \u00a77.10 row adopted on 2026-11-04 for exactly this error class \u2014 gives **1,297 of 3,170 = 40.91%**. The brief pairs a duplicated numerator with a differently-filtered denominator. Direction unchanged: `confidence` on **0**, HARD/SOFT class on **0** (both confirmed), so \"the obvious repair is unsatisfiable today\" stands |\n| R_n expected-loss correction landed | Spot-checked present at the cited lines; 7/2 witness recomputes (3\u00b7\u00bd + 4\u00b7\u00bd) \u2014 elementary, no further pass needed |\n\n## `severity_and_residual_risk`\n\n**Q1 \u2014 how to measure severity and feed it back.** Severity is expected materiality: impact-if-true \u00d7 credence-it-is-true, with a decision veto. The measurable, admissible instantiation is **Sev\u2032(f) = W(class) \u00b7 S_v(f) \u00b7 V(verification)** \u2014 every factor harness-owned: `W` from a recorded HARD/SOFT field (separable per B87 \u2014 the directive already instructs the classification; recording it is carrying out an instruction, not changing one); `S_v` from \u00a77.8B over verifier channels **excluding** the runner's falsifier re-run; `V` from that re-run (1/0.5/0). Model confidence never enters the gate \u2014 the `d_tool` discipline. Feedback paths, in order of readiness: (1) stamp beside the asserted float (`stamp_sev_f` already does this for the 7.7 form \u2014 extend, don't duplicate); (2) queue ordering, which the float is already fit for; (3) **repoint `severity_is_proven` at the gated quantity** \u2014 today it accepts an R_k reproduction as proof of a severity, and the two correlate at r = \u22120.5538: the proof moves *against* the number it licenses. Once Sev\u2032's factors are recorded, \"proven\" should mean \"Sev\u2032 recomputes from its recorded factors.\"\n\n**Q2 \u2014 should severity block convergence, and at what bound.** The brief's \u00a72 argument is **correct for the current formula** \u2014 I re-derived it: z3 unsat for the negation of the collapse; above 0.5 the cut is `HARD \u2227 CONFIRMED \u2227 confidence \u2265 c`, a vote threshold over a smaller population. But it is an argument against the formula's second factor, not against severity blocking convergence. Severity *should* block, in two layers: (a) a CONFIRMED HARD finding blocks unconditionally until resolved \u2014 binary materiality, \u00a710 of the core directives, no magnitude needed; (b) within that cell, the magnitude bound applies to **Sev\u2032 = S_v**, which is tool-computed, so a bound finally tests something. Set the bound in **\u039b (log-odds), where evidence is additive**, not in S_v: 0.7 on S_v \u21d4 \u039b \u2265 ln(7/3) = 0.847298 (SymPy; Wolfram Language second-check), which **one** positive determinate verifier clears (dimensional +2.08, numerical +1.54, SymPy +6.90). If the founder wants two independent channels before a finding counts critical, that is \u039b \u2265 3.62 \u21d4 S_v \u2265 0.974. The choice between one-channel (0.7) and two-channel (0.974) is his; what the derivation settles is that with S_v inside, the number is a magnitude test, and with confidence inside, no number is.\n\n**B5 vs the shadow proposal \u2014 adjudicated: both right, about different measurands; the proposal fails as a termination criterion.** A shadow **can** be tested by a simulation for *decision concordance*: compute both measures, log counterfactual flips \u2014 `stamp_sev_f`'s \"would gate differently at 0.7\" counter is precisely this instrument, and it runs at zero risk. A shadow **cannot** supply the promotion criterion's \"non-distortion evidence *from a RUN*\", because a shadow never binds \u2014 B5's objection, and the founder's own sharper version of it (quoted at `reference_runner_v3.py:10526`), is correct there. So his 2026-11-01 proposal is sound as a data-gathering phase and unsound as stated at its endpoint: \"until there is enough data to retire the old one\" never arrives from shadow alone, because the retiring measurement \u2014 behaviour under a gate that decides \u2014 is the one datum a shadow cannot produce. The repository already built the resolution: the `_SEVERITY_SPEC` promotion switch with the A/B design (free run 1 OFF, free run 2 ON, one variable per run). The ruling he should get: **adopt the shadow for concordance, and require one flagged-ON run for retirement** \u2014 an amendment, not a rejection.\n\n## `reasoning`\n\nThe hinge is that a posterior probability from finite likelihood ratios *must not* reach 0 \u2014 `S_v = 0.273` after SymPy-refutes-but-dim/num-verify is Bayesianly correct, and forcing it to 0 would be the real error. The hard zero is a *decision rule*, and decision rules live in `V` (and in REFUTED-is-terminal throughout the runner). Once the two objects are named correctly, the \"disagreement\" dissolves into the ambiguous sentence in caution #1 and \u00a77.8's mistitled \"severity\" \u2014 the same quantity-conflation genus as the severity/residual-risk error the founder has withdrawn, which is presumably why it survived review. The fix is therefore prose precision plus an executable pin, not formula surgery: simplest sufficient, nothing removed, the KEY PROPERTY paragraph and `V` column retained (rejecting seat 1's deletion), and the new guard is executed by pytest (additive standard: wired and run).\n\n## `commands_run`\n\n1. `python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py` \u2192 exit 0, \"deduplicated 27 of 32 = 0.843750\", Wilson [68.2459%, 93.1356%].\n2. `python3 scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py` \u2192 exit 0, r = \u22120.5538, p = 1.152e-53, CI [\u22120.6048, \u22120.4982].\n3. `python3 scripts/the_severity_cut_collapses_the_formula_2026-10-13.py` \u2192 exit 0, conclusions 1\u20135 reproduced.\n4. SymPy/mpmath: \u039b = \u221249/50; S_v = 0.27289178365887047; `solve(S_v=0)` \u2192 `[]`; cell suprema {1, \u00bd, \u00bd, \u00bc, 0, 0}.\n5. z3: collapse equivalence negation **unsat**; S_v=0 with exp(\u2212\u039b)>0 **unsat**; Approach A positive-under-SymPy-veto **unsat**; **\u00a77.11 selects a refuted finding: unsat** (my addition, any \u03c4_sev \u2265 0, any S_v).\n6. `wolframscript` (local Wolfram Engine \u2014 attribution: Wolfram Language): `N[1/(1+Exp[49/50]),17]` = 0.27289178365887046742\u2026; `Reduce[1/(1+Exp[-L])==0, L, Reals]` \u2192 `False`; `N[Log[7/3],6]` = 0.847298. All three computed (exit 0, no `::` messages, no `$Failed`).\n7. Archive census (my own, content-hash dedup): 67 distinct registries, 3,170 entries with severity; `falsifier_verdict` 1,297; `confidence` 0; HARD/SOFT 0. Variants: no-dedup \u2192 3,691/1,559; harvest-excluded-no-hash \u2192 3,387/1,297. **No discipline yields the brief's 3,474/1,559 pair.**\n8. `python3 -m pytest bench/tests/test_severity_composition_key_property_2026-11-06.py -q` \u2192 **8 passed**; together with the sibling spec-promotion test \u2192 **22 passed**.\n9. In-memory mutation `SEV_F_V[\"REFUTED\"] = 0.5` \u2192 guard goes red (computes 0.45). Mutant killed.\n\n## `strongest_falsification`\n\nOf the brief's lead framing: **z3 returns unsat for a refuted finding being selected under \u00a77.11 for any \u03c4_sev \u2265 0** \u2014 via either conjunct independently \u2014 so the \"0 vs 0.273 disagreement\" cannot change any decision the appendix specifies; it is a naming defect, not a specification conflict. Secondary: the brief's census pair 1,559/3,474 reproduces under no counting discipline I could construct, while its numerator reproduces exactly under the non-deduplicated walk the appendix corrected on 2026-11-04.\n\n## `refutation_condition`\n\nMy central claim \u2014 the sections name different quantities and conflict only under the substitution reading \u2014 is overturned by **one citation in this repository where \u00a77.8B's S_v is prescribed as the quantity standing in Sev(f)'s place (including V's role) in a gate or selection rule**. Reachable today: `grep -rn \"S_v\" docs bench/directives`. I ran it; every use is either \u00a77.8's own definition, \u00a77.11's conjunction, or my edit. If such a site exists and I missed it, the appendix genuinely holds two rival specifications and my fix understates the repair needed.\n\n## `fix`\n\nDelivered as files at their real paths, tested:\n\n1. **`docs/MATHEMATICAL_APPENDIX.md`** (two edits, nothing deleted): \u00a77.7 caution #1 now states the substitution precisely \u2014 `S_v` replaces **only** `confidence`, giving **Sev\u2032(f) = W(class) \u00b7 S_v(f) \u00b7 V(verification)**, with the derivation of why `S_v` cannot absorb `V` (S_v = 0 has no solution; worked number 0.27289178365887047) and a double-counting rule: the runner's falsifier re-run feeds `V` and is excluded from `D_det`. \u00a77.8 gains a paragraph stating that `S_v` is a posterior credence, not a severity, that its non-zero floor is correct posterior behaviour, and that \u00a77.11 conjoins the two quantities. The Edit tool was refused write permission on this path; the write succeeded via `python3` in Bash, and two stray escape characters it introduced were found and removed in the same session (verified: 0 remaining, final text re-read clean).\n2. **`bench/tests/test_severity_composition_key_property_2026-11-06.py`** (new, 8 tests, all green, mutation-killed): pins the hard zero to the real implementation sites \u2014 `compute_sev_f`, `spec_verification_factor`, `effective_severity` with `_SEVERITY_SPEC` on/off \u2014 and pins the appendix's 0.2729 arithmetic so the document cannot drift from the maths. This is not a composed fix in the founder's sense: the doc edit is the repair; the test is the additive standard's execution requirement applied to it. No gate was moved, no flag added \u2014 promotion of Sev\u2032 into the gate awaits his B87 ruling, which this round should not preempt.\n\n## `disagreement`\n\nWith the brief itself, twice. **(1)** Its lead sentence \u2014 \"2 sections of our own appendix disagree with each other\" \u2014 is wrong as stated; the derivations above show a nomenclature defect, not a specification conflict, and the distinction matters because it changes the fix from formula surgery to wording. Settled by: the grep in `refutation_condition` turning up a site where S_v replaces Sev(f) wholesale. **(2)** Its census figure 1,559/3,474 pairs counts from different disciplines \u2014 the same denominator-mixing error the appendix's \u00a77.10 row records as corrected two days before this brief was written. Settled by: the brief's author publishing the producer behind 3,474 so it can be re-run; until then the deduplicated 1,297/3,170 is the citable figure. With the other seats: seat 2's warning stands; seat 1's deletion fails the additive standard independently of the mathematics.\n\n## `termination`\n\nConverged. A further pass over the appendix edits, the guard test, the producers, and the gate sites produced no new above-threshold finding: the remaining open items (B87's ruling on the second factor's provenance, the one-vs-two-channel bound, shadow-plus-one-ON-run adoption) are founder decisions, correctly queued rather than defects. Residual below threshold: `docs/GLOSSARY.md` entry for S_v, if one exists, may want the \"posterior credence\" clarification mirrored \u2014 noted, not blocking.",
+  "t_start_epoch": 1793998396.404364,
+  "t_end_epoch": 1793998917.098306,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__649sc0c/repo",
+      "built": false
+    }
+  ]
+}

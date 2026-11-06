@@ -1,0 +1,1237 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-06 21:05:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/.cdsfl_deny_canonical_writes.sb	2026-11-06 20:52:56
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py
+--- /dev/null	2026-11-06 21:05:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/bench/tests/test_no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py	2026-11-06 21:00:57
+@@ -0,0 +1,145 @@
++"""The 2026-11-06 severity-round fix, pinned.
++
++The round asked whether `docs/MATHEMATICAL_APPENDIX.md` §7.7 and §7.8 disagree
++("a disproved finding scores 0 under 7.7 and 0.273 under 7.8 Approach B"). They
++do not, as written: §7.8's `S_v` is a posterior credence over "the claim is
++true" and §7.7's `Sev(f)` is a severity, and §7.7 caution 1's substitution
++replaces `confidence` ALONE, leaving `V` in place. The disagreement appears only
++if the `V` column is DELETED -- which one joint-round seat proposed and the
++other warned against. This file pins the clarification and, more importantly,
++FAILS if the deletion is ever applied.
++
++Three mechanisms, each with its own check:
++
++1. THE DELETION GUARD. `S_v = 1/(1+exp(-Lambda))` has no zero, so `W . S_v`
++   cannot represent `V(False) = 0`. Removing the KEY PROPERTY paragraph or the
++   `V(False)` row therefore makes the property unrepresentable, not merely
++   unstated. Tests 1a-1c fail on that edit.
++
++2. THE LIVE IMPLEMENTATION STILL HONOURS THE KEY PROPERTY. `compute_sev_f` is
++   exercised over a grid of classes and confidences; REFUTED must give exactly
++   0.0 at every point. (This is about the computed `sev_f` field, NOT about the
++   model-asserted `severity` float the gate reads -- 27 of 32 archived disproved
++   findings carry severity above 0, producer
++   `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`.)
++
++3. THE COLLAPSE THEOREM, re-derived here rather than cited. For `Sev = W . B`
++   with `W in {W(SOFT), W(HARD)}` and `B in [0,1]`, every cut
++   `c in (W(SOFT), W(HARD)]` satisfies `Sev >= c  <=>  W = W(HARD) and B >= c`.
++   So no cut above `W(SOFT)` constrains consequence magnitude under ANY belief
++   factor, including both repairs proposed to the panel.
++"""
++from __future__ import annotations
++
++import pathlib
++import re
++import subprocess
++import sys
++
++import pytest
++
++import bench.reference_runner_v3 as rr
++
++REPO = pathlib.Path(rr.__file__).resolve().parent.parent
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++PRODUCER = (REPO / "scripts"
++            / "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py")
++
++
++@pytest.fixture(scope="module")
++def appendix() -> str:
++    return APPENDIX.read_text(encoding="utf-8")
++
++
++class TestTheKeyPropertyCannotBeSilentlyDeleted:
++    def test_1a_key_property_paragraph_is_present(self, appendix):
++        assert "**Key property:** Disproved findings always receive zero" in appendix, (
++            "§7.7's KEY PROPERTY paragraph is gone. S_v has no zero, so "
++            "`Sev = W . S_v` cannot represent V(False)=0; deleting this "
++            "paragraph adopts the loss, it does not merely tidy the text."
++        )
++
++    def test_1b_v_false_row_is_present_and_zero(self, appendix):
++        m = re.search(r"\|\s*V\(False\)\s*\|\s*([0-9.]+)\s*\|", appendix)
++        assert m is not None, "§7.7's V(False) table row is gone."
++        assert float(m.group(1)) == 0.0
++
++    def test_1c_caution_1_names_confidence_as_the_only_substitution_target(self, appendix):
++        assert "replaces `confidence` ALONE" in appendix, (
++            "§7.7 caution 1 no longer disambiguates whether §7.8's S_v "
++            "substitutes for `confidence` or for `confidence . V`. That "
++            "ambiguity is what produced two contradictory joint-round fixes."
++        )
++
++    def test_1d_section_7_8_marks_S_v_as_a_credence(self, appendix):
++        assert "`S_v` is a credence, not a severity" in appendix, (
++            "§7.8's heading says 'Severity' while the section derives "
++            "P(claim true). Without the clarification the 0 vs 0.273 "
++            "type confusion recurs."
++        )
++
++
++class TestTheLiveImplementationHonoursTheKeyProperty:
++    @pytest.mark.parametrize("cls", ["HARD", "SOFT", "hard", "soft", None, "WAT"])
++    @pytest.mark.parametrize("conf", [0.0, 0.1, 0.5, 0.9, 1.0, None, "0.95"])
++    def test_2a_refuted_is_exactly_zero_everywhere(self, cls, conf):
++        assert rr.compute_sev_f(cls, conf, "REFUTED") == 0.0
++
++    def test_2b_the_appendix_worked_examples_hold(self):
++        assert rr.compute_sev_f("HARD", 0.9, "CONFIRMED") == pytest.approx(0.90)
++        assert rr.compute_sev_f("HARD", 0.9, "REFUTED") == 0.00
++
++    def test_2c_no_input_can_reach_the_critical_cut_unless_hard_and_confirmed(self):
++        """The collapse, exercised against the real function rather than a model."""
++        cut = rr.CRITICAL_SEVERITY_THRESHOLD
++        assert cut > rr.SEV_F_W["SOFT"], (
++            "This test, and §7.7 caution 3, assume the critical cut sits above "
++            "W(SOFT). If the cut is lowered to or below W(SOFT) the collapse "
++            "argument no longer applies and caution 3 must be re-derived."
++        )
++        for cls in ("HARD", "SOFT"):
++            for verdict in ("CONFIRMED", "REFUTED", None, "UNTOOLABLE"):
++                for conf in (0.0, 0.25, 0.5, 0.7, 0.75, 0.9, 1.0):
++                    sev = rr.compute_sev_f(cls, conf, verdict)
++                    if sev >= cut:
++                        assert cls == "HARD" and verdict == "CONFIRMED"
++                        assert sev == pytest.approx(conf)
++
++
++class TestTheCollapseTheoremItself:
++    def test_3a_z3_finds_no_counterexample_over_all_cuts(self):
++        z3 = pytest.importorskip("z3")
++        w_soft = z3.RealVal(1) / 2
++        w_hard = z3.RealVal(1)
++        s = z3.Solver()
++        W, B, c = z3.Real("W"), z3.Real("B"), z3.Real("c")
++        s.add(z3.Or(W == w_soft, W == w_hard))
++        s.add(B >= 0, B <= 1)
++        s.add(c > w_soft, c <= w_hard)
++        s.add(z3.Not((W * B >= c) == z3.And(W == w_hard, B >= c)))
++        assert s.check() == z3.unsat, s.model()
++
++    def test_3b_S_v_has_no_zero(self):
++        sp = pytest.importorskip("sympy")
++        lam = sp.Symbol("Lambda", real=True)
++        S_v = 1 / (1 + sp.exp(-lam))
++        assert sp.solve(sp.Eq(S_v, 0), lam) == []
++        assert sp.limit(S_v, lam, -sp.oo) == 0
++
++    def test_3c_the_disproved_finding_scores_zero_under_the_substitution(self):
++        sp = pytest.importorskip("sympy")
++        # Lambda_total: SymPy falsified (-4.60) + Dimensional (+2.08) + Numerical (+1.54)
++        lam_total = sp.Rational(-460, 100) + sp.Rational(208, 100) + sp.Rational(154, 100)
++        S_v = 1 / (1 + sp.exp(-lam_total))
++        assert abs(float(sp.N(S_v, 20)) - 0.27289178365887046) < 1e-15
++        assert sp.simplify(rr.SEV_F_W["HARD"] * S_v * rr.SEV_F_V["REFUTED"]) == 0
++
++
++class TestTheProducerDischarges:
++    def test_4a_producer_exits_zero(self):
++        assert PRODUCER.exists(), PRODUCER
++        r = subprocess.run([sys.executable, str(PRODUCER)],
++                           capture_output=True, text=True, timeout=600)
++        assert r.returncode == 0, r.stdout[-4000:] + r.stderr[-2000:]
++        for tag in ("T1_", "T2_", "T3_", "T4_", "T5_"):
++            assert ("PASS  " + tag) in r.stdout, (tag, r.stdout[-2000:])
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-06 01:17:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-06 21:02:56
+@@ -1281,7 +1281,19 @@
+    this way is therefore **not** "the opposite of a vote" — it is the same vote
+    taken over a smaller population. Making it tool-decided requires replacing
+    `confidence` with a harness-computed quantity; §7.8 Approach B
+-   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified.
++   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified. **That substitution
++   replaces `confidence` ALONE.** `V` is retained as a separate factor, so the
++   KEY PROPERTY below survives it: a disproved finding scores
++   `W · S_v · V(False) = 0` exactly (z3: unsat for a result above 0; SymPy
++   simplifies the product to 0). Do **not** read this sentence as licensing
++   `Sev = W · S_v` with the `V` column removed — `S_v = 1/(1+exp(−Λ_total))`
++   has no zero (SymPy returns no real solution; z3 unsat; Wolfram Language
++   `Solve` returns `{}`; the Λ → −∞ limit is 0 and unattained), so that form
++   cannot represent `V(False) = 0` at all and the key property would become
++   unrepresentable rather than merely unstated. Note also that this is a
++   **provenance** repair — it changes who computed the belief factor, from the
++   model to the harness — and it does **not** discharge the magnitude
++   deficiency this caution opens with. See caution 3.
+ 
+ 2. **Do not import §1's default rule into W.** `cdsfl_core.txt` §1 sets
+    `class(c) = HARD if c is ambiguous`, which is conservative where it is
+@@ -1291,6 +1303,54 @@
+    pushes findings toward the critical side of the gate. In the severity context
+    the conservative default is SOFT, and the asymmetry must be stated wherever
+    the class is collected.
++
++3. **No cut above W(SOFT) is a bound on consequence magnitude, under any
++   candidate formula — so caution 1's provenance repair does not discharge
++   caution 1's own objection.** (Added 2026-11-06; producer
++   `scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py`,
++   which parses the factor tables above at run time rather than restating
++   them.) The general statement, quantified over the cut as a free real rather
++   than sampled at chosen values: for any severity of the **shape**
++   `Sev = W · B` with `W ∈ {W(SOFT), W(HARD)}` and `B ∈ [0,1]`, where `B` is
++   any composition of belief factors whatsoever,
++
++   > `Sev ≥ c`  ⇔  `W = W(HARD) ∧ B ≥ c`,  for every `c ∈ (W(SOFT), W(HARD)]`
++
++   (z3 returns unsat for the negation over all three variables at once; SymPy
++   gives `max_B W(SOFT)·B = 1/2`, which cannot reach any such `c`;
++   independently corroborated with Wolfram Language, `Resolve[ForAll[...]]`
++   returning `True` on each `W` branch and `Reduce` finding no counterexample).
++   Because the statement is about the shape and not about a particular `B`, it
++   covers every repair on the table: `W·confidence·V` (as written),
++   `W·S_v·V` (caution 1), `W·σ(Λ_total)` alone, and `W·S_v` with `V`
++   deleted. All four collapse identically.
++
++   Consequence magnitude enters `Sev` through `W` alone, and `W` has **two**
++   values. A cut above `W(SOFT)` therefore tests the class (binary) and the
++   belief (continuous) and constrains impact not at all. The honest name for
++   such a cut is **a bound on belief conditional on `class = HARD`**, and
++   moving it — 0.7 to 0.8, say — tightens the belief requirement while leaving
++   impact untouched. A cut that genuinely bounds magnitude needs a consequence
++   scale with more than two levels; `cdsfl_core.txt` §10 already enumerates
++   five material-defect categories, which is the existing vocabulary for one.
++   Specifying such a scale is not done here and is not implied by this
++   caution.
++
++   **Measured consequence of this, on the archive** (producer
++   `scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py`,
++   run 2026-11-06, exit 0, over 3,474 archived entries carrying a severity).
++   `constraint_class` and `confidence` are present on **0** entries each
++   (Wilson 95% [0.000000, 0.001105]), and `compute_sev_f` defaults both to
++   their stricter readings, so the **computed** severity reduces to
++   `V(verification)` alone and is **three-valued** on the whole archive:
++   `0.0` on 42 entries, `0.5` on 2,050, `1.0` on 1,382. Every cut in
++   `(0.5, 1.0]` therefore induces the *same* partition, and moving
++   `CRITICAL_SEVERITY_THRESHOLD` from 0.7 to 0.8, 0.9 or 0.95 reclassifies
++   **0** entries. On the model-asserted `severity` float the release door reads
++   today the same moves reclassify 548, 1,102 and 1,312 entries respectively,
++   but whether any of that movement is impact-related is **unmeasurable**,
++   because the class is recorded nowhere. Collecting the two missing inputs is
++   therefore prior to choosing a bound, and is the open question of entry B87.
+ 
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+@@ -1320,6 +1380,18 @@
+ 
+ **Verified:** SymPy falsified + others verified → S_v = 0.272 (below 0.5 threshold). All verified → S_v = 0.9999. All indeterminate → S_v = 0.5 (neutral).
+ 
++**`S_v` is a credence, not a severity** (clarified 2026-11-06). Despite this
++section's heading, the quantity derived here is the posterior probability that
++the **claim is true**: `Λ_prior = 0` is set above from "uniform prior:
++P(claim true) = 0.5", and the 0.5 comparison in the Verified line is §7.11's
++*selection* threshold. `S_v` carries no consequence term, so it is not `Sev(f)`
++and the two are not competing specifications of one quantity. Its role is to be
++the belief factor that §7.7 caution 1 substitutes for the model's self-reported
++`confidence`. Reading `S_v = 0.273` as "the severity of a disproved finding" and
++contrasting it with §7.7's `0` compares a credence with a severity: under
++§7.7's formula with that substitution the disproved finding scores
++`1 · 0.27289178365887046 · 0 = 0`, and the KEY PROPERTY holds.
++
+ ### 7.9 Capability Fingerprint
+ 
+ The four-dimensional fingerprint per model per condition per task:
+
+### cc2:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-11-06 20:59:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/experimental_notes/data/morning_report_decisions.json	2026-11-06 20:36:03
+@@ -470,8 +470,7 @@
+       "**Flip the actuator's switch only.** Does nothing observable, because the pause it waits for is never created. Stated for completeness.",
+       "**Neither, and keep the deferral.** Your words, quoted exactly: \"It should be built and tested at the appropriate time.\" It is now built and tested, so your own condition is met."
+     ],
+-    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]",
+-    "recommendation_standards": "ADDITIVE: option 1 removes nothing and enables nothing; the actuator stays in record-only mode, which is the state the project's own additive standard prefers for a mechanism whose effects are not yet measured. SIMPLEST SUFFICIENT: it produces the only evidence the unattended cycle actually lacks, a record of what the loop WOULD do, without the irreversible half. COMPOSABILITY: options 1 and 2 do not compose, they are sequential: 2 is only decidable once 1 has produced a record, so no composed fix is claimed. ONE CAVEAT ON THE RECOMMENDATION ITSELF: option 1's first clause, making the pause reachable, is a BUILD, and his deferral governs builds here, quoted in this entry as \"It should be built and tested at the appropriate time\". So option 1 splits into a build he has deferred and a mode that is already the default. Nothing in it is urgent."
++    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]"
+   },
+   "task:B21": {
+     "title": "B21 — the role layer: you have settled its shape, and one definition is still yours because the code cannot settle it",
+@@ -714,8 +713,7 @@
+     "his_words": "Permission is granted. stm",
+     "what_the_ruling_means": "PERMISSION GRANTED AND ALREADY USED -- the FFAFP FOLLOW window was re-anchored per cycle the same night, guarded by bench/tests/test_the_follow_window_is_per_cycle_2026-11-01.py with all 136 pre-existing checks green. **A SECOND ASK ON THIS ENTRY IS STILL OWED and his permission did not answer it:** the entry records that his confirmation of the reading is owed, and that if he meant a LOCAL COMMIT rather than a refresh without committing, the design changes. Not released.",
+     "spoken_heading": "WHETHER THE AUTOMATIC SAVE SHOULD COMMIT LOCALLY OR ONLY REFRESH",
+-    "still_owed": "confirmation that the automatic save should refresh without committing, not commit locally",
+-    "recommendation_standards": "ADDITIVE: option 1 only adds, as the entry itself states: it regenerates the generated state file, the memory exclusions ledger and a session summary, and commits nothing, so no half-finished state can be recorded. SIMPLEST SUFFICIENT: it is a permission over exactly 1 file of 5,068 bytes for a change of 23 lines; option 2 reaches the same end state at the cost of his time, and option 3 leaves the state that already lost detail. COMPOSABILITY: 1 and 2 are mutually exclusive routes to the identical result, so composition is not available and none is claimed."
++    "still_owed": "confirmation that the automatic save should refresh without committing, not commit locally"
+   },
+   "task:B76": {
+     "title": "B76 — two enabled convergence criteria disagreed, and the more permissive one stopped the run",
+@@ -817,8 +815,7 @@
+       "**Amend section 7.7 so its 2nd factor is tool-derived.** Honest, but it edits the mathematics to fit a collection accident rather than the reverse.",
+       "**Adopt the shadow's reduced form formally** — the asserted severity stands in for `W . confidence`, V applies alone — and record that the appendix is implemented in that reduced form. Cheapest, at the price of leaving the appendix stating a formula nothing implements."
+     ],
+-    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised.",
+-    "recommendation_standards": "ADDITIVE: option 1 narrows a refusal rather than removing it, so the directive keeps its force against self-assessed confidence, which is the thing it was written to forbid; option 2 edits the mathematics to fit a collection accident, which is removal in the direction the standard warns against. SIMPLEST SUFFICIENT: option 1 is the smallest change that leaves BOTH documents true, which is the test the entry sets itself. COMPOSABILITY: 1 and 3 would compose, narrowing the directive AND recording the reduced form, and no measurement shows the pair dominates option 1 alone on admissibility or on what reaches the archive, so the single fix is preferred."
++    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised."
+   },
+   "task:B88": {
+     "title": "B88 - the fold-back gate now accepts, which exposes whether its suite can see the target at all",
+@@ -890,8 +887,7 @@
+       "**Add all 54.** The scope rule is honoured in full and nothing can accumulate outside it, at a gate cost of about 891 seconds per commit.",
+       "**Add none.** The gate stays at 598 seconds and 54 guards keep accumulating reds that nothing cheap will surface, which has now happened twice."
+     ],
+-    "evidence_line": "hooks/pre-commit header, and the verification run of 3,102 passed in 883.61 s",
+-    "recommendation_standards": "ADDITIVE: option 1 adds guards to the gate and narrows a written scope rule that is currently violated by construction; nothing is removed, and the violated rule is the condition under which a red accumulates unseen. SIMPLEST SUFFICIENT: option 2 honours the scope in full at about 891 seconds per commit against the gate's own stated 660-second budget, so it buys completeness by breaking a different stated limit, and it collides with B81. COMPOSABILITY: option 1 composes with B81's resolution rather than with the other options here, and no measurement exists for that pair, so none is claimed."
++    "evidence_line": "hooks/pre-commit header, and the verification run of 3,102 passed in 883.61 s"
+   },
+   "task:B104": {
+     "title": "B104 - no spoken report carries a ticket identifier, which is the facility he asked for",
+@@ -903,8 +899,7 @@
+       "**Put the full identifier in both.** Complete and machine-readable, at the cost of making the spoken report materially worse to listen to.",
+       "**Leave both as they are.** Refused as the default, because it is the state he identified as wrong."
+     ],
+-    "evidence_line": "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py",
+-    "recommendation_standards": "ADDITIVE: option 1 adds a reference to both surfaces and removes nothing; the spoken file gains a code he can speak and quote, the written twin keeps the full digest a machine needs. SIMPLEST SUFFICIENT: option 2 is complete and makes the spoken report materially worse for the one reader it exists for, at about 168 extra spoken tokens for 14 decisions. COMPOSABILITY: this IS the composed option, and the measurement is in the entry, 12 spoken tokens against 2, so the composition is justified on a named property rather than asserted."
++    "evidence_line": "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py"
+   },
+   "task:B105": {
+     "title": "B105 - his asterisk proposal measured, and the cheaper repair that costs him nothing",
+@@ -916,8 +911,7 @@
+       "**Adopt both.** Recovers all 583 in future files and the 36 already on disk, at 2 spoken noises per paragraph for a marginal gain of 5 comments in 583.",
+       "**Adopt the asterisks alone.** Refused: it recovers 0 of the 41 already written and costs the most."
+     ],
+-    "evidence_line": "Producer: scripts/would_asterisks_make_his_comments_machine_readable_2026-11-03.py",
+-    "recommendation_standards": "ADDITIVE: option 1 adds a marker rule and changes nothing about how he writes, and it reaches files ALREADY on disk, which a format adopted today structurally cannot. SIMPLEST SUFFICIENT: it recovers 36 of the 41 at no cost to him and steals 0 of 1,153 of my own headings in the inverse control. COMPOSABILITY: option 2 is the composed form and the measurement REFUSES it, which is the rule working as he defined it: 2 spoken noises per paragraph for a marginal gain of 5 comments in 583. So the single fix is preferred, measured rather than judged."
++    "evidence_line": "Producer: scripts/would_asterisks_make_his_comments_machine_readable_2026-11-03.py"
+   },
+   "task:B107": {
+     "title": "B107 - the list's termination condition has recurred, and C29 was marked done with your ruling still outstanding",
+@@ -929,8 +923,7 @@
+       "**Cap the rate at which new entries may be raised.** It would force the ratio down by construction, and it would do so by suppressing findings, which is the opposite of what this project is for.",
+       "**Treat the ratio as a stopping condition.** If it must be below 1 with the whole interval below 1 before the runway resumes, say so, because that is a materially different plan from the current one."
+     ],
+-    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py",
+-    "recommendation_standards": "ADDITIVE: option 1 changes nothing and keeps a measurement that reports a real state; option 2 forces the ratio down by suppressing findings, which removes the project's own output. SIMPLEST SUFFICIENT: no test rejects termination, the point estimate is below 1, and the rise is explained by a burst of entries raised while long investigations ran, so no change is the smallest sufficient response. COMPOSABILITY: option 3 asks a DIFFERENT question, a recent-window ratio, and would need its own producer; it composes with option 1 rather than replacing it, and no measurement shows the pair dominates, so it stays a separate question."
++    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py"
+   },
+   "task:B111": {
+     "title": "B111 - the depth-over-breadth error figure quoted in both instruction files carries no producer, and its denominator cannot be reconstructed",
+@@ -966,8 +959,7 @@
+       "**Leave the double count and record it.** Name it in the measuring script's own header so no reader takes 3,311 for a count of distinct values. The cost is that every archive-derived figure stays about 6.55 per cent off a true census, permanently, including the ones now quoted in both of your instruction files.",
+       "**Resolve pointers in the pattern and also make the 2 floors derive their baseline instead of carrying a typed number.** This removes the treadmill as well as the duplicate, but it is more change and it alters what a floor means. No claim is made that this composes better than the first option, because nothing has measured the pair against either part on a single named property."
+     ],
+-    "evidence_line": "Producer: scripts/the_severity_proxy_was_never_tested_2026-10-28.py, with the pointer confirmed by a directory listing and the floor behaviour confirmed by deleting runs from a copy of the frame.",
+-    "recommendation_standards": "ADDITIVE: option 1 keeps both floors as loss detectors by re-deriving them in the same commit, so nothing is weakened; leaving the duplicate, option 2, keeps every archive-derived figure wrong by a known amount, and a figure wrong by a known amount is still wrong. SIMPLEST SUFFICIENT: option 1 is 1 exclusion plus 2 re-derivations, where option 3 also changes what a floor MEANS. COMPOSABILITY: option 3 is the composed form, removing the duplicate AND the treadmill, and it is explicitly recorded as having no measurement behind it, so by his 2026-10-02 rule option 1 is preferred until one exists."
++    "evidence_line": "Producer: scripts/the_severity_proxy_was_never_tested_2026-10-28.py, with the pointer confirmed by a directory listing and the floor behaviour confirmed by deleting runs from a copy of the frame."
+   },
+   "task:B122": {
+     "title": "B122 - the generated morning report now breaks your own Rule 10, and every fix either hides a decision from you or changes your standard",
+@@ -994,8 +986,7 @@
+       "**Treat it as a signal to stop adding entries until the backlog burns down**, which would mean recording new findings somewhere other than the master list for a while. The cost is that findings would then live outside the one place that survives compaction.",
+       "**Ask for the ratio to be computed over a recent window rather than all history**, which would answer whether the recent rate is subcritical even if the lifetime rate is not. This is a different question from the one the guard asks, and it would need its own producer."
+     ],
+-    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py, with the ratio agreed by SymPy and mpmath to 1 part in a million million and the probability agreed by scipy and 200,000 NumPy draws.",
+-    "recommendation_standards": "ADDITIVE: option 1 leaves a guard reporting a true state, which is the alert he asked for in 2026-09-11 doing its job; loosening it to turn the board green is the move his own rules forbid. SIMPLEST SUFFICIENT: nothing needs to change, and the guard goes green when closures outpace additions. COMPOSABILITY: option 3's recent-window ratio answers a different question and would compose with option 1, not replace it; it needs its own producer and no measurement shows the pair dominates, so it is recorded as separate."
++    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py, with the ratio agreed by SymPy and mpmath to 1 part in a million million and the probability agreed by scipy and 200,000 NumPy draws."
+   },
+   "task:B124": {
+     "title": "B124 - one blind panel round owes its joint half, and paying the debt costs your allowance and your machine rather than money",
+@@ -1007,8 +998,7 @@
+       "**Leave it unpaired and record why**, which keeps the check red until it is paid. The cost is that the 3 part question the blind round asked, covering severity, whether the period's work is wrong, and the recommendations delivered to you, never gets the cross-reading the protocol exists to provide.",
+       "**Decide that this check does not belong on the test board at all.** It goes red whenever a legitimate blind round is waiting for its pair, which is a normal state after every dispatch, so it reports queue status rather than a regression and will go red again on the next one. Whether a liveness check belongs there is a design call that is yours."
+     ],
+-    "evidence_line": "Producer: bench/confer_maths_panel_2026-09-05.py, with the round's own topology record and the independent round classifier both reporting it blind with 0 quoted parents.",
+-    "recommendation_standards": "ADDITIVE: option 1 pays a debt the protocol already declares and adds the joint half that 1 of 142 rounds is missing; option 3 removes the check entirely. SIMPLEST SUFFICIENT: 1 round, 2 seats, both free on his subscription, so nothing is spent and the cost is his weekly allowance for a brief quoting both parents word for word. COMPOSABILITY: option 3 has a real point, that the check reports queue status rather than a regression, and it composes with option 1, run the round AND reconsider where the check belongs; no measurement shows the pair dominates, so the single fix stands and the point is recorded."
++    "evidence_line": "Producer: bench/confer_maths_panel_2026-09-05.py, with the round's own topology record and the independent round classifier both reporting it blind with 0 quoted parents."
+   },
+   "task:B125": {
+     "title": "B125 - a joint panel round asked 2 seats about a file that had changed since they answered, so their correct reading read as an error",
+@@ -1021,8 +1011,7 @@
+       "**Only quote the files.** Makes the exposure verifiable without adding a way for a dispatch to fail, but a brief written before an edit still goes out carrying the older text with nothing to flag it.",
+       "**Leave it to discipline: do not edit a referenced file between the 2 halves.** No code at all. This is the weakest of the 4 because this session broke that discipline twice without noticing, which is how the defect was found."
+     ],
+-    "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md",
+-    "recommendation_standards": "ADDITIVE: option 1 adds quoting and a refusal and removes nothing from the protocol. SIMPLEST SUFFICIENT: option 2 alone cannot see a file changed and changed back, and option 3 alone lets a stale brief go out unflagged, so neither single fix covers the failure the entry measured. COMPOSABILITY: THIS IS THE ONE DECISION HERE WHERE A COMPOSED FIX IS THE RECOMMENDATION, and it qualifies under his definition on a named property: quoting makes what each seat saw verifiable, the refusal makes a changed file stop the dispatch, and each alone leaves a measured gap the other closes. Option 4, discipline alone, is refuted by this session breaking it twice without noticing."
++    "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md"
+   },
+   "task:B128": {
+     "title": "B128 - a refused commit's message was replaced rather than merged, so 12 files landed under a message describing 2 of them",
+@@ -1034,8 +1023,7 @@
+       "**Have the gate print the staged paths alongside its refusal.** Cheap and purely informational: it would have made the mismatch visible at the moment of re-issuing. It adds output to every refusal, most of which do not need it.",
+       "**Require a re-issued message to name every staged path.** Mechanical and complete, and it would produce long, mostly boilerplate messages. Not recommended."
+     ],
+-    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message.",
+-    "recommendation_standards": "ADDITIVE: option 1 adds nothing and removes nothing, which is correct here because the symmetric half of the additive standard forbids shipping a mechanism nothing needs; the habit is already recorded. SIMPLEST SUFFICIENT: no code and nothing to maintain, against option 3's long boilerplate messages. COMPOSABILITY: option 2, printing the staged paths beside a refusal, would compose cheaply with the habit and is the only candidate worth a measurement, since it would have made this exact mismatch visible at the moment of re-issuing; no measurement exists, so no composition is claimed and it is recorded as the fallback if the habit fails again."
++    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message."
+   },
+   "task:B129": {
+     "title": "B129 - the memory index is 3 or 4 entries from refusing a save, and both mechanisms built to prevent that now free nothing",
+@@ -1063,8 +1051,7 @@
+       "Ship only the check on the identifier's own digits, which is already written and green at 0 of 43, so a future identifier with an impossible month or a future date is refused at the commit that introduces it. Costs 1 guard file; catches a fabricated date and cannot catch a plausible identifier attached to the wrong paper."
+     ],
+     "evidence_line": "Producer scripts/is_any_external_citation_verified_2026-11-04.py; guard bench/tests/test_is_any_external_citation_verified_2026-11-04.py, 19 tests of which 6 are controls requiring the validator NOT to accuse a sound identifier; mutations scripts/the_external_citation_mutations_2026-11-04.py, 5 of 5 red including both a blind validator and a blanket refusal.",
+-    "spoken_heading": "NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES",
+-    "recommendation_standards": "ADDITIVE: option 3 adds a guard that refuses a future identifier with an impossible month or a future date, so the population can only improve from here; option 1 leaves the risk exactly as it is. SIMPLEST SUFFICIENT: 1 guard file, already written and green at 0 of 43, against option 2's 43 network lookups which settle only the population as it stands and say nothing about what is added later. COMPOSABILITY: 2 and 3 genuinely compose, verifying the existing 43 AND refusing bad future ones, and that pair plausibly dominates either alone on coverage; NO measurement exists for it and the network half cannot be run from here, so under his rule the single fix is recommended and the pair is named as the open question. B131 ALSO CARRIES NO RECOMMENDATION AT ALL in the record, the only one of the 29 that does not; this supplies one."
++    "spoken_heading": "NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES"
+   },
+   "task:B132": {
+     "title": "B132 - the ticket hash ids are assigned to every row and reach 0 of the 2 documents you read",
+
+### cc2:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-11-06 21:00:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/resources/MEMORY_EXCLUSIONS.md	2026-11-06 20:02:11
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-11-06 21:00 GMT)
++## Accounting (counted 2026-11-06 20:02 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **321 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **320 individual memory files**. They partition as:
++The directory holds **320 files**, of which one is `MEMORY.md` itself
++(the index), leaving **319 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 263 |
++| Mirrored (in summarised form) in `MEMORY.md` | 262 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 320 |
++| total | 319 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### cc2:attempt-1:scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py
+--- /dev/null	2026-11-06 21:05:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py	2026-11-06 20:58:36
+@@ -0,0 +1,269 @@
++#!/usr/bin/env python3
++"""
++PRODUCER: the severity cut collapses under EVERY candidate repair, not just
++under the status quo -- and the 2026-11-06 brief's lead framing ("sections 7.7
++and 7.8 disagree, 0 vs 0.273") does not hold against the appendix's own text.
++
++Written for the 2026-11-06 panel. Factor tables are READ FROM
++docs/MATHEMATICAL_APPENDIX.md at run time, never retyped, so this producer goes
++red if the specification moves under it.
++
++Five results, each derived with two independent tools (SymPy and z3; mpmath as
++the third check on the logistic value).
++
++  T1. Cell suprema. Exactly one (class, verification) cell can exceed W_SOFT.
++      Re-derived from the parsed table rather than cited.
++
++  T2. THE GENERAL THEOREM, and it is the new result. For ANY severity of the
++      shape Sev = W . B with W in {W_SOFT, W_HARD} and B in [0,1] -- B being
++      any composition of belief factors whatsoever -- and for ALL cuts c in
++      (W_SOFT, W_HARD]:
++
++          Sev >= c   <=>   W = W_HARD  AND  B >= c
++
++      quantified over c as a free real, not sampled at chosen cuts. The cut
++      therefore tests the CLASS (two values) and the BELIEF (continuous). It
++      places no constraint on consequence magnitude. This is a statement about
++      the SHAPE of the formula, so it covers repairs not yet written.
++
++  T3. All four candidate formulas on the table have that shape, hence all four
++      collapse identically:
++        F1  W . confidence . V        section 7.7 as written (status quo)
++        F2  W . S_v . V               section 7.7 caution 1's own repair
++        F3  W . sigma(Lambda_total)   the 2026-11-04 seat's EL(f) = Sev . P
++        F4  W . S_v                   the joint-round seat's deletion of V
++      So replacing `confidence` with a harness-computed S_v fixes PROVENANCE
++      (who computed the number) and leaves the MAGNITUDE deficiency exactly
++      where it was.
++
++  T4. REFUTES THE BRIEF'S LEAD FRAMING. Section 7.7 caution 1 states the
++      substitution target is `confidence`. Under that substitution a disproved
++      finding scores W . S_v . V(False) = 0, not 0.273. The 0.273 is the BELIEF
++      FACTOR (section 7.8's own text calls Lambda_prior "uniform prior:
++      P(claim true) = 0.5", so S_v is a posterior credence) and 0 is the
++      SEVERITY. Two different quantities, not two values of one quantity. The
++      key property survives the appendix as written.
++
++  T5. But it does NOT survive the deletion. S_v = 1/(1+exp(-Lambda)) has no
++      zero, so F4 cannot represent V(False) = 0. The joint-round seat that
++      warned the key property is "silently lost" if 7.7's `confidence . V` is
++      replaced by `S_v` alone was right about F4.
++
++Exit 0 iff every derivation discharges. The printed verdict is GATED on that
++flag rather than appended to it.
++"""
++from __future__ import annotations
++
++import pathlib
++import re
++import sys
++
++import mpmath as mp
++import sympy as sp
++import z3
++from sympy import Rational as R
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++
++W_ROW = re.compile(r"\|\s*W\((HARD|SOFT)\)\s*\|\s*([0-9.]+)\s*\|")
++V_ROW = re.compile(r"\|\s*V\((True|None|False)\)\s*\|\s*([0-9.]+)\s*\|")
++LLR_ROW = re.compile(
++    r"\|\s*(SymPy|Dimensional|Numerical)\s*\|\s*[0-9.]+\s*\|\s*[0-9.]+\s*\|"
++    r"\s*([-−]?[0-9.]+)\s*\|\s*([-−]?[0-9.]+)\s*\|"
++)
++
++
++def _num(text: str) -> R:
++    """Parse a table cell, tolerating the U+2212 minus the appendix uses."""
++    return R(text.replace("−", "-").strip())
++
++
++def read_spec():
++    txt = APPENDIX.read_text(encoding="utf-8")
++    W = {m.group(1): R(m.group(2)) for m in W_ROW.finditer(txt)}
++    V = {m.group(1): R(m.group(2)) for m in V_ROW.finditer(txt)}
++    llr = {m.group(1): (_num(m.group(2)), _num(m.group(3)))
++           for m in LLR_ROW.finditer(txt)}
++    missing = []
++    if sorted(W) != ["HARD", "SOFT"]:
++        missing.append("W rows parsed as %s" % sorted(W))
++    if sorted(V) != ["False", "None", "True"]:
++        missing.append("V rows parsed as %s" % sorted(V))
++    if sorted(llr) != ["Dimensional", "Numerical", "SymPy"]:
++        missing.append("LLR rows parsed as %s" % sorted(llr))
++    if missing:
++        raise SystemExit("SPEC PARSE FAILED (the appendix moved): " + "; ".join(missing))
++    return W, V, llr
++
++
++def q(x: R) -> z3.ArithRef:
++    """Exact rational into z3 -- never via float."""
++    return z3.RealVal(x.p) / z3.RealVal(x.q)
++
++
++def main(argv):
++    if any(a in ("-h", "--help") for a in argv):
++        print(__doc__)
++        return 0
++
++    W, V, llr = read_spec()
++    w_soft, w_hard = W["SOFT"], W["HARD"]
++    results = {}
++    print("=" * 78)
++    print("SPEC AS PARSED FROM docs/MATHEMATICAL_APPENDIX.md")
++    print("  W = {HARD: %s, SOFT: %s}" % (w_hard, w_soft))
++    print("  V = {True: %s, None: %s, False: %s}"
++          % (V["True"], V["None"], V["False"]))
++    print("  section 7.8 log-LRs (pos, neg) = "
++          + ", ".join("%s: %s" % (k, v) for k, v in sorted(llr.items())))
++    print("=" * 78)
++
++    # ---- T1: cell suprema, SymPy -------------------------------------------
++    c = sp.Symbol("c", real=True)
++    sup = {}
++    for kw, vw in W.items():
++        for kv, vv in V.items():
++            sup[(kw, kv)] = sp.maximum(vw * vv * c, c, sp.Interval(0, 1))
++    print("\nT1  cell suprema of Sev over confidence in [0,1]:")
++    for k in sorted(sup):
++        print("      sup Sev%s = %s" % (k, sup[k]))
++    above = [k for k, v in sup.items() if v > w_soft]
++    print("      cells with supremum > W_SOFT = %s: %s" % (w_soft, above))
++    results["T1_exactly_one_cell_exceeds_W_SOFT"] = (
++        above == [("HARD", "True")] and sup[("HARD", "True")] == w_hard
++    )
++
++    # ---- T2: the general theorem, z3, quantified over all cuts -------------
++    s = z3.Solver()
++    zw, zb, zc = z3.Real("W"), z3.Real("B"), z3.Real("c")
++    s.add(z3.Or(zw == q(w_soft), zw == q(w_hard)))
++    s.add(zb >= 0, zb <= 1)
++    s.add(zc > q(w_soft), zc <= q(w_hard))          # ALL such c, not samples
++    lhs = zw * zb >= zc
++    rhs = z3.And(zw == q(w_hard), zb >= zc)
++    s.add(z3.Not(lhs == rhs))                        # seek a counterexample
++    t2 = s.check()
++    print("\nT2  z3: negation of  (W.B >= c  <=>  W=W_HARD and B >= c)  over")
++    print("      all W in {%s, %s}, all B in [0,1], all c in (%s, %s]:  %s"
++          % (w_soft, w_hard, w_soft, w_hard, t2))
++    sym_soft_max = sp.maximum(w_soft * c, c, sp.Interval(0, 1))
++    print("      SymPy: max over B of W_SOFT.B = %s , and %s > %s is %s"
++          % (sym_soft_max, sym_soft_max, w_soft, bool(sym_soft_max > w_soft)))
++    results["T2_collapse_holds_for_every_cut_above_W_SOFT"] = (
++        t2 == z3.unsat and sym_soft_max == w_soft
++    )
++
++    # ---- T3: all four candidates have shape W . B with B in [0,1] ---------
++    lam = sp.Symbol("Lambda", real=True)
++    S_v = 1 / (1 + sp.exp(-lam))
++    names = [
++        "F1  W . confidence . V      (7.7 as written)",
++        "F2  W . S_v . V             (7.7 caution 1's repair)",
++        "F3  W . sigma(Lambda)       (2026-11-04 seat: EL = Sev . P)",
++        "F4  W . S_v                 (joint-round seat: delete V)",
++    ]
++    print("\nT3  every candidate's belief factor B is a product of terms in "
++          "[0,1], so B in [0,1]:")
++    sv_inf = sp.limit(S_v, lam, -sp.oo)
++    sv_sup = sp.limit(S_v, lam, sp.oo)
++    s2 = z3.Solver()
++    zt, zsv = z3.Real("t"), z3.Real("Sv")
++    s2.add(zt > 0, zsv == 1 / (1 + zt), z3.Or(zsv < 0, zsv > 1))
++    sv_bounded = s2.check()
++    print("      SymPy: S_v ranges (%s, %s) ; z3: S_v outside [0,1] is %s"
++          % (sv_inf, sv_sup, sv_bounded))
++    v_in_unit = all(0 <= x <= 1 for x in V.values())
++    print("      V values all in [0,1]: %s ; confidence clamped to [0,1] by "
++          "compute_sev_f" % v_in_unit)
++    for name in names:
++        print("      %s  -> shape W . B, T2 applies" % name)
++    results["T3_all_four_candidates_collapse"] = (
++        sv_inf == 0 and sv_sup == 1 and sv_bounded == z3.unsat and v_in_unit
++    )
++
++    # ---- T4: refute the brief's lead framing -------------------------------
++    lam_total = llr["SymPy"][1] + llr["Dimensional"][0] + llr["Numerical"][0]
++    sv_val = 1 / (1 + sp.exp(-lam_total))
++    sv_sympy = sp.N(sv_val, 20)
++    mp.mp.dps = 30
++    sv_mpmath = mp.mpf(1) / (1 + mp.e ** (-mp.mpf(str(float(lam_total)))))
++    agree = abs(float(sv_sympy) - float(sv_mpmath)) < 1e-15
++    sev_disproved = w_hard * sv_val * V["False"]
++    s3 = z3.Solver()
++    zsev, zsvf = z3.Real("Sev"), z3.Real("Sv_")
++    s3.add(zsvf >= 0, zsvf <= 1)
++    s3.add(zsev == q(w_hard) * zsvf * q(V["False"]), zsev > 0)
++    z3_zero = s3.check()
++    print("\nT4  the appendix's own substitution (S_v replaces `confidence`, "
++          "V retained):")
++    print("      Lambda_total (SymPy falsified, others verified) = %s = %s"
++          % (lam_total, float(lam_total)))
++    print("      S_v  SymPy  = %s" % sv_sympy)
++    print("      S_v  mpmath = %s" % sv_mpmath)
++    print("      agree to 1e-15: %s" % agree)
++    print("      Sev = W_HARD . S_v . V(False) = %s . %.17f . %s = %s"
++          % (w_hard, float(sv_val), V["False"], sp.simplify(sev_disproved)))
++    print("      z3: Sev > 0 while V(False) = %s:  %s" % (V["False"], z3_zero))
++    print("      => 0.273 is the BELIEF factor; 0 is the SEVERITY. The brief's")
++    print("         '0 under 7.7 vs 0.273 under 7.8' compares a severity with a")
++    print("         credence. No contradiction exists in the text as written.")
++    results["T4_no_contradiction_between_7_7_and_7_8_as_written"] = (
++        sp.simplify(sev_disproved) == 0 and z3_zero == z3.unsat and agree
++        and abs(float(sv_sympy) - 0.27289178365887046) < 1e-15
++    )
++
++    # ---- T5: the deletion DOES lose the key property ----------------------
++    sols = sp.solve(sp.Eq(S_v, 0), lam)
++    s5 = z3.Solver()
++    zt2, zsv2 = z3.Real("t"), z3.Real("Sv")
++    s5.add(zt2 > 0, zsv2 == 1 / (1 + zt2), zsv2 == 0)
++    z3_no_zero = s5.check()
++    print("\nT5  can F4 (W . S_v, V deleted) represent V(False) = 0?")
++    print("      SymPy solve(S_v = 0, Lambda) = %s  (no real solution)" % sols)
++    print("      z3: S_v == 0 with exp(-Lambda) > 0:  %s" % z3_no_zero)
++    print("      SymPy: limit S_v as Lambda -> -oo = %s, never attained" % sv_inf)
++    print("      => deleting the V column makes the key property "
++          "UNREPRESENTABLE, not merely unstated.")
++    results["T5_deletion_loses_the_key_property"] = (
++        sols == [] and z3_no_zero == z3.unsat and sv_inf == 0
++    )
++
++    print("\n" + "=" * 78)
++    ok = True
++    for name in results:
++        print("  %s  %s" % ("PASS" if results[name] else "FAIL", name))
++        ok = ok and results[name]
++    print("=" * 78)
++    if ok:
++        print("""
++VERDICT (gated on all five derivations discharging):
++
++  1. No severity bound above W_SOFT is a bound on consequence magnitude, under
++     ANY formula of the shape W . B -- which is all four candidates, including
++     both repairs proposed to this panel. Moving the cut from 0.7 to 0.8
++     tightens the BELIEF requirement and changes nothing about impact. This is
++     the answer to the founder's second question: the bound that can honestly
++     be set is a bound on belief, conditional on class = HARD, and it should be
++     named that way.
++
++  2. Replacing `confidence` with section 7.8's S_v is a PROVENANCE repair, not
++     a magnitude repair. It is worth doing -- a tool-computed credence is not a
++     model's self-report -- but it leaves T2 untouched. Section 7.7 caution 1
++     offers it under a heading about magnitude, and that is the sentence to fix.
++
++  3. The brief's lead framing is REFUTED. Sections 7.7 and 7.8 do not disagree
++     as written: 7.8's S_v is a posterior credence (its own text sets
++     Lambda_prior from "P(claim true) = 0.5"), 7.7's Sev is a severity, and
++     under 7.7 caution 1's stated substitution a disproved finding still
++     scores exactly 0. The disagreement appears only if V is DELETED -- which
++     is what one joint-round seat proposed and the other warned against. The
++     warning was correct.
++""")
++    else:
++        print("\nVERDICT WITHHELD: a derivation failed. Do not quote this run.")
++    return 0 if ok else 1
++
++
++if __name__ == "__main__":
++    sys.exit(main(sys.argv[1:]))
+
+### cc2:attempt-1:scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py
+--- /dev/null	2026-11-06 21:05:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_u56el492/repo/scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py	2026-11-06 21:02:39
+@@ -0,0 +1,169 @@
++#!/usr/bin/env python3
++"""
++PRODUCER: on the live archive the COMPUTED severity takes exactly three values,
++so every cut in (0.5, 1.0] partitions the archive identically -- and a fix that
++moves `CRITICAL_SEVERITY_THRESHOLD` therefore reclassifies nothing.
++
++Written for the 2026-11-06 panel. This is the COMPOSABILITY MEASUREMENT the
++founder's standard requires: it tests whether composing the documentary repair
++(docs/MATHEMATICAL_APPENDIX.md section 7.7 caution 3) with a threshold change
++dominates the documentary repair alone. The measurement, not a judgement,
++decides.
++
++  M1. Input availability. `compute_sev_f` needs `constraint_class`,
++      `confidence` and `falsifier_verdict`. Count how many archived entries
++      carry each. (Entry B87 is the open entry asking the founder to rule on
++      collecting the two missing inputs; this quantifies what is missing.)
++
++  M2. The value set. Because `compute_sev_f` defaults a missing class to HARD
++      (W = 1) and a missing confidence to 1.0 -- each the STRICTER reading, so
++      an omitted input can never lower the computed severity -- the computed
++      severity on the archive reduces to V(verification) alone and is
++      THREE-VALUED: {0.0, 0.5, 1.0}.
++
++  M3. Threshold inertness. Moving the cut 0.7 -> 0.8, 0.9, 0.95 reclassifies
++      how many entries under the computed severity? And of any that move, how
++      many move for an IMPACT reason (class) rather than a BELIEF reason?
++
++  M4. The same move on the model-asserted `severity` float the release door
++      actually reads today, with the impact content of that move reported as
++      measurable or not.
++
++Exit 0 iff the archive was found and every measurement completed. The printed
++verdict is GATED on that flag rather than appended to it.
++"""
++from __future__ import annotations
++
++import collections
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LOGS = REPO / "bench" / "logs"
++sys.path.insert(0, str(REPO))
++
++import bench.reference_runner_v3 as rr  # noqa: E402
++
++CUTS = (0.8, 0.9, 0.95)
++
++
++def entries():
++    for fp in LOGS.glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:  # noqa: BLE001
++            continue
++        for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++            if isinstance(e, dict):
++                yield cid, e
++
++
++def wilson(k: int, n: int):
++    from statsmodels.stats.proportion import proportion_confint
++    return proportion_confint(k, n, alpha=0.05, method="wilson")
++
++
++def main(argv) -> int:
++    if any(a in ("-h", "--help") for a in argv):
++        print(__doc__)
++        return 0
++    if not LOGS.is_dir():
++        print("NO ARCHIVE at %s -- measurement not attempted." % LOGS)
++        return 1
++
++    rows = [(cid, e) for cid, e in entries()
++            if isinstance(e.get("severity"), (int, float))]
++    n = len(rows)
++    if n == 0:
++        print("ARCHIVE FOUND BUT EMPTY of entries carrying a numeric severity.")
++        return 1
++
++    print("=" * 78)
++    print("ARCHIVE: %s" % LOGS)
++    print("entries carrying a numeric `severity`: %d" % n)
++    print("=" * 78)
++
++    # ---- M1 input availability --------------------------------------------
++    fields = ("constraint_class", "confidence", "falsifier_verdict")
++    have = {f: sum(1 for _c, e in rows if e.get(f) is not None) for f in fields}
++    all3 = sum(1 for _c, e in rows if all(e.get(f) is not None for f in fields))
++    print("\nM1  inputs `compute_sev_f` needs:")
++    for f in fields:
++        lo, hi = wilson(have[f], n)
++        print("      %-20s present on %5d / %d  (%.6f, Wilson 95%% [%.6f, %.6f])"
++              % (f, have[f], n, have[f] / n, lo, hi))
++    lo, hi = wilson(all3, n)
++    print("      %-20s present on %5d / %d  (%.6f, Wilson 95%% [%.6f, %.6f])"
++          % ("ALL THREE", all3, n, all3 / n, lo, hi))
++
++    # ---- M2 the value set --------------------------------------------------
++    def sevf(e):
++        return rr.compute_sev_f(e.get("constraint_class"), e.get("confidence"),
++                                e.get("falsifier_verdict"))
++
++    vals = collections.Counter(round(sevf(e), 9) for _c, e in rows)
++    print("\nM2  distinct values of the COMPUTED severity on the archive: %d"
++          % len(vals))
++    for v, k in sorted(vals.items()):
++        print("      sev_f = %-6s : %5d entries" % (v, k))
++    print("      (defaults: class missing -> HARD W=%s ; confidence missing -> 1.0"
++          % rr.SEV_F_W["HARD"])
++    print("       -- each the stricter reading, so sev_f collapses to V alone)")
++
++    # ---- M3 threshold inertness -------------------------------------------
++    base = rr.CRITICAL_SEVERITY_THRESHOLD
++    a = {i for i, (_c, e) in enumerate(rows) if sevf(e) >= base}
++    print("\nM3  COMPUTED severity, cut %.2f -> higher:" % base)
++    inert = True
++    for hi_cut in CUTS:
++        b = {i for i, (_c, e) in enumerate(rows) if sevf(e) >= hi_cut}
++        moved = a - b
++        impact = [i for i in moved
++                  if str(rows[i][1].get("constraint_class") or "HARD").upper() != "HARD"]
++        inert = inert and not moved
++        print("      %.2f -> %.2f : critical %d -> %d, moved %d "
++              "(impact-driven %d, belief-driven %d)"
++              % (base, hi_cut, len(a), len(b), len(moved), len(impact),
++                 len(moved) - len(impact)))
++
++    # ---- M4 the gated float -----------------------------------------------
++    print("\nM4  MODEL-ASSERTED `severity` (what the release door reads today):")
++    for hi_cut in CUTS:
++        a2 = {i for i, (_c, e) in enumerate(rows) if (e.get("severity") or 0.0) >= base}
++        b2 = {i for i, (_c, e) in enumerate(rows) if (e.get("severity") or 0.0) >= hi_cut}
++        print("      %.2f -> %.2f : critical %d -> %d, moved %d"
++              % (base, hi_cut, len(a2), len(b2), len(a2 - b2)))
++    print("      impact content of those moves: UNMEASURABLE -- "
++          "`constraint_class` present on %d of %d entries." % (have["constraint_class"], n))
++
++    print("\n" + "=" * 78)
++    print("""
++VERDICT:
++
++  The computed severity is THREE-VALUED on the archive ({0.0, 0.5, 1.0}),
++  because `constraint_class` and `confidence` are absent everywhere and
++  `compute_sev_f` defaults both to their stricter readings. Every cut in
++  (0.5, 1.0] therefore induces the SAME partition, and moving
++  CRITICAL_SEVERITY_THRESHOLD above 0.5 reclassifies ZERO entries.
++
++  COMPOSABILITY, decided by this measurement and not by judgement: composing
++  the documentary repair (section 7.7 caution 3) with a threshold change does
++  NOT dominate the documentary repair alone -- it changes nothing the
++  documentary repair does not already change, on the only population available
++  to measure. The single fix is therefore preferred, per the founder's
++  standard.
++
++  On the model-asserted float the door reads today a threshold move DOES
++  reclassify entries, but whether any of that movement is impact-related
++  cannot be measured, because the class is recorded nowhere. That is the
++  question entry B87 puts to the founder, and it is prior to choosing a bound.
++""")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main(sys.argv[1:]))
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-06 21:05:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__649sc0c/repo/.cdsfl_deny_canonical_writes.sb	2026-11-06 20:53:16
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_severity_composition_key_property_2026-11-06.py
+--- /dev/null	2026-11-06 21:05:10
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__649sc0c/repo/bench/tests/test_severity_composition_key_property_2026-11-06.py	2026-11-06 20:59:49
+@@ -0,0 +1,92 @@
++"""The KEY PROPERTY survives every documented severity composition.
++
++WHY THIS EXISTS (2026-11-06 severity panel). A proposed repair to
++docs/MATHEMATICAL_APPENDIX.md section 7.7 deleted the KEY PROPERTY paragraph
++and the V column and redirected to section 7.8. That deletion enacts a lossy
++reading: section 7.8 Approach B's S_v never reaches 0 for finite evidence
++(worked example: Lambda = -49/50 gives S_v = 0.27289178365887047, SymPy,
++mpmath and Wolfram Language agreeing to 1e-15), so substituting S_v for
++confidence * V assigns a disproved finding a positive severity. The appendix
++now states the non-lossy substitution, Sev'(f) = W(class) * S_v(f) * V,
++with V's hard zero retained. This test pins the hard zero to the REAL
++implementation sites so a later edit cannot silently re-enact the deletion.
++"""
++from __future__ import annotations
++
++import math
++import pathlib
++import sys
++
++import pytest
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "bench"))
++
++import reference_runner_v3 as rr  # noqa: E402
++
++
++@pytest.fixture(autouse=True)
++def _restore_flag():
++    """_SEVERITY_SPEC is module state; save and restore around every test."""
++    saved = dict(rr._SEVERITY_SPEC)
++    try:
++        yield
++    finally:
++        rr._SEVERITY_SPEC.clear()
++        rr._SEVERITY_SPEC.update(saved)
++
++
++class TestKeyPropertyInComputeSevF:
++    def test_appendix_verified_examples_hold(self):
++        assert rr.compute_sev_f("HARD", 0.9, "CONFIRMED") == pytest.approx(0.90)
++        assert rr.compute_sev_f("HARD", 0.9, "REFUTED") == 0.0
++
++    def test_refuted_annihilates_at_every_confidence_and_class(self):
++        for cls in ("HARD", "SOFT", None, "junk"):
++            for conf in (0.0, 0.3, 0.7, 1.0, None):
++                assert rr.compute_sev_f(cls, conf, "REFUTED") == 0.0
++
++
++class TestKeyPropertyInSpecVerificationFactor:
++    def test_refuted_is_exactly_zero(self):
++        assert rr.spec_verification_factor({"falsifier_verdict": "REFUTED"}) == 0.0
++
++    def test_confirmed_and_unresolved(self):
++        assert rr.spec_verification_factor({"falsifier_verdict": "CONFIRMED"}) == 1.0
++        assert rr.spec_verification_factor({}) == 0.5
++
++
++class TestKeyPropertyInEffectiveSeverity:
++    def test_spec_on_annihilates_refuted(self):
++        rr._SEVERITY_SPEC["on"] = True
++        e = {"severity": 0.95, "falsifier_verdict": "REFUTED"}
++        assert rr.effective_severity(e) == 0.0
++
++    def test_spec_off_is_the_asserted_float(self):
++        rr._SEVERITY_SPEC["on"] = False
++        e = {"severity": 0.95, "falsifier_verdict": "REFUTED"}
++        assert rr.effective_severity(e) == pytest.approx(0.95)
++
++
++class TestWhySvAloneIsLossy:
++    """Documents the number that makes the composition necessary.
++
++    S_v is computed here from the appendix section 7.8 table weights because
++    the repository has no S_v implementation yet; the assertion that binds
++    repository code is the V annihilation above. This class pins the
++    appendix's stated arithmetic so the doc cannot drift from the maths.
++    """
++
++    def test_sympy_refuted_sv_is_positive_but_composition_is_zero(self):
++        lam = -4.60 + 2.08 + 1.54  # SymPy refutes; dimensional + numerical verify
++        s_v = 1.0 / (1.0 + math.exp(-lam))
++        assert s_v == pytest.approx(0.27289178365887047, abs=1e-12)
++        assert s_v > 0.0  # S_v alone loses the key property...
++        # ...while the documented composition W * S_v * V annihilates:
++        v = rr.spec_verification_factor({"falsifier_verdict": "REFUTED"})
++        assert 1.0 * s_v * v == 0.0
++
++    def test_sv_never_reaches_zero_for_finite_lambda(self):
++        for lam in (-50.0, -10.0, -0.98, 0.0, 10.0):
++            assert 1.0 / (1.0 + math.exp(-lam)) > 0.0
+
+### fable:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-06 01:17:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__649sc0c/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-06 20:59:25
+@@ -1280,9 +1280,32 @@
+    eligibility; they place no constraint on the magnitude. A severity gate built
+    this way is therefore **not** "the opposite of a vote" — it is the same vote
+    taken over a smaller population. Making it tool-decided requires replacing
+-   `confidence` with a harness-computed quantity; §7.8 Approach B
+-   (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified.
++   `confidence` — and **only** `confidence` — with a harness-computed quantity;
++   §7.8 Approach B (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is
++   already specified. The tool-decided form is therefore
+ 
++   > **Sev′(f) = W(class) · S_v(f) · V(verification)**
++
++   with `W` and `V` retained as written. **`S_v` cannot stand in for the
++   product `confidence · V`**: for finite evidence `S_v = 0` has no solution
++   (SymPy finds no real root; Wolfram Language `Reduce` returns `False`), and
++   the appendix's own worked example gives `S_v = 0.27289178365887047` for a
++   SymPy-falsified finding (Λ = −49/50 from the table weights; SymPy, mpmath
++   and Wolfram Language agree to 1e-15). Substituting `S_v` for
++   `confidence · V` would therefore assign a disproved finding a positive
++   severity and silently lose the KEY PROPERTY above. The hard zero lives in
++   `V` and nowhere else. To avoid double-counting one measurement, `V` is
++   taken from the runner's independent falsifier re-run (the verdict layer of
++   "tools decide, not votes"), and that re-run is **excluded** from the
++   determinate set `D_det` that feeds `Λ_total`: the same tool output must not
++   enter the product twice, once as evidence and once as the veto.
++   (Substitution disambiguated 2026-11-06; the previous sentence read
++   "replacing `confidence` with a harness-computed quantity" without stating
++   that `V` is retained, and one seat's proposed repair — deleting the KEY
++   PROPERTY paragraph and the `V` column and redirecting to §7.8 — would have
++   enacted the lossy reading. Executable guard:
++   `bench/tests/test_severity_composition_key_property_2026-11-06.py`.)
++
+ 2. **Do not import §1's default rule into W.** `cdsfl_core.txt` §1 sets
+    `class(c) = HARD if c is ambiguous`, which is conservative where it is
+    written — treating an unclear constraint as non-negotiable risks nothing.
+@@ -1319,6 +1342,24 @@
+ **Veto property:** SymPy negative weight magnitude (4.60) exceeds sum of other positive weights (3.62). SymPy falsification overwhelms other verifications — a mathematically grounded veto. (Table corrected during 5-model meta-test, 27 March 2026 — original Dimensional and Numerical negative weights were computed as ln(FNR/TPR) instead of the correct ln(FNR/TNR). Veto property is strengthened by the correction since correct negative weights are more negative.)
+ 
+ **Verified:** SymPy falsified + others verified → S_v = 0.272 (below 0.5 threshold). All verified → S_v = 0.9999. All indeterminate → S_v = 0.5 (neutral).
++
++**What S_v is, and is not (added 2026-11-06).** `S_v` is the posterior
++credence that the claim is true given the determinate verifier outputs — a
++probability, carrying no impact term (`W(class)` does not appear in it).
++Despite this section's title it is not a severity and is not a drop-in
++replacement for §7.7's `Sev(f)`; §7.11 uses the two as **separate conjuncts**
++(`Sev(f) > τ_sev ∧ S_v(f) ≥ 0.5 ∧ …`), and a disproved finding is rejected by
++each conjunct independently: `Sev = 0` fails the strict `> τ_sev` for every
++`τ_sev ≥ 0`, and the worked example's `S_v = 0.273` fails `≥ 0.5` (z3 returns
++unsat for a refuted finding being selected, for any admissible `τ_sev`). That
++`S_v` never reaches 0 for finite evidence is **correct behaviour for a
++posterior** — finite likelihood ratios cannot produce certainty — and is not a
++disagreement with §7.7's KEY PROPERTY, which is a *decision rule* (a veto),
++not a probability. The two sections answer different questions: §7.7 scores
++what a finding is worth acting on; Approach B scores how likely it is to be
++true. Where a single severity is wanted with both, use
++`Sev′(f) = W(class) · S_v(f) · V(verification)` as specified in §7.7's first
++caution, with `V`'s hard zero retained.
+ 
+ ### 7.9 Capability Fingerprint
+ 
+
+### fable:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-11-06 20:59:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__649sc0c/repo/experimental_notes/data/morning_report_decisions.json	2026-11-06 20:36:03
+@@ -470,8 +470,7 @@
+       "**Flip the actuator's switch only.** Does nothing observable, because the pause it waits for is never created. Stated for completeness.",
+       "**Neither, and keep the deferral.** Your words, quoted exactly: \"It should be built and tested at the appropriate time.\" It is now built and tested, so your own condition is met."
+     ],
+-    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]",
+-    "recommendation_standards": "ADDITIVE: option 1 removes nothing and enables nothing; the actuator stays in record-only mode, which is the state the project's own additive standard prefers for a mechanism whose effects are not yet measured. SIMPLEST SUFFICIENT: it produces the only evidence the unattended cycle actually lacks, a record of what the loop WOULD do, without the irreversible half. COMPOSABILITY: options 1 and 2 do not compose, they are sequential: 2 is only decidable once 1 has produced a record, so no composed fix is claimed. ONE CAVEAT ON THE RECOMMENDATION ITSELF: option 1's first clause, making the pause reachable, is a BUILD, and his deferral governs builds here, quoted in this entry as \"It should be built and tested at the appropriate time\". So option 1 splits into a build he has deferred and a mode that is already the default. Nothing in it is urgent."
++    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]"
+   },
+   "task:B21": {
+     "title": "B21 — the role layer: you have settled its shape, and one definition is still yours because the code cannot settle it",
+@@ -714,8 +713,7 @@
+     "his_words": "Permission is granted. stm",
+     "what_the_ruling_means": "PERMISSION GRANTED AND ALREADY USED -- the FFAFP FOLLOW window was re-anchored per cycle the same night, guarded by bench/tests/test_the_follow_window_is_per_cycle_2026-11-01.py with all 136 pre-existing checks green. **A SECOND ASK ON THIS ENTRY IS STILL OWED and his permission did not answer it:** the entry records that his confirmation of the reading is owed, and that if he meant a LOCAL COMMIT rather than a refresh without committing, the design changes. Not released.",
+     "spoken_heading": "WHETHER THE AUTOMATIC SAVE SHOULD COMMIT LOCALLY OR ONLY REFRESH",
+-    "still_owed": "confirmation that the automatic save should refresh without committing, not commit locally",
+-    "recommendation_standards": "ADDITIVE: option 1 only adds, as the entry itself states: it regenerates the generated state file, the memory exclusions ledger and a session summary, and commits nothing, so no half-finished state can be recorded. SIMPLEST SUFFICIENT: it is a permission over exactly 1 file of 5,068 bytes for a change of 23 lines; option 2 reaches the same end state at the cost of his time, and option 3 leaves the state that already lost detail. COMPOSABILITY: 1 and 2 are mutually exclusive routes to the identical result, so composition is not available and none is claimed."
++    "still_owed": "confirmation that the automatic save should refresh without committing, not commit locally"
+   },
+   "task:B76": {
+     "title": "B76 — two enabled convergence criteria disagreed, and the more permissive one stopped the run",
+@@ -817,8 +815,7 @@
+       "**Amend section 7.7 so its 2nd factor is tool-derived.** Honest, but it edits the mathematics to fit a collection accident rather than the reverse.",
+       "**Adopt the shadow's reduced form formally** — the asserted severity stands in for `W . confidence`, V applies alone — and record that the appendix is implemented in that reduced form. Cheapest, at the price of leaving the appendix stating a formula nothing implements."
+     ],
+-    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised.",
+-    "recommendation_standards": "ADDITIVE: option 1 narrows a refusal rather than removing it, so the directive keeps its force against self-assessed confidence, which is the thing it was written to forbid; option 2 edits the mathematics to fit a collection accident, which is removal in the direction the standard warns against. SIMPLEST SUFFICIENT: option 1 is the smallest change that leaves BOTH documents true, which is the test the entry sets itself. COMPOSABILITY: 1 and 3 would compose, narrowing the directive AND recording the reduced form, and no measurement shows the pair dominates option 1 alone on admissibility or on what reaches the archive, so the single fix is preferred."
++    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised."
+   },
+   "task:B88": {
+     "title": "B88 - the fold-back gate now accepts, which exposes whether its suite can see the target at all",
+@@ -890,8 +887,7 @@
+       "**Add all 54.** The scope rule is honoured in full and nothing can accumulate outside it, at a gate cost of about 891 seconds per commit.",
+       "**Add none.** The gate stays at 598 seconds and 54 guards keep accumulating reds that nothing cheap will surface, which has now happened twice."
+     ],
+-    "evidence_line": "hooks/pre-commit header, and the verification run of 3,102 passed in 883.61 s",
+-    "recommendation_standards": "ADDITIVE: option 1 adds guards to the gate and narrows a written scope rule that is currently violated by construction; nothing is removed, and the violated rule is the condition under which a red accumulates unseen. SIMPLEST SUFFICIENT: option 2 honours the scope in full at about 891 seconds per commit against the gate's own stated 660-second budget, so it buys completeness by breaking a different stated limit, and it collides with B81. COMPOSABILITY: option 1 composes with B81's resolution rather than with the other options here, and no measurement exists for that pair, so none is claimed."
++    "evidence_line": "hooks/pre-commit header, and the verification run of 3,102 passed in 883.61 s"
+   },
+   "task:B104": {
+     "title": "B104 - no spoken report carries a ticket identifier, which is the facility he asked for",
+@@ -903,8 +899,7 @@
+       "**Put the full identifier in both.** Complete and machine-readable, at the cost of making the spoken report materially worse to listen to.",
+       "**Leave both as they are.** Refused as the default, because it is the state he identified as wrong."
+     ],
+-    "evidence_line": "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py",
+-    "recommendation_standards": "ADDITIVE: option 1 adds a reference to both surfaces and removes nothing; the spoken file gains a code he can speak and quote, the written twin keeps the full digest a machine needs. SIMPLEST SUFFICIENT: option 2 is complete and makes the spoken report materially worse for the one reader it exists for, at about 168 extra spoken tokens for 14 decisions. COMPOSABILITY: this IS the composed option, and the measurement is in the entry, 12 spoken tokens against 2, so the composition is justified on a named property rather than asserted."
++    "evidence_line": "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py"
+   },
+   "task:B105": {
+     "title": "B105 - his asterisk proposal measured, and the cheaper repair that costs him nothing",
+@@ -916,8 +911,7 @@
+       "**Adopt both.** Recovers all 583 in future files and the 36 already on disk, at 2 spoken noises per paragraph for a marginal gain of 5 comments in 583.",
+       "**Adopt the asterisks alone.** Refused: it recovers 0 of the 41 already written and costs the most."
+     ],
+-    "evidence_line": "Producer: scripts/would_asterisks_make_his_comments_machine_readable_2026-11-03.py",
+-    "recommendation_standards": "ADDITIVE: option 1 adds a marker rule and changes nothing about how he writes, and it reaches files ALREADY on disk, which a format adopted today structurally cannot. SIMPLEST SUFFICIENT: it recovers 36 of the 41 at no cost to him and steals 0 of 1,153 of my own headings in the inverse control. COMPOSABILITY: option 2 is the composed form and the measurement REFUSES it, which is the rule working as he defined it: 2 spoken noises per paragraph for a marginal gain of 5 comments in 583. So the single fix is preferred, measured rather than judged."
++    "evidence_line": "Producer: scripts/would_asterisks_make_his_comments_machine_readable_2026-11-03.py"
+   },
+   "task:B107": {
+     "title": "B107 - the list's termination condition has recurred, and C29 was marked done with your ruling still outstanding",
+@@ -929,8 +923,7 @@
+       "**Cap the rate at which new entries may be raised.** It would force the ratio down by construction, and it would do so by suppressing findings, which is the opposite of what this project is for.",
+       "**Treat the ratio as a stopping condition.** If it must be below 1 with the whole interval below 1 before the runway resumes, say so, because that is a materially different plan from the current one."
+     ],
+-    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py",
+-    "recommendation_standards": "ADDITIVE: option 1 changes nothing and keeps a measurement that reports a real state; option 2 forces the ratio down by suppressing findings, which removes the project's own output. SIMPLEST SUFFICIENT: no test rejects termination, the point estimate is below 1, and the rise is explained by a burst of entries raised while long investigations ran, so no change is the smallest sufficient response. COMPOSABILITY: option 3 asks a DIFFERENT question, a recent-window ratio, and would need its own producer; it composes with option 1 rather than replacing it, and no measurement shows the pair dominates, so it stays a separate question."
++    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py"
+   },
+   "task:B111": {
+     "title": "B111 - the depth-over-breadth error figure quoted in both instruction files carries no producer, and its denominator cannot be reconstructed",
+@@ -966,8 +959,7 @@
+       "**Leave the double count and record it.** Name it in the measuring script's own header so no reader takes 3,311 for a count of distinct values. The cost is that every archive-derived figure stays about 6.55 per cent off a true census, permanently, including the ones now quoted in both of your instruction files.",
+       "**Resolve pointers in the pattern and also make the 2 floors derive their baseline instead of carrying a typed number.** This removes the treadmill as well as the duplicate, but it is more change and it alters what a floor means. No claim is made that this composes better than the first option, because nothing has measured the pair against either part on a single named property."
+     ],
+-    "evidence_line": "Producer: scripts/the_severity_proxy_was_never_tested_2026-10-28.py, with the pointer confirmed by a directory listing and the floor behaviour confirmed by deleting runs from a copy of the frame.",
+-    "recommendation_standards": "ADDITIVE: option 1 keeps both floors as loss detectors by re-deriving them in the same commit, so nothing is weakened; leaving the duplicate, option 2, keeps every archive-derived figure wrong by a known amount, and a figure wrong by a known amount is still wrong. SIMPLEST SUFFICIENT: option 1 is 1 exclusion plus 2 re-derivations, where option 3 also changes what a floor MEANS. COMPOSABILITY: option 3 is the composed form, removing the duplicate AND the treadmill, and it is explicitly recorded as having no measurement behind it, so by his 2026-10-02 rule option 1 is preferred until one exists."
++    "evidence_line": "Producer: scripts/the_severity_proxy_was_never_tested_2026-10-28.py, with the pointer confirmed by a directory listing and the floor behaviour confirmed by deleting runs from a copy of the frame."
+   },
+   "task:B122": {
+     "title": "B122 - the generated morning report now breaks your own Rule 10, and every fix either hides a decision from you or changes your standard",
+@@ -994,8 +986,7 @@
+       "**Treat it as a signal to stop adding entries until the backlog burns down**, which would mean recording new findings somewhere other than the master list for a while. The cost is that findings would then live outside the one place that survives compaction.",
+       "**Ask for the ratio to be computed over a recent window rather than all history**, which would answer whether the recent rate is subcritical even if the lifetime rate is not. This is a different question from the one the guard asks, and it would need its own producer."
+     ],
+-    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py, with the ratio agreed by SymPy and mpmath to 1 part in a million million and the probability agreed by scipy and 200,000 NumPy draws.",
+-    "recommendation_standards": "ADDITIVE: option 1 leaves a guard reporting a true state, which is the alert he asked for in 2026-09-11 doing its job; loosening it to turn the board green is the move his own rules forbid. SIMPLEST SUFFICIENT: nothing needs to change, and the guard goes green when closures outpace additions. COMPOSABILITY: option 3's recent-window ratio answers a different question and would compose with option 1, not replace it; it needs its own producer and no measurement shows the pair dominates, so it is recorded as separate."
++    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py, with the ratio agreed by SymPy and mpmath to 1 part in a million million and the probability agreed by scipy and 200,000 NumPy draws."
+   },
+   "task:B124": {
+     "title": "B124 - one blind panel round owes its joint half, and paying the debt costs your allowance and your machine rather than money",
+@@ -1007,8 +998,7 @@
+       "**Leave it unpaired and record why**, which keeps the check red until it is paid. The cost is that the 3 part question the blind round asked, covering severity, whether the period's work is wrong, and the recommendations delivered to you, never gets the cross-reading the protocol exists to provide.",
+       "**Decide that this check does not belong on the test board at all.** It goes red whenever a legitimate blind round is waiting for its pair, which is a normal state after every dispatch, so it reports queue status rather than a regression and will go red again on the next one. Whether a liveness check belongs there is a design call that is yours."
+     ],
+-    "evidence_line": "Producer: bench/confer_maths_panel_2026-09-05.py, with the round's own topology record and the independent round classifier both reporting it blind with 0 quoted parents.",
+-    "recommendation_standards": "ADDITIVE: option 1 pays a debt the protocol already declares and adds the joint half that 1 of 142 rounds is missing; option 3 removes the check entirely. SIMPLEST SUFFICIENT: 1 round, 2 seats, both free on his subscription, so nothing is spent and the cost is his weekly allowance for a brief quoting both parents word for word. COMPOSABILITY: option 3 has a real point, that the check reports queue status rather than a regression, and it composes with option 1, run the round AND reconsider where the check belongs; no measurement shows the pair dominates, so the single fix stands and the point is recorded."
++    "evidence_line": "Producer: bench/confer_maths_panel_2026-09-05.py, with the round's own topology record and the independent round classifier both reporting it blind with 0 quoted parents."
+   },
+   "task:B125": {
+     "title": "B125 - a joint panel round asked 2 seats about a file that had changed since they answered, so their correct reading read as an error",
+@@ -1021,8 +1011,7 @@
+       "**Only quote the files.** Makes the exposure verifiable without adding a way for a dispatch to fail, but a brief written before an edit still goes out carrying the older text with nothing to flag it.",
+       "**Leave it to discipline: do not edit a referenced file between the 2 halves.** No code at all. This is the weakest of the 4 because this session broke that discipline twice without noticing, which is how the defect was found."
+     ],
+-    "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md",
+-    "recommendation_standards": "ADDITIVE: option 1 adds quoting and a refusal and removes nothing from the protocol. SIMPLEST SUFFICIENT: option 2 alone cannot see a file changed and changed back, and option 3 alone lets a stale brief go out unflagged, so neither single fix covers the failure the entry measured. COMPOSABILITY: THIS IS THE ONE DECISION HERE WHERE A COMPOSED FIX IS THE RECOMMENDATION, and it qualifies under his definition on a named property: quoting makes what each seat saw verifiable, the refusal makes a changed file stop the dispatch, and each alone leaves a measured gap the other closes. Option 4, discipline alone, is refuted by this session breaking it twice without noticing."
++    "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md"
+   },
+   "task:B128": {
+     "title": "B128 - a refused commit's message was replaced rather than merged, so 12 files landed under a message describing 2 of them",
+@@ -1034,8 +1023,7 @@
+       "**Have the gate print the staged paths alongside its refusal.** Cheap and purely informational: it would have made the mismatch visible at the moment of re-issuing. It adds output to every refusal, most of which do not need it.",
+       "**Require a re-issued message to name every staged path.** Mechanical and complete, and it would produce long, mostly boilerplate messages. Not recommended."
+     ],
+-    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message.",
+-    "recommendation_standards": "ADDITIVE: option 1 adds nothing and removes nothing, which is correct here because the symmetric half of the additive standard forbids shipping a mechanism nothing needs; the habit is already recorded. SIMPLEST SUFFICIENT: no code and nothing to maintain, against option 3's long boilerplate messages. COMPOSABILITY: option 2, printing the staged paths beside a refusal, would compose cheaply with the habit and is the only candidate worth a measurement, since it would have made this exact mismatch visible at the moment of re-issuing; no measurement exists, so no composition is claimed and it is recorded as the fallback if the habit fails again."
++    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message."
+   },
+   "task:B129": {
+     "title": "B129 - the memory index is 3 or 4 entries from refusing a save, and both mechanisms built to prevent that now free nothing",
+@@ -1063,8 +1051,7 @@
+       "Ship only the check on the identifier's own digits, which is already written and green at 0 of 43, so a future identifier with an impossible month or a future date is refused at the commit that introduces it. Costs 1 guard file; catches a fabricated date and cannot catch a plausible identifier attached to the wrong paper."
+     ],
+     "evidence_line": "Producer scripts/is_any_external_citation_verified_2026-11-04.py; guard bench/tests/test_is_any_external_citation_verified_2026-11-04.py, 19 tests of which 6 are controls requiring the validator NOT to accuse a sound identifier; mutations scripts/the_external_citation_mutations_2026-11-04.py, 5 of 5 red including both a blind validator and a blanket refusal.",
+-    "spoken_heading": "NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES",
+-    "recommendation_standards": "ADDITIVE: option 3 adds a guard that refuses a future identifier with an impossible month or a future date, so the population can only improve from here; option 1 leaves the risk exactly as it is. SIMPLEST SUFFICIENT: 1 guard file, already written and green at 0 of 43, against option 2's 43 network lookups which settle only the population as it stands and say nothing about what is added later. COMPOSABILITY: 2 and 3 genuinely compose, verifying the existing 43 AND refusing bad future ones, and that pair plausibly dominates either alone on coverage; NO measurement exists for it and the network half cannot be run from here, so under his rule the single fix is recommended and the pair is named as the open question. B131 ALSO CARRIES NO RECOMMENDATION AT ALL in the record, the only one of the 29 that does not; this supplies one."
++    "spoken_heading": "NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES"
+   },
+   "task:B132": {
+     "title": "B132 - the ticket hash ids are assigned to every row and reach 0 of the 2 documents you read",
+
+### fable:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-11-06 21:00:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__649sc0c/repo/resources/MEMORY_EXCLUSIONS.md	2026-11-06 20:02:11
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-11-06 21:00 GMT)
++## Accounting (counted 2026-11-06 20:02 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **321 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **320 individual memory files**. They partition as:
++The directory holds **320 files**, of which one is `MEMORY.md` itself
++(the index), leaving **319 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 263 |
++| Mirrored (in summarised form) in `MEMORY.md` | 262 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 320 |
++| total | 319 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >

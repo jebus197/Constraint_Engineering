@@ -470,7 +470,8 @@
       "**Flip the actuator's switch only.** Does nothing observable, because the pause it waits for is never created. Stated for completeness.",
       "**Neither, and keep the deferral.** Your words, quoted exactly: \"It should be built and tested at the appropriate time.\" It is now built and tested, so your own condition is met."
     ],
-    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]"
+    "evidence_line": "Producers: scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py reporting 4 of 4 built, and scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py reporting 0 of 351 runs with the review flag set, Wilson [0.000000, 0.010826] on 2 engines agreeing to 3.5e-18, Clopper-Pearson [0.000000, 0.010455], on 3 independent predicates. The declaration's own line references are now carried as data in a CITATIONS dict of 9 entries and checked by bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py; 2 of the 4 pointing into the runner had drifted, by 23 and 7 lines, 0.500000, Wilson [0.150039, 0.849961]",
+    "recommendation_standards": "ADDITIVE: option 1 removes nothing and enables nothing; the actuator stays in record-only mode, which is the state the project's own additive standard prefers for a mechanism whose effects are not yet measured. SIMPLEST SUFFICIENT: it produces the only evidence the unattended cycle actually lacks, a record of what the loop WOULD do, without the irreversible half. COMPOSABILITY: options 1 and 2 do not compose, they are sequential: 2 is only decidable once 1 has produced a record, so no composed fix is claimed. ONE CAVEAT ON THE RECOMMENDATION ITSELF: option 1's first clause, making the pause reachable, is a BUILD, and his deferral governs builds here, quoted in this entry as \"It should be built and tested at the appropriate time\". So option 1 splits into a build he has deferred and a mode that is already the default. Nothing in it is urgent."
   },
   "task:B21": {
     "title": "B21 — the role layer: you have settled its shape, and one definition is still yours because the code cannot settle it",
@@ -713,7 +714,8 @@
     "his_words": "Permission is granted. stm",
     "what_the_ruling_means": "PERMISSION GRANTED AND ALREADY USED -- the FFAFP FOLLOW window was re-anchored per cycle the same night, guarded by bench/tests/test_the_follow_window_is_per_cycle_2026-11-01.py with all 136 pre-existing checks green. **A SECOND ASK ON THIS ENTRY IS STILL OWED and his permission did not answer it:** the entry records that his confirmation of the reading is owed, and that if he meant a LOCAL COMMIT rather than a refresh without committing, the design changes. Not released.",
     "spoken_heading": "WHETHER THE AUTOMATIC SAVE SHOULD COMMIT LOCALLY OR ONLY REFRESH",
-    "still_owed": "confirmation that the automatic save should refresh without committing, not commit locally"
+    "still_owed": "confirmation that the automatic save should refresh without committing, not commit locally",
+    "recommendation_standards": "ADDITIVE: option 1 only adds, as the entry itself states: it regenerates the generated state file, the memory exclusions ledger and a session summary, and commits nothing, so no half-finished state can be recorded. SIMPLEST SUFFICIENT: it is a permission over exactly 1 file of 5,068 bytes for a change of 23 lines; option 2 reaches the same end state at the cost of his time, and option 3 leaves the state that already lost detail. COMPOSABILITY: 1 and 2 are mutually exclusive routes to the identical result, so composition is not available and none is claimed."
   },
   "task:B76": {
     "title": "B76 — two enabled convergence criteria disagreed, and the more permissive one stopped the run",
@@ -815,7 +817,8 @@
       "**Amend section 7.7 so its 2nd factor is tool-derived.** Honest, but it edits the mathematics to fit a collection accident rather than the reverse.",
       "**Adopt the shadow's reduced form formally** — the asserted severity stands in for `W . confidence`, V applies alone — and record that the appendix is implemented in that reduced form. Cheapest, at the price of leaving the appendix stating a formula nothing implements."
     ],
-    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised."
+    "evidence_line": "`confidence` on 0 of 3,311 findings and a HARD/SOFT class on 0 of 98 distinct fields; 5 of the 6 directive quotations verified byte-exact in the file before being written, the 6th labelled as whitespace-normalised.",
+    "recommendation_standards": "ADDITIVE: option 1 narrows a refusal rather than removing it, so the directive keeps its force against self-assessed confidence, which is the thing it was written to forbid; option 2 edits the mathematics to fit a collection accident, which is removal in the direction the standard warns against. SIMPLEST SUFFICIENT: option 1 is the smallest change that leaves BOTH documents true, which is the test the entry sets itself. COMPOSABILITY: 1 and 3 would compose, narrowing the directive AND recording the reduced form, and no measurement shows the pair dominates option 1 alone on admissibility or on what reaches the archive, so the single fix is preferred."
   },
   "task:B88": {
     "title": "B88 - the fold-back gate now accepts, which exposes whether its suite can see the target at all",
@@ -887,7 +890,8 @@
       "**Add all 54.** The scope rule is honoured in full and nothing can accumulate outside it, at a gate cost of about 891 seconds per commit.",
       "**Add none.** The gate stays at 598 seconds and 54 guards keep accumulating reds that nothing cheap will surface, which has now happened twice."
     ],
-    "evidence_line": "hooks/pre-commit header, and the verification run of 3,102 passed in 883.61 s"
+    "evidence_line": "hooks/pre-commit header, and the verification run of 3,102 passed in 883.61 s",
+    "recommendation_standards": "ADDITIVE: option 1 adds guards to the gate and narrows a written scope rule that is currently violated by construction; nothing is removed, and the violated rule is the condition under which a red accumulates unseen. SIMPLEST SUFFICIENT: option 2 honours the scope in full at about 891 seconds per commit against the gate's own stated 660-second budget, so it buys completeness by breaking a different stated limit, and it collides with B81. COMPOSABILITY: option 1 composes with B81's resolution rather than with the other options here, and no measurement exists for that pair, so none is claimed."
   },
   "task:B104": {
     "title": "B104 - no spoken report carries a ticket identifier, which is the facility he asked for",
@@ -899,7 +903,8 @@
       "**Put the full identifier in both.** Complete and machine-readable, at the cost of making the spoken report materially worse to listen to.",
       "**Leave both as they are.** Refused as the default, because it is the state he identified as wrong."
     ],
-    "evidence_line": "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py"
+    "evidence_line": "Producer: scripts/has_the_ticket_store_earned_its_place_2026-11-03.py",
+    "recommendation_standards": "ADDITIVE: option 1 adds a reference to both surfaces and removes nothing; the spoken file gains a code he can speak and quote, the written twin keeps the full digest a machine needs. SIMPLEST SUFFICIENT: option 2 is complete and makes the spoken report materially worse for the one reader it exists for, at about 168 extra spoken tokens for 14 decisions. COMPOSABILITY: this IS the composed option, and the measurement is in the entry, 12 spoken tokens against 2, so the composition is justified on a named property rather than asserted."
   },
   "task:B105": {
     "title": "B105 - his asterisk proposal measured, and the cheaper repair that costs him nothing",
@@ -911,7 +916,8 @@
       "**Adopt both.** Recovers all 583 in future files and the 36 already on disk, at 2 spoken noises per paragraph for a marginal gain of 5 comments in 583.",
       "**Adopt the asterisks alone.** Refused: it recovers 0 of the 41 already written and costs the most."
     ],
-    "evidence_line": "Producer: scripts/would_asterisks_make_his_comments_machine_readable_2026-11-03.py"
+    "evidence_line": "Producer: scripts/would_asterisks_make_his_comments_machine_readable_2026-11-03.py",
+    "recommendation_standards": "ADDITIVE: option 1 adds a marker rule and changes nothing about how he writes, and it reaches files ALREADY on disk, which a format adopted today structurally cannot. SIMPLEST SUFFICIENT: it recovers 36 of the 41 at no cost to him and steals 0 of 1,153 of my own headings in the inverse control. COMPOSABILITY: option 2 is the composed form and the measurement REFUSES it, which is the rule working as he defined it: 2 spoken noises per paragraph for a marginal gain of 5 comments in 583. So the single fix is preferred, measured rather than judged."
   },
   "task:B107": {
     "title": "B107 - the list's termination condition has recurred, and C29 was marked done with your ruling still outstanding",
@@ -923,7 +929,8 @@
       "**Cap the rate at which new entries may be raised.** It would force the ratio down by construction, and it would do so by suppressing findings, which is the opposite of what this project is for.",
       "**Treat the ratio as a stopping condition.** If it must be below 1 with the whole interval below 1 before the runway resumes, say so, because that is a materially different plan from the current one."
     ],
-    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py"
+    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py",
+    "recommendation_standards": "ADDITIVE: option 1 changes nothing and keeps a measurement that reports a real state; option 2 forces the ratio down by suppressing findings, which removes the project's own output. SIMPLEST SUFFICIENT: no test rejects termination, the point estimate is below 1, and the rise is explained by a burst of entries raised while long investigations ran, so no change is the smallest sufficient response. COMPOSABILITY: option 3 asks a DIFFERENT question, a recent-window ratio, and would need its own producer; it composes with option 1 rather than replacing it, and no measurement shows the pair dominates, so it stays a separate question."
   },
   "task:B111": {
     "title": "B111 - the depth-over-breadth error figure quoted in both instruction files carries no producer, and its denominator cannot be reconstructed",
@@ -959,7 +966,8 @@
       "**Leave the double count and record it.** Name it in the measuring script's own header so no reader takes 3,311 for a count of distinct values. The cost is that every archive-derived figure stays about 6.55 per cent off a true census, permanently, including the ones now quoted in both of your instruction files.",
       "**Resolve pointers in the pattern and also make the 2 floors derive their baseline instead of carrying a typed number.** This removes the treadmill as well as the duplicate, but it is more change and it alters what a floor means. No claim is made that this composes better than the first option, because nothing has measured the pair against either part on a single named property."
     ],
-    "evidence_line": "Producer: scripts/the_severity_proxy_was_never_tested_2026-10-28.py, with the pointer confirmed by a directory listing and the floor behaviour confirmed by deleting runs from a copy of the frame."
+    "evidence_line": "Producer: scripts/the_severity_proxy_was_never_tested_2026-10-28.py, with the pointer confirmed by a directory listing and the floor behaviour confirmed by deleting runs from a copy of the frame.",
+    "recommendation_standards": "ADDITIVE: option 1 keeps both floors as loss detectors by re-deriving them in the same commit, so nothing is weakened; leaving the duplicate, option 2, keeps every archive-derived figure wrong by a known amount, and a figure wrong by a known amount is still wrong. SIMPLEST SUFFICIENT: option 1 is 1 exclusion plus 2 re-derivations, where option 3 also changes what a floor MEANS. COMPOSABILITY: option 3 is the composed form, removing the duplicate AND the treadmill, and it is explicitly recorded as having no measurement behind it, so by his 2026-10-02 rule option 1 is preferred until one exists."
   },
   "task:B122": {
     "title": "B122 - the generated morning report now breaks your own Rule 10, and every fix either hides a decision from you or changes your standard",
@@ -986,7 +994,8 @@
       "**Treat it as a signal to stop adding entries until the backlog burns down**, which would mean recording new findings somewhere other than the master list for a while. The cost is that findings would then live outside the one place that survives compaction.",
       "**Ask for the ratio to be computed over a recent window rather than all history**, which would answer whether the recent rate is subcritical even if the lifetime rate is not. This is a different question from the one the guard asks, and it would need its own producer."
     ],
-    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py, with the ratio agreed by SymPy and mpmath to 1 part in a million million and the probability agreed by scipy and 200,000 NumPy draws."
+    "evidence_line": "Producer: scripts/task_list_burndown_2026-09-11.py, with the ratio agreed by SymPy and mpmath to 1 part in a million million and the probability agreed by scipy and 200,000 NumPy draws.",
+    "recommendation_standards": "ADDITIVE: option 1 leaves a guard reporting a true state, which is the alert he asked for in 2026-09-11 doing its job; loosening it to turn the board green is the move his own rules forbid. SIMPLEST SUFFICIENT: nothing needs to change, and the guard goes green when closures outpace additions. COMPOSABILITY: option 3's recent-window ratio answers a different question and would compose with option 1, not replace it; it needs its own producer and no measurement shows the pair dominates, so it is recorded as separate."
   },
   "task:B124": {
     "title": "B124 - one blind panel round owes its joint half, and paying the debt costs your allowance and your machine rather than money",
@@ -998,7 +1007,8 @@
       "**Leave it unpaired and record why**, which keeps the check red until it is paid. The cost is that the 3 part question the blind round asked, covering severity, whether the period's work is wrong, and the recommendations delivered to you, never gets the cross-reading the protocol exists to provide.",
       "**Decide that this check does not belong on the test board at all.** It goes red whenever a legitimate blind round is waiting for its pair, which is a normal state after every dispatch, so it reports queue status rather than a regression and will go red again on the next one. Whether a liveness check belongs there is a design call that is yours."
     ],
-    "evidence_line": "Producer: bench/confer_maths_panel_2026-09-05.py, with the round's own topology record and the independent round classifier both reporting it blind with 0 quoted parents."
+    "evidence_line": "Producer: bench/confer_maths_panel_2026-09-05.py, with the round's own topology record and the independent round classifier both reporting it blind with 0 quoted parents.",
+    "recommendation_standards": "ADDITIVE: option 1 pays a debt the protocol already declares and adds the joint half that 1 of 142 rounds is missing; option 3 removes the check entirely. SIMPLEST SUFFICIENT: 1 round, 2 seats, both free on his subscription, so nothing is spent and the cost is his weekly allowance for a brief quoting both parents word for word. COMPOSABILITY: option 3 has a real point, that the check reports queue status rather than a regression, and it composes with option 1, run the round AND reconsider where the check belongs; no measurement shows the pair dominates, so the single fix stands and the point is recorded."
   },
   "task:B125": {
     "title": "B125 - a joint panel round asked 2 seats about a file that had changed since they answered, so their correct reading read as an error",
@@ -1011,7 +1021,8 @@
       "**Only quote the files.** Makes the exposure verifiable without adding a way for a dispatch to fail, but a brief written before an edit still goes out carrying the older text with nothing to flag it.",
       "**Leave it to discipline: do not edit a referenced file between the 2 halves.** No code at all. This is the weakest of the 4 because this session broke that discipline twice without noticing, which is how the defect was found."
     ],
-    "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md"
+    "evidence_line": "Producers: the chronology is from git, with the byte comparison and the heading positions agreeing on line 170 independently. The blind half's stored copy is 11,718 bytes, 170 lines and 5 headings and is identical for both seats; the file now carries 19,193 bytes, 223 lines and 7 headings; the joint half's store holds 0 copies of it. Full record: experimental_notes/Panel_FULL_RECORD_The_Period_Joint_2026-11-04.md",
+    "recommendation_standards": "ADDITIVE: option 1 adds quoting and a refusal and removes nothing from the protocol. SIMPLEST SUFFICIENT: option 2 alone cannot see a file changed and changed back, and option 3 alone lets a stale brief go out unflagged, so neither single fix covers the failure the entry measured. COMPOSABILITY: THIS IS THE ONE DECISION HERE WHERE A COMPOSED FIX IS THE RECOMMENDATION, and it qualifies under his definition on a named property: quoting makes what each seat saw verifiable, the refusal makes a changed file stop the dispatch, and each alone leaves a measured gap the other closes. Option 4, discipline alone, is refuted by this session breaking it twice without noticing."
   },
   "task:B128": {
     "title": "B128 - a refused commit's message was replaced rather than merged, so 12 files landed under a message describing 2 of them",
@@ -1023,7 +1034,8 @@
       "**Have the gate print the staged paths alongside its refusal.** Cheap and purely informational: it would have made the mismatch visible at the moment of re-issuing. It adds output to every refusal, most of which do not need it.",
       "**Require a re-issued message to name every staged path.** Mechanical and complete, and it would produce long, mostly boilerplate messages. Not recommended."
     ],
-    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message."
+    "evidence_line": "Found by scripts/is_depth_alone_blinkered_2026-11-04.py, which verifies each attribution it reports by locating the quoted words in the record: 2 of its 23 quoted attributions could not be found, and both existed only in the refused message. Commit 03e675b8 carries 12 files and 0 of 6 probes for the work it does not describe appear in its message.",
+    "recommendation_standards": "ADDITIVE: option 1 adds nothing and removes nothing, which is correct here because the symmetric half of the additive standard forbids shipping a mechanism nothing needs; the habit is already recorded. SIMPLEST SUFFICIENT: no code and nothing to maintain, against option 3's long boilerplate messages. COMPOSABILITY: option 2, printing the staged paths beside a refusal, would compose cheaply with the habit and is the only candidate worth a measurement, since it would have made this exact mismatch visible at the moment of re-issuing; no measurement exists, so no composition is claimed and it is recorded as the fallback if the habit fails again."
   },
   "task:B129": {
     "title": "B129 - the memory index is 3 or 4 entries from refusing a save, and both mechanisms built to prevent that now free nothing",
@@ -1051,7 +1063,8 @@
       "Ship only the check on the identifier's own digits, which is already written and green at 0 of 43, so a future identifier with an impossible month or a future date is refused at the commit that introduces it. Costs 1 guard file; catches a fabricated date and cannot catch a plausible identifier attached to the wrong paper."
     ],
     "evidence_line": "Producer scripts/is_any_external_citation_verified_2026-11-04.py; guard bench/tests/test_is_any_external_citation_verified_2026-11-04.py, 19 tests of which 6 are controls requiring the validator NOT to accuse a sound identifier; mutations scripts/the_external_citation_mutations_2026-11-04.py, 5 of 5 red including both a blind validator and a blanket refusal.",
-    "spoken_heading": "NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES"
+    "spoken_heading": "NO EXTERNAL CITATION IN THIS RECORD IS VERIFIED BY ANYTHING, AND 14 TEST FILES GUARD THE INTERNAL ONES",
+    "recommendation_standards": "ADDITIVE: option 3 adds a guard that refuses a future identifier with an impossible month or a future date, so the population can only improve from here; option 1 leaves the risk exactly as it is. SIMPLEST SUFFICIENT: 1 guard file, already written and green at 0 of 43, against option 2's 43 network lookups which settle only the population as it stands and say nothing about what is added later. COMPOSABILITY: 2 and 3 genuinely compose, verifying the existing 43 AND refusing bad future ones, and that pair plausibly dominates either alone on coverage; NO measurement exists for it and the network half cannot be run from here, so under his rule the single fix is recommended and the pair is named as the open question. B131 ALSO CARRIES NO RECOMMENDATION AT ALL in the record, the only one of the 29 that does not; this supplies one."
   },
   "task:B132": {
     "title": "B132 - the ticket hash ids are assigned to every row and reach 0 of the 2 documents you read",
