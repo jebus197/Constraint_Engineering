@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Does the hash-identity guard discriminate? Mutate a COPY of the store.
+import sys
 
 The real store is append-only and is never written here: each mutation builds a
 copy in a temporary directory and points the guard at it. Anchors are derived by
@@ -147,4 +148,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

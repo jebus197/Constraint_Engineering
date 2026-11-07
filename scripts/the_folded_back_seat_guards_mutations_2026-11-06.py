@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Mutation harness for the 2 guards folded back from the free panel round.
+import sys
 
 WHY THIS IS OWED. `fff-external` says FFAFP applies with equal force to fixes
 proposed by other models: "someone else already checked it" is not a
@@ -99,4 +100,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

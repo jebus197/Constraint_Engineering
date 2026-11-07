@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Does the census-producer guard actually DISCRIMINATE? Mutate and watch it fail.
+import sys
 
 A guard that passes on a healthy tree is a hypothesis. This harness copies the
 committed producer, applies one defect at a time to the COPY -- never to the
@@ -112,4 +113,8 @@ def main() -> int:
     return 0
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

@@ -45,3 +45,82 @@ is therefore about the DEFECTS being closed, and a failure arising from board or
 prediction without refuting the repairs.
 
 Written under CDSFL note standard v1.9 (1 November 2026).
+
+---
+
+## SCORED AGAINST THE FINISHED BOARD: THE HARD CLAUSE HELD EXACTLY, THE EASY CLAUSE IS REFUTED BY 10
+
+**Appended 2026-11-07 after the board finished. Everything above is UNCHANGED, because
+amending a pre-registration after the fact destroys the only property that makes it
+worth having.** An earlier append written mid-run said the second clause was refuted
+3 times; that was a partial count taken at 43% of the run and is superseded by the
+figures below.
+
+### The board
+
+15,858 passed, 11 failed, 37 skipped, 8,247.78 s (2:17:27), pytest exit 1, at `e796a010`
+on a tree with 0 uncommitted paths, from `python3 -m pytest bench/tests/ -q --netguard-strict`.
+
+### The partition against `e0feed27`
+
+| | measured |
+|---|---|
+| of the 17 recorded failures, FIXED | **16 of 17** = 0.941176, Wilson [0.730180, 0.989540], CP [0.713111, 0.998512] |
+| of the 17, STILL RED | **1 of 17** = 0.058824, Wilson [0.010460, 0.269820], CP [0.001488, 0.286889] |
+| NEW failures | **10** |
+
+Producer: `scripts/compare_this_board_against_the_record_2026-11-07.py`. Both interval
+routes agree to within 1.2e-16 throughout.
+
+### Clause 1: HELD, and exactly
+
+The prediction named **1** survivor and said it would be the subcritical branching
+check. The board returned exactly 1, and it is
+`test_task_list_burndown_2026-09-11.py::TestTheListTerminates::test_the_process_is_subcritical`,
+reporting `R = 0.9685 with 95% interval [0.8031, 1.1679]`. The upper bound is above 1,
+which is entry **B123** and his decision.
+
+### Clause 2: REFUTED BY 10
+
+Which stated falsifier fired: the 1st, *"More than 1 failure means something since
+`e0feed27` broke, or one of the 16 repairs does not hold under the full suite's shared
+state."* It is the first branch, and the something was **this session's own work**.
+
+**10 of 10 new failures were introduced on or after 2026-11-06**: 1.000000,
+Wilson [0.722467, 1.000000], Clopper-Pearson [0.691503, 1.000000], decision rule
+(Wilson lower bound > 0.5000) UPHELD at 0.722467. Every row carries its own dating
+evidence. Producer: `scripts/who_made_this_board_red_2026-11-07.py`. **0 came from the
+product.**
+
+### The instrument built to score this would have CONFIRMED the refuted clause
+
+The comparator's 3 refusals — unfinished log, narrower run, missing baseline — all
+passed, and it still measured nothing: the suite wrapper overwrites
+`resources/suite_record.json` with the board it has just finished, so the comparator
+partitioned the board **against itself** and printed `0 fixed, 11 of 11 still red, 0 NEW`.
+
+**`0 NEW` is this prediction's own refuted clause.** An instrument in that state agrees
+with whatever prediction it is pointed at. A 4th refusal now fires when the record's
+`commit` equals the current HEAD.
+
+### What was repaired, and what the board still owes
+
+8 of the 10 were repaired in this session and verified by re-running their guards:
+the 2 help-flag guards, `test_fresh_clone_is_actually_run_2026-09-11.py`, `test_note_standard_v17_enforced_2026-08-26.py`, `test_every_test_file_is_collected_2026-09-01.py`, the source-text census, and both halves of the reachedness check (667 of 667
+reached, 100.0000%, CP [99.4485%, 100.0000%]). The gate's declared figure was refreshed
+to 128 files and 2,585 tests.
+
+**2 remain and both are his**: the blind round's joint half (**B124**, queue state its
+own option 3 predicted in writing before this run existed, and paid work needing
+authorisation), and the subcritical measure (**B123**).
+
+### The error, named without generalising past it
+
+The prediction verified the 16 repairs and `bench/tests/test_operational_scripts.py`, then asserted
+0 new failures. **It never asked what the predicting session had itself done to the
+board.** 2 of the 10 were created by work he had ordered (the panel round, the fold-back);
+8 were created by the repairing itself. A prediction about a board must account for the
+predictor's own commits to that board, and this prediction did not. The scope of that lesson is
+this prediction and predictions of the same shape — not predictions in general.
+
+Written under CDSFL note standard v1.9 (1 November 2026).

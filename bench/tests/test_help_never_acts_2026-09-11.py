@@ -64,6 +64,28 @@ def tracked_scripts() -> list[pathlib.Path]:
     return [REPO / f for f in r.stdout.split() if f.endswith(".py")]
 
 
+def _answer_help_names(tree: ast.AST) -> set:
+    """Every local name bound to `_cli_help.answer_help`, its own name included.
+
+    ★ ADDED 2026-11-07 BECAUSE THE MATCHER WAS ACCUSING CORRECT CODE. It asked
+    for a call named exactly `answer_help`; 15 of the 205 scripts that call it
+    use `from _cli_help import answer_help as _answer_help`, so it saw none of
+    them. 2 of those 15 also match `WRITES` and were reported as writers that
+    ignore the flag, while running them with `--help` prints usage, exits 0 and
+    writes nothing.
+
+    The set is built ONLY from `ImportFrom` nodes whose module is `_cli_help`
+    and whose imported name is `answer_help`, so no unrelated call can enter it.
+    """
+    names = {"answer_help"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "_cli_help":
+            for a in node.names:
+                if a.name == "answer_help" and a.asname:
+                    names.add(a.asname)
+    return names
+
+
 def answers_help(src: str, under_dash_m: bool = True) -> bool:
     """Does this script actually CALL a help handler, or build a parser?
 
@@ -94,6 +116,7 @@ def answers_help(src: str, under_dash_m: bool = True) -> bool:
     except SyntaxError:
         return False
     leaky = _help_calls_unreachable_under_dash_m(tree) if under_dash_m else set()
+    helpers = _answer_help_names(tree)
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -101,7 +124,7 @@ def answers_help(src: str, under_dash_m: bool = True) -> bool:
         name = getattr(fn, "id", None) or getattr(fn, "attr", None)
         if name == "ArgumentParser":
             return True
-        if name == "answer_help" and id(node) not in leaky:
+        if name in helpers and id(node) not in leaky:
             return True
     return False
 
@@ -116,6 +139,7 @@ def _help_calls_unreachable_under_dash_m(tree: ast.AST) -> set[int]:
                    for t in types)
 
     leaky: set[int] = set()
+    helpers = _answer_help_names(tree)
     for node in ast.walk(tree):
         if not isinstance(node, ast.Try):
             continue
@@ -137,7 +161,7 @@ def _help_calls_unreachable_under_dash_m(tree: ast.AST) -> set[int]:
             for s in part:
                 for n in ast.walk(s):
                     if isinstance(n, ast.Call) and (getattr(n.func, "id", None)
-                                                    or getattr(n.func, "attr", None)) == "answer_help":
+                                                    or getattr(n.func, "attr", None)) in helpers:
                         leaky.add(id(n))
     return leaky
 

@@ -33,6 +33,7 @@ import os
 import sys
 from pathlib import Path
 
+import pathlib
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
@@ -101,13 +102,59 @@ class TestTheTwoSourcesAgree:
         puts `d`'s value in the output regardless, so a marker-first predicate
         would disagree with the printed record. That disagreement is the
         2026-10-19 defect. This test fails if someone flips it.
+
+        ★ CONVERTED FROM A SOURCE-TEXT MATCH TO AN EXECUTING CHECK, 2026-11-07.
+        It used to assert that the literal
+        `ruled = d.get("ruled") or it.get("ruled")` appears in
+        `scripts/morning_report_build_2026-10-12.py`. That asserts only that the
+        module spells itself a particular way: it breaks on a rename that
+        changes nothing, and it cannot see a producer and a consumer that
+        disagree, which is the very defect it was written to pin. The census
+        guard's own remedy prefers conversion over widening the pinned set, and
+        2 of the 4 assertions added on 2026-10-06 were converted this way.
+
+        So the precedence is now EXERCISED: `decisions` is called with an item
+        whose marker carries one ruling date and authored detail that carries
+        another, and the merged record must show the AUTHORED one. The inverse
+        is checked too, because a precedence that always returns the same side
+        is not a precedence.
         """
-        src = (REPO / "scripts" / "morning_report_build_2026-10-12.py").read_text(
-            encoding="utf-8")
-        assert 'ruled = d.get("ruled") or it.get("ruled")' in src, (
-            "the precedence at line 701 has changed. If that was deliberate, "
-            "the merge at `{**it, **d}` must change with it, or the predicate "
-            "and the printed record will disagree again.")
+        import json as _json
+
+        def _run(marker_ruled, detail_ruled, tmp):
+            body = {"task:ZZTEST": {"title": "t", "what": "w", "why": "y"}}
+            if detail_ruled is not None:
+                body["task:ZZTEST"]["ruled"] = detail_ruled
+            p = tmp / "detail.json"
+            p.write_text(_json.dumps(body), encoding="utf-8")
+            old = mr.DETAIL
+            try:
+                mr.DETAIL = p
+                item = {"key": "task:ZZTEST", "ident": "ZZTEST", "state": "OPEN"}
+                if marker_ruled is not None:
+                    item["ruled"] = marker_ruled
+                attached, _missing, _orphan = mr.decisions([item])
+            finally:
+                mr.DETAIL = old
+            assert attached, "the crafted item produced no attached record"
+            return attached[0].get("ruled")
+
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            tmp = pathlib.Path(td)
+            #: authored detail WINS when it has a date
+            got = _run("2026-01-01", "2026-02-02", tmp)
+            assert got == "2026-02-02", (
+                f"the authored ruling date must take precedence; got {got!r}. "
+                f"If the precedence was flipped deliberately, the merge at "
+                f"`{{**it, **d}}` must change with it, or the predicate and the "
+                f"printed record will disagree again -- the 2026-10-19 defect.")
+            #: and FALLS BACK to the marker when it has none
+            got = _run("2026-01-01", None, tmp)
+            assert got == "2026-01-01", (
+                f"with no authored date the marker's must show through; got "
+                f"{got!r}. A precedence that returns the same side either way "
+                f"is not a precedence.")
 
 
 class TestR1Specifically:

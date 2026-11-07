@@ -101,11 +101,4 @@ def main(argv: list[str]) -> int:
 if __name__ == "__main__":
     import pathlib as _pl
     sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
-    from _cli_help import answer_help as _answer_help
-    #: ★ `takes_no_arguments=False`, BECAUSE THIS SCRIPT HAS A PARSER.
-    #: The default is True, which refuses EVERY flag before argparse is
-    #: reached -- so `--check` was declared, documented and unreachable, exiting
-    #: 2 with "This script takes no arguments". A flag that cannot be called is
-    #: the unwired-addition failure, and it was caught by running it.
-    _answer_help(__doc__, __file__, takes_no_arguments=False)
     raise SystemExit(main(sys.argv[1:]))

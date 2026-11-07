@@ -276,6 +276,16 @@ B131 measures that 43 arXiv identifiers, 44 DOIs and 260 links sit in the record
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B20 bound orchestrator: both switches need his ruling
+
+*Parked 2026-11-07T20:13:27+00:00.*
+
+B20 is built, not blocked on work. Its own entry records 4 of 4 components built, 0 partly built, 0 absent, and the monitoring loop built and tested but not enabled. The only remaining act is flipping 2 switches - the actuator opt-in flag and the runner review flag - which would let the loop act unattended on his machine. That is decision 1 in his queue of 29 and it is explicitly his: option 1, make the pause reachable and leave the actuator in record-only mode, is the recommendation. Flipping either without his word would be an irreversible outward-facing change he has never been asked to authorise. Measured 2026-11-07: of the 35 OPEN entries, 31 carry options awaiting his ruling, and the 4 that do not - B20, B22, B56, B122, C0001 - each reserve the remaining decision to him in their own text. B22 additionally needs paid panel authorisation.
+
+**This is YOUR DECISION, by the entry's own words — "awaiting his ruling".** Not blocking, and not work to be done meanwhile.
+
+**Needs your decision — IRREVERSIBLE: one of his 3 standing categories: a git ref, money, or the sealed key store.** Not blocking; nothing on the list waits on it.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Mutation harness for bench/tests/test_the_line_caps_were_never_his_2026-11-06.py.
+import sys
 
 A guard that has never been seen to fail is a guard that asserts nothing.
 This reverts the producer 5 ways and requires the NAMED test to go red each
@@ -107,4 +108,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

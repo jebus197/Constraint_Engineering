@@ -45,13 +45,36 @@ from _cli_help import answer_help  # noqa: E402
 REPO = pathlib.Path(__file__).resolve().parents[1]
 LOGS = REPO / "bench" / "logs"
 
-#: His operating point, read from its owner rather than retyped.
+#: His operating point, IMPORTED from its owner -- not retyped, and not parsed.
 def _chosen_target() -> float:
+    """Read the VALUE, not the spelling.
+
+    ★ WAS A SOURCE-TEXT PARSE (repaired 2026-11-07, entry B56). It scanned the
+    owning script for a line starting `CHOSEN_TARGET` and split it on `=` and
+    `#`. That is `execute-do-not-grep` in a consumer: it reads how the producer
+    SPELLS the number rather than what the number IS, so a rename kills a
+    correct consumer with SystemExit, and `CHOSEN_TARGET = TARGETS[1]` -- a
+    perfectly good refactor of a correct producer -- raises ValueError on the
+    float conversion. Importing cannot drift from the producer because it IS
+    the producer's value.
+
+    The owner is import-safe: checked by AST before this was changed, it has no
+    top-level loops or calls and `CHOSEN_TARGET` is a plain module-level
+    assignment. The pinning guard already `exec_module`s the same file.
+    """
+    import importlib.util
     p = REPO / "scripts" / "can_we_do_better_than_one_in_twenty_2026-10-30.py"
-    for ln in p.read_text().splitlines():
-        if ln.strip().startswith("CHOSEN_TARGET"):
-            return float(ln.split("=")[1].split("#")[0].strip())
-    raise SystemExit("CHOSEN_TARGET is not in its owning script; refusing to guess")
+    if not p.is_file():
+        raise SystemExit(f"the operating point's owner is gone: {p}")
+    spec = importlib.util.spec_from_file_location("cwdbt_operating_point", p)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    if not hasattr(mod, "CHOSEN_TARGET"):
+        raise SystemExit(
+            "CHOSEN_TARGET is not defined in its owning script; refusing to "
+            "guess. It was renamed or moved -- update this reader rather than "
+            "retyping the number here.")
+    return float(mod.CHOSEN_TARGET)
 
 
 #: The 4 candidate definitions of "the seat was right about this finding".

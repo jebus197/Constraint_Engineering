@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Does the stamper's guard discriminate? Mutate the stamper, require red.
+import sys
 
 ANCHORS ARE DERIVED by searching the stamper's own source for the construct each
 mutation must break, and a mutation whose anchor is absent REFUSES rather than
@@ -126,4 +127,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

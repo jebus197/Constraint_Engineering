@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Mutation harness for the dormant-section archive axis.
+import sys
 
 Reverts `cdsfl_sv.archive_stale_memory_entries` 6 ways and requires the
 NAMED guard test to go red each time. Anchors are DERIVED from the source;
@@ -96,4 +97,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

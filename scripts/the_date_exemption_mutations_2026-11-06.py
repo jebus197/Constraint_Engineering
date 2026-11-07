@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Mutation harness for the date-bounded exemption, 2026-11-06.
+import sys
 
 An exemption added to a comparator is the most dangerous kind of change,
 because the failure mode is SILENT: an exemption that forgives too much turns
@@ -97,4 +98,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    import pathlib as _pl
+    sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

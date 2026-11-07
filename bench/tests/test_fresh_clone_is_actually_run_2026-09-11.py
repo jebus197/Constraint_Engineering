@@ -25,6 +25,7 @@ runs, and the task-list entry quotes its output with the HEAD it was run at.
 from __future__ import annotations
 
 import importlib.util
+import ast
 import subprocess
 import sys
 from pathlib import Path
@@ -154,11 +155,75 @@ class TestTheHelperIsNotUsedWhereArgparseAlreadyWorks:
     parser; using it where argparse already works makes the help text worse,
     which is the opposite of its purpose."""
 
+    @staticmethod
+    def _both_forms(src: str) -> bool:
+        """Does this source CONSTRUCT a parser AND CALL the helper?
+
+        ★ WAS A SUBSTRING TEST, AND IT ACCUSED 2 CORRECT SCRIPTS ON 2026-11-07.
+        It read `"answer_help(" in src and "ArgumentParser" in src`. Both of
+        `scripts/who_made_this_board_red_2026-11-07.py` and
+        `scripts/the_help_matcher_needed_both_halves_2026-11-07.py` MENTION
+        "ArgumentParser" as a string literal inside their own detector logic --
+        they are tools that look for parsers -- and neither builds one. The
+        guard read the mention as the thing mentioned, which is
+        `execute-do-not-grep` in its plainest form and the same shape as a
+        detector that spells out its own pattern.
+
+        Asked of the PARSED module instead: a parser must be CONSTRUCTED (an
+        `ast.Call` to `ArgumentParser`, bare or as `argparse.ArgumentParser`)
+        and the helper must be CALLED, under its own name or an alias bound
+        from `_cli_help`. Strictly more precise in both directions: a real
+        construction is always an `ast.Call` and so cannot be missed, and a
+        literal can no longer accuse.
+        """
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
+            return False
+        helper_names = {"answer_help"}
+        for n in ast.walk(tree):
+            if isinstance(n, ast.ImportFrom) and n.module == "_cli_help":
+                for a in n.names:
+                    if a.name == "answer_help" and a.asname:
+                        helper_names.add(a.asname)
+        builds = calls = False
+        for n in ast.walk(tree):
+            if not isinstance(n, ast.Call):
+                continue
+            nm = getattr(n.func, "id", None) or getattr(n.func, "attr", None)
+            if nm == "ArgumentParser":
+                builds = True
+            elif nm in helper_names:
+                calls = True
+        return builds and calls
+
+    def test_the_both_forms_check_discriminates(self):
+        """Commissioned before trusted. A check that fires on everything is as
+        useless as one that fires on nothing."""
+        both = ("import argparse\n"
+                "from _cli_help import answer_help\n"
+                "def main():\n"
+                "    answer_help(__doc__, __file__)\n"
+                "    argparse.ArgumentParser()\n")
+        assert self._both_forms(both), "a real both-forms script must be caught"
+        aliased = both.replace("import answer_help",
+                               "import answer_help as _answer_help").replace(
+            "    answer_help(", "    _answer_help(")
+        assert self._both_forms(aliased), "the alias form must be caught too"
+        mention = ('X = "ArgumentParser"\n'
+                   'from _cli_help import answer_help\n'
+                   'answer_help(__doc__, __file__)\n')
+        assert not self._both_forms(mention), (
+            "a STRING LITERAL naming ArgumentParser must not accuse: that is "
+            "the false positive this check was rewritten to stop")
+        parser_only = "import argparse\nargparse.ArgumentParser()\n"
+        assert not self._both_forms(parser_only), "a parser alone is fine"
+
     def test_no_script_uses_both(self):
         offenders = []
         for p in sorted((REPO / "scripts").glob("*.py")):
             src = p.read_text(encoding="utf-8")
-            if "answer_help(" in src and "ArgumentParser" in src:
+            if self._both_forms(src):
                 offenders.append(p.name)
         assert not offenders, (
             f"{offenders} call answer_help AND build an argparse parser. "
