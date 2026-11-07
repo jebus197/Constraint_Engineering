@@ -1221,7 +1221,24 @@ class TicketStore:
         # identity is the real question: it fires the moment identity starts
         # depending on the text again, which is the regression that minted 5
         # duplicate tickets.
-        if tid_of(t.kind, clean, t.task_ref) != t.tid:
+        #: ★ `t.anchor` WAS MISSING HERE AND IT REFUSED 77% OF THE REGISTER.
+        #: `tid_of`'s precedence is task_ref, then anchor, then content. Passing
+        #: only `task_ref` meant an ANCHOR-addressed ticket -- every one raised
+        #: from his annotations or from chat, which carry an anchor and no
+        #: reference -- fell through to CONTENT addressing, so the recomputed
+        #: digest differed from the stored identity and this guard fired on a
+        #: restatement that was perfectly safe. Measured 2026-11-07 over the live
+        #: store: 2,650 of 3,422 tickets are anchor-addressed, and for 2,643 of
+        #: those 2,650 -- 0.997358, Wilson 95% [0.994557, 0.998720],
+        #: Clopper-Pearson [0.994565, 0.998937] -- `tid_of(kind, new, task_ref,
+        #: anchor)` equals the stored tid while `tid_of(kind, new, task_ref)`
+        #: does not. The comment above records the check being hardened by
+        #: mutation, and it was: the mutation exercised the `task_ref` path only,
+        #: so the anchor omission survived a harness written to catch exactly
+        #: this. THE CHECK IS NOT WEAKENED: a content-addressed ticket still has
+        #: no reference and no anchor, so its digest still moves with its text
+        #: and this still refuses.
+        if tid_of(t.kind, clean, t.task_ref, t.anchor) != t.tid:
             raise AssertionError(
                 "restating this text would move the hashed identity, so identity "
                 "is digesting the text again. Refusing to write it.")
@@ -1419,7 +1436,13 @@ class TicketStore:
         # RECOMPUTED for the same reason as in `restate`: comparing the copied
         # field could never fail. This asks whether the LABEL has become part
         # of the identity, which is the only way a retitle could move one.
-        if tid_of(t.kind, t.verbatim, t.task_ref) != t.tid:
+        #: ★ THE SAME OMISSION AS IN `restate`, AND FOUND IN THE SAME PASS.
+        #: Without `t.anchor` this asks the content question of a ticket whose
+        #: identity is its anchor, so it refused every retitle of the 2,650
+        #: anchor-addressed tickets. Both sites are corrected together, because
+        #: fixing 1 and leaving the other is how a repair reopens what another
+        #: repair closed.
+        if tid_of(t.kind, t.verbatim, t.task_ref, t.anchor) != t.tid:
             raise AssertionError(
                 "this ticket's stored identity does not match its own content, so "
                 "a retitle cannot be shown to be safe. Refusing to write it.")

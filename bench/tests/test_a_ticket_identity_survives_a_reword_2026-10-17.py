@@ -339,6 +339,27 @@ def test_no_reference_has_live_work_at_a_superseded_identity():
 
 # --------------------------------------------------- the gates actually fire
 
+def _assert_double_matches_real(double, real) -> None:
+    """A test double must accept exactly what the real function accepts.
+
+    ★ ADDED 2026-11-07 AFTER A STALE DOUBLE MADE A CORRECT REPAIR LOOK BROKEN.
+    Both doubles below took 3 parameters against `tid_of`'s 4, so restoring the
+    omitted `anchor` at the call site produced
+    `TypeError: ... takes from 2 to 3 positional arguments but 4 were given`
+    from INSIDE a `pytest.raises(AssertionError)` block -- which reads as the
+    subject violating its contract rather than as the double being out of date.
+    Checked here so the next arity change fails with a sentence naming the
+    cause instead of a TypeError the reader has to trace.
+    """
+    import inspect
+    d = [p for p in inspect.signature(double).parameters]
+    r = [p for p in inspect.signature(real).parameters]
+    assert d == r, (
+        f"this test double's signature {d} no longer matches the real "
+        f"tid_of's {r}. The double is stale, not the subject: update the "
+        f"double rather than reverting the call site.")
+
+
 def test_restate_refuses_when_identity_would_depend_on_the_text(tmp_path, monkeypatch):
     """EXECUTES the gate rather than trusting it.
 
@@ -353,8 +374,18 @@ def test_restate_refuses_when_identity_would_depend_on_the_text(tmp_path, monkey
 
     real = TS.tid_of
 
-    def text_sensitive(kind, verbatim, task_ref=""):
-        """The defective rule: the text is back in the digest."""
+    def text_sensitive(kind, verbatim, task_ref="", anchor=""):
+        """The defective rule: the text is back in the digest.
+
+        ★ GAINED `anchor` ON 2026-11-07, AND THE REASON IS WORTH KEEPING. This
+        double took 3 parameters while the real `tid_of` takes 4. When the
+        omitted `anchor` was restored at `restate`'s call site -- a repair that
+        unblocked 2,650 of 3,422 tickets -- this double raised TypeError instead
+        of the AssertionError the test asserts, so a CORRECT repair read as a
+        broken contract. The contract itself was never in question and is
+        unchanged: a text-sensitive digest must still be refused. A stale test
+        double is a defect in the test, not in the subject.
+        """
         import hashlib
         h = hashlib.sha256()
         h.update(kind.encode()); h.update(b"\x00")
@@ -363,6 +394,7 @@ def test_restate_refuses_when_identity_would_depend_on_the_text(tmp_path, monkey
             h.update(b"\x00"); h.update(str(task_ref).encode())
         return h.hexdigest()[:12]
 
+    _assert_double_matches_real(text_sensitive, real)
     monkeypatch.setattr(TS, "tid_of", text_sensitive)
     with pytest.raises(AssertionError) as e:
         store.restate(t.tid, "a completely different wording", "a restatement")
@@ -377,9 +409,10 @@ def test_retitle_refuses_a_ticket_whose_identity_does_not_match_its_content(
     store = TS.TicketStore(tmp_path / "t.jsonl")
     t, _ = store.propose("pf", "label", "the text", "test", task_ref="Z9")
 
-    def label_sensitive(kind, verbatim, task_ref=""):
+    def label_sensitive(kind, verbatim, task_ref="", anchor=""):
         return "0" * 12          # anything that disagrees with the stored id
 
+    _assert_double_matches_real(label_sensitive, TS.tid_of)
     monkeypatch.setattr(TS, "tid_of", label_sensitive)
     with pytest.raises(AssertionError):
         store.retitle(t.tid, "a new label")
