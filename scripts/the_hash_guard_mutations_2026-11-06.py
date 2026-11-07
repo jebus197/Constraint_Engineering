@@ -24,11 +24,33 @@ def live_idents() -> list[str]:
 
 
 def rows() -> list[dict]:
-    out = []
-    for l in STORE.read_text(encoding="utf-8", errors="replace").splitlines():
-        if l.strip():
-            try: out.append(json.loads(l))
-            except Exception: pass
+    """Parse the append-only store, RECORDING any line that will not parse.
+
+    ★ THE `except Exception: pass` HERE WAS A SWALLOWED FAILURE, caught
+    2026-11-06 by `test_no_bare_or_silently_swallowed_exception_handlers` in
+    `bench/tests/test_operational_scripts.py` -- a guard outside the commit
+    gate, so 5 gate-green commits passed over it. A store line that will not
+    parse is a store line this harness cannot see, and a mutation harness that
+    silently drops rows measures a store it has quietly altered. The count is
+    returned alongside and asserted by the caller, so a parse failure can
+    never again be indistinguishable from a clean read.
+    """
+    out, unparseable = [], []
+    for n, l in enumerate(
+            STORE.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        if not l.strip():
+            continue
+        try:
+            out.append(json.loads(l))
+        except json.JSONDecodeError as err:
+            unparseable.append(f"{STORE.name}:{n}: {type(err).__name__}: {err}")
+    if unparseable:
+        print(f"  WARNING: {len(unparseable)} store line(s) did not parse and are "
+              f"NOT in the population measured below:")
+        for u in unparseable[:5]:
+            print(f"    {u}")
+        if len(unparseable) > 5:
+            print(f"    ... and {len(unparseable) - 5} more")
     return out
 
 

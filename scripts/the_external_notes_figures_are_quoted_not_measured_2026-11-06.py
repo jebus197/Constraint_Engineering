@@ -101,9 +101,12 @@ def main() -> int:
               f"({r['urls_distinct']} distinct), {r['dois']} DOIs, "
               f"{r['arxiv']} arXiv-shaped identifiers")
         k, m = r["paras_with_figure_and_citation"], r["paras_with_figure"]
-        res = iv(k, m)
-        if res:
-            (wl, wh), (wl2, wh2), (cl, ch) = res
+        #: ★ `if res:` WAS VACUOUS. `iv` returns a 3-tuple, which is TRUE in
+        #: every case including one it could not compute, so the guard tested
+        #: nothing. The real precondition is a non-zero denominator, which the
+        #: `k/m` below already requires.
+        if m:
+            (wl, wh), (wl2, wh2), (cl, ch) = iv(k, m)
             print(f"  figure-bearing paragraphs also carrying a citation: "
                   f"{k} of {m} = {k/m:.6f}")
             print(f"    Wilson [{wl:.6f}, {wh:.6f}] statsmodels / "

@@ -27,11 +27,38 @@ DETECTOR = REPO / "scripts" / "counting_imports_ranks_producers_backwards_2026-1
 
 def detector_patterns() -> dict[str, str]:
     """The Wilson routes, lifted from the detector's own QUANTITY_ROUTES table."""
+    #: ★ READ THE TABLE BY IMPORT, NOT BY REGEX OVER THE SOURCE. Repaired
+    #: 2026-11-07. The source-text read below anchors on `"name": r"pattern"`
+    #: all on one line, and on 2026-11-06 the detector's "written-out algebra"
+    #: entry was widened into a multi-line parenthesised concatenation -- a
+    #: perfectly ordinary Python spelling that this shape cannot see. The
+    #: producer then exited "ANCHOR ABSENT: could not identify both Wilson
+    #: routes", so the instrument that measures B135 was silently disabled by
+    #: a repair to B135's own subject. That widening was B135's option 2, which
+    #: the entry itself calls a treadmill; option 1, its recommendation, is to
+    #: replace a source-text match with EXECUTION. This applies option 1 to the
+    #: PRODUCER: importing the module yields the dict whatever its spelling.
+    #: The source-text path is retained as a fallback and the route used is
+    #: printed, so a future import failure is loud rather than silent.
+    import importlib.util as _ilu
+    try:
+        _spec = _ilu.spec_from_file_location("_wilson_detector_subject", DETECTOR)
+        _mod = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(_mod)
+        _routes = dict(_mod.QUANTITY_ROUTES["Wilson"])
+        print("  route table read BY IMPORT (immune to how the table is spelled)")
+        return _routes
+    except Exception as _err:                                    # noqa: BLE001
+        print(f"  import failed ({type(_err).__name__}: {_err}); "
+              f"falling back to the source-text read")
     src = DETECTOR.read_text(encoding="utf-8")
     m = re.search(r'"Wilson":\s*\{(.*?)\}', src, re.S)
     if not m:
         raise SystemExit("ANCHOR ABSENT: the detector's Wilson route table has moved")
-    return dict(re.findall(r'"([^"]+)":\s*r"([^"]+)"', m.group(1)))
+    out = dict(re.findall(r'"([^"]+)":\s*r"([^"]+)"', m.group(1)))
+    print(f"  route table read FROM SOURCE TEXT: {len(out)} route(s) -- a value "
+          f"spelled across lines is invisible to this path")
+    return out
 
 
 #: THE SAME ALGEBRA, WRITTEN ANY REASONABLE WAY. Each alternative is the Wilson

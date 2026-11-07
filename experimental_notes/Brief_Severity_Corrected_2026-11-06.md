@@ -1,5 +1,58 @@
 # CORRECTED BRIEF -- severity and residual risk, with the error the last brief carried
 
+> ## ★ THIS BRIEF'S OWN LEAD CLAIM WAS REFUTED BY THE ROUND IT DISPATCHED. BANNER ADDED 2026-11-07.
+>
+> **Read this before reading anything below.** The brief's lead question, stated in
+> SECTION 1 and closed at the sentence beginning *"So the same disproved finding scores 0
+> under 7.7 and 0.273 under 7.8 Approach B"*, asserts that 2 sections of
+> `docs/MATHEMATICAL_APPENDIX.md` contradict each other. **They do not.** Both free seats,
+> cc2 and fable, reached that conclusion independently and from their own reading of the
+> appendix, and it was then checked directly against the appendix text.
+>
+> **§7.11 of the same appendix requires BOTH quantities at once**: a finding is selected
+> only if its severity exceeds one threshold AND `S_v` is at least 0.5. They are 2 measures
+> used together, not 2 competing definitions of 1 measure. §7.8 states its own prior as the
+> probability that a claim is TRUE before verification, so `S_v` is a credence about truth,
+> not a measure of consequence. The 0 against 0.273 gap was produced by substituting 1 for
+> the other, which neither the appendix nor the code does anywhere.
+>
+> **The claim of tool verification was the more serious error.** The brief says the
+> contradiction was verified by 2 independent mathematical tools. Both tool results are
+> TRUE -- the 3-factor product is 0 when its verification factor is 0, and `S_v` never
+> reaches 0 -- and neither establishes that the 2 expressions name the same quantity, which
+> is the step the headline needed and is a question about what §7.8 says rather than a
+> question of arithmetic. 2 true answers were attached to a conclusion neither supported.
+>
+> **The underlying cause is a naming collision, now documented in the appendix.** `S_v` is
+> called multi-verifier Bayesian SEVERITY in the selection section and in the glossary while
+> §7.8 derives a probability of truth. A clarification now stands in
+> `docs/MATHEMATICAL_APPENDIX.md` under the heading beginning *"`S_v` is a credence, not a
+> severity"*, pinned by
+> `bench/tests/test_the_severity_factor_values_are_pinned_2026-11-06.py`. It is named by its
+> heading rather than by a line number, because a line number drifts and a heading does not.
+>
+> **What survived, and was made stronger:** the argument that no severity threshold above
+> 0.5 tests how bad a finding is, because the only factor carrying consequence has 2 values.
+> 1 seat generalised it from this formula to every formula of the same shape, with the
+> threshold left free rather than tested at chosen values.
+>
+> **The census figures below are also superseded**: the archive total of 3,474 counts each
+> seat's private copy of the repository as a further run. The authoritative total is 3,170 by
+> whole-file digest de-duplication, and 1,297 of those carry a falsification verdict, because
+> the verdict field is an EMPTY STRING on 305 findings. The conclusion is unaffected in every
+> frame, since the factor the formula needs is recorded on 0 findings in all of them.
+> Producers for those 4 figures, so they travel with the code that makes them:
+> `scripts/severity_was_never_computed_from_the_model_2026-10-12.py` for the digest
+> de-duplication, and `scripts/the_severity_census_has_three_frames_2026-11-06.py` for the 4
+> frames side by side. They are NOT in this brief's declared-figures block and cannot be:
+> that block was written before the round, and these are figures the round produced. The
+> validator's figure-coverage warning rose from 24 to 25 for exactly that reason, which is
+> the brief-artefact integrity question already open as entry B125.
+>
+> **The original text is left standing below, unedited, because it is the record of what the
+> seats were actually asked.** Full record:
+> `experimental_notes/Free_Panel_Severity_Corrected_2026-11-06.md`.
+
 
 ## REQUIRED SECTION 1 -- The question
 

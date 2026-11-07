@@ -146,6 +146,11 @@ def main() -> int:
     print(f"named but absent : {len(missing)}")
     for r in missing[:8]:
         print(f"    {r}")
+    #: ★ STATE THE REMAINDER. A listing cut to 8 under a heading that
+    #: reads as complete is a silent falsehood, and 3 of these shipped in
+    #: 1 night's work. The total is printed, so the reader can see the cut.
+    if len(missing) > 8:
+        print(f"    ... and {len(missing) - 8} more not shown (of {len(missing)} total)")
     blk = stamp_block(text)
     print(f"\nstamp block      : {len(blk.splitlines())} lines, "
           f"{len(blk)} chars for {len(arts)} artefacts")

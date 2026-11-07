@@ -202,3 +202,94 @@ class TestTheMechanismIsWiredAndRecorded:
         assert "THE FOUNDER'S MACHINE IS A FIXED RESOURCE" in t
         assert "364.7" in t, "the measured per-process peak must travel with the rule"
         assert "ultracode" in t.lower(), "his ultracode vocabulary must be recorded"
+
+
+class TestHisSubagentCapIsRecordedAndNeverCalledMeasured:
+    """ENTRY B134, HIS RULING OF 2026-11-06: fanning out is permitted and the
+    maximum is 6 subagents per task.
+
+    ★ IT IS A RULING AND NOT A MEASUREMENT, and that distinction is the whole
+    of B134. He recalled the figure had been measured after a run of more than
+    40 subagents slowed this machine, and that measurement is NOT in the record:
+    the master task list, the global instruction file and
+    `scripts/depth_and_breadth_are_measurable_2026-10-25.py` contain no cap, no
+    optimum and no 6. `measured-rate-travels-with-its-script` forbids citing a
+    figure with no producer, so the provenance string must say so and these
+    tests assert that it does.
+
+    ★ WHAT IS MEASURED is that 6 coincides with 3 numbers this machine already
+    yields, so adopting it costs nothing -- and that for HEAVY work the
+    machine's own budget is STRICTER, which his ruling does not cover.
+    """
+
+    def _b(self, mod, work_class="light"):
+        return mod.budget(work_class)
+
+    def test_the_cap_is_recorded_and_reachable(self):
+        """ADDITIVE: an addition nothing reaches is not additive, so the cap
+        must leave its constant and arrive in the budget answer."""
+        assert _load().FOUNDER_SUBAGENT_CAP == 6
+        b = self._b(_load())
+        assert b["founder_subagent_cap"] == 6, (
+            "the cap is defined and does not reach the caller, which is the "
+            "unwired-addition failure the additive standard names")
+
+    def test_the_provenance_says_it_is_not_measured(self):
+        """The one sentence that keeps this honest when it is quoted back."""
+        p = _load().FOUNDER_SUBAGENT_CAP_PROVENANCE.lower()
+        assert "not a measurement" in p, _load().FOUNDER_SUBAGENT_CAP_PROVENANCE
+        assert "2026-11-06" in _load().FOUNDER_SUBAGENT_CAP_PROVENANCE
+        assert "b134" in p
+
+    def test_the_stricter_of_the_2_governs(self):
+        """HEAVY work is memory-bound at 2 on this machine, so 6 must not win.
+
+        Asserted as a PROPERTY over both work classes rather than against the
+        literal 2, because the live figure moves with free memory and a pinned
+        literal would make this guard a drift detector instead of a rule.
+        """
+        for wc in ("heavy", "light"):
+            b = self._b(_load(), wc)
+            assert b["binding_agent_cap"] == min(b["founder_subagent_cap"],
+                                                 b["max_concurrent_agents"]), wc
+            assert b["binding_agent_cap"] <= b["founder_subagent_cap"], (
+                f"{wc}: his ceiling was exceeded")
+            assert b["binding_agent_cap"] <= b["max_concurrent_agents"], (
+                f"{wc}: the machine's own budget was exceeded")
+
+    def test_heavy_work_is_bounded_below_his_cap_on_this_machine(self):
+        """ANTI-VACUITY. Without this the test above holds trivially if the
+        machine's budget were always 6 or more, and the refinement that matters
+        -- that 6 is not safe for 6 verifications -- would go unstated."""
+        heavy = self._b(_load(), "heavy")
+        assert heavy["max_concurrent_agents"] < _load().FOUNDER_SUBAGENT_CAP, (
+            f"heavy budget {heavy['max_concurrent_agents']} is not below the cap "
+            f"of {_load().FOUNDER_SUBAGENT_CAP}; if this machine has grown, say "
+            f"so rather than deleting the test")
+        assert heavy["binding_constraint"] == "memory"
+
+    def test_the_coincidence_with_the_derived_numbers_is_reported(self):
+        """The claim that adopting 6 costs nothing rests on these 3 agreeing."""
+        b = self._b(_load(), "light")
+        assert b["core_ceiling"] == 6
+        assert b["harness_default_cap"] == 6
+        assert b["max_concurrent_agents"] == 6 or b["machine_already_loaded"], (
+            "the light budget is neither 6 nor explained by existing load")
+
+    def test_enforcement_is_not_claimed_here(self):
+        """★ THE BOUNDARY. The enforcing hook is THE SAME INODE as the repo copy
+        (709943134, link count 2), so a repo-side write is the same write. That
+        is the self-modification question entry B113 puts to him and which he
+        has not ruled, so this cap is RECORDED and REPORTED, never enforced in
+        the hook. This test fails if a future change quietly adds enforcement.
+        """
+        import pathlib as _pl
+        hook = _pl.Path.home() / ".claude" / "hooks" / "local_resource_budget.py"
+        if not hook.is_file():
+            import pytest as _pt
+            _pt.skip("the hook is not installed on this machine")
+        src = hook.read_text(encoding="utf-8", errors="replace")
+        assert "FOUNDER_SUBAGENT_CAP" not in src, (
+            "the cap now appears in the hook. If he has ruled B113, say so in "
+            "the entry and update this test deliberately; do not let a hook edit "
+            "arrive without his permission on record.")

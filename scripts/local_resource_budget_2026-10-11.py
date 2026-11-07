@@ -63,6 +63,34 @@ HEADROOM_SHARE = 0.5
 #: machine that still allowed 6 heavy processes, which exceeds what 8 GiB holds.
 RESERVED_CORES = 2
 
+#: ★ HIS RULING, 2026-11-06, AND IT IS A RULING AND NOT A MEASUREMENT.
+#: He instructed that fanning out is permitted and that the maximum is 6
+#: subagents per task, recalling that it had been measured after a run of more
+#: than 40 subagents on 1 task slowed this machine. THAT MEASUREMENT IS NOT IN
+#: THE RECORD: the master task list, the global instruction file and
+#: `scripts/depth_and_breadth_are_measurable_2026-10-25.py` were searched, and
+#: the nearest producer measures fan-out rate per calendar day with no cap, no
+#: optimum and no 6. `measured-rate-travels-with-its-script` forbids citing a
+#: figure with no producer, so this must never be presented as measured.
+#: Entry B134.
+#:
+#: WHAT IS MEASURED IS THAT IT COINCIDES WITH 3 NUMBERS THIS MACHINE ALREADY
+#: YIELDS, so the ruling costs nothing and contradicts nothing: `core_ceiling`
+#: is 6, `harness_default_cap` is 6, and `max_concurrent_agents` for LIGHT work
+#: is 6, all at 8 logical cores with 2 reserved.
+#:
+#: AND IT IS NOT SAFE FOR HEAVY WORK, which his ruling does not cover. The same
+#: call returns 2 for heavy work, bound by MEMORY: one pytest tree peaks at
+#: 364.7 MiB against about 1.58 GiB of live headroom. So where the agents each
+#: run a verification, the machine's own budget is the stricter bound and
+#: governs. Both numbers are kept; neither is removed.
+FOUNDER_SUBAGENT_CAP = 6
+FOUNDER_SUBAGENT_CAP_PROVENANCE = (
+    "founder ruling 2026-11-06, NOT a measurement; entry B134. It coincides "
+    "with core_ceiling, harness_default_cap and the light-work agent budget on "
+    "this machine. For heavy work the memory-bound budget is stricter and governs."
+)
+
 
 def logical_cores() -> int:
     try:
@@ -147,6 +175,13 @@ def budget(work_class: str = "heavy") -> dict:
         "load_averages": la,
         "machine_already_loaded": loaded,
         "max_concurrent_agents": chosen,
+        #: ★ B134: his cap travels with every budget answer, so a caller
+        #: cannot read the derived number without also seeing his ceiling and
+        #: which of the 2 binds. Returned rather than merely defined, because
+        #: an addition nothing reaches is not additive.
+        "founder_subagent_cap": FOUNDER_SUBAGENT_CAP,
+        "founder_subagent_cap_provenance": FOUNDER_SUBAGENT_CAP_PROVENANCE,
+        "binding_agent_cap": min(FOUNDER_SUBAGENT_CAP, chosen),
         "harness_default_cap": min(16, max(1, cores - 2)),
     }
 

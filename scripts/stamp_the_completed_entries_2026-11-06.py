@@ -126,6 +126,11 @@ def main() -> int:
     print(f"settled entries skipped (no parseable heading)   : {skipped}")
     for j, ident, new in changed[:5]:
         print(f"\n  {ident} at line {j+1}:\n    {new[:150]}")
+    #: ★ STATE THE REMAINDER. A listing cut to 5 under a heading that
+    #: reads as complete is a silent falsehood, and 3 of these shipped in
+    #: 1 night's work. The total is printed, so the reader can see the cut.
+    if len(changed) > 5:
+        print(f"    ... and {len(changed) - 5} more not shown (of {len(changed)} total)")
 
     if not a.apply:
         print("\nDRY RUN -- nothing written. Re-run with --apply.")

@@ -621,8 +621,54 @@ def depends_on_another_entry(ident: str) -> str | None:
 _DATED = re.compile(r"\b(2026-\d{2}-\d{2})")
 
 
+#: ★ A STORE KEY IS NOT AN IDENTIFIER, AND PASSING ONE HERE USED TO BE SILENT.
+#: Both this function and `still_asks` look an identifier up in dicts keyed
+#: BARE -- `B21`, never `task:B21`. A caller that passes the store key finds
+#: nothing, and the miss then reads as a finding: `bodies().get("task:B21","")`
+#: returns "", `_DATED.findall("")` is empty, `any([])` is False, and the
+#: function reports "the ruling still settles this entry" -- the one direction
+#: that SILENCES him.
+#:
+#: MEASURED COST, 2026-11-07. `how_many_verdicts_really_await_him_2026-11-06.py`
+#: called `ruling_is_spent(f"task:{ident}", ...)`. 3 of 41 live entries were
+#: labelled REPEAT on that empty string -- B13, B20 and B21 -- and B20 is the
+#: next task on the list and the 1st decision in his queue, its own heading
+#: saying he has ruled the build 3 times and has never been asked whether to
+#: turn it on. Half the defect was hidden because B71 came out right anyway,
+#: rescued by the BLOCKED branch.
+#:
+#: WHY A COLON AND NOT A MISSING KEY. Failing open on any ident absent from
+#: `bodies()` was tried first and is REJECTED BY MEASUREMENT: the 7 `defect:`
+#: entries he ruled on 2026-10-16 legitimately have no body, so that version
+#: moved the decision queue from 29 to 36 and would have put 7 settled items
+#: back in front of him -- the already-ruled fault it was written to prevent.
+#: A COLON is the precise signal, because 0 of 274 task-list entries, 0 of 274
+#: `bodies()` keys and 0 decision identifiers contain one, so a colon can only
+#: mean a caller passed a key where an identifier belongs.
+#: Producer: scripts/are_the_twenty_nine_new_or_repeats_2026-11-07.py
+_KEY_NOT_IDENT = (
+    "asks_newer_than_the_ruling was passed {!r}, which contains a colon and is "
+    "therefore a STORE KEY, not an entry identifier. The lookups here are keyed "
+    "bare (B21, not task:B21); a prefixed key finds nothing and the miss reads "
+    "as 'the ruling still settles this', which silences him. Pass the bare "
+    "identifier. See scripts/are_the_twenty_nine_new_or_repeats_2026-11-07.py."
+)
+
+
+def _reject_store_key(ident: str) -> None:
+    """1 predicate, 3 callers -- the 3 public entry points that take an ident.
+
+    Written as 1 function rather than 3 copies because this file already holds
+    the lesson: `ruling_is_spent` exists precisely because the same date rule
+    was written out at 2 call sites and repaired at only 1.
+    """
+    if ":" in (ident or ""):
+        raise ValueError(_KEY_NOT_IDENT.format(ident))
+
+
 def asks_newer_than_the_ruling(ident: str, ruled: str | None) -> bool:
     """A live ask PLUS a dated addition later than the ruling that silences it."""
+    _reject_store_key(ident)
     if not ruled:
         return bool(still_asks(ident))
     if not still_asks(ident):
@@ -639,6 +685,7 @@ def asks_newer_than_the_ruling(ident: str, ruled: str | None) -> bool:
 
 def still_asks(ident: str) -> bool:
     """Does this entry carry a LIVE asking sentence? 1 predicate, 2 callers."""
+    _reject_store_key(ident)
     try:
         mod = _load(REPO / "scripts"
                     / "how_many_decisions_actually_need_him_2026-11-01.py",
@@ -671,6 +718,7 @@ def ruling_is_spent(ident: str, ruled: str | None, state: str | None) -> bool:
       2. the entry is BLOCKED and still asking, which no date can detect when
          the ruling and the new question fall on ONE DAY, as B71's did.
     """
+    _reject_store_key(ident)
     if not ruled:
         return False
     if asks_newer_than_the_ruling(ident, ruled):

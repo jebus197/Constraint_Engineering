@@ -270,6 +270,12 @@ B131 measures that 43 arXiv identifiers, 44 DOIs and 260 links sit in the record
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B20: whether to turn on the bound orchestrator
+
+*Parked 2026-11-07T15:46:17+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)

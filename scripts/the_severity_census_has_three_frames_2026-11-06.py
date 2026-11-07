@@ -104,9 +104,6 @@ FRAMES = {
 
 
 def main() -> int:
-    if "--help" in sys.argv or "-h" in sys.argv:
-        print(__doc__)
-        return 0
     results = {}
     for name, (pattern, means) in FRAMES.items():
         files = sorted(LOGS.glob(pattern.replace("logs/", "")))
@@ -151,4 +148,16 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    #: ★ `answer_help` ANSWERS `--help` AND REFUSES AN UNRECOGNISED FLAG,
+    #: which a hand-rolled `"--help" in sys.argv` check does not: it let
+    #: `--this-flag-does-not-exist` through with exit 0, and an unrecognised
+    #: argument that reads as success is the failure
+    #: `test_an_unknown_flag_is_rejected_loudly` exists for. Placed INSIDE
+    #: `__main__`, never at module level, where it would see pytest's own
+    #: argv on import and exit 2 -- the defect that took 12 tests down
+    #: earlier tonight.
+    import pathlib as _pl, sys as _sys
+    _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+    from _cli_help import answer_help as _answer_help
+    _answer_help(__doc__, __file__)
     raise SystemExit(main())

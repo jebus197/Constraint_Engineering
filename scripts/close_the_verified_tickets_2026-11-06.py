@@ -122,6 +122,11 @@ def main() -> int:
     assert not bad, "a closure without a verification must never be attempted"
     for tid, ref, v in go[:5]:
         print(f"\n  {tid}  {ref}\n    {v}")
+    #: ★ STATE THE REMAINDER. A listing cut to 5 under a heading that
+    #: reads as complete is a silent falsehood, and 3 of these shipped in
+    #: 1 night's work. The total is printed, so the reader can see the cut.
+    if len(go) > 5:
+        print(f"    ... and {len(go) - 5} more not shown (of {len(go)} total)")
     if not a.apply:
         print(f"\nDRY RUN -- nothing written. Re-run with --apply on a green board.")
         return 0

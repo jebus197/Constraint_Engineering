@@ -25,7 +25,17 @@ from collections import Counter
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
 from _cli_help import answer_help as _ah
-_ah(__doc__, __file__)
+#: ★ GUARDED 2026-11-06. Unguarded, this ran on IMPORT, and `answer_help`
+#: refuses an unrecognised argument by design -- so an importer passing the
+#: script path, as `test_help_builds_and_lists_every_advertised_flag` does,
+#: got exit 2 and the module read as unimportable. The same defect at module
+#: level in 2 other producers took 12 tests down earlier tonight.
+#: THIS SCRIPT HAS NO `main()`: its body runs at module level, so an import
+#: still performs the whole measurement. That is pre-existing and is NOT
+#: fixed here -- restructuring it is a larger change than this defect
+#: warrants, and the guard that caught this only requires importability.
+if __name__ == "__main__":
+    _ah(__doc__, __file__)
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -83,7 +93,7 @@ for it in live:
     ruled = it.get("ruled")
     if not ruled: cls[it["ident"]] = "REAL"
     else:
-        spent = mr.ruling_is_spent(f"task:{it['ident']}", ruled, it.get("state") or "")
+        spent = mr.ruling_is_spent(it["ident"], ruled, it.get("state") or "")
         cls[it["ident"]] = "LIVE-AGAIN" if spent else "REPEAT"
 c = Counter(cls.values())
 print(f"  live entries: {len(live)}   partition: {dict(c)}")
