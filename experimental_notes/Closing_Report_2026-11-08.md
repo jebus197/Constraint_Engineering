@@ -4,7 +4,7 @@
 
 ## Summary
 
-**5** commits landed against his 29 rulings of this morning, each gated by `hooks/pre-commit`. Of **9** board runs, **5 landed and 4 refused**, and every refusal was correct.
+**5** commits had landed against his 29 rulings of this morning **when this was written**, each gated by `hooks/pre-commit`. The bound is deliberate: this report is itself committed, so it counts its own commits and went stale by 1 the instant the correction below was committed. A self-counting figure cannot be live, so it is dated and the producer is named instead. Of **9** board runs, **5 landed and 4 refused**, and every refusal was correct.
 
 > ★ **THESE 2 FIGURES ARE CORRECTED AND THE SUPERSEDED VALUES ARE NAMED DELIBERATELY**, because a reader who saw the first version needs to see which moved. It read *7 commits* and *2 refusals*. Both were TYPED rather than derived, which is `measured-rate-travels-with-its-script` broken in the document whose purpose is to be the honest record — and about my own activity, which is the least excusable kind. Producer: `scripts/how_many_commits_and_how_many_refusals_2026-11-08.py`. It reports the 2 halves as unequally reproducible on purpose: the commit count comes from `git log --since` and anyone can re-run it, while a refusal leaves NO trace in the repository, so that count is session-observed and says so. His 5 questions are answered below, with what is outstanding and whose it is. The transferable result is not any single repair: **6 separate instruments reported a false positive, every one the same shape — a note explaining a fault read as the fault.**
 
