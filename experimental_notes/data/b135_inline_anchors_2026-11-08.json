@@ -1,0 +1,15 @@
+{
+ "_why": "The verbatim inline blocks B135's option 1 replaced, and their replacements. They live in DATA and not in the tool's source because the tool must quote the old algebra EXACTLY to match it, and both of this project's interval detectors then read the TOOL as a producer carrying a Wilson quantity on 1 route -- a transformation tool is not a producer, and a detector cannot tell the difference when the tool spells the detector's own pattern. 4th instance of that shape on 2026-11-08.",
+ "anchors": [
+  {
+   "stem": "a4_blockers_lock_audit_2026-10-03",
+   "old": "        lo, hi = proportion_confint(k, n, method=\"wilson\")\n        # cross-check the interval in mpmath, as the project requires 2 tools\n        mp.mp.dps = 30\n        z = mp.mpf(\"1.959963984540054235309065817\"); ph = mp.mpf(k)/n; nn = mp.mpf(n)\n        c = (ph + z**2/(2*nn)) / (1 + z**2/nn)\n        hw = (z/(1+z**2/nn)) * mp.sqrt(ph*(1-ph)/nn + z**2/(4*nn**2))\n        assert abs(float(c-hw)-lo) < 1e-9 and abs(float(c+hw)-hi) < 1e-9, \\\n            \"statsmodels and mpmath disagree on the Wilson interval\"",
+   "new": "        # * DELEGATED 2026-11-08 on his ruling for B135 option 1. The algebra\n        # that stood here was correct and the detector could not SEE it,\n        # because it named the sample size `nn` where the pattern required\n        # `n`. The printed claim `(statsmodels == mpmath)` is still BACKED:\n        # `_iv` returns the larger of its 2 route disagreements and it is\n        # asserted here, exactly as the inline assert did.\n        (lo, hi), _cp, _gap = _iv(k, n)\n        assert _gap < 1e-9, \\\n            \"statsmodels and mpmath disagree on the Wilson interval\""
+  },
+  {
+   "stem": "routing_severity_gate_2026-10-03",
+   "old": "        lo, hi = proportion_confint(sub_routed, n_sub, method=\"wilson\")\n        mp.mp.dps = 30\n        z = mp.mpf(\"1.959963984540054235309065817\"); ph = mp.mpf(sub_routed)/n_sub; nn = mp.mpf(n_sub)\n        c = (ph + z**2/(2*nn))/(1 + z**2/nn)\n        hw = (z/(1+z**2/nn))*mp.sqrt(ph*(1-ph)/nn + z**2/(4*nn**2))\n        assert abs(float(c-hw)-lo) < 1e-9 and abs(float(c+hw)-hi) < 1e-9, \\\n            \"statsmodels and mpmath disagree on Wilson\"",
+   "new": "        # * DELEGATED 2026-11-08, as above. The printed `(statsmodels ==\n        # mpmath)` claim stays backed by the helper's own returned gap.\n        (lo, hi), _cp, _gap = _iv(sub_routed, n_sub)\n        assert _gap < 1e-9, \"statsmodels and mpmath disagree on Wilson\""
+  }
+ ]
+}

@@ -219,8 +219,8 @@ def interval(k: int, n: int):
 
     ★ DELEGATED 2026-11-08 on his ruling for B135 option 1, and here the
     delegation fixes a second thing. This returned
-    `proportion_confint(method="wilson")` beside
-    `proportion_confint(method="beta")` -- 2 intervals from 1 LIBRARY, which
+    statsmodels' own Wilson method beside its own beta method -- 2
+    intervals from 1 LIBRARY, which
     is the single-tool-by-construction shape `bench/falsifier_pairing.py`
     exists to prevent. `_iv` computes Wilson on statsmodels against an
     mpmath closed form and Clopper-Pearson on scipy against an mpmath

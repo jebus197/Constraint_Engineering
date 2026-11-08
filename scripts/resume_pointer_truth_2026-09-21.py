@@ -59,6 +59,85 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+import math
+
+
+def _iv(k: int, n: int):
+    """Wilson and Clopper-Pearson, each on 2 INDEPENDENT routes."""
+    from scipy import stats
+    from statsmodels.stats.proportion import proportion_confint
+    import mpmath
+    mpmath.mp.dps = 40
+    if n == 0:
+        return (0.0, 1.0), (0.0, 1.0), 0.0
+    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
+    z = stats.norm.ppf(0.975)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    hw = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    wdiff = max(abs(wl - (c - hw)), abs(wh - (c + hw)))
+    cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
+    ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
+
+    def bi(a, b, y):
+        """Invert the regularised incomplete beta by bisection.
+
+        HARDENED 2026-11-04. `mpmath.betainc` is fast, but its hyp2f1 path
+        FAILS TO CONVERGE for large parameters at mid-range x. Measured at
+        a=2437, b=17564 it succeeds for x <= 0.1264 and for x >= 0.9 and raises
+        ValueError in between -- which is exactly where a bisection over [0, 1]
+        takes its first step, so the whole inversion died rather than degrading.
+        It surfaced when a producer called this at k=2436, n=20000; every
+        existing caller used a small n, and the guard that executes every `_iv`
+        against the same k and n uses n <= 38, so no test could have seen it.
+
+        Where betainc raises, the same integral is computed by quadrature in
+        log space instead. At the measured failing point that agreed with
+        scipy's quantile to 1.11e-16. It costs about 6 s per bound against
+        milliseconds for betainc, so it is used only after a failure, never by
+        default.
+        """
+        logB = mpmath.log(mpmath.beta(a, b))
+
+        def by_quad(x):
+            if x <= 0:
+                return mpmath.mpf(0)
+            def dens(u):
+                return mpmath.e**((a - 1) * mpmath.log(u)
+                                  + (b - 1) * mpmath.log1p(-u) - logB)
+            return mpmath.quad(dens, [0, min(mpmath.mpf(x), mpmath.mpf(1))])
+
+        fell_back = False
+
+        def f(x):
+            nonlocal fell_back
+            if not fell_back:
+                try:
+                    return mpmath.betainc(a, b, 0, x, regularized=True) - y
+                except Exception:
+                    fell_back = True
+            return by_quad(x) - y
+
+        # STOP ON PRECISION, not on a fixed count. The bracket halves every
+        # step, so 2**-60 is already below this tolerance and a fixed 240 did
+        # 180 redundant evaluations. That is free for betainc and it is NOT
+        # free for the quadrature fallback, which costs about 28 ms per
+        # evaluation: 240 steps took 6.66 s and 60 take 1.69 s for a bound
+        # identical to 12 decimal places. The count is still capped so a
+        # pathological case cannot spin.
+        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
+        tol = mpmath.mpf("1e-18")
+        for _ in range(240):
+            if hi - lo < tol:
+                break
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if f(m) < 0 else (lo, m)
+        return float((lo + hi) / 2)
+
+    cdiff = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
+                abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
+    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -253,29 +332,23 @@ def check(rel: str, head_now: str, ahead_now: int) -> dict:
 
 
 def wilson_two_ways(successes: int, n: int, alpha: float = 0.05):
-    """Wilson score interval by 2 independent routes; they must agree."""
-    from statsmodels.stats.proportion import proportion_confint
-    import mpmath as mp
-    from scipy.stats import norm
+    """Wilson score interval by 2 independent routes; they must agree.
 
-    lo_sm, hi_sm = proportion_confint(successes, n, alpha=alpha, method="wilson")
-
-    mp.mp.dps = 50
-    z = mp.mpf(float(norm.ppf(1 - alpha / 2)))
-    nn, x = mp.mpf(n), mp.mpf(successes)
-    p = x / nn
-    denom = 1 + z**2 / nn
-    centre = (p + z**2 / (2 * nn)) / denom
-    half = (z * mp.sqrt(p * (1 - p) / nn + z**2 / (4 * nn**2))) / denom
-    lo_mp, hi_mp = centre - half, centre + half
-
-    for a_, b_, name in ((lo_sm, lo_mp, "lower"), (hi_sm, hi_mp, "upper")):
-        gap = abs(mp.mpf(float(a_)) - b_)
-        assert gap < mp.mpf("1e-12"), (
-            f"the 2 Wilson routes disagree on the {name} bound by {gap}; "
-            "a cross-verified figure that does not cross-verify is not evidence"
-        )
-    return float(lo_sm), float(hi_sm)
+    * DELEGATED 2026-11-08 on his ruling for B135 option 1. `alpha` is KEPT and
+    CHECKED rather than dropped: the canonical helper fixes 0.05, and silently
+    returning a 95 per cent interval for a caller who asked for another level
+    would be the kind of quiet wrong answer this project exists to catch. The
+    1 call site uses the default, verified before the edit.
+    """
+    if abs(alpha - 0.05) > 1e-12:
+        raise ValueError(
+            f"the canonical interval helper is fixed at alpha=0.05; "
+            f"{alpha} was asked for, and a silent 95 per cent answer is wrong")
+    (lo, hi), _cp, gap = _iv(successes, n)
+    assert gap < 1e-12, (
+        f"the 2 Wilson routes disagree by {gap}; a cross-verified figure that "
+        f"does not cross-verify is not evidence")
+    return float(lo), float(hi)
 
 
 def main() -> int:
