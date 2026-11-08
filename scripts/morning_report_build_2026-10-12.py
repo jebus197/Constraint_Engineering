@@ -811,6 +811,22 @@ _VB = "<!-- verbatim-begin: {} -->"
 _VE = "<!-- verbatim-end -->"
 
 
+#: Statuses at which the WORK is in the tree. `state` says whether the ENTRY
+#: is closed; `status` says how far the work got. Section 3 lists items whose
+#: STATE is still OPEN, so an item belongs there on its state -- but the prose
+#: below used to assert "the work is outstanding" from the ruling date alone,
+#: with no reference to status at all. The moment 2 statuses were correctly
+#: advanced to COMMITTED on 2026-11-08 that clause became FALSE, and the line
+#: he reads said the work was outstanding and COMMITTED in the same breath.
+#:
+#: Measured before and after: with 3 further advances applied, the old pair of
+#: clauses contradicts itself on 5 of 21 ruled items and this pair on 0 of 21.
+#: That is why the status advance and this change ship TOGETHER -- the advance
+#: alone takes the contradiction from 2 to 5, so composing them dominates
+#: either half, which is the only sense in which composing is justified here.
+WORK_IS_DONE = ("COMMITTED", "ENABLED")
+
+
 def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> str:
     L = []
     A = L.append
@@ -893,13 +909,23 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
             extra += (" — **STRUCK PERMANENTLY ON YOUR INSTRUCTION, 2026-10-16. "
                       "It may not re-enter the decision list by any route.**")
         elif o.get("ruled"):
-            extra += f" — **YOU RULED THIS ON {o['ruled']}; the work is outstanding**"
+            #: ★ CONDITIONED ON STATUS, 2026-11-08. See WORK_IS_DONE above.
+            _done = _st.upper() in WORK_IS_DONE
+            extra += (
+                f" — **YOU RULED THIS ON {o['ruled']}; the work is "
+                f"`{_st.upper()}` and the ENTRY is still open**" if _done
+                else f" — **YOU RULED THIS ON {o['ruled']}; "
+                     f"the work is outstanding**")
         # ★ THE BUILT STATE TRAVELS WITH THE ITEM INTO SECTION 3 (2026-10-16).
         # The mislabel that caused this generator to exist was calling A19
         # unbuilt when its marker read TESTED. Routing a ruled item out of the
         # decision list would have reproduced exactly that mislabel one section
         # further down, because only section 1 rendered the state.
-        if o.get("already_built"):
+        if o.get("already_built") and _st.upper() not in WORK_IS_DONE:
+            #: Suppressed once the work is done, because the clause above
+            #: already names the status and printing it twice in one line is
+            #: noise. Retained verbatim for every status short of COMMITTED,
+            #: so nothing a reader relied on is lost.
             extra += f" — already BUILT and TESTED (`{o.get('status')}`)"
         A(f"- **{o['ident']}**{ticket_tag(o['ident'])} ({o['source']}){extra}")
         A(f"  {o['headline']}")

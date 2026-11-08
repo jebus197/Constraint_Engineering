@@ -286,6 +286,12 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Needs your decision — IRREVERSIBLE: one of his 3 standing categories: a git ref, money, or the sealed key store.** Not blocking; nothing on the list waits on it.
 
+## qs:65a5b902ff02 — should an entry's evidence require EVERY cited item to be a test, or AT LEAST ONE?
+
+*Parked 2026-11-08T03:59:57+00:00.*
+
+evidence_objections in scripts/task_list_markers.py appends one objection per evidence item, so the predicate is ALL-must-be-a-test rather than AT-LEAST-ONE. 22 of 274 entries object (0.080292, Wilson [0.053619, 0.118570]); 9 of those 22 (0.409091, Wilson [0.232558, 0.612652]) already name at least one real test under bench/tests and are refused anyway for also citing a product-code line or a producer script: B21, B77, B93, B94, B102, B103, B113, B131, B132. The check was built for entries carrying a prose annotation or a directory with NO sound test at all, so the ALL form reaches past its own motivating failures. It binds ONLY at close - set_marker consults it solely when new_state is DONE - so nothing is blocked. Stripping the location citations to satisfy it would delete information a reader wants. The semantics of the evidence field are the founder's to rule. Raised as qs:65a5b902ff02.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)
