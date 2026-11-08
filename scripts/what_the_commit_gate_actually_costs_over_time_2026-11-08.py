@@ -152,6 +152,34 @@ def rows(path: pathlib.Path = LEDGER) -> list[dict]:
     return out
 
 
+#: ★ A KILLED BOARD IS NOT A FAST REFUSAL, and the ledger CANNOT tell them
+#: apart. Added 2026-11-08, hours after the ledger itself, because the 4th row
+#: ever written was a board interrupted by hand and it recorded
+#: `{"seconds":12,"exit":1}` -- byte-identical in shape to a gate that refused
+#: quickly. The hook sees only the exit code of a pytest whose process was
+#: killed, which is 1, the same code a genuine test failure gives.
+#:
+#: SO THE SHORT ROWS ARE SEPARATED RATHER THAN DROPPED OR COUNTED. Dropping
+#: them would hide a real fast refusal if one ever occurred; counting them
+#: inflated "over the stated limit" from 4 of 4 to 4 of 5 and the standard
+#: deviation from 36 seconds to 315. Both are reported, labelled, and the
+#: headline figure uses the completed runs.
+#:
+#: THE THRESHOLD IS DERIVED FROM THE MECHANISM, NOT CHOSEN. The gate's cheap
+#: phase alone takes minutes; a run ending inside 120 seconds did not reach
+#: the board at all, so it cannot be a verdict about the board's cost. It is
+#: reported as INDETERMINATE, which is what this project's own rule requires
+#: of a measurement that did not happen.
+INTERRUPTED_UNDER_SECONDS = 120
+
+
+def split_rows(rs: list[dict]) -> tuple[list[dict], list[dict]]:
+    """(completed, indeterminate). A short run is not evidence about cost."""
+    done = [r for r in rs if r["seconds"] >= INTERRUPTED_UNDER_SECONDS]
+    short = [r for r in rs if r["seconds"] < INTERRUPTED_UNDER_SECONDS]
+    return done, short
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.parse_args()
@@ -171,6 +199,21 @@ def main() -> int:
         print(f"  Spool path: {LEDGER}")
         return 0
 
+    rs_all = rs
+    rs, short = split_rows(rs_all)
+    if short:
+        print(f"\n  INDETERMINATE, EXCLUDED FROM EVERY FIGURE BELOW: "
+              f"{len(short)} row(s) under {INTERRUPTED_UNDER_SECONDS} s "
+              f"({', '.join(str(r['seconds']) + ' s' for r in short)}). A board "
+              f"killed by hand records a short duration and exit 1, which is "
+              f"shape-identical to a fast refusal -- the hook sees only the "
+              f"exit code of a pytest whose process was killed. Counting them "
+              f"would be reporting an interruption as a verdict.")
+    if not rs:
+        print(f"\n  NO COMPLETED RUN IS RECORDED YET, so nothing is claimed "
+              f"about the gate's cost. {len(rs_all)} row(s) exist and all are "
+              f"indeterminate.")
+        return 0
     secs = [r["seconds"] for r in rs]
     over = [r for r in rs if r["seconds"] > STATED_LIMIT_SECONDS]
     refused = [r for r in rs if r.get("exit") not in (0, None)]

@@ -150,3 +150,58 @@ def test_the_producer_reads_a_real_row(prod, tmp_path):
     assert len(got) == 1 and got[0]["seconds"] == 661, got
     assert prod.STATED_LIMIT_SECONDS == 660, (
         "the stated limit moved; the hook's header says 11 minutes")
+
+def test_an_interrupted_board_is_not_counted_as_a_refusal(prod):
+    """A KILLED BOARD IS NOT A FAST REFUSAL, and the ledger cannot tell.
+
+    Found hours after the ledger itself: the 4th row ever written was a board
+    interrupted by hand and it recorded `{"seconds":12,"exit":1}` --
+    shape-identical to a gate that refused quickly, because the hook sees only
+    the exit code of a pytest whose process was killed, which is 1, the same
+    code a genuine test failure gives.
+
+    IT CHANGED THE FIGURES MATERIALLY, which is why this is guarded rather than
+    noted: counting that row put "over the stated limit" at 4 of 5 instead of
+    4 of 4, and the standard deviation at 314.9 seconds instead of 37.9 -- a
+    factor of 8.3 on a number that describes how predictable the gate is.
+    """
+    assert hasattr(prod, "split_rows"), (
+        "the producer no longer separates interrupted runs, so an "
+        "interruption would be reported as a verdict about the gate's cost")
+    rows = [{"seconds": 700, "exit": 0}, {"seconds": 12, "exit": 1},
+            {"seconds": 680, "exit": 1}, {"seconds": 119, "exit": 1}]
+    done, short = prod.split_rows(rows)
+    assert [r["seconds"] for r in done] == [700, 680], done
+    assert [r["seconds"] for r in short] == [12, 119], short
+
+
+def test_the_threshold_is_below_any_real_board(prod):
+    """ANTI-VACUITY in the dangerous direction.
+
+    A threshold set too high would silently discard REAL runs and flatter the
+    gate. The gate's cheap phase alone runs for minutes, so 120 s cannot
+    exclude a completed board -- and every completed row in the live ledger
+    must survive the split.
+    """
+    assert prod.INTERRUPTED_UNDER_SECONDS <= 120, (
+        f"the cutoff is {prod.INTERRUPTED_UNDER_SECONDS} s, high enough to "
+        f"discard a real board and report the gate as cheaper than it is")
+    live = prod.rows()
+    if not live:
+        pytest.skip("no ledger rows on this machine yet")
+    done, _short = prod.split_rows(live)
+    for r in done:
+        assert r["seconds"] >= prod.INTERRUPTED_UNDER_SECONDS
+    # every row at or above the cutoff is kept: nothing real is dropped
+    assert len(done) == sum(
+        1 for r in live if r["seconds"] >= prod.INTERRUPTED_UNDER_SECONDS)
+
+
+def test_a_ledger_of_only_interrupted_rows_claims_nothing(prod, tmp_path):
+    """The honest degenerate case, rather than a distribution from noise."""
+    p = tmp_path / "all_short.jsonl"
+    p.write_text('{"at":"a","seconds":3,"exit":1,"head":"x"}\n'
+                 '{"at":"b","seconds":9,"exit":1,"head":"y"}\n')
+    rows = prod.rows(p)
+    done, short = prod.split_rows(rows)
+    assert done == [] and len(short) == 2, (done, short)
