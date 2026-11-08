@@ -9804,6 +9804,84 @@ def both_gates_agree(
                    f"gamma gate [{gamma_reason}]")
 
 
+# ── B84 FIELD 1: A PRE-RUN DESCRIPTION OF THE TARGET ───────────────────────
+# HIS RULING, 2026-11-08: *"I accept your recommendation. stm"*, against the
+# recommendation to record the CLASS of missing reference points rather than
+# only the 1 instance the entry began with.
+#
+# THE DEFECT, MEASURED. Across 65 archived run directories carrying a
+# structured state, 59 distinct after removing identical twins, the state holds
+# 21 keys and 0 of them describe the TARGET BEFORE THE RUN BEGAN. Every key is
+# a per-round history or the finding registry. So a difficulty estimator has
+# nothing to learn from: the only available features are OUTCOMES of the run
+# itself, and rounds against findings correlate at Pearson r = 0.836787,
+# p = 1.533183e-16. An estimator fitted on those would return a number that
+# rises with however many rounds a run happened to take -- a round counter
+# wearing the name of a confidence measure, which is the failure his own words
+# named when he set the priority.
+#
+# WHY IT IS CAPTURED ONCE AND NEVER OVERWRITTEN. `_apply_back_gate` can fold a
+# CLOSED fix back into the working copy of the target, so the file on disk is
+# NOT guaranteed to be the pre-run file at a later round. The description is
+# therefore written on the FIRST checkpoint of a run and left alone: round 1
+# closes before any fold-back can occur, so the first write is the pre-run
+# state. A later round re-reading the file would silently record a
+# post-fix target under a pre-run name, which is worse than recording nothing.
+#
+# IT COSTS NOTHING TO RUN. 1 stat and 1 read of a file the runner has already
+# opened, on the first checkpoint only. His machine is a fixed resource and
+# this field was chosen over the other 3 in the entry precisely because the
+# others need either an extra suite execution or a source that does not yet
+# exist.
+#
+# WHAT IT DELIBERATELY DOES NOT DO: fit anything. The entry's recommendation is
+# explicit that no estimator is to be written yet, because an estimator fitted
+# before a pre-run feature exists is the circular one described above.
+_PRE_RUN_TARGET: dict = {}
+
+
+def pre_run_target_description(cfg, ckpt_path) -> dict:
+    """The target as it was BEFORE this run, captured once per checkpoint path.
+
+    Returns the cached description on every call after the first, so a later
+    round cannot overwrite it with a post-fold-back reading.
+    """
+    key = str(ckpt_path)
+    if key in _PRE_RUN_TARGET:
+        return _PRE_RUN_TARGET[key]
+    rel = getattr(cfg, "test_article", "") or ""
+    out = {
+        "path": rel,
+        "kind": getattr(cfg, "target_kind", "") or "",
+        "captured_at_round": 1,
+        "bytes": None, "lines": None, "sha256": None,
+        "why_absent": "",
+    }
+    if not rel:
+        out["why_absent"] = (
+            "cfg.test_article is empty, so this run names no target file; the "
+            "field is recorded as absent rather than omitted, because an "
+            "omitted key cannot be told from a key nobody wrote")
+        _PRE_RUN_TARGET[key] = out
+        return out
+    try:
+        import hashlib as _hl
+        p = REPO_ROOT / rel
+        if not p.is_file():
+            p = pathlib.Path(rel)
+        raw = p.read_bytes()
+        out["bytes"] = len(raw)
+        out["lines"] = raw.count(b"\n") + (0 if raw.endswith(b"\n") else 1)
+        out["sha256"] = _hl.sha256(raw).hexdigest()
+    except Exception as exc:                              # noqa: BLE001
+        out["why_absent"] = (
+            f"{type(exc).__name__} reading {rel}: {str(exc)[:120]}. Recorded "
+            f"as a named failure rather than a 0, because a 0 size would be "
+            f"read as a measurement")
+    _PRE_RUN_TARGET[key] = out
+    return out
+
+
 def _check_state_convergence(
     round_idx: int,
     registry: FindingRegistry,
@@ -21144,6 +21222,12 @@ def run_experiment(
             # it has to be classified by its DIRECTORY NAME instead -- which
             # misfiled this run as pre-v3 archive on 2026-08-30.
             "runner_version": RUNNER_VERSION,
+            # ★ B84 FIELD 1, 2026-11-08 on his ruling. The 21 keys below all
+            # describe what HAPPENED; this one describes what the run started
+            # from, which is the only kind of feature a difficulty estimator
+            # can use without becoming a round counter. See
+            # `pre_run_target_description` for why it is captured once.
+            "pre_run_target": pre_run_target_description(cfg, ckpt_path),
             "registry": registry.to_dict(),
             "novelty_counts": novelty_counts,
             "raw_counts": raw_counts,

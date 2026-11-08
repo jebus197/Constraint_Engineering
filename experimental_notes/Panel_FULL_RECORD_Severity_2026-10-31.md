@@ -250,7 +250,7 @@ Budget reached. Writing findings.
 
 He is describing a quantity that **already exists in this harness and is not the one the 0.7 cut is applied to.**
 
-His words — *"the chances that a particular flaw, or class of flaws might remain after a given number of passes under severe scrutiny"* — are a verbatim statement of `R_k(i)`, computed by `compute_rk` (`bench/reference_runner_v3.py:16041`), recorded as `sk_result["R_new"]`, specified in `cdsfl_operational.md` §3/§16. It is Stage 5 of the model.
+His words — *"the chances that a particular flaw, or class of flaws might remain after a given number of passes under severe scrutiny"* — are a verbatim statement of `R_k(i)`, computed by `compute_rk` (`bench/reference_runner_v3.py:16119`), recorded as `sk_result["R_new"]`, specified in `cdsfl_operational.md` §3/§16. It is Stage 5 of the model.
 
 `entry["severity"]` is a different quantity: a model-asserted **consequence/materiality** rating, cut at `CRITICAL_SEVERITY_THRESHOLD = 0.7`. The CDSFL objective section defines it that way explicitly: *"V(f) = materiality(f) = consequence if defect f ships (= severity)"*.
 

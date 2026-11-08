@@ -11,7 +11,7 @@ are reachable on real data.
 AND IT PINS THAT P4 USES THE LIVE PREDICATE. A first version tested
 `not entry["verdicts"]` as a stand-in for `severity_is_proven`, which is a
 DIFFERENT CLAIM from the one the pre-registration commits to -- the live function
-at `bench/reference_runner_v3.py:10597` checks that the model's stated R_k
+at `bench/reference_runner_v3.py:10675` checks that the model's stated R_k
 reproduces from its own stated inputs. The proxy and the real predicate disagree
 on this very archive: 8 entries against 10. Scoring a proxy would have scored a
 different prediction than the one fixed before the run, which destroys the only
