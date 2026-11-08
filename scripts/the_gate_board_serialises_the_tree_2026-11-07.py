@@ -71,7 +71,31 @@ def _iv(k: int, n: int):
     half = (z / den) * mp.sqrt(ph * (1 - ph) / n + z**2 / (4 * n * n))
     cl = 0.0 if k == 0 else float(_beta.ppf(0.025, k, n - k + 1))
     ch = 1.0 if k == n else float(_beta.ppf(0.975, k + 1, n - k))
-    dis = max(abs(lo - float(cen - half)), abs(hi - float(cen + half)))
+
+    #: ★ THE SECOND CLOPPER-PEARSON ROUTE, RESTORED 2026-11-07. This helper
+    #: shipped with Wilson on 2 routes (statsmodels, and the closed form in
+    #: mpmath above) but Clopper-Pearson on ONE -- scipy's `beta.ppf` alone --
+    #: and `dis` compared only the 2 Wilson values. So the printed
+    #: "2-route disagreement" was TRUE of Wilson and SAID NOTHING about the
+    #: Clopper-Pearson pair sitting beside it on the same line. 2 library
+    #: names bought 1 cross-check, which is the exact shape
+    #: `test_an_interval_rests_on_two_routes_2026-11-03` exists to refuse; it
+    #: named this file, and it was right. The second route inverts the
+    #: regularised incomplete beta by bisection in arbitrary precision, which
+    #: reaches the same quantity by different arithmetic rather than reaching a
+    #: different quantity by a second library.
+    def _invert(a, b, y):
+        f = lambda x: mp.betainc(a, b, 0, x, regularized=True) - y   # noqa: E731
+        loq, hiq = mp.mpf(0), mp.mpf(1)
+        for _ in range(200):
+            mid = (loq + hiq) / 2
+            loq, hiq = (mid, hiq) if f(mid) < 0 else (loq, mid)
+        return float((loq + hiq) / 2)
+
+    cl2 = 0.0 if k == 0 else _invert(k, n - k + 1, 0.025)
+    ch2 = 1.0 if k == n else _invert(k + 1, n - k, 0.975)
+    dis = max(abs(lo - float(cen - half)), abs(hi - float(cen + half)),
+              abs(cl - cl2), abs(ch - ch2))
     return (max(0.0, lo), hi), (cl, ch), dis
 
 

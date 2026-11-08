@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import ast
 import pathlib
-import re
 import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -127,9 +126,19 @@ def main(argv) -> int:
     print("\nOFFENDER COUNT under each condition (lower is better; 0 is green):")
     w = max(len(r[0]) for r in rows)
     for label, offs in rows:
-        print(f"  {label:<{w}} : {len(offs):>3}"
-              + ("   GREEN" if not offs else "   still red: " + ", ".join(
-                  o.split('/')[-1] for o in offs[:4])))
+        if not offs:
+            print(f"  {label:<{w}} : {len(offs):>3}   GREEN")
+            continue
+        #: ★ STATE THE REMAINDER. This listing was cut to 4 in silence and the
+        #: operational guard caught it on the 2026-11-07 board -- in a producer
+        #: written the same day the SAME defect class was repaired in 3 other
+        #: scripts. A heading that reads as complete over a cut list is a
+        #: silent falsehood whoever writes it.
+        shown = [o.split('/')[-1] for o in offs[:4]]
+        rest = len(offs) - len(shown)
+        tail = f", and {rest} more not shown" if rest else ""
+        print(f"  {label:<{w}} : {len(offs):>3}   still red: "
+              + ", ".join(shown) + tail)
 
     a_only, b_only, both = len(rows[1][1]), len(rows[2][1]), len(rows[3][1])
     print("\n" + "=" * 78)

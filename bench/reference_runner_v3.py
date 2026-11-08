@@ -5312,7 +5312,35 @@ GAMMA_BANDS = [
 ]
 
 
-def _interpret_gamma(gamma: float) -> str:
+def _interpret_gamma(gamma: float, estimable: bool = True) -> str:
+    """The band label, which may only be applied to a gamma that IS a slope.
+
+    ★ `estimable` ADDED 2026-11-08 for the defect
+    `gamma-band-label-is-applied-to-an-unestimable-gamma`, observed live on
+    2026-10-15 in free run 1 and ruled by the founder on 2026-10-16, "Fix it
+    all". `_estimate_gamma` returns 0.0 as a SENTINEL for 4 distinct
+    non-measurements -- too few rounds, no novelty at all, fewer than 2 usable
+    log points, and a degenerate denominator -- and the lowest band reads
+    "Gamma disagrees with state closure — recommend HIL audit". So the first 2
+    rounds of EVERY run printed a referral to him about a quantity that had not
+    been measured, which is noise that can mask a real disagreement later.
+
+    THE GATE ALREADY KNEW THIS AND THE LABEL DID NOT. `_gamma_is_estimable` was
+    added 2026-10-08 for his ruling that gamma gates in all cases, and the guard
+    `bench/tests/test_gamma_gates_wherever_it_exists_2026-10-08.py` executes it
+    against the estimator over an exhaustive short-series sweep so the 2 cannot
+    drift. None of its 30 tests reached this function.
+
+    THIS DOES NOT DEMOTE GAMMA. No band is removed, no threshold moves, and
+    nothing that gated before stops gating; `estimable` defaults to True so
+    every pre-existing caller is byte-identical. The only change is that an
+    unmeasured gamma now SAYS it is unmeasured instead of claiming the worst
+    band. Gamma is load-bearing by standing directive, and a diagnostic that
+    cries wolf in round 1 of every run is what erodes a load-bearing signal.
+    """
+    if not estimable:
+        return ("not yet estimable — the 0.000 is the estimator's sentinel, "
+                "not a slope, so no band applies and no audit is implied")
     for low, high, interpretation in GAMMA_BANDS:
         if low <= gamma < high:
             return interpretation
@@ -20815,9 +20843,14 @@ def run_experiment(
         gamma_critical_history.append(gamma_critical)
         gate_level, gamma_passed = _check_gamma_gate(gamma, round_idx, cfg)
 
+        #: ★ THE BAND LABEL IS GATED ON ESTIMABILITY, 2026-11-08. Passing the
+        #: SAME series and window the estimate was taken from, so the label and
+        #: the number can never describe different inputs.
+        _gamma_all_estimable = _gamma_is_estimable(
+            _settled_all, cfg.min_rounds_for_gamma)
         _log(f"  gamma_all: {gamma_all:.3f} ({gate_level}, "
              f"{'passed' if gamma_passed else 'BLOCKED'}) — "
-             f"{_interpret_gamma(gamma_all)}")
+             f"{_interpret_gamma(gamma_all, _gamma_all_estimable)}")
         _log(f"  gamma_critical: {gamma_critical:.3f} (continuous decay-curve "
              f"diagnostic; the 3-round zero-new-critical count is its threshold-free "
              f"convergence endpoint — same diminishing-returns principle, ~1.0 at "

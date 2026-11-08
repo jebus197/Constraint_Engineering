@@ -242,11 +242,16 @@ def main(argv) -> int:
         print(f"    never committed: {len(undated)}")
         for p in undated[:8]:
             print(f"        {p}")
+        #: ★ STATE THE REMAINDER -- see the sibling repair in
+        #: the_help_matcher_needed_both_halves_2026-11-07.py. Both were written
+        #: on 2026-11-07 and both committed the class repaired that morning.
+        if len(undated) > 8:
+            print(f"        ... and {len(undated) - 8} more not shown")
 
     k = sum(1 for _, d in rows if d >= CUT)
     n = len(rows)
-    print(f"\nARTEFACT-POOLED RATE -- REPORTED, AND NOT THE DECISION. It is the")
-    print(f"WRONG UNIT and is kept only so the reasoning is visible:")
+    print("\nARTEFACT-POOLED RATE -- REPORTED, AND NOT THE DECISION. It is the")
+    print("WRONG UNIT and is kept only so the reasoning is visible:")
     _show("artefacts added on or after 2026-11-06", k, n)
     print("  ★ WHY THIS IS NOT THE ANSWER. Pooling paths across guards weights")
     print("    each guard by HOW MANY PATHS IT HAPPENS TO NAME, which has no")
@@ -406,14 +411,14 @@ def main(argv) -> int:
     #: the measurement. The figures belong to
     #: `bench/tests/test_precommit_gate_cost_2026-09-10.py`, which computes them
     #: as its own assertion, and are cited from there rather than recomputed.
-    print(f"      Its 2 figures -- the live collected count and the count "
-          f"declared in the task list's entry 1.1 -- are computed and printed "
-          f"by bench/tests/test_precommit_gate_cost_2026-09-10.py itself and "
-          f"are cited from there, NOT recomputed here: reading them costs an "
-          f"~11-minute gate-board run. The guard's own remedy is "
-          f"`python3 scripts/precommit_gate_cost_2026-09-10.py --write "
-          f"--repeats 0`. 0 of the board's 128 FILES were added on or after "
-          f"2026-11-06, so the growth is tests added to files already on it.")
+    print("      Its 2 figures -- the live collected count and the count "
+          "declared in the task list's entry 1.1 -- are computed and printed "
+          "by bench/tests/test_precommit_gate_cost_2026-09-10.py itself and "
+          "are cited from there, NOT recomputed here: reading them costs an "
+          "~11-minute gate-board run. The guard's own remedy is "
+          "`python3 scripts/precommit_gate_cost_2026-09-10.py --write "
+          "--repeats 0`. 0 of the board's 128 FILES were added on or after "
+          "2026-11-06, so the growth is tests added to files already on it.")
     print("=" * 78)
     return 0
 

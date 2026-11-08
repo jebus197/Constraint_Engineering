@@ -95,7 +95,7 @@ disagreement as the specification. The joint round did not settle this. **Attack
 Treat every figure as a hypothesis under test and re-derive what you can.
 
 * **The 7.7 formula IS implemented and is switched OFF.** `compute_sev_f` at
-  `bench/reference_runner_v3.py:10714` computes the product exactly, including the hard 0.
+  `bench/reference_runner_v3.py:10742` computes the product exactly, including the hard 0.
   `_SEVERITY_SPEC = {"on": False}`. With it off the gate reads `float(entry["severity"])`, a
   model-asserted number.
 * **The key property is violated where it should bite.** `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`,
