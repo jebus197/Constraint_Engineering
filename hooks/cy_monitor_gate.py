@@ -152,12 +152,58 @@ def live_runs() -> tuple[list[dict], list[dict]]:
     return live, unwatched
 
 
+#: ★ SHELLS ARE EXCLUDED FROM A `pgrep -f` MATCH, 2026-11-08 on his ruling
+#: ("Repair the gate."). `-f` matches the WHOLE COMMAND LINE, so a process whose
+#: ARGUMENTS merely name the runner was reported as a live run. Observed twice
+#: with 2 different pids: 2026-11-04T05:40 named pid 21974, which was the
+#: `git commit` shell itself, carrying a commit message describing this very
+#: blocker -- writing about the runner was indistinguishable from running it --
+#: and the next commit at 05:54:24 named pid 28697, `comm` `/bin/zsh`, whose
+#: command line named the runner twice.
+#:
+#: WHAT IS REMOVED IS CATEGORICALLY IMPOSSIBLE, NOT MERELY DOUBTFUL, so the
+#: author's intent above is kept intact: a shell cannot execute a `.py`
+#: in-process, and a shell that SPAWNED a runner has a child that matches on its
+#: own with a non-shell `comm`. REQUIRING PYTHON WOULD UNDER-REFUSE for a runner
+#: started by any other route, which is the failure this gate exists to prevent,
+#: so the test is on the shell and not on the interpreter. A pid whose `comm`
+#: cannot be read is KEPT, for the same reason.
+_SHELLS = frozenset({"sh", "bash", "zsh", "dash", "ksh", "csh", "tcsh", "fish"})
+
+
+def _shell_name(comm: str) -> str:
+    """The bare program name from a `ps -o comm=` value.
+
+    ★ THE BASENAME IS LOAD-BEARING, measured on this machine 2026-11-08:
+    `ps -p <pid> -o comm=` returns FULL PATHS -- `/bin/sh`, `/bin/zsh`, and for
+    python `/Library/Frameworks/Python.framework/.../MacOS/Python`. Comparing
+    the raw string against a set of bare shell names would match NOTHING and
+    the exclusion would ship inert, which is the addition-nothing-reaches half
+    of `additive-standard`. A login shell reports `-zsh`, so the leading dash
+    is stripped too.
+    """
+    return pathlib.PurePosixPath(comm.strip()).name.lstrip("-")
+
+
+def _is_shell(pid: str) -> bool:
+    """True only when `ps` POSITIVELY reports this pid as a shell."""
+    try:
+        out = subprocess.run(["ps", "-p", str(pid), "-o", "comm="],
+                             capture_output=True, text=True, timeout=4)
+    except Exception:                                        # noqa: BLE001
+        return False                 # unreadable -> KEEP, fail toward refusing
+    if out.returncode != 0:
+        return False                 # gone or denied -> KEEP
+    return _shell_name(out.stdout or "") in _SHELLS
+
+
 def runner_processes() -> list[str]:
     """Live runner processes, for runs started BEFORE the pulse file existed.
 
     Without this the gate would be vacuous on exactly the run that motivated it,
     since that run has no pulse. ANY match counts as live: over-refusing is
-    recoverable, under-refusing is the defect being closed.
+    recoverable, under-refusing is the defect being closed -- EXCEPT a shell,
+    for the reason recorded above this function.
     """
     if os.environ.get("CDSFL_CY_NO_PGREP", "").strip():
         return []            # test seam: isolate the pulse path from the machine
@@ -165,7 +211,8 @@ def runner_processes() -> list[str]:
         out = subprocess.run(
             ["pgrep", "-f", "run_simulated_experiment.py"],
             capture_output=True, text=True, timeout=4)
-        return [x for x in (out.stdout or "").split() if x.strip()]
+        pids = [x for x in (out.stdout or "").split() if x.strip()]
+        return [p for p in pids if not _is_shell(p)]
     except Exception:                                        # noqa: BLE001
         return []
 

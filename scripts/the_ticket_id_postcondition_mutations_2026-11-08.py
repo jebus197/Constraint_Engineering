@@ -13,6 +13,7 @@ Exit 0 iff every mutation is caught AND the original bytes are restored.
 """
 from __future__ import annotations
 
+import argparse
 import pathlib
 import shutil
 import subprocess
@@ -42,6 +43,15 @@ MUTATIONS = [
 
 
 def main() -> int:
+    # ★ `--help` MUST NOT DO THE WORK. Added 2026-11-08: 8 scripts of this
+    # date wrote files while answering `--help`, which
+    # `bench/tests/test_help_never_acts_2026-09-11.py` forbids and which
+    # `feedback_help_must_never_cost_money` records as 15 of 17 runners
+    # billing for a help request. A parser is used rather than
+    # `_cli_help.answer_help` because an unrecognised argument then exits 2
+    # instead of being ignored, and because it cannot be made unreachable
+    # under `python3 -m`, which is how 5 of 9 earlier repairs failed.
+    argparse.ArgumentParser(description=__doc__.splitlines()[0]).parse_args()
     if not (REPO / TEST).is_file():
         print(f"REFUSED: no guard at {TEST}. Install it before reversing it; "
               f"a mutation harness with no guard reports nothing.")

@@ -21,8 +21,16 @@ AND THE PART THAT IS NEW. The 2 switches are INDEPENDENT, and the middle
 setting (`--hil-review` on, `--act` off) is informative on its own: the
 classifier reaches its RESUME verdict and RECORDS it with full evidence while
 re-invoking nothing. That is a dry-run arm, and it produces exactly the
-evidence needed to rule on turning action on. 0 of the 351 archived run
-directories ever set the flag, so no such decision has been recorded.
+evidence needed to rule on turning action on. 0 archived run directories
+have ever set the flag, so no such decision has been recorded.
+
+★ THE COUNT IS NOT WRITTEN HERE ANY MORE. Corrected 2026-11-08: this docstring
+and the closing report both read `351`, while the producer that OWNS the figure,
+`scripts/the_unattended_loop_has_never_been_reachable_2026-11-04.py`, derives
+352. A figure living as prose inside a producer is the exact thing
+`measured-rate-travels-with-its-script` forbids, and it had already drifted. The
+denominator is now derived at print time from the same directory the owner reads,
+so the 2 cannot disagree again.
 
 A PROBE NOTE THAT IS PART OF THE RESULT. The first version of this measurement
 used an empty temporary directory and reported HOLD with BOTH switches on,
@@ -37,6 +45,7 @@ Exit: 0 when every expectation below holds, 1 otherwise.
 """
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import json
 import pathlib
@@ -86,6 +95,15 @@ def drive_case(M, codes, *, act, max_resumes=3, pulse=None, root):
 
 
 def main() -> int:
+    # ★ `--help` MUST NOT DO THE WORK. Added 2026-11-08: 8 scripts of this
+    # date wrote files while answering `--help`, which
+    # `bench/tests/test_help_never_acts_2026-09-11.py` forbids and which
+    # `feedback_help_must_never_cost_money` records as 15 of 17 runners
+    # billing for a help request. A parser is used rather than
+    # `_cli_help.answer_help` because an unrecognised argument then exits 2
+    # instead of being ignored, and because it cannot be made unreachable
+    # under `python3 -m`, which is how 5 of 9 earlier repairs failed.
+    argparse.ArgumentParser(description=__doc__.splitlines()[0]).parse_args()
     M = load_actuator()
     dead = a_genuinely_dead_pid()
     failures: list[str] = []
@@ -203,8 +221,12 @@ def main() -> int:
     print("    --hil-review on, --act off    RESUME recorded with evidence, 0 actions")
     print("    both on                       acts, up to --max-resumes resumes")
     print()
+    # DERIVED, never typed: the same `bench/logs` directory listing the owning
+    # producer reads. See the docstring's correction note of 2026-11-08.
+    _logs = REPO / "bench" / "logs"
+    _n = len([d for d in _logs.iterdir() if d.is_dir()]) if _logs.is_dir() else 0
     print("  The middle row is a DRY-RUN ARM and it is what the bottom row's")
-    print("  ruling needs. It has never been run: 0 of the 351 archived run")
+    print(f"  ruling needs. It has never been run: 0 of the {_n} archived run")
     print("  directories set the flag.")
     return 0
 

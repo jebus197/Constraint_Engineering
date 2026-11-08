@@ -160,11 +160,43 @@ def _tail_lines(transcript: pathlib.Path) -> list[str]:
         lines = text.splitlines()
         if want < size and lines:
             lines = lines[1:]           # the partial first line
-        if any(_looks_like_founder_line(ln) for ln in lines):
+        # ★ THE WINDOW MUST HOLD THE WHOLE RUN OF HIS MESSAGES, NOT JUST THE
+        # LAST ONE. Fixed 2026-11-08, after the union repair in `turn_signals`
+        # FAILED IN PRODUCTION on the very turn that introduced it. The rule was
+        # "stop as soon as a founder-looking line is present", and his
+        # instruction of 13:54:09 carrying `a` and `d` sat on the far side of a
+        # 4 MiB chunk boundary from his `rs` at 13:54:20. The window held only
+        # `rs`, so the union had 1 member and `had_d` came back False again -- a
+        # correct fix operating on a window too narrow to see its own input. The
+        # guard could not catch it: its fixtures put both messages in 1 small
+        # file.
+        #
+        # SO THE WINDOW NOW EXTENDS UNTIL ASSISTANT WORK PRECEDES THE EARLIEST
+        # founder-looking line, which is the real turn boundary -- consecutive
+        # messages of his with no work between them are 1 instruction. It costs
+        # 1 further doubling in the ordinary case, and the bound and the
+        # fail-toward-refusing property documented above are untouched: where no
+        # such line is ever found the loop still ends at TAIL_BYTES.
+        first = next((i for i, ln in enumerate(lines)
+                      if _looks_like_founder_line(ln)), None)
+        if first is not None and any(_looks_like_assistant_line(ln)
+                                     for ln in lines[:first]):
             return lines
         if want >= TAIL_BYTES or want >= size:
             return lines                # bounded; fails toward refusing
         want *= 2
+
+
+def _looks_like_assistant_line(line: str) -> bool:
+    """Cheap pre-test for an assistant entry, used only to bound the window.
+
+    A SUPERSET, like its founder sibling: every assistant entry is a
+    `"type":"assistant"` line, so a line failing this cannot be one. It decides
+    only where the PREVIOUS turn ended and never counts work, so a false
+    positive widens the window by 1 doubling and a false negative cannot shrink
+    it below the behaviour this replaced.
+    """
+    return '"type":"assistant"' in line or '"type": "assistant"' in line
 
 
 def _looks_like_founder_line(line: str) -> bool:
@@ -234,6 +266,38 @@ def founder_commands(text: str) -> list[str]:
     return []
 
 
+#: ★ THE 3 STRUCTURAL MARKERS THAT SAY AN ENTRY IS NOT HIS, added 2026-11-08.
+#: The harness writes its own notifications as `"type":"user"` entries WITHOUT
+#: `isMeta`, so the 2026-09-11 repair does not reach them: measured on the live
+#: transcript, 75 of 104 entries this hook accepted as his words were harness
+#: injections. Each carries its provenance in 3 independent fields, and 75 of
+#: 75 carry at least 1 of the 3 -- 1.000000, Wilson [0.951276, 1.000000],
+#: Clopper-Pearson [0.952005, 1.000000], 0 unmarked. Matching the literal
+#: `<task-notification>` instead would be a SHAPE, which
+#: `feedback_an_explicit_marker_and_fixed_widths_beat_a_shape_2026-11-04`
+#: records as the weaker instrument.
+#:
+#: IT REJECTS ONLY ON POSITIVE EVIDENCE. An absent field is NOT evidence of a
+#: machine, so an entry of his that lacks all 3 is still accepted. That
+#: asymmetry is his ruling of 2026-09-11 -- "all commands issued by me should
+#: be considered law, and are non-optional under any condition!" -- so the
+#: failure direction is to obey him, never to discard him.
+def not_his(d: dict) -> list[str]:
+    """Which markers POSITIVELY identify this entry as machine-origin."""
+    out = []
+    if d.get("promptSource") == "system":
+        out.append("promptSource=system")
+    turn = d.get("turnOrigin")
+    if isinstance(turn, str) and turn and turn != "human":
+        out.append(f"turnOrigin={turn}")
+    origin = d.get("origin")
+    if isinstance(origin, dict):
+        kind = origin.get("kind")
+        if isinstance(kind, str) and kind and kind != "human":
+            out.append(f"origin.kind={kind}")
+    return out
+
+
 def is_founder_message(d: dict) -> bool:
     """True ONLY for a message the founder actually typed.
 
@@ -255,6 +319,8 @@ def is_founder_message(d: dict) -> bool:
     if d.get("type") != "user":
         return False
     if d.get("isCompactSummary") or d.get("isMeta"):
+        return False
+    if not_his(d):
         return False
     c = d.get("message", {}).get("content")
     if isinstance(c, list) and any(
@@ -322,8 +388,29 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
         return 0, 0, False, False
     lines = _tail_lines(transcript)
     start = 0
-    had_d = False
+    # ★ HIS COMMANDS ARE THE UNION OVER THE TURN, NOT THE LAST LINE ALONE.
+    # Fixed 2026-11-08. This read `had_d = "d" in founder_commands(c)` inside
+    # the loop, so only the LAST accepted entry counted. On 2026-11-08 he sent
+    # his instruction at 13:54:09 carrying `a` and `d`, then `rs` on its own
+    # line at 13:54:20; `founder_commands("rs")` is `["rs"]`, so `had_d` became
+    # False and this gate refused 8 times against a standing `d`. Proven on the
+    # live transcript by
+    # `scripts/his_command_was_erased_by_his_own_next_line_2026-11-08.py`:
+    # last-wins gives ["rs"], the union gives ["a", "d", "rs"].
+    #
+    # THE UNION IS BOUNDED BY HIS OWN WORK, not by the window. A founder
+    # message that follows assistant TOOL CALLS starts a fresh command set,
+    # because work since his last message means the previous instruction has
+    # been acted on. Without that bound a `d` from an earlier turn inside the
+    # same tail would silence this gate indefinitely, which is the opposite
+    # failure and just as bad.
+    cmds: set = set()
+    worked_since = False
     for i, line in enumerate(lines):
+        if ('"type":"assistant"' in line or '"type": "assistant"' in line) \
+                and '"tool_use"' in line:
+            worked_since = True
+            continue
         if '"type":"user"' not in line and '"type": "user"' not in line:
             continue
         try:
@@ -337,8 +424,12 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
             c = " ".join(x.get("text", "") for x in c if isinstance(x, dict))
         if not isinstance(c, str) or "<system-reminder>" in c:
             continue
+        if worked_since:
+            cmds = set()
+        cmds |= set(founder_commands(c))
         start = i
-        had_d = "d" in founder_commands(c)
+        worked_since = False
+    had_d = "d" in cmds
 
     calls = prose = 0
     commit = False
