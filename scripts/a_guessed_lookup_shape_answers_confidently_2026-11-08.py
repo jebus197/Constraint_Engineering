@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A guessed lookup shape returns a confident wrong answer, 4 times in 1 night.
+"""A guessed lookup shape returns a confident wrong answer, 5 times in 1 night.
 
 WHY THIS EXISTS. On 2026-11-07 into 2026-11-08 this session asked 4 different
 data structures for something using a key whose SHAPE it had assumed rather than
@@ -22,7 +22,7 @@ back empty. The failure is silent and it is always in the reassuring direction -
 
 NO RATE IS REPORTED. The denominator would be "lookups performed in a session",
 which nothing counts, and inventing one is the defect this project recorded as a
-figure with no producer. 4 named cases, each reproducible.
+figure with no producer. 5 named cases, each reproducible.
 
 Exit 0 iff every case still reproduces BOTH answers.
 """
@@ -115,14 +115,37 @@ def case_pipeline_exit_code():
             "a DONE marker that had lost its support")
 
 
+def case_zsh_does_not_word_split():
+    """`cmd $FILES` is 44 arguments in bash and 1 in zsh, which is this shell."""
+    import shutil
+    zsh = shutil.which("zsh")
+    if not zsh:
+        return ("an unquoted list passed to a command", "no zsh on this machine",
+                "", False, "the case cannot be reproduced here")
+    script = ("FILES='a b c'; "
+              "printf 'args=%s\\n' \"$#\" >/dev/null; "
+              "set -- $FILES; printf '%s' \"$#\"")
+    unsplit = subprocess.run([zsh, "-c", script], capture_output=True,
+                             text=True).stdout.strip()
+    split = subprocess.run(["/bin/bash", "-c", script], capture_output=True,
+                           text=True).stdout.strip()
+    return ("an unquoted list passed to a command",
+            f"zsh  `set -- $FILES` -> {unsplit} argument(s)",
+            f"bash `set -- $FILES` -> {split} argument(s)",
+            unsplit == "1" and split == "3",
+            "44 test files went to pytest as 1 argument; it reported 'no tests "
+            "ran' and exited 4, and the turn reported the guards as running")
+
+
 CASES = [case_store_key_vs_identifier, case_nested_vs_flat,
-         case_blocking_vs_cli, case_pipeline_exit_code]
+         case_blocking_vs_cli, case_pipeline_exit_code,
+         case_zsh_does_not_word_split]
 
 
 def main() -> int:
     print("=" * 78)
     print("A GUESSED LOOKUP SHAPE ANSWERS CONFIDENTLY, AND IN THE REASSURING")
-    print("DIRECTION. 4 CASES FROM 1 NIGHT, EACH RUN BOTH WAYS.")
+    print("DIRECTION. 5 CASES FROM 1 NIGHT, EACH RUN BOTH WAYS.")
     print("=" * 78)
     ok = 0
     for fn in CASES:
@@ -141,7 +164,7 @@ def main() -> int:
     print("  THE COMMON SHAPE: a wrong PATH raises, a wrong SHAPE returns")
     print("    empty. Empty is indistinguishable from a measurement, and it")
     print("    always reads as 'nothing wrong'.")
-    print("  THE CHECK THAT WOULD HAVE CAUGHT ALL 4: before trusting a lookup,")
+    print("  THE CHECK THAT WOULD HAVE CAUGHT ALL 5: before trusting a lookup,")
     print("    run it on an input whose answer is already known. Every case")
     print("    above is 2 lines of code away from being obvious.")
     print("=" * 78)
