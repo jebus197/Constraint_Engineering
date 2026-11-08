@@ -1355,6 +1355,59 @@ def items_missing_a_ticket_id(items: list[dict]) -> list[str]:
                   for k in unclassified]
 
 
+#: Paths an authored evidence line may cite as the producer of its figures.
+#: Anchored to the 2 directories this repository keeps executable code in, so
+#: a prose mention of a `.py` name in passing is not mistaken for a citation.
+_CITED_PRODUCER = re.compile(r"((?:scripts|bench)/[A-Za-z0-9_./-]+\.py)")
+
+
+def decisions_citing_no_resolvable_producer(
+        detail: dict, root: pathlib.Path = REPO) -> list[str]:
+    """Authored items that cite producers where NOT ONE of them resolves.
+
+    ★ WHAT THIS CATCHES, WITH A LIVE REPRODUCTION. Entry B102's authored
+    evidence line was, in full, `Producer:
+    scripts/his_words_arrive_where_nothing_looks_2026-11-03.py` -- a file that
+    has NEVER existed here, which `git log --all` confirms by returning 0
+    commits for the path. So its figure, 206 of his 1,421 distinct messages,
+    reached his morning deliverable with no reproducible route. That is
+    `measured-rate-travels-with-its-script` violated inside the document the
+    rule exists to protect, and it stood from 2026-11-03 to 2026-11-08 because
+    NOTHING checked it: of the guards reading this data, the only one touching
+    a field named `evidence_line` reads an unrelated tuple of line numbers.
+
+    AT LEAST ONE, NOT ALL, and that is deliberate. A repair should NAME the
+    phantom it replaced so the record shows what was wrong -- B102's corrected
+    line does exactly that. Under an ALL rule, writing that history down would
+    itself fail this check, so the check would punish the honest repair. The
+    same ANY-versus-ALL question is open for the task list's `evidence:` field
+    as `qs:65a5b902ff02`; here a concrete requirement settles it.
+
+    CONDITIONAL on a path being cited at all. 22 of 48 authored items cite no
+    producer and whether they should is a SEPARATE question; a check that
+    conflated the 2 would fire 22 times on its first run and be switched off.
+
+    AND IT IS NOT AN OVERLAP CHECK, which was measured and rejected. 5 of 15
+    task-keyed items name no artefact in common with their task-list evidence
+    field, but 4 of those 5 are citing different KINDS of artefact on purpose
+    -- a producer against a defect location, a guard, a panel log. Only 1 cites
+    something absent. An overlap rule would have fired 5 times with 4 false
+    positives, which is the guard-accuses-correct-code failure this project has
+    measured at 9 of 36.
+    """
+    out: list[str] = []
+    for key, v in detail.items():
+        if key.startswith("_") or not isinstance(v, dict):
+            continue
+        cited = _CITED_PRODUCER.findall(str(v.get("evidence_line", "")))
+        if not cited:
+            continue
+        if not any((root / c).is_file() for c in cited):
+            out.append(f"{key}: cites {len(cited)} producer(s) and none "
+                       f"resolve: {cited}")
+    return out
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--since", default=None,
@@ -1381,6 +1434,24 @@ def main(argv: list[str]) -> int:
         print(f"  (study defects are exempt: the store issues no id for them. "
               f"{len([i for i in items if not (i.get('key') or '').startswith(_TICKETED_SOURCES)])} "
               f"of {len(items)} derived items are in that class.)")
+        return 3
+
+    #: ★ B102's POSTCONDITION, 2026-11-08. A figure whose producer does not
+    #: resolve is a claim about evidence rather than evidence. Refusing is
+    #: right here and reporting would not be: unlike a prose finding, which
+    #: needs generated speech rewritten and so must never withhold his
+    #: deliverable, a phantom citation has an obvious repair -- name the real
+    #: producer, or drop the claim. Checked before wiring: nothing automated
+    #: calls `--write`, so this surfaces to an author and cannot silently cost
+    #: him a report.
+    _no_prod = decisions_citing_no_resolvable_producer(
+        json.loads(DETAIL.read_text(encoding="utf-8")) if DETAIL.is_file() else {})
+    if _no_prod:
+        print("REFUSED — an authored figure cites a producer that does not resolve.")
+        for line in _no_prod:
+            print(f"  {line}")
+        print("  Name a producer that exists, or say the figure is unmeasured. "
+              "A measured rate may be cited only with the script that made it.")
         return 3
     if missing or orphan:
         print("REFUSED — the derived list and the authored detail disagree.")
