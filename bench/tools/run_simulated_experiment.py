@@ -63,6 +63,57 @@ VENDORS = [f"{v}-SIM" for v in
            ("CC2", "DeepSeek", "ChatGPT", "Gemini", "Codex", "Fable")]
 
 
+#: ★ LIFTED TO MODULE LEVEL 2026-11-08, SO A SECOND CALLER CAN USE THE SAME ONE.
+#: B20's measured blocker: no invocation of this harness was both SIMULATED and
+#: RESUMABLE. The actuator resumes by re-invoking its launch command with
+#: `--resume`; `bench/reference_runner_v3.py` declares that flag on its `run`
+#: subcommand and `bench/launch_exp39.py` forwards it, but this file declared it
+#: 0 times and could not, because the protection that stops a simulated run
+#: billing anything was this `getaddrinfo` patch nested inside `main()` -- and an
+#: in-process network block cannot survive the subprocess boundary a resume
+#: requires. So the resumable path dispatched for real and cost money, which he
+#: has refused, and the free path could not be resumed. 0 of 352 archived runs
+#: declare the arm, and it was a missing seam rather than his deferral.
+#:
+#: 1 INSTALLER WITH 2 CALLERS, NOT 2 INSTALLERS, under `simplicity-default`: a
+#: billing guard that exists twice can be repaired once. The host list was
+#: already centralised -- the comment below has said ONE canonical copy since it
+#: was written -- so only the 6-line installer was local, and that is what moved.
+def install_paid_tripwire():
+    """Refuse a paid host at the transport layer. Returns the original resolver.
+
+    PAID-DISPATCH TRIPWIRE (CC2, panel review 2026-08-30, ranked 7th). If the
+    shim ever fails to install, or a path is added that bypasses the seam, the
+    run would dispatch to REAL models and bill for it. The whole point of a
+    simulated run is that it cannot, so the refusal is at the transport layer
+    rather than trusting the seam.
+
+    IDEMPOTENT ON PURPOSE. A resumable wrapper installs this and then calls the
+    runner's own `main()`, which may reach code that installs it again; patching
+    a patched resolver would chain them and make the error message name the
+    wrong layer. The already-installed case returns the ORIGINAL resolver, not
+    the patch, so a caller that restores on exit restores the real one.
+    """
+    import socket as _sock
+    from live_dispatch_policy import PAID_HOSTS as _PAID   # ONE canonical copy
+    if getattr(_sock.getaddrinfo, "_cdsfl_paid_tripwire", False):
+        return getattr(_sock.getaddrinfo, "_cdsfl_original")
+    _orig_gai = _sock.getaddrinfo
+
+    def _no_paid(host, port, *a, **kw):
+        h = str(host).lower().rstrip(".")
+        if any(h == d or h.endswith("." + d) for d in _PAID):
+            raise RuntimeError(
+                f"SIMULATED RUN ATTEMPTED A PAID DISPATCH to {h}. The seam has "
+                f"a hole. Refusing rather than billing.")
+        return _orig_gai(host, port, *a, **kw)
+
+    _no_paid._cdsfl_paid_tripwire = True
+    _no_paid._cdsfl_original = _orig_gai
+    _sock.getaddrinfo = _no_paid
+    return _orig_gai
+
+
 class SeatSelectionError(ValueError):
     """A named seat that is not a seat. Raised before any dispatch is built."""
 
@@ -892,19 +943,7 @@ def main() -> int:
     # seam, this run would dispatch to REAL models and bill for it. The whole
     # point of a simulated run is that it cannot. So the harness refuses at the
     # transport layer rather than trusting the seam.
-    import socket as _sock
-    from live_dispatch_policy import PAID_HOSTS as _PAID   # ONE canonical copy
-    _orig_gai = _sock.getaddrinfo
-
-    def _no_paid(host, port, *a, **kw):
-        h = str(host).lower().rstrip(".")
-        if any(h == d or h.endswith("." + d) for d in _PAID):
-            raise RuntimeError(
-                f"SIMULATED RUN ATTEMPTED A PAID DISPATCH to {h}. The seam has "
-                f"a hole. Refusing rather than billing.")
-        return _orig_gai(host, port, *a, **kw)
-
-    _sock.getaddrinfo = _no_paid
+    install_paid_tripwire()
     _seat_map = SHIM.DEFAULT_LADDER if args.seat_models == "ladder" else None
     if _seat_map:
         print(f"    seats   MIXED LADDER {_seat_map}", flush=True)

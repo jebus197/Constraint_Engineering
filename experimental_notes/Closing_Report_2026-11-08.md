@@ -57,7 +57,7 @@ The judgement owed is **0 items, not 39**. The unclassified list was counted 202
 
 ## Outstanding
 
-**His, 4.** The asterisk amendment's scope. B135's third option — execute a helper where one is defined, report `CANNOT CLASSIFY` otherwise. The push: **585** commits against `origin/main`, **55** against this branch's own remote. And his 2 feature requests, B79 and B94.
+**His, 4.** The asterisk amendment's scope. B135's third option — execute a helper where one is defined, report `CANNOT CLASSIFY` otherwise. The push. **589** against `origin/main` and **62** against this branch's own remote *when this was written* — both rise with every commit, this report's included, so they are bounded and the producer is named rather than the figure left to drift. An earlier version said 585 and 55, already stale on delivery. Producer: `scripts/how_many_commits_and_how_many_refusals_2026-11-08.py`. And his 2 feature requests, B79 and B94.
 
 **Mine.** The simulated-and-resumable gap. The 19 remaining acceptances — 3 discharged by being recorded, 4 small, the rest each a separate entry. The 31 questions of his the register says are owed. The 2 memory ledger defects above.
 
