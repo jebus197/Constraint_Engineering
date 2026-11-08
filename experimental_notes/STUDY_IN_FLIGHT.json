@@ -1139,7 +1139,9 @@
       "what_slipped_past": "73 of 522 notes postdate the standard and name none, 13.9847%, Wilson [11.2717%, 17.2238%] — an UPPER BOUND, since several are working scratch files",
       "not_a_defect": "the 161 notes naming an OLDER standard are correct; the convention retains version-specific foot-lines",
       "found_by": "CC1 being wrong twice and chasing the contradiction with the pre-commit",
-      "producer": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py"
+      "producer": "scripts/the_note_lint_ratchet_is_blind_to_the_stamp_2026-10-15.py",
+      "status": "FIXED AND VERIFIED BY EXECUTION 2026-11-08. The rule is reached through the ratchet's own calling convention: `note_vagueness_lint.py` takes `--as <logical path>` and `hooks/pre-commit` passes it on both sides of the comparison, so a temp-directory copy is still judged as the note it stands for. Run on a flat temp copy of an unstamped note, the plain path reports nothing and `--as experimental_notes/...` reports MISSING NOTE STANDARD STAMP -- so the blindness this record describes is closed, and the mechanism is wired rather than merely present. His ruling of 2026-10-17 was to fix going forward and leave the archive alone, so the 73-of-522 unstamped figure here is HISTORY and not outstanding work. Guard: bench/tests/test_the_stamp_rule_reaches_the_ratchet_2026-10-17.py. Verified by scripts/how_many_open_defects_are_already_fixed_2026-11-08.py.",
+      "verified_at": "623d157b"
     },
     {
       "id": "the-sim-suffix-is-not-enforced-on-model-supplied-identifiers",
@@ -1150,7 +1152,9 @@
       "measured": "run 2: 2 distinct identifiers, 64 instances, all Gemini-SIM_GEMINI_F00N; run 1: 0",
       "mechanism": "the seat emitted GEMINI_F001..F005 as its own local identifiers; reference_runner_v3.py:4602 joins the seat label to them and carries the bare name through",
       "why_the_test_must_stay_red": "greening it needs run 2's artefacts rewritten, which falsifies evidence, or exempted, which hides the gap",
-      "fix_proposed_not_applied": "normalise model-supplied local identifiers at the composition site, dropping a vendor token the seat label already carries in -SIM form"
+      "fix_proposed_not_applied": "normalise model-supplied local identifiers at the composition site, dropping a vendor token the seat label already carries in -SIM form",
+      "status": "FIX APPLIED 2026-10-16, VERIFIED BY EXECUTION 2026-11-08. This record's `fix_proposed_not_applied` field is STALE: the normaliser exists as `_compose_finding_id` and `_strip_redundant_vendor_prefix`, which drop a vendor token the seat label already carries in -SIM form. Executed on 5 identifiers including the exact GEMINI_F001 shape from run 2, 0 of 5 leak a bare vendor token: GEMINI_F001 under seat Gemini-SIM composes to Gemini-SIM_F001. THE RECORD'S OWN `why_the_test_must_stay_red` IS UNAFFECTED AND STILL CORRECT -- run 2's archived artefacts carry the old identifiers, rewriting them would falsify evidence and exempting them would hide the gap -- so the FIX being applied and the TEST staying red are 2 separate facts and both hold. The provenance property this protects is the one the project's own standing directive names: a simulated result must never be greppable as a real one. Verified by scripts/how_many_open_defects_are_already_fixed_2026-11-08.py.",
+      "verified_at": "623d157b"
     },
     {
       "at": "2026-10-15T23:23:08+01:00",

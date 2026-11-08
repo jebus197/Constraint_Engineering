@@ -66,7 +66,34 @@ def _iv(k: int, n: int):
     half = (z / den) * mp.sqrt(ph * (1 - ph) / n + z**2 / (4 * n * n))
     cl = 0.0 if k == 0 else float(_beta.ppf(0.025, k, n - k + 1))
     ch = 1.0 if k == n else float(_beta.ppf(0.975, k + 1, n - k))
-    dis = max(abs(lo - float(cen - half)), abs(hi - float(cen + half)))
+
+    #: ★ THE SECOND CLOPPER-PEARSON ROUTE, RESTORED 2026-11-08, AND THIS IS THE
+    #: SECOND TIME THE SAME CLASS APPEARED IN ONE NIGHT. This helper shipped
+    #: with Wilson on 2 routes -- statsmodels and the closed form above -- and
+    #: Clopper-Pearson on ONE, scipy's `beta.ppf` alone, while `dis` compared
+    #: only the 2 Wilson values. So the printed "2-route disagreement" was true
+    #: of Wilson and said NOTHING about the Clopper-Pearson pair on the same
+    #: line, and it printed as exactly 0.000e+00, which was the tell.
+    #:
+    #: FOUND BY THE DETECTOR, not by reading: B135's execution half was
+    #: installed the same night and `counting_imports_ranks_producers_
+    #: backwards_2026-11-03.py` named this file as resting a quantity on a
+    #: single route. The identical repair had been made hours earlier in
+    #: `the_gate_board_serialises_the_tree_2026-11-07.py`, so the class was
+    #: known and committed again anyway -- which is the argument for a detector
+    #: over an intention.
+    def _invert(a, b, y):
+        f = lambda x: mp.betainc(a, b, 0, x, regularized=True) - y   # noqa: E731
+        loq, hiq = mp.mpf(0), mp.mpf(1)
+        for _ in range(200):
+            mid = (loq + hiq) / 2
+            loq, hiq = (mid, hiq) if f(mid) < 0 else (loq, mid)
+        return float((loq + hiq) / 2)
+
+    cl2 = 0.0 if k == 0 else _invert(k, n - k + 1, 0.025)
+    ch2 = 1.0 if k == n else _invert(k + 1, n - k, 0.975)
+    dis = max(abs(lo - float(cen - half)), abs(hi - float(cen + half)),
+              abs(cl - cl2), abs(ch - ch2))
     return (max(0.0, lo), hi), (cl, ch), dis
 
 

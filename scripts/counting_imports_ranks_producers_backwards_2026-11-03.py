@@ -31,6 +31,7 @@ checkable by rerunning this script.
 from __future__ import annotations
 
 import argparse
+import ast
 import pathlib
 import re
 import subprocess
@@ -128,12 +129,115 @@ def stem_imports(text: str) -> list[str]:
                    if re.search(rf"^\s*(?:import|from)\s+{m}\b", text, re.M)})
 
 
-def routes(text: str) -> dict[str, list[str]]:
+
+def _safe_to_import(text: str) -> bool:
+    """True when the module carries NO top-level work, so importing runs nothing.
+
+    DECIDED BY AST, NOT BY A NAMING CONVENTION. A module whose body is imports,
+    definitions, constant assignments and an `if __name__` guard performs no
+    measurement on import. Anything else -- a bare call, a loop, a print -- is
+    top-level work, and importing it would fire somebody else's measurement on
+    an 8 GiB machine. 126 of 274 producers are in that class, which is why the
+    execute-only reading of B135 is unavailable.
+    """
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return False
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom, ast.FunctionDef,
+                             ast.AsyncFunctionDef, ast.ClassDef, ast.Assign,
+                             ast.AnnAssign, ast.Expr)):
+            #: A bare expression is allowed ONLY when it is a docstring or a
+            #: comment-like constant. A CALL at top level is work.
+            if isinstance(node, ast.Expr) and not isinstance(node.value,
+                                                             ast.Constant):
+                return False
+            continue
+        if isinstance(node, ast.If):
+            test = ast.unparse(node.test)
+            if "__name__" in test:
+                continue
+            return False
+        return False
+    return True
+
+
+def _decides_by_execution(path) -> tuple[float | None, str]:
+    """(measured 2-route gap, detail), or (None, why not).
+
+    ★ B135's SECOND HALF, 2026-11-08. The detector's own rule is that a
+    quantity must rest on 2 INDEPENDENT routes. Until now it decided that by
+    matching source text, so a producer computing Wilson twice in an
+    unanticipated spelling was ranked as resting on 1 route -- a guard
+    accusing correct code, which this project has recorded 9 times in a single
+    board. Executing the helper answers the question the spelling only
+    approximates.
+    """
+    p = pathlib.Path(path)
+    if not p.is_file():
+        return None, "no file"
+    text = p.read_text(encoding="utf-8", errors="replace")
+    if not _safe_to_import(text):
+        return None, "module does top-level work; not imported"
+    if "def _iv(" not in text:
+        return None, "no _iv helper to call"
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(f"_b135_{p.stem}", p)
+    if spec is None or spec.loader is None:
+        return None, "not loadable"
+    mod = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mod)
+    except BaseException as exc:                      # noqa: BLE001
+        return None, f"import raised {type(exc).__name__}"
+    fn = getattr(mod, "_iv", None)
+    if not callable(fn):
+        return None, "_iv is not callable"
+    try:
+        res = fn(3, 10)
+    except BaseException as exc:                      # noqa: BLE001
+        return None, f"_iv raised {type(exc).__name__}"
+    #: THE SHAPE IS THE EVIDENCE. The canonical helper returns
+    #: ((wilson_lo, wilson_hi), (cp_lo, cp_hi), disagreement). A helper that
+    #: computed only 1 route has no disagreement to report.
+    if not (isinstance(res, tuple) and len(res) == 3):
+        return None, f"_iv returned {type(res).__name__}, not a 3-tuple"
+    gap = res[2]
+    if not isinstance(gap, (int, float)):
+        return None, "the 3rd element is not a number"
+    if not (0.0 <= float(gap) < 1e-6):
+        return None, f"2 routes disagree by {gap}"
+    return float(gap), f"2 routes agree to {float(gap):.3e}"
+
+def routes(text: str, path=None) -> dict[str, list[str]]:
+    """The routes to each quantity, by text match and -- where possible -- by
+    EXECUTION.
+
+    `path` is OPTIONAL and defaults to None, so every pre-existing caller
+    behaves exactly as before. With a path, and only where the module can be
+    imported without running anybody's measurement, the helper is CALLED and a
+    measured 2-route agreement is admitted as a route in its own right. That is
+    B135's second half: the detector's rule is about independence, and a
+    spelling is only a proxy for it.
+    """
     out = {}
     for q, rs in QUANTITY_ROUTES.items():
         found = [nm for nm, rx in rs.items() if re.search(rx, text)]
         if found:
             out[q] = found
+    if path is None:
+        return out
+    gap, detail = _decides_by_execution(path)
+    if gap is None:
+        return out
+    #: ADMITTED ONLY WHERE A QUANTITY IS ALREADY CLAIMED. Execution confirms
+    #: independence for an interval the producer reports; it does not invent a
+    #: quantity the producer never claimed, which would answer a question
+    #: nothing asked.
+    for q in ("Wilson", "Clopper-Pearson"):
+        if q in out and f"EXECUTED ({detail})" not in out[q]:
+            out[q] = out[q] + [f"EXECUTED ({detail})"]
     return out
 
 
@@ -185,7 +289,13 @@ def main() -> int:
         if t is None:
             print(f"  MISSING {name}")
             continue
-        imps, rt, sym = stem_imports(t), routes(t), symbolic_derivation(t)
+        #: ★ THE PATH IS PASSED, 2026-11-08, so the detector can execute
+        #: what it reads where that is safe. Without it the call is
+        #: byte-identical to the text-only behaviour it had before.
+        _src = REPO / "scripts" / f"{name}.py"
+        imps, rt, sym = (stem_imports(t),
+                         routes(t, _src if args.rev is None else None),
+                         symbolic_derivation(t))
         alone = [q for q, r in rt.items() if len(r) == 1]
         crossed = [q for q, r in rt.items() if len(r) >= 2]
         rows.append((name, imps, rt, alone, crossed, sym))

@@ -12,6 +12,23 @@ contradict them just as readily: it recomputes from the live index and from
 every archived snapshot beside it, and proves the repaired bound safe with z3
 instead of asserting it.
 
+★ THE 2 BUDGETS HAVE SINCE CROSSED OVER, AND THIS FILENAME IS A DATED CLAIM.
+Measured 2026-11-08 by running this script: it reports `BINDING CHARS = 11`
+against 124 entries of runway by lines, where on 2026-10-29 the LINE budget
+bound at 11 against the character budget's 34. The index has been regrouped in
+LINES and has grown in CHARACTERS since, so the binding side swapped. The name
+is kept because renaming breaks the citations that make this script reachable,
+and because this project names a superseded figure rather than erasing it --
+the filename is the claim as it stood on its date, not a current one. Read the
+output, never the name.
+
+AND THE UNIT MATTERS MORE THAN EITHER BUDGET. The loader trims first, then
+measures the JavaScript UTF-16 length. On 2026-11-08 the index is 23,674 of
+those units, 23,674 code points and 24,589 UTF-8 bytes, with 0 astral
+characters -- so a guard written in bytes would fire about 915 units early.
+`sv`'s own refuse line is 95% of the loader limit, which that day left 76
+units of runway and 0 further entries at the 113-unit median.
+
 READ-ONLY. It never writes under the memory directory.
 """
 from __future__ import annotations

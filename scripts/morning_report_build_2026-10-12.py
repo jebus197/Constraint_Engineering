@@ -1237,6 +1237,64 @@ def ticket_tag(ident: str) -> str:
     return f" `[{t}]`" if t else ""
 
 
+def _bare_ident(key: str) -> str:
+    """The identifier inside a derived item's STORE KEY.
+
+    ★ WHY THIS EXISTS, 2026-11-08. A derived item's `key` is a store key of the
+    form `task:B20` or `defect:<slug>`, and `ticket_id` wants the BARE
+    identifier. Measured: `ticket_id("B20")` returns `a7e64483f941` while
+    `ticket_id("task:B20")` returns "". Asking with the store key reported 48 of
+    48 items as carrying no ticket, and a refusal built on that reading would
+    have refused every item and withheld his morning report. This is the defect
+    the project recorded as "a store key is not an identifier" the day before,
+    where the same confusion mislabelled 3 live entries as repeats.
+    """
+    return key.split(":", 1)[1] if ":" in key else key
+
+
+#: The sources whose items the ticket store issues an id FOR. A study defect
+#: read from STUDY_IN_FLIGHT.json is not a ticket and never had one, so
+#: demanding an id for it would refuse 8 items today for no fault.
+_TICKETED_SOURCES = ("task:",)
+
+#: ★ EVERY PREFIX MUST BE KNOWN, so an exemption is a DECISION and never an
+#: accident. The scope test below is a `startswith`, which means a key with an
+#: unrecognised prefix -- or none at all -- would be skipped silently and its
+#: missing ticket id would never be reported. Measured 2026-11-08: the derived
+#: population is 40 `task:` and 8 `defect:` with 0 un-prefixed, so this is
+#: latent rather than live. It is written anyway because "0 un-prefixed keys"
+#: is only reassuring while something is counting them, and a 0 nobody counts
+#: is the shape this project records as asking what a 0 is a 0 OF.
+_KNOWN_SOURCES = ("task:", "defect:")
+
+
+def items_missing_a_ticket_id(items: list[dict]) -> list[str]:
+    """Derived items that SHOULD carry a ticket id and do not.
+
+    B132's postcondition. `ticket_tag` renders the empty string when no ticket
+    exists, so without this an item reaches him with no id and nothing says so
+    -- and B132's own words are that "a postcondition cannot be forgotten, and
+    a resolution to remember can".
+    """
+    out, unclassified = [], []
+    for i in items:
+        key = i.get("key") or ""
+        if not key:
+            continue
+        if not key.startswith(_KNOWN_SOURCES):
+            #: NOT silently exempt. An unrecognised source is reported, so a
+            #: new item shape cannot slip past the requirement by accident.
+            unclassified.append(key)
+            continue
+        if not key.startswith(_TICKETED_SOURCES):
+            continue
+        if not ticket_id(_bare_ident(key)):
+            out.append(key)
+    return out + [f"{k} (UNCLASSIFIED SOURCE: it carries no known prefix, so "
+                  f"nothing decided whether it owes a ticket id)"
+                  for k in unclassified]
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--since", default=None,
@@ -1252,6 +1310,18 @@ def main(argv: list[str]) -> int:
     items = task_items() + study_items()
     decs, missing, orphan = decisions(items)
 
+    #: ★ B132's POSTCONDITION, 2026-11-08. Scoped to the sources the store
+    #: issues ids for, and the exclusion is said aloud rather than assumed.
+    _no_tid = items_missing_a_ticket_id(items)
+    if _no_tid:
+        print("REFUSED — a derived item would be listed with no ticket id.")
+        for k in _no_tid:
+            print(f"  NO TICKET ID for {k}: raise it through the ticket store, "
+                  f"or the reader meets a code with nowhere to look it up")
+        print(f"  (study defects are exempt: the store issues no id for them. "
+              f"{len([i for i in items if not (i.get('key') or '').startswith(_TICKETED_SOURCES)])} "
+              f"of {len(items)} derived items are in that class.)")
+        return 3
     if missing or orphan:
         print("REFUSED — the derived list and the authored detail disagree.")
         for k in missing:
