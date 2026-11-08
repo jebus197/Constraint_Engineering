@@ -732,7 +732,53 @@ def decisions_without_recommendations(path, text: str) -> list:
     return out
 
 
-def partition(path) -> tuple[list, list]:
+#: ★ OUT-OF-BAND EXEMPTION, ADDED 2026-11-08 ON HIS RULING FOR B96. He accepted
+#: that genuinely quoted material be exempt in the SPOKEN copy as it already is
+#: in the written one, and then ruled for the version that honours both rules
+#: when the straightforward reading was shown to break the other.
+#:
+#: WHY NOT MARKERS IN THE FILE. The written exemption is carried by literal
+#: `verbatim-begin` / `verbatim-end` HTML comments, found by searching the file
+#: TEXT -- so exempting a span that way requires the marker to be IN the file.
+#: Measured 2026-11-08: 0 of the delivered spoken files carry them, in either
+#: the Desktop folder or the repository, and the note standard forbids markup
+#: in a spoken file in its own words, because anything that would be SPOKEN as
+#: a noise or skipped awkwardly must not be there. That rule is his
+#: accessibility accommodation, not tidiness. So the generator, which already
+#: lints both copies immediately after writing them and therefore already KNOWS
+#: where its quoted spans are, passes them instead of embedding them.
+#:
+#: ONE SPLITTER STILL, which is the property this module's own comments were
+#: written to protect: these spans are mapped to paragraph numbers through
+#: `PARAGRAPH_BREAK`, the same expression `paragraphs()` splits on, so the
+#: exempt set cannot be numbered by one rule and applied to findings numbered
+#: by another. That drift is the measured defect of 2026-09-11.
+def paragraph_offsets(text: str) -> list:
+    """(start, end) character offsets of each paragraph, 1-based by position."""
+    out, pos = [], 0
+    for m in PARAGRAPH_BREAK.finditer(text):
+        out.append((pos, m.start()))
+        pos = m.end()
+    out.append((pos, len(text)))
+    return out
+
+
+def paragraphs_covering(text: str, spans) -> set:
+    """Paragraph NUMBERS that overlap any of `spans`, which are char ranges."""
+    marked = set()
+    if not spans:
+        return marked
+    bounds = paragraph_offsets(text)
+    for a, b in spans:
+        if b <= a:
+            continue
+        for n, (ps, pe) in enumerate(bounds, 1):
+            if ps < b and a < pe:
+                marked.add(n)
+    return marked
+
+
+def partition(path, extra_exempt_spans=None) -> tuple[list, list]:
     """(counted, exempted) for one note: everything `lint` reports plus the
     structural findings, split on whether it sits inside a verbatim region.
 
@@ -757,7 +803,7 @@ def partition(path) -> tuple[list, list]:
     hits = lint(path)
     text = path.read_text(encoding="utf-8")
     state = region_state(text)
-    exempt = state["marked"]
+    exempt = set(state["marked"]) | paragraphs_covering(text, extra_exempt_spans)
     counted = [h for h in hits if h[0] not in exempt]
     exempted = [h for h in hits if h[0] in exempt]
 
@@ -1189,7 +1235,7 @@ def undefined_project_terms(path) -> list:
     return out
 
 
-def blocking(path) -> list:
+def blocking(path, extra_exempt_spans=None) -> list:
     """The findings that COUNT. What a guard must gate on."""
     # ★ RULE 30 IS REPORTED, NOT BLOCKING, AND THAT WAS DECIDED BY MEASUREMENT
     # AFTER IT REFUSED A COMPLIANT NOTE (2026-10-15).
@@ -1217,7 +1263,8 @@ def blocking(path) -> list:
     # SO THE CAPABILITY IS INTACT AND ONLY THE GATE COUPLING CHANGED: Rule 30
     # still runs, still reports through `main()`, and still carries a committed
     # ratchet. It returns here when it can tell a coinage from an adjective.
-    return partition(path)[0] + missing_standard_stamp(path)
+    return (partition(path, extra_exempt_spans)[0]
+            + missing_standard_stamp(path))
 
 
 #: Rule 28's phrases, bounded so an inflection is not read as the noun.

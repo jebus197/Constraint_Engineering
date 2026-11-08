@@ -1445,7 +1445,29 @@ _MEMORY_INDEX_LIMIT_LINES = 200
 #: A backup is a copy of the index, not a memory, and cannot be pointed at.
 _MEMORY_BACKUP_PREFIX = "MEMORY.backup-"
 
-_MEMORY_INDEX_REFUSE_FRACTION = 0.95
+#: ★ RAISED 0.95 -> 0.98 ON HIS RULING OF 2026-11-08, decision 28 option 1:
+#: *"Raise the character limit and leave each retirement judgement to you as it
+#: arises."* It buys 750 characters, about 2 index entries at the measured
+#: median.
+#:
+#: AND THE LIMIT HE NAMED IS NOT THE ONE THAT MOVED, WHICH HE NEEDS TO KNOW.
+#: The entry told him the limit is "a loader budget rather than a physical
+#: constraint". `_MEMORY_INDEX_LIMIT_CHARS` is neither ours nor a preference:
+#: it is read out of the installed binary that enforces it, and re-extracted
+#: 2026-11-08 from v2.1.220 at `/opt/homebrew/lib/node_modules/@anthropic-ai/
+#: claude-code/bin/claude.exe` it is STILL `PRe=25000`, with `fie=200` and the
+#: enforcing function `Rtr` both unchanged. Raising OUR constant above the
+#: loader's would not enlarge the index; it would let the loader TRUNCATE it
+#: silently, which is the failure the constant exists to prevent. So the only
+#: limit that is ours is this reserve, and that is what the ruling moved.
+#:
+#: THE RESERVE IS ONLY SAFE TO SHRINK BECAUSE THE RUNWAY REPORT IS NOW HONEST.
+#: `headroom` measured against the LOADER's limit while the save refuses at this
+#: fraction of it, so every runway figure overstated by exactly the reserve --
+#: 1,326 characters and room for 11 entries reported where 76 characters and 0
+#: remained. Shrinking the reserve without fixing that would have made a thin
+#: margin invisible as well as thin. The 2 changes are deliberately in 1 commit.
+_MEMORY_INDEX_REFUSE_FRACTION = 0.98
 _MEMORY_ENTRY_ONE_LINE_CHARS = 150
 
 # Canonical Open Brain install. Named explicitly because a stale fork of the
@@ -1588,12 +1610,35 @@ class _MemoryIndexAudit:
     median_entry: int = 0
 
     @property
+    def refuse_chars(self) -> int:
+        """The character count at which THIS TOOL refuses, not the loader's cut."""
+        return int(_MEMORY_INDEX_LIMIT_CHARS * _MEMORY_INDEX_REFUSE_FRACTION)
+
+    @property
+    def refuse_lines(self) -> int:
+        return int(_MEMORY_INDEX_LIMIT_LINES * _MEMORY_INDEX_REFUSE_FRACTION)
+
+    @property
     def headroom(self) -> int:
-        return _MEMORY_INDEX_LIMIT_CHARS - self.chars
+        """★ MEASURED AGAINST THIS TOOL'S OWN REFUSAL, fixed 2026-11-08.
+
+        It returned `_MEMORY_INDEX_LIMIT_CHARS - chars`, the distance to the
+        point at which the LOADER truncates, while `_check_memory_index_size`
+        refuses at a FRACTION of that. So every runway figure overstated by
+        exactly the reserve, and `entries_left` inherited it through its own
+        character branch. With the index at 23,674 this reported 1,326
+        characters and room for 11 more entries where 76 characters and 0
+        entries remained before its own refusal -- the overstatement being
+        1,250 of 25,000 and 10 of 200, the signature of the cause rather than a
+        coincidence. The instrument built to warn about the limit was the thing
+        hiding it.
+        """
+        return self.refuse_chars - self.chars
 
     @property
     def lines_headroom(self) -> int:
-        return _MEMORY_INDEX_LIMIT_LINES - self.lines
+        """Against this tool's own refusal, for the reason given on `headroom`."""
+        return self.refuse_lines - self.lines
 
     @property
     def entries_left(self) -> int:

@@ -1101,7 +1101,7 @@ def _spoken(text: str) -> str:
 
 
 def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
-               detail: bool = True) -> str:
+               detail: bool = True, exempt_out=None) -> str:
     """The spoken report. `detail=False` drops the per-decision argument.
 
     ★ HIS COMPLAINT OF 2026-11-08 HAS 2 HALVES AND THIS IS THE SECOND. He was
@@ -1122,6 +1122,16 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
     """
     L = []
     A = L.append
+    #: ★ QUOTED SPANS, RECORDED FOR THE LINT RATHER THAN MARKED IN THE FILE.
+    #: His ruling for B96 is that genuinely quoted material be exempt in the
+    #: spoken copy as it already is in the written one, and then that it be done
+    #: the way that honours his TTS standard too: `render_md` carries literal
+    #: `verbatim-begin` HTML comments, and putting those in a file he LISTENS to
+    #: is forbidden by that standard in its own words. This generator already
+    #: lints both copies immediately after writing them, so it records the spans
+    #: by LINE INDEX here and converts them to character offsets at the end --
+    #: exact, rather than matched by text, and 0 bytes of what he hears change.
+    _ex: list = []
     A(f"MORNING REPORT, {dt.date.today().strftime('%d %B %Y')}")
     A("")
     A(f"This report is generated from the project's own records rather than written by "
@@ -1187,14 +1197,17 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
     A(f"{len(done)} commits. Each is one line here; the detail is in the commit message "
       f"and the notes it names.")
     A("")
+    _s = len(L)                      # git commit subjects, as committed
     for _h, when, subj in done:
         A(f"{when}. {_spoken(subj)}")
+    _ex.append((_s, len(L)))
     A("")
     A("SECTION 3. OUTSTANDING WORK THAT NEEDS NO DECISION")
     A("")
     A("Each of these already carries a ruling on the record, so it is queued work rather "
       "than a question.")
     A("")
+    _s = len(L)                      # task-list headlines, as the markers carry them
     for o in outstanding:
         A(_spoken(o.get("title") or o["ident"]) + ".")
         A("")
@@ -1224,20 +1237,24 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
             A("")
             A(_spoken(o["why"]))
         A("")
+    _ex.append((_s, len(L)))         # closes the task-list headline span
     A(f"SECTION 4. EXPLANATIONS OWED, {len(owed)} OF THEM")
     A("")
     A("Each of these is a place where an explanation was asked for before a ruling would "
       "be given, and the explanation was never delivered. These are answers owed rather "
       "than work owed.")
     A("")
+    _s = len(L)                      # the founder's own words
     for q in owed:
         A(f"{q['date']}. {_spoken(_first_sentence(q['text']))}")
+    _ex.append((_s, len(L)))
     A("")
     if superseded:
         A(f"And {len(superseded)} of them are discounted as no longer relevant, on his "
           f"question of whether these are still relevant. Each is discounted against the "
           f"record rather than by judgement.")
         A("")
+        _s = len(L)                  # the discounting record, quoted
         for r in superseded:
             A(f"{r['date']}. {_spoken(r['subject'])}.")
             A("")
@@ -1245,6 +1262,7 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
             A("")
             A("What remains. " + _spoken(r["what_remains"]))
             A("")
+        _ex.append((_s, len(L)))
     # ★ HIS `pf`, 2026-11-01, same routing as the markdown above so the 2
     # renderings cannot disagree about what is outstanding.
     _pres = parked_presentation(parked, outstanding)
@@ -1281,6 +1299,17 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
     A("")
     A("")
     A(f"Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.")
+    if exempt_out is not None:
+        # Line index -> character offset, using the SAME join this returns, so
+        # the offsets cannot drift from the text they describe.
+        _starts, _off = [], 0
+        for _ln in L:
+            _starts.append(_off)
+            _off += len(_ln) + 1
+        _starts.append(_off)
+        for _a, _b in _ex:
+            if _b > _a:
+                exempt_out.append((_starts[_a], _starts[_b]))
     return "\n".join(L) + "\n"
 
 
@@ -1593,8 +1622,14 @@ def main(argv: list[str]) -> int:
 
     #: ★ THE COPY HE READS DROPS THE DECISION DETAIL, on his complaint of
     #: 2026-11-08. The markdown in the repository keeps every section.
+    #: ★ THE SPOKEN COPY'S QUOTED SPANS, carried OUT OF BAND on his ruling for
+    #: B96. The written copy marks them with `verbatim-begin` comments; a file
+    #: he LISTENS to may not carry markup, so the renderer records the spans and
+    #: the self-lint below is given them instead. Same exemption, 0 bytes of
+    #: difference in what he hears.
+    _tts_exempt: list = []
     tts = render_tts(decs, outstanding, done, owed, parked, args.since,
-                     superseded, detail=False)
+                     superseded, detail=False, exempt_out=_tts_exempt)
     if args.write:
         out = (REPO / "experimental_notes"
                / f"Morning_Report_{dt.date.today().isoformat()}_GENERATED.md")
@@ -1617,8 +1652,10 @@ def main(argv: list[str]) -> int:
         # a prose finding would cost him the thing he needs.
         try:
             from note_vagueness_lint import blocking as _blocking
-            for _f in (out, desk):
-                _hits = _blocking(_f)
+            for _f, _sp in ((out, None), (desk, _tts_exempt)):
+                # The markdown carries its own markers; the spoken copy's spans
+                # arrive here instead, for the reason recorded at `_tts_exempt`.
+                _hits = _blocking(_f, _sp)
                 if _hits:
                     print(f"  NOTE-STANDARD: {len(_hits)} blocking finding(s) in "
                           f"{_f.name} -- read before delivering")

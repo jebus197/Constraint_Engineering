@@ -87,7 +87,26 @@ Role = Literal["collator", "player_manager", "participant"]
 #: Its dm-level counterpart IS a live seat role, assigned and demoted by the
 #: role assignment and failure-handling path, which is the second declaration of
 #: the structural axis the second seat found.
-ROLE_ALIASES: dict[str, str] = {"player": "participant", "reviewer": "participant"}
+#: ★ HIS VOCABULARY ENTERS AS ALIASES ON HIS RULING OF 2026-11-08, decision 13:
+#: *"Aliases only."* He renamed the roles on 2026-10-31 -- the player manager is
+#: now the orchestrator, a collator is now a classifier, and a worker is any
+#: model that participates and can influence the outcome -- and the declared
+#: `Role` members still carry the retired spellings.
+#:
+#: WHY ALIASES AND NOT A RENAME, which is what makes this ADDITIVE in the strict
+#: sense: a rename of the `Literal` members would break every archived run,
+#: config and report that carries the old spelling, and `additive-standard`
+#: permits a removal only on a committed measurement showing the replacement
+#: dominates. Adding accepted spellings removes nothing, and both directions
+#: keep working. `canonical_role` reaches these, and an unknown role still
+#: raises with the declared members and the aliases both named in the message.
+ROLE_ALIASES: dict[str, str] = {
+    "player": "participant",
+    "reviewer": "participant",
+    "orchestrator": "player_manager",
+    "classifier": "collator",
+    "worker": "participant",
+}
 
 
 def canonical_role(value: str) -> str:
