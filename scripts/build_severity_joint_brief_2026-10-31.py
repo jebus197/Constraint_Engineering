@@ -197,6 +197,23 @@ def main() -> int:
     ]
     text = "\n".join(parts) + "\n"
 
+    # ★ THE ARTEFACT STAMP, ADDED 2026-11-08 (B125 prerequisite). This builder
+    # produced `severity_corrected_2026-11-06` -- the only brief written on or
+    # after the day the stamper was built -- and it did not call the stamper,
+    # which is why 0 of 148 briefs on disk carry a stamp. The placement is
+    # delegated rather than copied, so the title-splitting rule has 1 home.
+    def _insert_stamp(_t: str) -> str:
+        import importlib.util as _ilu
+        _p = (pathlib.Path(__file__).resolve().parent
+              / "stamp_the_brief_artefacts_2026-11-06.py")
+        if not _p.is_file():
+            return _t
+        _s = _ilu.spec_from_file_location("_brief_stamper_sev", _p)
+        _m = _ilu.module_from_spec(_s); _s.loader.exec_module(_m)
+        return _m.insert_stamp(_t, REPO)
+
+    text = _insert_stamp(text)
+
     out_dir = REPO / "bench" / "logs" / ROUND
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "BRIEF.md"

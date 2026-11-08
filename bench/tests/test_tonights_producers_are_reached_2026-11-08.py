@@ -125,6 +125,9 @@ NOT_RUN_HERE = {
     "the_both_gates_and_frame_mutations_2026-11-08.py":
         "invokes pytest AND rewrites the live runner and a gate guard; "
         "would recurse and mutate the subject mid-board",
+    "the_shared_stamp_placement_mutations_2026-11-08.py":
+        "invokes pytest AND rewrites 2 brief builders and the stamper; "
+        "would recurse and mutate the subjects mid-board",
     "the_resumable_seam_mutations_2026-11-08.py": "invokes pytest; would recurse",
     "the_runway_reference_mutations_2026-11-08.py": "invokes pytest; would recurse",
     "the_shell_exclusion_mutations_2026-11-08.py":

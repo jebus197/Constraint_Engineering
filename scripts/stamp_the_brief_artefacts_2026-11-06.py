@@ -160,3 +160,38 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+# ── THE INSERTION, EXTRACTED 2026-11-08 SO BOTH BUILDERS SHARE IT ──────────
+# MEASURED FIRST: this stamper was written on 2026-11-06, carries 15 tests and
+# its own mutation harness, and had stamped 0 of the 148 briefs on disk --
+# Wilson 95% [0.000000, 0.025299]. The reason was not a fault in the stamper.
+# It was reached by exactly 1 of the 2 joint-brief builders, and the only brief
+# built on or after the day it was written, `severity_corrected_2026-11-06`,
+# came from the OTHER one. A mechanism guarded by its own tests and reached by
+# no production caller is the addition-nothing-reaches half of the additive
+# standard, which this project has confirmed 11 times.
+#
+# THE PLACEMENT LOGIC LIVES HERE RATHER THAN IN EACH BUILDER, and that is the
+# whole reason for extracting instead of copying. Its own comment in the
+# working builder records that the first version inserted after the first `# `
+# line and SPLIT A 2-LINE TITLE IN HALF -- caught by a test, not by reading.
+# Copying that subtlety into a second builder would have been a 50/50 chance
+# of repeating a bug whose history is already written down.
+def insert_stamp(text: str, repo) -> str:
+    """`text` with the stamp block inserted, or `text` unchanged.
+
+    The block goes immediately before the first `## ` subsection, which is
+    after any title however many `# ` lines it occupies.
+    """
+    block = stamp_block(text, repo)
+    if not block:
+        return text
+    lines = text.splitlines()
+    at = next((i for i, l in enumerate(lines) if l.startswith("## ")), None)
+    if at is None:
+        # No subsection at all: fall in after the last leading `#` line.
+        at = 0
+        while at < len(lines) and (lines[at].startswith("#")
+                                   or not lines[at].strip()):
+            at += 1
+    return "\n".join(lines[:at] + ["", block] + lines[at:]) + "\n"

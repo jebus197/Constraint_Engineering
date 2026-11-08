@@ -78,13 +78,14 @@ A lookup under a name the store does not use returns nothing, and the miss then 
 
 ## What is yours, and nothing else is
 
-**9 decisions.** The 4 questions above, each answered here, needing only your word on what to do next. And 5 where your acceptance does not settle the scope:
+**10 decisions.** The 4 questions above, each answered here, needing only your word on what to do next. And 6 where your acceptance does not settle the scope:
 
 1. **B104** — the generated report pair alone, already satisfied, or every spoken file and its markdown twin, which is not. 2 of 14 spoken files and 11 of 33 twins carry an identifier, and most spoken files are hand-written, so there is no single place to change.
 2. **B94** — whether your acceptance reaches the 4 sibling runners' closure label or only the `v_bar` half. The decisions file itself flags that 2 options both claim to be the recommendation.
 3. **B103** — the cost bound, which the recommendation's own words leave to you. Decision 17's option 4 is a candidate: the cheap 48 of the 83, about 33 seconds.
 4. **B84** — the 1 extra suite run per run that a baseline pass rate needs, and where the HARD/SOFT class and the confidence are to come from. Field 1 of its 4 is built and costs nothing; the other 3 each need either execution budget on your machine or a source that does not exist. B121 held this slot earlier today and is now closed, its own ambiguity resolved by measurement because the alternative reading was incoherent rather than merely different.
 5. **B131** — whether *ship* means committed, which it is, or commit-gating, which collides with B103.
+6. **B125** — the only decision of the 24 where a **composed** fix is the recommendation, so your own standard requires a measurement showing the pair beats either half alone before it may be recommended. Its prerequisite is built and **neither half of the composition is**: the brief does not yet quote the state of the files it references, and the dispatcher does not yet refuse when a referenced file has moved.
 
 **And the push.** **591** commits against `origin/main`, **64** against this branch's own remote `origin/sim/shakedown-2026-09-29`, *when this was written*. Both rise with every commit. Your choice of target, and only the one you name.
 
