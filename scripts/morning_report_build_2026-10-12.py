@@ -336,7 +336,12 @@ def study_items() -> list[dict]:
             "source": "programme of study, open defect",
             "where": "experimental_notes/STUDY_IN_FLIGHT.json",
             "state": "NEEDS RULING",
-            "status": str(drec.get("status", ""))[:60],
+            #: ★ THE FULL STATUS IS CARRIED, 2026-11-08. It was cut at 60
+            #: characters and never rendered, so the record could say a defect
+            #: was FIXED while the report said its work was outstanding. These
+            #: statuses now run to about 1,000 characters, and the renderer --
+            #: not the extractor -- decides what to show and says what it cut.
+            "status": str(drec.get("status", "")),
             "already_built": False,
             "evidence": [],
             "headline": str(drec.get("what", ""))[:240],
@@ -871,6 +876,19 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
         # The marker's own `ruled:` date, shown so a ruled-but-unexecuted item
         # reads as "you ruled this, the work is outstanding" rather than as a
         # mystery that quietly left the decision list.
+        #: ★ THE RECORDED STATUS IS SHOWN, 2026-11-08, so the record and this
+        #: report cannot disagree about whether a defect is still open work.
+        #: The cut is ANNOUNCED rather than silent: a listing trimmed under a
+        #: heading that reads as complete is the defect class repaired 5 times
+        #: in this file's own history.
+        _st = str(o.get("status") or "").strip()
+        if _st and o.get("source", "").startswith("programme of study"):
+            _shown = _st[:200]
+            _rest = len(_st) - len(_shown)
+            extra += (f" — **RECORDED STATUS:** {_shown}"
+                      + (f" … ({_rest} more characters in "
+                         f"experimental_notes/STUDY_IN_FLIGHT.json)"
+                         if _rest > 0 else ""))
         if o.get("struck_permanently"):
             extra += (" — **STRUCK PERMANENTLY ON YOUR INSTRUCTION, 2026-10-16. "
                       "It may not re-enter the decision list by any route.**")
