@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 7 November 2026 21:10 GMT (2026-11-07T21:10:48+00:00)
+Generated: 8 November 2026 06:52 GMT (2026-11-08T06:52:33+00:00)
 
 ---
 
@@ -18,28 +18,21 @@ Generated: 7 November 2026 21:10 GMT (2026-11-07T21:10:48+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `45cea3f9` The complete board returned 11 failures: 16 of 17 fixed, the 1 survivor exactly as predicted, and 10 new ones that this session's own repairs created
-- **Committed:** 2026-11-07 20:31:36 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 24
+- **Last commit (the PARENT of the commit containing this file):** `59d2cf45` 60 per cent of the DONE claims in the master list rest on verification the commit gate never runs, and decision 17's scope covers a sixth of it
+- **Committed:** 2026-11-08 06:39:21 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 39
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `A  bench/tests/test_a_restatement_must_see_the_anchor_2026-11-07.py`
-- `M  bench/tests/test_a_ticket_identity_survives_a_reword_2026-10-17.py`
-- `M  bench/ticket_store.py`
-- `M  bench/tickets/tickets.jsonl`
-- `M  bench/tickets/tickets_searches.jsonl`
-- `MM experimental_notes/The_Complete_Board_And_Its_Ten_New_Failures_2026-11-07.md`
-- `MM resources/MEMORY_EXCLUSIONS.md`
-- `M resources/RECOVERY.md`
-- `A  scripts/the_anchor_in_the_identity_check_mutations_2026-11-07.py`
-- `?? scripts/the_gate_board_serialises_the_tree_2026-11-07.py`
+- `M experimental_notes/data/morning_report_decisions.json`
+- `M experimental_notes/data/output_hashes.json`
+- `?? scripts/sv_reports_a_runway_it_will_refuse_2026-11-08.py`
 
 ---
 
 ## Tests
 
-**15945 tests collected** at 7 November 2026 21:10 GMT, HEAD `45cea3f9` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**16060 tests collected** at 8 November 2026 06:52 GMT, HEAD `59d2cf45` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -69,13 +62,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
-- `45cea3f9 The complete board returned 11 failures: 16 of 17 fixed, the 1 survivor exactly as predicted, and 10 new ones that this session's own repairs created`
-- `e796a010 The answer to his repeat question was wrong by a key spelling: 3 live entries were called repeats on an empty string, B20 among them, and 0 of the 29 are repeats at all`
-- `6955397a A guard that got faster had stopped testing: 12 of its 13 failures were a help handler I added at module level, and the cost figure I prepared for his gate decision was understated 11-fold because I timed a test that was not running`
-- `6751cdb0 4 verdicts on 1 figure and only 1 was right, so the night's lesson is that a seat which catches your error can commit it and your correction of it can be worse than both`
-- `58995566 The panel round refuted me 4 times, my correction of the seat that caught me was itself wrong, and the method I reached for had been in the project for 25 days`
-- `624686db He ruled on a line cap he never set, the report that asked him was hand-written, and recording his ruling broke 3 instruments that each held a different view of what he owes`
-- `e2a87dac The complete board's largest failure cluster was one interval helper, and the detector that found it is blind to 43% of the same algebra`
-- `e0feed27 A resume pointer's git facts were unreachable by the guard written to check them, and the FOLLOW that found it took 3 passes`
-- `da38d9ac The independent check he ordered never ran: a 2-seat pair stood in for a 5-seat panel, and the cause is the dispatcher's own default`
-- `4d363c52 The figure withdrawn from B120 now has a producer, and it says the withdrawn number overstated the evidence by 9 orders of magnitude`
+- `59d2cf45 60 per cent of the DONE claims in the master list rest on verification the commit gate never runs, and decision 17's scope covers a sixth of it`
+- `7d481161 Decision 17 asked what growing the commit gate would cost, and the answer is graduated: 58 per cent of the ungated guards fit in under 2 per cent of the gate`
+- `b364191c Adding the 83 ungated guards would double the commit gate, and running them found 3 reds the gate cannot see, 2 of them mine from hours earlier`
+- `7aa972d2 B87's figure gains the producer it never had, and 2 claims I made about the commit gate's cost are withdrawn the same morning`
+- `150cd478 A figure reached his morning deliverable citing a producer that has never existed, and nothing checked that for 5 days`
+- `1035513f Decision 28 told him the memory index was 3 entries from refusing a save when its own producer says 0, and I corrected 3 of its 10 fields before checking how many there were`
+- `173867d3 Correcting 2 statuses made the report contradict itself, B20's title claimed nothing was built against a producer measuring 4 of 4, and 3 more entries carried a status their own artefacts refuted`
+- `323726f4 The evidence check read a cited line number as part of the filename, so it refused correct citations and would have refused a correct close`
+- `38ae4377 Two task-list statuses claimed work was uncommitted when it was in HEAD, and a verification run of 44 guard files ran nothing while reporting as green`
+- `fea0d60a A fix applied to 1 of 2 renderers is not applied: the spoken report carried 0 recorded statuses against the written copy's 7`
