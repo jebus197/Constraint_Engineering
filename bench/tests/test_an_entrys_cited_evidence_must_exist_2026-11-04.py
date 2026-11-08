@@ -39,7 +39,6 @@ a different measurement; this guard's own figures are recomputed here by
 execution, which is the point.
 """
 import pathlib
-import re
 import sys
 
 import pytest
@@ -48,7 +47,15 @@ REPO = pathlib.Path(__file__).resolve().parents[2]
 LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 
 #: A trailing `:123` or `:123-456` is a LINE REFERENCE, not part of the filename.
-_LINE_REF = re.compile(r":\d+(?:-\d+)?$")
+#: ★ IMPORTED, NOT REDEFINED, 2026-11-08. This file carried its own copy of
+#: the pattern while `evidence_objections` carried none, so the 2 checks
+#: disagreed about the project's own citation convention: this guard passed a
+#: `file.py:123` citation and that one called it a missing file. The definition
+#: now lives in `task_list_markers` beside the function that was missing it.
+sys.path.insert(0, str(REPO / "scripts"))
+import task_list_markers as _markers  # noqa: E402
+
+_LINE_REF = _markers.LINE_REF
 
 #: A cited token is a PATH only if it carries a separator. Entries also put bare
 #: words in the field, and a bare word is not a claim about a file.

@@ -542,6 +542,12 @@ def _asserts_something(node, src: str) -> bool:
     return "raises" in (ast.get_source_segment(src, node) or "")
 
 
+#: A trailing `:123` or `:123-456` in an `evidence:` value is a LINE REFERENCE,
+#: not part of the filename. Defined here because 2 callers need it and a
+#: duplicated copy is how they came to disagree.
+LINE_REF = re.compile(r":\d+(?:-\d+)?$")
+
+
 def evidence_objections(ident: str, evidence, root: Path = REPO) -> list[str]:
     """Every reason a DONE entry's named evidence is not evidence. [] if sound.
 
@@ -564,7 +570,20 @@ def evidence_objections(ident: str, evidence, root: Path = REPO) -> list[str]:
     if not evidence:
         return [f"task {ident}: DONE with no evidence named"]
     for name in evidence:
-        target = (root / name)
+        #: ★ THE LINE REFERENCE IS STRIPPED, 2026-11-08. This read
+        #: `root / name` with the WHOLE evidence string, so a citation of the
+        #: form `bench/dm/_types.py:314` was looked up as a FILENAME and
+        #: reported as "does not exist" while the file existed and the line sat
+        #: well inside it. 7 such objections stood across B20, B93 and B94, and
+        #: because `set_marker` calls this to REFUSE a write, closing any of
+        #: them would have been refused for a reason that is not true.
+        #:
+        #: `LINE_REF` lives in this module rather than in the guard that first
+        #: needed it, so the 2 callers cannot disagree about the convention --
+        #: which is exactly how they came to disagree, the guard for B110
+        #: having carried its own copy. That is this function's own docstring:
+        #: one definition, two callers.
+        target = (root / LINE_REF.sub("", name))
         if not target.exists():
             out.append(f"task {ident}: {name} does not exist")
             continue
