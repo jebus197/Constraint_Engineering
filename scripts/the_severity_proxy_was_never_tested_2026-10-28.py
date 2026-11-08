@@ -130,7 +130,35 @@ def _audit_rows() -> tuple[np.ndarray, np.ndarray, dict]:
 def _archive_severities() -> np.ndarray:
     """Every registry severity in the archive -- the real sampling frame."""
     out: list[float] = []
-    for p in sorted(LOGS.glob(FRAME_GLOB)):
+    # ★ ONE RUN WAS COUNTED TWICE, 2026-11-08 on his ruling (B121).
+    # `bench/logs/exp36_evidence_latest` is a SYMLINK to
+    # `exp36_evidence_20260407T004931Z`, and the glob above walks both, so that
+    # run's severities entered the sampling frame twice. MEASURED before the
+    # fix: the glob yielded 65 frames, 64 of them distinct after resolving, so
+    # exactly 1 duplicate -- and the symlink's target is globbed directly as
+    # well, which is what makes it a true double-count rather than the only
+    # route to that run.
+    #
+    # DE-DUPLICATED BY RESOLVED PATH, NOT BY EXCLUDING SYMLINKS BY NAME. A
+    # convenience pointer may be the ONLY route to a run whose real directory
+    # has been moved, and dropping such a pointer would silently shrink the
+    # frame instead of correcting it. Resolving keeps whichever route exists
+    # and counts the run once either way.
+    #
+    # POINT, NEVER PRUNE: the symlink is left exactly where it is. It is a
+    # convenience the project uses; what was wrong was counting through it.
+    _seen: set = set()
+    _frames = []
+    for _p in sorted(LOGS.glob(FRAME_GLOB)):
+        try:
+            _key = _p.resolve()
+        except OSError:
+            _key = _p
+        if _key in _seen:
+            continue
+        _seen.add(_key)
+        _frames.append(_p)
+    for p in _frames:
         try:
             entries = json.loads(p.read_text(encoding="utf-8")) \
                           .get("registry", {}).get("entries", {})

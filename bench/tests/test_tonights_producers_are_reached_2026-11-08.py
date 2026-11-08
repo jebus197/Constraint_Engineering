@@ -122,6 +122,9 @@ NOT_RUN_HERE = {
     "the_out_of_band_exemption_mutations_2026-11-08.py": "invokes pytest; would recurse",
     "the_producer_resolution_mutations_2026-11-08.py": "invokes pytest; would recurse",
     "the_reached_producer_mutations_2026-11-08.py": "invokes pytest; would recurse",
+    "the_both_gates_and_frame_mutations_2026-11-08.py":
+        "invokes pytest AND rewrites the live runner and a gate guard; "
+        "would recurse and mutate the subject mid-board",
     "the_resumable_seam_mutations_2026-11-08.py": "invokes pytest; would recurse",
     "the_runway_reference_mutations_2026-11-08.py": "invokes pytest; would recurse",
     "the_shell_exclusion_mutations_2026-11-08.py":

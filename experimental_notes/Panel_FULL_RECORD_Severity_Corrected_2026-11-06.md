@@ -74,7 +74,7 @@ disagreement as the specification. The joint round did not settle this. **Attack
 Treat every figure as a hypothesis under test and re-derive what you can.
 
 * **The 7.7 formula IS implemented and is switched OFF.** `compute_sev_f` at
-  `bench/reference_runner_v3.py:10742` computes the product exactly, including the hard 0.
+  `bench/reference_runner_v3.py:10800` computes the product exactly, including the hard 0.
   `_SEVERITY_SPEC = {"on": False}`. With it off the gate reads `float(entry["severity"])`, a
   model-asserted number.
 * **The key property is violated where it should bite.** `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`,
@@ -196,7 +196,7 @@ z3: unsat for the negation over all three variables simultaneously. SymPy: `max_
 
 **4. NEW, and it decides founder Q2: the computed severity is three-valued on the archive.** Over 3,474 archived entries, `constraint_class` and `confidence` are present on **0** each (Wilson 95% [0.000000, 0.001105]), and `compute_sev_f` defaults both to their *stricter* readings. So `sev_f` reduces to `V` alone: **0.0 on 42 entries, 0.5 on 2,050, 1.0 on 1,382**. Every cut in (0.5, 1.0] induces the **same partition**; moving 0.7 → 0.8, 0.9 or 0.95 reclassifies **0 entries**. On the model-asserted float the door reads today, the same moves reclassify 548 / 1,102 / 1,312 — but whether *any* of that is impact-related is **unmeasurable**, because the class is recorded nowhere.
 
-**5. Clean, stated as such: the shadow is NOT an addition nothing reaches.** `stamp_sev_f` is called at `bench/reference_runner_v3.py:10766` and exercised by `bench/tests/test_sev_f_and_queue_membership_2026-10-13.py` (asserts the off-path no-op returns 0 and the on-path stamps 2). No additive-standard violation here. I checked because 11 of this project's confirmed defects were additions nothing reached.
+**5. Clean, stated as such: the shadow is NOT an addition nothing reaches.** `stamp_sev_f` is called at `bench/reference_runner_v3.py:10824` and exercised by `bench/tests/test_sev_f_and_queue_membership_2026-10-13.py` (asserts the off-path no-op returns 0 and the on-path stamps 2). No additive-standard violation here. I checked because 11 of this project's confirmed defects were additions nothing reached.
 
 **6. Brief's measured claims — all reproduced**, exit 0: 84.3750% key-property violation, Wilson [68.2459%, 93.1356%]; `r = −0.5538, p = 1.152e-53, CI [−0.6048, −0.4982]`, Spearman −0.4716; the `−49/50 → 0.27289178365887046` worked example. Sub-threshold drift: the `reference_runner_v3.py` comment states 831/835 V-crossers; the live archive now gives **834/838** (99.5227%). Immaterial, not fixed.
 

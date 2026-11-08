@@ -125,7 +125,79 @@ class TestTheCorpusIsABoundaryBand:
         lo, hi = produced["archive_range"]
         assert lo == pytest.approx(0.0) and hi == pytest.approx(1.0), (
             "the band's narrowness only matters because the frame is wide")
-        assert produced["archive_n"] >= 3237
+        # ★ ALL 3 FLOORS FELL ON 2026-11-08, AND NOT BECAUSE THE ARCHIVE WAS
+        # REWRITTEN. B121, on his ruling: `bench/logs/exp36_evidence_latest` is
+        # a SYMLINK to `exp36_evidence_20260407T004931Z`, and the frame glob
+        # walked BOTH, so that run's severities entered the sampling frame
+        # twice. Measured before the repair: the glob yielded 65 frames and 64
+        # distinct after resolving -- exactly 1 duplicate, whose target was
+        # globbed directly as well. De-duplicating is a correction to the FRAME,
+        # which is a different act from rewriting the archive, and his standing
+        # ruling forbids only the latter. Nothing was deleted; the symlink
+        # stays exactly where it is.
+        #
+        # THE 3 SUPERSEDED FLOORS ARE NAMED DELIBERATELY so a reader who
+        # remembers them can see which moved: archive_n 3237 -> 3094,
+        # critical_above_band 1130 -> 1105, archive_critical 1420 -> 1389. The
+        # SHARES barely move -- 0.860052 against 0.865600 above the band, and
+        # 0.795536 against 0.794444 of all CRITICAL calls -- which is the point:
+        # the double count inflated both sides of every ratio, so the
+        # substantive claims this file exists to hold are unchanged.
+        assert produced["archive_n"] >= 3094, (
+            f"the de-duplicated frame held 3094 severities on 2026-11-08; "
+            f"{produced['archive_n']} is fewer, and a FRAME correction has "
+            f"already been applied, so a further fall needs its own cause")
+
+    def test_the_sampling_frame_counts_no_run_twice(self):
+        """B121, and it is the assertion the FLOORS cannot make.
+
+        Removing the de-duplication RAISES every count, so a `>=` floor passes
+        happily on a double-counted frame -- the fix would have been unguarded
+        while 3 freshly re-derived floors sat beside it looking like coverage.
+        Found by this file's own P-pass rather than by a later failure.
+
+        So the property asserted is the FRAME's, not a count's: no 2 paths the
+        producer walks may resolve to the same file. That holds whatever the
+        archive grows to, and it goes red the moment the resolve step is
+        dropped.
+        """
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("_sp_frame", PRODUCER)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        walked = sorted(mod.LOGS.glob(mod.FRAME_GLOB))
+        resolved = {}
+        for q in walked:
+            try:
+                key = q.resolve()
+            except OSError:
+                key = q
+            resolved.setdefault(key, []).append(q)
+        dupes = {k: v for k, v in resolved.items() if len(v) > 1}
+        assert len(walked) >= 60, (
+            f"the glob walked only {len(walked)} frames; it is not looking at "
+            f"this archive, so this test is vacuous")
+        assert dupes, (
+            "the raw glob contains NO duplicate at all, so this test can no "
+            "longer tell a de-duplicating producer from a naive one -- the "
+            "symlink that caused B121 is gone and this needs re-deriving")
+        kept = mod._archive_severities()
+        naive = 0
+        for q in walked:
+            try:
+                ents = __import__("json").loads(
+                    q.read_text(encoding="utf-8")).get(
+                        "registry", {}).get("entries", {})
+            except (OSError, ValueError):
+                continue
+            naive += sum(1 for e in ents.values()
+                         if isinstance(e, dict)
+                         and isinstance(e.get("severity"), (int, float)))
+        assert len(kept) < naive, (
+            f"the producer harvested {len(kept)} severities and a NAIVE walk of "
+            f"the same glob harvests {naive}. They are equal, so the "
+            f"de-duplication is not happening and at least 1 run is counted "
+            f"twice -- the B121 defect, back.")
 
     def test_the_band_holds_a_minority_of_archive_severities(self, produced):
         assert produced["share_in_band"] < 0.2, (
@@ -277,14 +349,15 @@ class TestTheStrongestObjectionIsAnswered:
         # REWRITTEN, which his standing ruling forbids. The SHARE above carries
         # the substantive claim and is pinned exactly, so the property this test
         # asserts is unchanged.
-        assert produced["critical_above_band"] >= 1130, (
+        assert produced["critical_above_band"] >= 1105, (
             f"critical calls above the band fell to "
-            f"{produced['critical_above_band']} from the 1130 recorded on "
-            f"2026-10-29; an archive-derived count can only fall if the archive "
-            f"was rewritten")
-        assert produced["archive_critical"] >= 1420, (
+            f"{produced['critical_above_band']} from the 1105 re-derived on "
+            f"2026-11-08 after the duplicate frame was removed (it read 1130 "
+            f"while one run was counted twice)")
+        assert produced["archive_critical"] >= 1389, (
             f"archive criticals fell to {produced['archive_critical']} from "
-            f"the 1420 recorded on 2026-10-29")
+            f"the 1389 re-derived on 2026-11-08 after the duplicate frame was "
+            f"removed (it read 1420 while one run was counted twice)")
 
     def test_the_band_bounds_are_read_from_the_data(self, produced):
         lo, hi = produced["band_bounds"]

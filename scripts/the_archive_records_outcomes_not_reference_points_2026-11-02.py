@@ -47,6 +47,22 @@ import re
 import sys
 
 import mpmath as mp
+# ★ NUMPY WAS USED AND NEVER IMPORTED, FIXED 2026-11-08. `np.log` at the
+# closed-form table below is the SECOND of this script's 2 cross-check
+# routes, so the module raised NameError on the first row it reached and
+# everything after that point was unreachable -- including the whole
+# `--sizing` block, which is what produces the floor multiplier 2240/481 =
+# 4.656965 that entry B84 quotes to the founder. The figures were CORRECT
+# (verified 2026-11-08 on SymPy exact, mpmath and numpy, all agreeing) and
+# they were UNPRODUCIBLE, which is `measured-rate-travels-with-its-script`
+# broken in the only direction that is easy to miss: the numbers are right.
+#
+# NOTHING CAUGHT IT BECAUSE NOTHING RAN IT. This file is 1 of the 229
+# dated producers in the admitted-debt set at
+# `experimental_notes/data/unreached_producers_2026-11-08.json`, and 0 tests
+# named it. It now has a guard, so the debt is 1 smaller rather than
+# re-admitted.
+import numpy as np
 import sympy as sp
 from statsmodels.stats.proportion import proportion_confint
 
@@ -351,6 +367,11 @@ def main() -> int:
     print()
     print(f"  {'q':>5} {'nu':>6} {'floor':>9} {'lambda':>10} "
           f"{'n* to 0.01 from R=1':>21}")
+    #: Collected so the sentence below is DERIVED rather than typed. Its 3
+    #: figures were literals in a print statement sitting immediately after
+    #: the loop that computes them -- a number quoted as prose beside the
+    #: code that could have produced it.
+    _derived: dict = {}
     for qv, nv in (("0.2", "0.05"), ("0.3", "0.05"), ("0.5", "0.05"),
                    ("0.9", "0.05"), ("0.5", "0.23")):
         qq, nn = sp.Rational(qv), sp.Rational(nv)
@@ -358,18 +379,31 @@ def main() -> int:
         lv = float(lam.subs({q: qq, nu: nn}))
         e0 = abs(1.0 - fl)
         if 0 < lv < 1 and e0 > 0.01:
-            a = float(mp.log(mp.mpf("0.01") / mp.mpf(e0)) / mp.log(mp.mpf(lv)))
-            b = float(np.log(0.01 / e0) / np.log(lv))
-            agree = abs(a - b) < 1e-9
-            cell = f"{a:.4f}" + ("" if agree else " TOOLS DISAGREE")
+            # ★ RENAMED FROM `a` AND `b`, 2026-11-08. `a` IS THE ARGPARSE
+            # NAMESPACE, bound at the head of this function, and this loop
+            # rebound it to a float -- so `a.sizing` at the foot raised
+            # AttributeError and the whole `--sizing` block was unreachable.
+            # That is a SECOND independent fault on the same path as the
+            # missing numpy import, and it was invisible until the first was
+            # fixed, because the module never got this far. Both had to be
+            # repaired before the floor multiplier 2240/481 that entry B84
+            # quotes could be produced by any invocation at all.
+            n_mp = float(mp.log(mp.mpf("0.01") / mp.mpf(e0)) / mp.log(mp.mpf(lv)))
+            n_np = float(np.log(0.01 / e0) / np.log(lv))
+            agree = abs(n_mp - n_np) < 1e-9
+            cell = f"{n_mp:.4f}" + ("" if agree else " TOOLS DISAGREE")
+            _derived[(qv, nv)] = n_mp
         else:
             cell = "within 0.01 already" if e0 <= 0.01 else "lambda out of (0,1)"
         print(f"  {qv:>5} {nv:>6} {fl:>9.6f} {lv:>10.6f} {cell:>21}")
     print()
     print("  SO THE ANSWER TO 'HOW IS IT CALCULATED' IS A CLOSED FORM, AND IT")
     print("  NEEDS EXACTLY THE 2 INPUTS THAT ARE NOT ARCHIVE-DERIVED. At q = 0.3")
-    print("  and nu = 0.05 it is 14.4830 passes to come within 0.01 of the floor")
-    print("  from R = 1; at q = 0.9 it is 2.0202; at q = 0.2 it is 25.1235. The")
+    print(f"  and nu = 0.05 it is {_derived.get(('0.3', '0.05'), float('nan')):.4f}"
+          f" passes to come within 0.01 of the floor")
+    print(f"  from R = 1; at q = 0.9 it is "
+          f"{_derived.get(('0.9', '0.05'), float('nan')):.4f}; at q = 0.2 it is "
+          f"{_derived.get(('0.2', '0.05'), float('nan')):.4f}. The")
     print("  spread across plausible q is an order of magnitude, so the figure")
     print("  cannot be quoted without its inputs -- which is why the missing")
     print("  fields are the binding constraint and not the mathematics.")

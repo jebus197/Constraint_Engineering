@@ -9746,6 +9746,64 @@ def _evaluate_gate_conditions(
     )
 
 
+# ── B76: BOTH GATES MUST AGREE BEFORE A RUN TERMINATES ─────────────────────
+# HIS RULING, 2026-11-08: *"Require both gates to agree. stm"*
+#
+# THE DEFECT, OBSERVED RATHER THAN HYPOTHESISED. On the 2026-11-02 rerun the
+# 2 enabled criteria disagreed and the MORE PERMISSIVE one stopped the run.
+# From that run's own console log:
+#   γ-alt: hardened not met: γ_crit=0.808 (≥0.41? True; sustained=True;
+#          loo_ok=True) AND zero_crit_ok
+#   STATE_CONVERGED at round 5 (3 consecutive passes): All conditions met:
+#          open_ch=0 (stable), novel=0, contested=0, gamma=0.487
+# The hardened gate said NOT MET and the state gate terminated the run anyway,
+# because the composition was an OR: `if gamma_alt_converged and not converged:
+# converged = True`, with the state gate's own True never re-examined.
+#
+# WHY AN OR WAS WRONG HERE AND NOT MERELY DIFFERENT. The project's standing
+# directive states the agreed design as a TWO-SIDED gate in which convergence
+# requires BOTH sides of the same diminishing-returns coin to agree, neither
+# alone. An OR makes the pair strictly weaker than either member, so adding a
+# second criterion made termination EASIER rather than harder -- the opposite
+# of what a second criterion is for.
+#
+# THIS IS A PURE FUNCTION ON PURPOSE. The live decision sits inside a 20,000
+# line loop that needs a full experiment to exercise, so a guard could only
+# have asserted on its source text -- and a text assertion cannot detect a
+# producer and a consumer that disagree. Extracted, all 4 combinations are
+# EXECUTED by `bench/tests/test_both_gates_must_agree_2026-11-08.py`.
+#
+# IT MAKES CONVERGENCE STRICTER, AND THAT IS THE POINT RATHER THAN A SIDE
+# EFFECT. Under this rule the 2026-11-02 run would not have converged at round
+# 5. A run that cannot satisfy both sides is a run whose own evidence does not
+# yet support stopping; the directive's position is that where convergence
+# seems out of reach the cause is MECHANICAL and is to be hunted in the
+# mechanics, never by loosening the gate.
+def both_gates_agree(
+    state_converged: bool, state_reason: str,
+    gamma_converged: bool, gamma_reason: str,
+) -> tuple:
+    """(converged, reason). BOTH gates must agree; neither terminates alone.
+
+    The reason always names WHICH side dissented, because a run that stops --
+    or declines to stop -- for an unnamed reason cannot be retraced by a
+    researcher, which is his standing requirement.
+    """
+    if state_converged and gamma_converged:
+        return True, (f"BOTH GATES AGREE: state gate [{state_reason}]; "
+                      f"gamma gate [{gamma_reason}]")
+    if state_converged and not gamma_converged:
+        return False, (f"HELD OPEN -- the state gate converged and the gamma "
+                       f"gate did not, so the run continues: state gate "
+                       f"[{state_reason}]; gamma gate DISSENTS [{gamma_reason}]")
+    if gamma_converged and not state_converged:
+        return False, (f"HELD OPEN -- the gamma gate converged and the state "
+                       f"gate did not, so the run continues: gamma gate "
+                       f"[{gamma_reason}]; state gate DISSENTS [{state_reason}]")
+    return False, (f"NEITHER GATE CONVERGED: state gate [{state_reason}]; "
+                   f"gamma gate [{gamma_reason}]")
+
+
 def _check_state_convergence(
     round_idx: int,
     registry: FindingRegistry,
@@ -21000,13 +21058,15 @@ def run_experiment(
                 rho_churn=rho_churn, irreducible_queue=_irreducible_q,
                 gamma_critical=gamma_critical,
             )
-        if gamma_alt_converged and not converged:
-            _log(f"  γ-alt: {gamma_alt_reason}")
-            converged = True
-            conv_reason = gamma_alt_reason
-        elif not gamma_alt_converged:
-            # Log but don't promote — main gate governs until γ-alt fires.
-            _log(f"  γ-alt: {gamma_alt_reason}")
+        # ★ B76, 2026-11-08 on his ruling: BOTH gates must agree. This was an
+        # OR, under which either gate alone terminated the run and the state
+        # gate's own True was never re-examined once set. See
+        # `both_gates_agree` above for the observed case and the reasoning.
+        _log(f"  γ-alt: {gamma_alt_reason}")
+        converged, conv_reason = both_gates_agree(
+            converged, conv_reason, gamma_alt_converged, gamma_alt_reason)
+        if not converged:
+            _log(f"  convergence HELD OPEN: {conv_reason}")
 
         # G7 round-level tie-breaker (Gemini confer input, folded into
         # the G7 design). When the run is deep in the converged regime

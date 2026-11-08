@@ -239,7 +239,7 @@ fable says the contradiction is real, citing **§15 `d_tool`** (quantities come 
 
 ### 10.4 Findings neither B87 nor the brief contained
 
-- **A second partition reader**: `_corroborated_novelty_series` at `bench/reference_runner_v3.py:10963`, with an identical raw-severity read. cc2 found it only because its patch refused to apply on a unique match.
+- **A second partition reader**: `_corroborated_novelty_series` at `bench/reference_runner_v3.py:11021`, with an identical raw-severity read. cc2 found it only because its patch refused to apply on a unique match.
 - **`compute_sev_f` / `stamp_sev_f` already exist**, wired into the round loop at line 20523, tested, default-off, with reader-side support for both missing factors (fable). So "add the HARD/SOFT field" needs a **writer**, not a build.
 - **`effective_severity` + `RunnerConfig.severity_spec_enabled`** were built 2026-10-15, so "§7.7 gates nothing" overstates: the promotion reaches **1 of the 2** severity consumers that decide convergence (cc2).
 - **The key property may not be unconditionally desirable at the gate that blocks a run from converging** (fable): Exp 42 measured 2 of 3 REFUTED criticals as falsely REFUTED, so full §7.7 compliance at the gate would have released real defects. It is a scoring-layer property.
