@@ -20,7 +20,39 @@ _cdsfl_on_exit() {
     fi
     if [ -n "${CDSFL_HOOK_T0:-}" ]; then
         mkdir -p .cdsfl_tmp 2>/dev/null
-        echo "$(( $(date +%s) - CDSFL_HOOK_T0 ))" > .cdsfl_tmp/precommit_seconds 2>/dev/null
+        _cdsfl_secs=$(( $(date +%s) - CDSFL_HOOK_T0 ))
+        # KEPT: scripts/cdsfl_sv.py:620 reads this exact path to derive its own
+        # timeout, so the single number stays where it is. Nothing is removed.
+        echo "$_cdsfl_secs" > .cdsfl_tmp/precommit_seconds 2>/dev/null
+        # ★ AND APPENDED TO A LEDGER, 2026-11-08 on his ruling (B81). The line
+        # above OVERWRITES, so this gate has never had a cost HISTORY: every
+        # claim about what it costs has come from 1 number describing the last
+        # run, and the header's own stated limit of 11 minutes could not be
+        # checked against anything. Recent boards have run 652, 683 and 698
+        # seconds, so the gate sits ON that line rather than safely inside it,
+        # and a limit nobody can measure against is not a limit.
+        #
+        # THE OUTCOME IS RECORDED BESIDE THE DURATION, and that is the half
+        # worth having: `_rc` is this trap's own exit code, so the ledger shows
+        # how often the gate REFUSED as well as what it cost. A refusal leaves
+        # no other trace in the repository, which is why this session's own
+        # refusal count had to be session-observed rather than derived.
+        #
+        # IT IS A SPOOL UNDER .cdsfl_tmp AND THEREFORE UNTRACKED, DELIBERATELY.
+        # A tracked ledger written from a pre-commit hook lands AFTER the commit
+        # it describes, so every commit would leave the tree dirty and the
+        # ledger would trail by one. Where the history should finally live is
+        # part of B103, which is his decision, so this collects the evidence
+        # without pre-empting it.
+        #
+        # IT CAN NEVER FAIL A COMMIT. Every command here is redirected and the
+        # block returns nothing; an unwritable spool costs a line of history
+        # and not a commit.
+        printf '{"at":"%s","seconds":%s,"exit":%s,"head":"%s"}\n' \
+            "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
+            "$_cdsfl_secs" "$_rc" \
+            "$(git rev-parse --short HEAD 2>/dev/null)" \
+            >> .cdsfl_tmp/precommit_durations.jsonl 2>/dev/null
     fi
     return $_rc
 }

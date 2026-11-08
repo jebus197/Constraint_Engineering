@@ -203,9 +203,21 @@ def main() -> int:
                          recorded),
                         ("STILL OPEN -- accepted and NOT yet built", still_open),
                         ("no entry found", missing)):
-        print(f"\n  {label}: {len(rows)}")
-        if rows:
-            print("    " + " ".join(sorted(set(rows), key=lambda x: int(x[1:]))))
+        #: ★ THE COUNT AND THE LIST MUST ANSWER THE SAME QUESTION, fixed
+        #: 2026-11-08. `len(rows)` counted ANNOTATIONS and the line below
+        #: printed `set(rows)`, which is unique ENTRIES -- so this reported
+        #: "BUILT, entry DONE: 10" and then named 9, because B102 is annotated
+        #: twice. A count beside a list that disagrees with it is the
+        #: figure-answers-a-different-question defect, in a producer written
+        #: the same day it was used to report to him. BOTH are now shown, each
+        #: labelled with what it counts.
+        uniq = sorted(set(rows), key=lambda x: int(x[1:]))
+        extra = ("" if len(rows) == len(uniq)
+                 else f" ({len(rows)} annotations, 1 or more entry annotated "
+                      f"more than once)")
+        print(f"\n  {label}: {len(uniq)} entries{extra}")
+        if uniq:
+            print("    " + " ".join(uniq))
 
     disc = len(built) + len(recorded)
     for label, k in (("discharged in either sense", disc),

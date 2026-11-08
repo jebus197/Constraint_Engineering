@@ -79,6 +79,7 @@ MUST_RUN = (
     "the_unreached_producer_debt_is_not_todays_2026-11-08.py",
     "what_his_twenty_nine_rulings_actually_say_2026-11-08.py",
     "what_the_commit_gate_costs_now_2026-11-08.py",
+    "what_the_commit_gate_actually_costs_over_time_2026-11-08.py",
     "what_the_gate_leaves_unverified_2026-11-08.py",
 )
 
