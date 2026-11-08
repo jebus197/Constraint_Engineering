@@ -204,7 +204,31 @@ The answer given to you yesterday was wrong. The measurement script written to a
 """
 
 
-def render(mrb, rows, spoken: bool) -> str:
+def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
+    """Render the file. `detail=False` gives the INDEX ALONE.
+
+    ★ HIS COMPLAINT OF 2026-11-08, and it is measured. He answered all 29
+    decisions from the index and said of the rest that, at over 22,000 words,
+    it is an almost impossible workload. Measured by
+    `scripts/what_his_twenty_nine_rulings_actually_say_2026-11-08.py`: the
+    delivered file was 22,902 words of which the long tier is 0.927451 of the
+    characters, and 0.690653 of the morning report's 12-word sequences also
+    appear in it, because 2 generators each render all 29 in full.
+
+    HIS FIRST READING IS REFUTED AND HIS SECOND IS RIGHT. Nothing was
+    appended today: these files ran 18,300 bytes on 2026-10-29 and 25,523 on
+    2026-10-30, then 151,786 on 2026-11-04, LARGER than this one. The 2-tier
+    shape predates the file; the workload request simply lapsed.
+
+    SO THE REPOSITORY COPIES KEEP EVERY SECTION AND THE DESKTOP COPY CARRIES
+    THE INDEX, 9,594 characters against 130,263. The 3 dependencies were
+    checked rather than assumed: `do_the_two_decision_surfaces_agree` reads
+    the REPOSITORY glob and needs the `DECISION n.` headings, which the
+    repository copy keeps; `sync_desktop_mirrors.MIRRORS` holds 5 entries and
+    this file is not 1 of them, so nothing copies the full text back over the
+    Desktop one; and this module's exit-0 postcondition is computed from
+    `rows`, not from the rendered text.
+    """
     sp = mrb._spoken if spoken else (lambda t: t)
     date = (dt.datetime.now().strftime("%d %B %Y, %H:%M GMT") if spoken
             else dt.date.today().isoformat())
@@ -218,18 +242,24 @@ def render(mrb, rows, spoken: bool) -> str:
     # 100,000 characters is not what "quick" means. Every decision appears here
     # in 1 line with its recommendation, so a ruling can be given from the
     # index alone and the detail read only where it is wanted.
-    A("THE 29 AT A GLANCE" if spoken else "## The 29 at a glance")
+    # DERIVED, never typed: this read "THE 29 AT A GLANCE" and would have gone
+    # stale the moment he ruled on one of them.
+    A(f"THE {len(rows)} AT A GLANCE" if spoken
+      else f"## The {len(rows)} at a glance")
     A("")
-    A(sp(_wrap_free(
-        "Each line gives the decision number, the entry it belongs to, the question, and the "
-        "recommended option in a clause. The full argument for each follows below in the same "
-        "order. A ruling can be given from this list alone, naming the decision number and the "
-        "option number."
-    )) if spoken else _wrap_free(
-        "Each line gives the decision number, the entry it belongs to, the question, and the "
-        "recommended option in a clause. The full argument for each follows below in the same "
-        "order. A ruling can be given from this list alone, naming the decision number and the "
-        "option number."))
+    # ★ ONE SENTENCE, ONE DECLARATION. This stood written out TWICE, once for
+    # the spoken branch and once for the markdown one, so a conditional added
+    # to either would have left the 2 surfaces promising different things --
+    # the `execute-do-not-grep` shape in prose. It is composed once here.
+    _lead = ("Each line gives the decision number, the entry it belongs to, the "
+             "question, and the recommended option in a clause. A ruling can be given "
+             "from this list alone, naming the decision number and the option number. ")
+    _lead += ("The full argument for each follows below in the same order."
+              if detail else
+              "The full argument for each is in the repository, in the markdown and "
+              "spoken copies of this file under experimental notes, which carry every "
+              "section.")
+    A(sp(_wrap_free(_lead)) if spoken else _wrap_free(_lead))
     A("")
     for i, r in enumerate(rows, 1):
         k, _how = recommended_index(r["options"]) if r["options"] else (0, "")
@@ -243,7 +273,9 @@ def render(mrb, rows, spoken: bool) -> str:
     A("" if spoken else "---")
     A("")
 
-    for i, r in enumerate(rows, 1):
+    # SKIPPED BY ITS ITERABLE rather than by re-indenting 40 lines under an
+    # `if`: simplest sufficient, and a diff a reader can check.
+    for i, r in enumerate(rows if detail else [], 1):
         hd = f"DECISION {i}. {r['heading']}"
         tag = f" `[{r['tid']}]`" if r.get("tid") else ""
         A(hd if spoken else f"## {hd}{tag}")
@@ -284,6 +316,13 @@ def render(mrb, rows, spoken: bool) -> str:
             A("")
         A("" if spoken else "---")
         A("")
+    if not detail:
+        A(sp(_wrap_free(
+            f"That is the whole of the index. The full argument for all {len(rows)} "
+            f"decisions, with the evidence and every option, is in the repository "
+            f"copies of this file under experimental notes. Nothing is cut: this copy "
+            f"is the index, so a ruling can be given without reading the rest.")))
+        A("")
     A("Written under CDSFL note standard v1.9 (1 November 2026)."
       if spoken else
       "Written under CDSFL note standard v1.9 (1 November 2026).")
@@ -307,8 +346,16 @@ def main(argv) -> int:
 
     md = render(mrb, rows, spoken=False)
     tts = render(mrb, rows, spoken=True)
+    #: ★ THE COPY HE ACTUALLY READS IS THE INDEX, on his complaint of
+    #: 2026-11-08. The repository keeps both full renders, which is what the
+    #: surface-agreement checker reads and what holds the `DECISION n.`
+    #: headings it needs. See `render`'s docstring for the measurement and for
+    #: the 3 dependencies that were checked before this split.
+    tts_index = render(mrb, rows, spoken=True, detail=False)
     print(f"  markdown : {len(md.splitlines())} lines, {len(md)} chars")
     print(f"  spoken   : {len(tts.splitlines())} lines, {len(tts)} chars")
+    print(f"  his copy : {len(tts_index.splitlines())} lines, {len(tts_index)} chars "
+          f"({len(tts_index) / max(1, len(tts)):.4f} of the full spoken render)")
 
     today = dt.date.today().isoformat()
     #: ★ NAMED `_GENERATED` AND NOT COMMITTED, exactly as the morning report is.
@@ -324,7 +371,7 @@ def main(argv) -> int:
         DESKTOP.mkdir(parents=True, exist_ok=True)
         p_md.write_text(md, encoding="utf-8")
         p_tx.write_text(tts, encoding="utf-8")
-        p_dk.write_text(tts, encoding="utf-8")
+        p_dk.write_text(tts_index, encoding="utf-8")
         print(f"\nWROTE {p_md}\n      {p_tx}\n      {p_dk}")
     else:
         print("\nDRY RUN -- nothing written. Re-run with --write.")

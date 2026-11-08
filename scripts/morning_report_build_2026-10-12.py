@@ -1100,7 +1100,26 @@ def _spoken(text: str) -> str:
     return t.strip()
 
 
-def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> str:
+def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
+               detail: bool = True) -> str:
+    """The spoken report. `detail=False` drops the per-decision argument.
+
+    ★ HIS COMPLAINT OF 2026-11-08 HAS 2 HALVES AND THIS IS THE SECOND. He was
+    sent 2 files that morning, 22,555 and 22,505 words, and 0.690653 of this
+    report's 12-word sequences also appear in the decisions file -- because
+    this renderer and `scripts/build_decisions_file_2026-11-07.py` each render
+    all 29 decisions in full, from the same authored detail. Shortening 1 file
+    alone would have left him the same text under another name. Measured by
+    `scripts/what_his_twenty_nine_rulings_actually_say_2026-11-08.py`.
+
+    SO SECTION 1 BECOMES A COUNT AND A POINTER IN THE COPY HE READS. The
+    markdown report in the repository is UNCHANGED and still carries every
+    section, which matters because the verbatim-region markers pinned by
+    `bench/tests/test_the_report_structure_is_pinned_2026-11-03.py` are emitted
+    by `render_md` and not by this function -- checked before the edit, because
+    that guard exists for a repair which removed an opening marker and left its
+    close behind.
+    """
     L = []
     A = L.append
     A(f"MORNING REPORT, {dt.date.today().strftime('%d %B %Y')}")
@@ -1136,7 +1155,18 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
     A("")
     A("SECTION 1. DECISIONS THAT NEED AN ANSWER")
     A("")
-    for i, d in enumerate(decs, 1):
+    if not detail:
+        A(_spoken(
+            f"{len(decs)} decisions need an answer and each is listed, with its "
+            f"recommendation, in the decisions file of the same date. They are not "
+            f"repeated here: this report and that file were rendering the same 29 "
+            f"arguments in full, which is why 2 files of about 22,500 words each "
+            f"reached you on the 8th of November. Section 2 onward is this "
+            f"report's own."))
+        A("")
+    # SKIPPED BY ITS ITERABLE rather than by re-indenting the block under an
+    # `if`: simplest sufficient, and a diff a reader can check.
+    for i, d in enumerate(decs if detail else [], 1):
         A(f"DECISION {i}. {_spoken(d.get('title') or d['ident'])}")
         A("")
         A("What it is. " + _spoken(d.get("what", d.get("headline", ""))))
@@ -1561,7 +1591,10 @@ def main(argv: list[str]) -> int:
     done = work_done(args.since)
     md = render_md(decs, outstanding, done, owed, parked, args.since, superseded)
 
-    tts = render_tts(decs, outstanding, done, owed, parked, args.since, superseded)
+    #: ★ THE COPY HE READS DROPS THE DECISION DETAIL, on his complaint of
+    #: 2026-11-08. The markdown in the repository keeps every section.
+    tts = render_tts(decs, outstanding, done, owed, parked, args.since,
+                     superseded, detail=False)
     if args.write:
         out = (REPO / "experimental_notes"
                / f"Morning_Report_{dt.date.today().isoformat()}_GENERATED.md")
