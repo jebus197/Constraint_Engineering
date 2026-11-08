@@ -257,6 +257,19 @@ def is_a_response_file(path: Path) -> bool:
 #: and frequently begin without a space after the hash.
 _MD_HEADING = re.compile(r"^#{1,6}\s+\S")
 
+#: His ticket markers, as a trailing token. Sourced from `ticket_store.KINDS`
+#: so the 2 declarations cannot drift; falls back to the literal set only when
+#: the import is unavailable, and the guard asserts the 2 agree.
+try:
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    from bench.ticket_store import KINDS as _HIS_KINDS
+except Exception:                                         # noqa: BLE001
+    _HIS_KINDS = ("fr", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
+_ENDS_IN_HIS_MARKER = re.compile(
+    r"\b(?:" + "|".join(sorted(_HIS_KINDS, key=len, reverse=True)) + r")\b\s*$",
+    re.IGNORECASE)
+
 #: Where this project's own generated TTS reports live. An annotated response
 #: file is a COPY of one of these with his '#' insertions, so the original is an
 #: EXACT oracle for which lines are the report's and which are his -- better
@@ -308,6 +321,25 @@ def _looks_like_a_markdown_heading(line: str) -> bool:
     if len(stripped) - len(stripped.lstrip("#")) >= 2:
         return True
     body = line.lstrip("#").strip()
+    # ★ A LINE ENDING IN ONE OF HIS TICKET MARKERS IS NEVER A HEADING. Added
+    # 2026-11-08 on his ruling (B105). His commonest annotation form is
+    # "I accept your recommendation. stm" -- and it defeated the shape test
+    # below in the WORST possible way: it ends in a marker rather than in
+    # sentence punctuation, so `endswith((".", "?", "!"))` is False, and it is
+    # short, so `len(body) <= 120` is True. Both conditions for "this is a
+    # heading" were therefore met by the single most common thing he writes,
+    # and the line was discarded as not his.
+    #
+    # THE MARKER SET IS IMPORTED, NOT SPELLED HERE, so a 7th kind added to
+    # `ticket_store.KINDS` is recognised without editing this file -- the
+    # addition-nothing-reaches failure in reverse. A WORD BOUNDARY is required
+    # on both sides, which is what keeps `disc` out of "discussion" and `ds`
+    # out of "Methods"; checked by execution in the guard rather than reasoned
+    # about here. The match is CASE-INSENSITIVE because 3 of his annotations
+    # carry `Qs` and `Stm` with a leading capital, and a case-sensitive
+    # pattern drops exactly those.
+    if _ENDS_IN_HIS_MARKER.search(body):
+        return False
     # A heading rarely runs past a clause and rarely ends in sentence punctuation.
     return len(body) <= 120 and not body.rstrip().endswith((".", "?", "!"))
 

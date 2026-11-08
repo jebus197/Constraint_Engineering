@@ -58,11 +58,13 @@ DATE = "2026-11-08"
 #: Producers that must RUN. All 20 were executed and timed before listing.
 MUST_RUN = (
     "a4_doors_are_shared_2026-11-08.py",
+    "b83s_premise_is_false_the_outcome_is_stored_2026-11-08.py",
     "a_guessed_lookup_shape_answers_confidently_2026-11-08.py",
     "a_rule_excluded_from_blocking_still_blocks_2026-11-08.py",
     "are_the_two_switches_the_whole_set_2026-11-08.py",
     "does_any_archived_finding_carry_confidence_2026-11-08.py",
     "his_command_was_erased_by_his_own_next_line_2026-11-08.py",
+    "his_commonest_annotation_was_read_as_a_heading_2026-11-08.py",
     "how_many_commits_and_how_many_refusals_2026-11-08.py",
     "how_many_of_his_twenty_nine_are_actually_addressed_2026-11-08.py",
     "how_many_open_defects_are_already_fixed_2026-11-08.py",
@@ -101,6 +103,8 @@ NEEDS_EXTERNAL = {
         pathlib.Path.home() / ".claude/projects/-Users-georgejackson-Developer-Projects",
     "how_many_of_his_twenty_nine_are_actually_addressed_2026-11-08.py":
         pathlib.Path.home() / "Developer_Projects/Responses",          # UNGUARDED
+    "his_commonest_annotation_was_read_as_a_heading_2026-11-08.py":
+        pathlib.Path.home() / "Developer_Projects/Responses",
     "record_his_verdicts_of_the_eighth_2026-11-08.py":
         pathlib.Path.home() / "Developer_Projects/Responses",
     "sv_reports_a_runway_it_will_refuse_2026-11-08.py":

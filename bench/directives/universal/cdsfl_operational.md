@@ -622,6 +622,32 @@ parse), not from self-assessed confidence. A claim of d = 0.9 based on
 tests caught the flaw class" is admissible. Formally: d_i = f(T_i) where
 T_i is the result of executing a defined verification tool.
 
+**confidence in Sev(f) — THE SAME RULE, STATED EXPLICITLY. Added 2026-11-08
+on the founder's ruling (B87).**
+`docs/MATHEMATICAL_APPENDIX.md` section 7.7 defines severity as
+`Sev(f) = W(class) . confidence . V(verification)`. That `confidence` factor
+is governed by `d_tool` above and by nothing else: it must be a FUNCTION OF
+TOOL OUTPUT, in the same sense and with the same worked examples. A
+confidence derived from tool receipts is ADMISSIBLE — "9 of 10 relevant
+tests caught the flaw class" gives an admissible 0.9 for severity exactly as
+it does for d. A confidence that is a model's own estimate of its own
+certainty remains INADMISSIBLE, and "I am certain" is still not a number.
+
+This clause ADDS a permission and removes none. It was written because the
+severity specification asks for a factor that no gate named, so the factor
+was recorded on 0 of 3,311 archived findings — Wilson 95%
+[0.000000, 0.001159] — and the shadow had to substitute the asserted
+severity for `W . confidence` because that was the only admissible route in
+existence. Stating the rule gives the factor a lawful source; it does not
+license self-assessment by the back door.
+
+NOTE FOR ANYONE COMPARING RUNS ACROSS THIS DATE: this file is part of the
+composed directive text every seat receives, so it is an experimental
+independent variable. A run before this clause and a run after it were given
+different instructions. The change can only ADMIT data that was previously
+refused, so it cannot invalidate an earlier finding, but it is not a no-op
+and runs either side of it are not interchangeable.
+
 **σ_measured — fix efficacy measured, not assumed.**
 When the three-phase extension uses fix efficacy σ (equivalently, the
 S_k score), this must come from *re-running* the verification tools after

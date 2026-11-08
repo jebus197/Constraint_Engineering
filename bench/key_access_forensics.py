@@ -830,7 +830,25 @@ def scan_run(run_dir: Path, key_dir: Path | Iterable[Path] | None = None,
         _scope_roots.append(rep.run_root_recorded)
     confined = bool(rep.target_dirs) and not any(
         _under(d, r) for d in rep.target_dirs for r in _scope_roots)
+    # ★ THE STAGED TARGET ROOT IS IN SCOPE, 2026-11-08 on his ruling (B82).
+    # A falsifier is REQUIRED to work inside `~/CDSFL_review_targets`, so a
+    # path literal naming it is the mandated location and not an escape. It
+    # was missing from this list, and the out-of-scope signal below therefore
+    # fired at the CONFIRMED tier 100 times on the one directory the design
+    # compels a falsifier to use.
+    #
+    # THIS CANNOT CREATE A FALSE NEGATIVE ON A KEY READ, by the invariant
+    # stated at the head of this block and not by hope: `protected` is tested
+    # BEFORE the allowlist inside `_in_scope`, so a key store hidden under the
+    # staged root still loses the test. The guard asserts that direction
+    # explicitly rather than leaving it to the comment.
+    try:
+        from bench.falsifier_verify import STAGED_TARGET_ROOT as _STAGED_ROOT
+    except Exception:                                       # noqa: BLE001
+        _STAGED_ROOT = None
     allowlist = [str(run_dir), *rep.target_dirs]
+    if _STAGED_ROOT and str(_STAGED_ROOT) not in allowlist:
+        allowlist.append(str(_STAGED_ROOT))
     if not confined:
         for _r in reversed(_scope_roots):
             allowlist.insert(0, _r)
