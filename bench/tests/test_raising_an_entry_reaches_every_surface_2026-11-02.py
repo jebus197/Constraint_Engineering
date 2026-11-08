@@ -101,7 +101,27 @@ class TestItIsInert:
                        cwd=ROOT, capture_output=True, text=True)
         after = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
                                capture_output=True, text=True).stdout
-        assert before == after, "running the checker changed the working tree"
+        #: ★ THE MESSAGE NAMES WHAT DIFFERED, 2026-11-08. The assertion is
+        #: UNCHANGED and deliberately so -- it is correct, and weakening it
+        #: would cost the coverage it exists for. What changed is that a
+        #: failure used to assert a CAUSE it had not established: it said the
+        #: checker changed the tree, when this probe reads `git status
+        #: --porcelain` for the WHOLE repository and that output reflects the
+        #: INDEX. Anything else writing concurrently -- a commit's pre-commit
+        #: refresh, a `git add` in another process -- trips it and is then
+        #: reported as the checker's doing. That happened on 2026-11-08 and
+        #: cost a session several minutes hunting a defect that was not there;
+        #: the checker was proved inert 3 ways (0 write-capable call sites by
+        #: ast, 0 of 11,416 tracked files changed by content hash, and 9 of 9
+        #: passing on a quiet tree). Printing the delta makes the next
+        #: occurrence self-diagnosing instead of misleading.
+        _delta = sorted(set(after.splitlines()) ^ set(before.splitlines()))
+        assert before == after, (
+            "the working tree changed across the checker's run. This probe "
+            "reads `git status --porcelain` for the whole repository, which "
+            "reflects the INDEX, so a concurrent commit or `git add` trips it "
+            "and is NOT the checker writing. Check that before changing the "
+            "checker. Lines that differed:\n  " + "\n  ".join(_delta))
 
     def test_help_is_answered_and_costs_nothing(self):
         r = subprocess.run([sys.executable, str(TOOL), "--help"],

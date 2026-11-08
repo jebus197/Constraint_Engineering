@@ -286,7 +286,7 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Needs your decision — IRREVERSIBLE: one of his 3 standing categories: a git ref, money, or the sealed key store.** Not blocking; nothing on the list waits on it.
 
-## qs:65a5b902ff02 — should an entry's evidence require EVERY cited item to be a test, or AT LEAST ONE?
+## qs:65a5b902ff02 — should an entry's evidence require EVERY cited item to be a test, or AT LEAST 1?
 
 *Parked 2026-11-08T03:59:57+00:00.*
 
