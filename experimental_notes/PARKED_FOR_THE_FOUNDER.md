@@ -298,6 +298,12 @@ evidence_objections in scripts/task_list_markers.py appends one objection per ev
 
 The producer-resolution check built 2026-11-08 is conditional on a path being cited, so it catches an item naming a PHANTOM producer (which B102 did for 5 days) but not an item naming NONE. Partition of 48 authored items: 24 figure+producer, 11 figure+none, 4 no-figure+producer, 9 no-figure+none, summing to 48. So the rule bites on 11 of the 35 figure-bearing items, 0.314286, Wilson [0.185508, 0.479798], Clopper-Pearson [0.168517, 0.492880] - not on the 21 naming no producer, because 9 of those carry no figure and owe none. The 11 are the concise-style and proven-floor study defects plus B71, B77, B79, B81, B83, B84, B87, B103 and B125. The number overstates the cost: B87 names no script yet its figure was reproduced by hand in about 10 lines and came back exactly current, denominator drift 0. Not built unasked because the check REFUSES, so extending it blocks report generation until all 11 are satisfied, and any figure that proves unreproducible must be labelled unmeasured, which changes what he reads.
 
+## The B13 commit board is still running, so writing to the tree risks a spurious failure and corrupts the commit in flight
+
+*Parked 2026-11-08T07:30:44+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (19)
