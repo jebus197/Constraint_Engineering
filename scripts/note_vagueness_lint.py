@@ -122,6 +122,37 @@ WORD_NUMBER_OK = re.compile(
 # to 6, 3 and 3.
 BARE_WORD_NUMBER = re.compile(rf"\b{_NW}\b", re.I)
 
+#: ★ RULE 6: A TTS FILE NAMES A FILE, IT DOES NOT SPELL ITS PUNCTUATION.
+#:
+#: Raised as `pf:c31e41410ec2` on a delivered note carrying `python3 scripts
+#: slash register.py minus minus kind wr minus minus status OPEN minus minus
+#: limit 0`. The lint reported 0 findings on it, because it had no check for
+#: phonetic punctuation at all. His annotation asked whether this was a weird
+#: new kind of word numbering and, if not justified, to fix it. The rule broken
+#: is Rule 6, not `no-word-numbers`: no number is spelled in that string.
+#:
+#: WHY THIS PATTERN IS NARROW, MEASURED BEFORE IT WAS WRITTEN. Rule 30 is
+#: REPORTED and not blocking because it cannot separate a coinage from ordinary
+#: noun-plus-noun English, 544 of 869 instances. So this one was measured
+#: against the corpus first, on 2026-11-08: outside verbatim panel BRIEF files
+#: it fires on 2 instances, BOTH genuine, and 0 files both fire AND discuss
+#: Rule 6 or phonetic spelling -- so the self-accusation trap of
+#: `feedback_a_detector_must_not_spell_out_its_own_pattern_2026-11-02` does not
+#: arise. It runs on QUOTE-MASKED text as a second protection, so a note naming
+#: the bad form in order to correct it stays exempt.
+#:
+#: ITS SCOPE IS 2 INSTANCES AND NOT MORE, AND THAT IS STATED DELIBERATELY. A
+#: first measurement of mine reported 926 instances across 82 files; that
+#: counted verbatim panel briefs, which are seat text preserved unedited by
+#: design. The 926 is withdrawn. The rule is worth having because an
+#: unenforced rule recurs, not because the backlog is large.
+PHONETIC_PATH = re.compile(
+    r"\bminus minus\b"
+    r"|\bdouble dash\b"
+    r"|\bdot (?:py|md|txt|json|jsonl|toml|sh|yaml|cfg)\b"
+    r"|\bslash\b"
+    r"|\bunderscore\b", re.I)
+
 #: IDIOMS WHERE A NUMBER WORD IS NOT A NUMBER. "no one", "one another", "at one
 #: with" and the ordinals are English, not data, and his own rule exempts
 #: ordinals and dates that read naturally aloud. Listed explicitly rather than
@@ -1619,6 +1650,16 @@ def lint(path: pathlib.Path) -> list:
                     out.append((para_no,
                                 "SPELLED NUMBER (Rule 27 in full: use digits)",
                                 bm.group(0), s))
+        # ★ RULE 6, AND ONLY FOR A TTS FILE. A markdown note writes real
+        # paths in backticks by design; flagging those would make the rule
+        # absurd. `_tts` is the test the stamp rule already applies, reused
+        # rather than reinvented so the 2 cannot drift.
+        if _tts:
+            pm = PHONETIC_PATH.search(unquoted)
+            if pm:
+                out.append((para_no,
+                            "PHONETIC PATH (Rule 6: name the file, not its punctuation)",
+                            pm.group(0), s))
         for phrase, name in CATEGORY_NOUN.items():
             if CATEGORY_NOUN_RE[phrase].search(low):
                 out.append((para_no, f"CATEGORY NOUN (Rule 28: say {name!r})",
