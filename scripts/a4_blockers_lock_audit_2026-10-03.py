@@ -20,75 +20,90 @@ import mpmath as mp
 VALVE = ("OPEN", "CONTESTED", "REOPENED", "CORROBORATED", "WITHHELD", "UNCONFIRMED")
 CRIT = 0.7
 
-ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-ap.add_argument("--run", default=None)
-ap.add_argument("--threshold", type=int, default=8)
-ap.add_argument("--rounds", type=int, default=8)
-a = ap.parse_args()
+def main() -> int:
+    """★ THE BODY MOVED HERE ON 2026-11-08 SO THIS FILE CAN BE IMPORTED.
 
-if getattr(a, "run", None) is None:
-    ap.error("--run is required")
+    It ran at module level, so importing it either handed argparse the
+    importing process's argv and raised `SystemExit: 2`, or printed its whole
+    report. B135's option 1 requires the shared interval helper to be EXECUTED
+    by `bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py`, which
+    imports every script defining one; an unimportable producer makes that
+    helper unreachable. Command-line behaviour is unchanged and was asserted
+    byte for byte against a baseline taken before the edit.
+    """
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--run", default=None)
+    ap.add_argument("--threshold", type=int, default=8)
+    ap.add_argument("--rounds", type=int, default=8)
+    a = ap.parse_args()
 
-run = pathlib.Path(a.run)
-d = json.loads((run / "runner_state.json").read_text(errors="replace"))
-entries = (d.get("registry") or {}).get("entries") or {}
-final_round = a.rounds - 1          # 0-based
+    if getattr(a, "run", None) is None:
+        ap.error("--run is required")
 
-blockers = {cid: e for cid, e in entries.items()
-            if e.get("status") == "UNCONFIRMED" and e.get("severity", 0) >= CRIT}
+    run = pathlib.Path(a.run)
+    d = json.loads((run / "runner_state.json").read_text(errors="replace"))
+    entries = (d.get("registry") or {}).get("entries") or {}
+    final_round = a.rounds - 1          # 0-based
 
-print(f"run: {run.name}   entries: {len(entries)}   "
-      f"final round_idx: {final_round}   threshold: {a.threshold}")
-print(f"A4 blockers (UNCONFIRMED and severity >= {CRIT}): {len(blockers)}")
-print()
+    blockers = {cid: e for cid, e in entries.items()
+                if e.get("status") == "UNCONFIRMED" and e.get("severity", 0) >= CRIT}
 
-would_free_now, would_free_at_7, shut_by_reviews = [], [], []
-for cid, e in sorted(blockers.items()):
-    lscr = e.get("last_status_change_round", 0)
-    age = final_round - lscr
-    nverd = len(e.get("verdicts", []) or [])
-    l_status = e.get("status") in VALVE
-    l_sev = e.get("severity", 0) >= CRIT
-    l_age = age >= a.threshold
-    l_rev = nverd > 0
-    print(f"  {cid}  severity={e.get('severity'):.2f}  status={e.get('status')}")
-    print(f"      last_status_change_round={lscr}  age at final round={age}")
-    print(f"      verdicts={nverd}")
-    print(f"      LOCKS -> status:{'OPEN' if l_status else 'SHUT'}  "
-          f"severity:{'OPEN' if l_sev else 'SHUT'}  "
-          f"age>={a.threshold}:{'OPEN' if l_age else 'SHUT'}  "
-          f"has_reviews:{'OPEN' if l_rev else 'SHUT'}")
-    freed = l_status and l_sev and l_age and l_rev
-    freed_t7 = l_status and l_sev and (age >= final_round) and l_rev
-    print(f"      valve fires as configured (T={a.threshold}): {freed}")
-    print(f"      valve would fire at T={final_round}: {freed_t7}")
+    print(f"run: {run.name}   entries: {len(entries)}   "
+          f"final round_idx: {final_round}   threshold: {a.threshold}")
+    print(f"A4 blockers (UNCONFIRMED and severity >= {CRIT}): {len(blockers)}")
     print()
-    if freed: would_free_now.append(cid)
-    if freed_t7: would_free_at_7.append(cid)
-    if not l_rev: shut_by_reviews.append(cid)
 
-n = len(blockers)
-print(f"SUMMARY over {n} blocker(s):")
-print(f"  freed as configured (T={a.threshold}) : {len(would_free_now)} {would_free_now}")
-print(f"  freed if T lowered to {final_round}        : {len(would_free_at_7)} {would_free_at_7}")
-print(f"  still shut by has_reviews         : {len(shut_by_reviews)} {shut_by_reviews}")
-print()
+    would_free_now, would_free_at_7, shut_by_reviews = [], [], []
+    for cid, e in sorted(blockers.items()):
+        lscr = e.get("last_status_change_round", 0)
+        age = final_round - lscr
+        nverd = len(e.get("verdicts", []) or [])
+        l_status = e.get("status") in VALVE
+        l_sev = e.get("severity", 0) >= CRIT
+        l_age = age >= a.threshold
+        l_rev = nverd > 0
+        print(f"  {cid}  severity={e.get('severity'):.2f}  status={e.get('status')}")
+        print(f"      last_status_change_round={lscr}  age at final round={age}")
+        print(f"      verdicts={nverd}")
+        print(f"      LOCKS -> status:{'OPEN' if l_status else 'SHUT'}  "
+              f"severity:{'OPEN' if l_sev else 'SHUT'}  "
+              f"age>={a.threshold}:{'OPEN' if l_age else 'SHUT'}  "
+              f"has_reviews:{'OPEN' if l_rev else 'SHUT'}")
+        freed = l_status and l_sev and l_age and l_rev
+        freed_t7 = l_status and l_sev and (age >= final_round) and l_rev
+        print(f"      valve fires as configured (T={a.threshold}): {freed}")
+        print(f"      valve would fire at T={final_round}: {freed_t7}")
+        print()
+        if freed: would_free_now.append(cid)
+        if freed_t7: would_free_at_7.append(cid)
+        if not l_rev: shut_by_reviews.append(cid)
 
-if n:
-    k = len(shut_by_reviews)
-    lo, hi = proportion_confint(k, n, method="wilson")
-    # cross-check the interval in mpmath, as the project requires 2 tools
-    mp.mp.dps = 30
-    z = mp.mpf("1.959963984540054235309065817"); ph = mp.mpf(k)/n; nn = mp.mpf(n)
-    c = (ph + z**2/(2*nn)) / (1 + z**2/nn)
-    hw = (z/(1+z**2/nn)) * mp.sqrt(ph*(1-ph)/nn + z**2/(4*nn**2))
-    assert abs(float(c-hw)-lo) < 1e-9 and abs(float(c+hw)-hi) < 1e-9, \
-        "statsmodels and mpmath disagree on the Wilson interval"
-    print(f"  shut by has_reviews: {k}/{n} = {100.0*k/n:.4f}%  "
-          f"Wilson [{100*lo:.4f}%, {100*hi:.4f}%]  (statsmodels == mpmath)")
+    n = len(blockers)
+    print(f"SUMMARY over {n} blocker(s):")
+    print(f"  freed as configured (T={a.threshold}) : {len(would_free_now)} {would_free_now}")
+    print(f"  freed if T lowered to {final_round}        : {len(would_free_at_7)} {would_free_at_7}")
+    print(f"  still shut by has_reviews         : {len(shut_by_reviews)} {shut_by_reviews}")
+    print()
 
-    ages = np.array([final_round - e.get("last_status_change_round", 0)
-                     for e in blockers.values()])
-    print(f"  ages (NumPy): min={ages.min()} max={ages.max()} "
-          f"mean={ages.mean():.4f}")
-    print(f"  threshold needed to free the OLDEST blocker: {ages.max()}")
+    if n:
+        k = len(shut_by_reviews)
+        lo, hi = proportion_confint(k, n, method="wilson")
+        # cross-check the interval in mpmath, as the project requires 2 tools
+        mp.mp.dps = 30
+        z = mp.mpf("1.959963984540054235309065817"); ph = mp.mpf(k)/n; nn = mp.mpf(n)
+        c = (ph + z**2/(2*nn)) / (1 + z**2/nn)
+        hw = (z/(1+z**2/nn)) * mp.sqrt(ph*(1-ph)/nn + z**2/(4*nn**2))
+        assert abs(float(c-hw)-lo) < 1e-9 and abs(float(c+hw)-hi) < 1e-9, \
+            "statsmodels and mpmath disagree on the Wilson interval"
+        print(f"  shut by has_reviews: {k}/{n} = {100.0*k/n:.4f}%  "
+              f"Wilson [{100*lo:.4f}%, {100*hi:.4f}%]  (statsmodels == mpmath)")
+
+        ages = np.array([final_round - e.get("last_status_change_round", 0)
+                         for e in blockers.values()])
+        print(f"  ages (NumPy): min={ages.min()} max={ages.max()} "
+              f"mean={ages.mean():.4f}")
+        print(f"  threshold needed to free the OLDEST blocker: {ages.max()}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
