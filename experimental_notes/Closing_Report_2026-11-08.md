@@ -4,7 +4,9 @@
 
 ## Summary
 
-7 commits landed against his 29 rulings of this morning, each gated by `hooks/pre-commit`. 2 of those boards refused and were right both times. His 5 questions are answered below, with what is outstanding and whose it is. The transferable result is not any single repair: **6 separate instruments reported a false positive, every one the same shape — a note explaining a fault read as the fault.**
+**5** commits landed against his 29 rulings of this morning, each gated by `hooks/pre-commit`. Of **9** board runs, **5 landed and 4 refused**, and every refusal was correct.
+
+> ★ **THESE 2 FIGURES ARE CORRECTED AND THE SUPERSEDED VALUES ARE NAMED DELIBERATELY**, because a reader who saw the first version needs to see which moved. It read *7 commits* and *2 refusals*. Both were TYPED rather than derived, which is `measured-rate-travels-with-its-script` broken in the document whose purpose is to be the honest record — and about my own activity, which is the least excusable kind. Producer: `scripts/how_many_commits_and_how_many_refusals_2026-11-08.py`. It reports the 2 halves as unequally reproducible on purpose: the commit count comes from `git log --since` and anyone can re-run it, while a refusal leaves NO trace in the repository, so that count is session-observed and says so. His 5 questions are answered below, with what is outstanding and whose it is. The transferable result is not any single repair: **6 separate instruments reported a false positive, every one the same shape — a note explaining a fault read as the fault.**
 
 ## The answers to his 5 questions
 
@@ -36,7 +38,8 @@ The judgement owed is **0 items, not 39**. The unclassified list was counted 202
 | `b835bf9f` | both halves of the report split |
 | `f8305b1e` | B135 batch 1: 4 importability repairs, 4 delegations |
 | `2e5665f0` | B135 closed: 7 delegated, 6 excluded on their merits |
-| this one | B129, B93, B96, and B129's stale decision record archived |
+| `0630a5b1` | B129, B93, B96, their tickets closed, and B129's ruling carried into its entry |
+| this one | the 2 corrected counts above, with their producer |
 
 **The Stop gate.** My ticket named the wrong cause; the `isMeta` route closed in September. The real faults: `had_d` taken from his last message only, so his `rs` cancelled his `d` 11 seconds later; and a `<task-notification>` counts as him — **75 of 104** entries over a 200 MiB window. The fix then **failed in production on the turn that introduced it**, because `_tail_lines` stopped at his last message and his 2 lay across a 4 MiB boundary.
 
