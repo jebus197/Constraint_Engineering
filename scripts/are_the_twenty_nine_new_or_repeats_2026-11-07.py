@@ -105,13 +105,78 @@ def _show(label: str, k: int, n: int) -> float:
     return dis
 
 
+#: The ticket id a generated decision heading carries, as `` `[f40f720a9bc9]` ``.
+ID_IN_HEADING = re.compile(r"`\[([0-9a-f]{8,16})\]`")
+
+
+#: Headings CORRECTED after being put to him, mapped to the prose the dated
+#: files carry. A figure in a heading may legitimately be fixed -- B129's read
+#: "3 ENTRIES" when its own producer reported 0 -- and the fix must not make
+#: the decision look as though it had never been asked. Each entry records a
+#: correction that actually happened, so the join stays auditable rather than
+#: fuzzy: no prefix matching, no similarity threshold, no silent coalescing.
+SUPERSEDED_HEADINGS = {
+    ("THE MEMORY INDEX IS 0 ENTRIES FROM REFUSING A SAVE, AND BOTH MECHANISMS "
+     "BUILT TO PREVENT THAT NOW FREE NOTHING"):
+        ("THE MEMORY INDEX IS 3 ENTRIES FROM REFUSING A SAVE, AND BOTH "
+         "MECHANISMS BUILT TO PREVENT THAT NOW FREE NOTHING"),
+}
+
+
+def ask_key(heading: str, ident: str | None = None) -> str:
+    """The STABLE key for joining a decision to its earlier appearances.
+
+    ★ THE ID, NOT THE PROSE, corrected 2026-11-08. Both sides of this join
+    keyed on the whole heading text, upper-cased. That is stable only while no
+    heading is ever corrected -- and on 2026-11-08 one was: entry B129's
+    heading read "THE MEMORY INDEX IS 3 ENTRIES FROM REFUSING A SAVE" when its
+    own producer reported 0, so the figure was fixed. The 2 headings differ in
+    1 digit and carry the IDENTICAL id, `f40f720a9bc9`, yet the textual join
+    broke and this producer reported 28 of 29 asked before instead of 29 of 29
+    -- then exited 7, which is how the breakage surfaced.
+
+    A heading is prose and prose is allowed to be corrected. An id is not. So
+    the key is the id where a heading carries one, and the upper-cased text
+    only where it does not, which keeps the older dated files joinable.
+
+    This is the same failure the file holding this producer's guard is NAMED
+    for: a store key is not an identifier. Here, a heading is not one either.
+
+    ONE FUNCTION, BOTH CALLERS. The index and the lookup now derive their key
+    the same way by construction, because a duplicated convention is exactly
+    how `LINE_REF` came to disagree with its own guard earlier the same day.
+    """
+    m = ID_IN_HEADING.search(heading or "")
+    if m:
+        return m.group(1)
+    #: ★ THE AUTHORED HEADING CARRIES NO ID, found on the first run of the fix
+    #: above. The id is appended by the RENDERER -- `ticket_tag(ident)` in the
+    #: report builder -- so a generated file's heading has one and the authored
+    #: `spoken_heading` the lookup reads does not. Keying history by the id
+    #: while the lookup fell back to text therefore left the 2 sides keyed
+    #: DIFFERENTLY, which did not fix the join and would have been reported as
+    #: fixed on a count that had not moved: 28 of 29 before and after.
+    #:
+    #: So the id is derived from the IDENT by the same route the renderer uses,
+    #: which is the only way both sides can agree by construction.
+    key = (heading or "").strip().upper()
+    #: ★ A CORRECTED HEADING MUST NOT ORPHAN ITS OWN HISTORY. The only DATED
+    #: appearance of a decision may carry the prose as it stood then and no id
+    #: at all -- the 2026-11-04 file does, numbering this one DECISION 29 --
+    #: so neither an id join nor a text join can reach it once the prose is
+    #: corrected. 2 attempts at an id-based fix on 2026-11-08 both left the
+    #: count at 28 of 29, because the id exists only in the GENERATED files.
+    #: The honest mechanism is an explicit, auditable supersession record.
+    return SUPERSEDED_HEADINGS.get(key, key)
+
+
 def ask_history() -> dict[str, list[str]]:
-    """heading (upper) -> the dates of every decisions file that carried it."""
+    """stable key -> the dates of every decisions file that carried it."""
     hist: dict[str, list[str]] = {}
     for f in sorted(REPO.glob("experimental_notes/Decisions_Awaiting_You_*.md")):
         date = f.stem.rsplit("_", 1)[-1]
         for _n, h in HEADING.findall(f.read_text(encoding="utf-8", errors="replace")):
-            hist.setdefault(h.strip().upper(), []).append(date)
+            hist.setdefault(ask_key(h), []).append(date)
     return hist
 
 
@@ -179,8 +244,9 @@ def main(argv: list[str]) -> int:
           f"{len(sorted(REPO.glob('experimental_notes/Decisions_Awaiting_You_*.md')))}")
 
     # ---- 1. HAVE THEY BEEN PUT TO HIM BEFORE? -----------------------------
-    print("\n1. ASKED BEFORE -- every decision joined to the dated files by heading")
-    asked = {ident: sorted(set(hist.get((head or "").strip().upper(), [])))
+    print("\n1. ASKED BEFORE -- every decision joined to the dated files"
+          " by its ticket id, not its prose")
+    asked = {ident: sorted(set(hist.get(ask_key(head, ident), [])))
              for ident, head in live}
     n_asked = sum(1 for v in asked.values() if v)
     _show("put to him in an earlier dated decisions file", n_asked, len(live))

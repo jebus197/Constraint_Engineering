@@ -149,23 +149,47 @@ class TestTheGeneratorActuallyConsultsIt:
     def test_it_returns_3_like_its_sibling_refusal(self):
         """The entry asks for the SAME exit code the authored-detail check uses.
 
-        ★ THE WINDOW IS BOUNDED BY THE NEXT REFUSAL, corrected 2026-11-08. The
-        first version took a fixed 1,200 characters from the call site, which
-        reaches PAST this block into the authored-detail refusal and picks up
-        ITS `return 3`. So changing this block's exit code to 0 left the test
-        green -- caught by the mutation harness, which is the only reason it is
-        not still vacuous. A window must end where the thing it describes ends.
+        ★ NO TEXT WINDOW AT ALL, 2026-11-08, SECOND CORRECTION. The first
+        version took a fixed 1,200 characters from the call site, which reached
+        PAST this block into the authored-detail refusal and picked up ITS
+        `return 3`, so zeroing this block's code left the test green. The
+        second bounded the window at the literal `if missing or orphan:`, which
+        held until a NEW refusal was inserted between the 2 anchors the same
+        morning -- B102's producer-resolution check -- and the window then
+        spanned 2 blocks and counted 2 returns. A window bounded by a NAMED
+        SUCCESSOR is only as stable as the absence of insertions before it.
+
+        So the block is located STRUCTURALLY instead: the `if` statement in
+        `main` whose test reads the postcondition's own variable, and its own
+        body. `ast` is this project's stated default for a structural code
+        claim, and an insertion anywhere cannot move a node's body. The
+        assertion is unchanged in substance -- exactly 1 return, with the value
+        3 -- and is now stated of the block itself rather than of a span of
+        characters that happens to contain it.
         """
-        src = BUILDER.read_text(encoding="utf-8")
-        i = src.index("items_missing_a_ticket_id(items)")
-        end = src.index("if missing or orphan:", i)
-        window = src[i:end]
-        assert "return 3" in window, (
-            "the ticket-id refusal does not return 3 inside its OWN block (the "
-            "window ends at the next refusal, so a neighbour's exit code "
-            "cannot satisfy it); the entry asks for the same code as the "
-            "authored-detail refusal")
-        assert window.count("return ") == 1, (
-            f"the bounded window holds {window.count('return ')} return "
-            f"statements; it should hold exactly this block's, or the "
-            f"assertion above can be satisfied by the wrong one")
+        tree = ast.parse(BUILDER.read_text(encoding="utf-8"))
+        main = next((n for n in ast.walk(tree)
+                     if isinstance(n, ast.FunctionDef) and n.name == "main"), None)
+        assert main is not None, "main() is gone from the generator"
+
+        #: the refusal guarded by the postcondition's own result variable
+        blocks = [n for n in ast.walk(main)
+                  if isinstance(n, ast.If)
+                  and isinstance(n.test, ast.Name)
+                  and n.test.id == "_no_tid"]
+        assert len(blocks) == 1, (
+            f"expected exactly 1 `if _no_tid:` refusal in main(), found "
+            f"{len(blocks)}; the postcondition's result is read somewhere "
+            f"unexpected, so this test no longer knows which block it checks")
+        body = blocks[0].body
+        returns = [n for n in ast.walk(blocks[0]) if isinstance(n, ast.Return)]
+        assert len(returns) == 1, (
+            f"the `if _no_tid:` block holds {len(returns)} return statement(s); "
+            f"it should hold exactly 1, or which code it exits with is "
+            f"ambiguous")
+        val = returns[0].value
+        assert isinstance(val, ast.Constant) and val.value == 3, (
+            f"the ticket-id refusal returns {ast.dump(val) if val else 'None'} "
+            f"rather than the constant 3; the entry asks for the same code as "
+            f"the authored-detail refusal")
+        assert body, "the refusal block is empty"
