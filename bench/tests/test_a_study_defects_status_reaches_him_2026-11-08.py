@@ -79,7 +79,16 @@ class TestTheStatusIsCarriedWhole:
 
 
 class TestTheRendererShowsItAndSaysWhatItCut:
-    """STRUCTURAL: rendering section 3 requires writing his report files."""
+    """STRUCTURAL: rendering section 3 requires writing his report files.
+
+    ★ BOTH RENDERERS ARE CHECKED, 2026-11-08. The first version of this class
+    examined only the WRITTEN section 3, and the fix was applied only there --
+    measured immediately after, the written copy carried 7 status lines and the
+    SPOKEN copy carried 0. He reads these by text-to-speech, so the spoken file
+    is the surface that reaches him, and a guard that watches 1 of 2 renderers
+    would have passed while the half he reads stayed wrong. That is the same
+    divergence between these 2 copies that an existing entry already records.
+    """
 
     def _section3(self) -> str:
         src = BUILDER.read_text(encoding="utf-8")
@@ -87,11 +96,30 @@ class TestTheRendererShowsItAndSaysWhatItCut:
         j = src.index('"## 4.', i)
         return src[i:j]
 
+    def _spoken_section3(self) -> str:
+        src = BUILDER.read_text(encoding="utf-8")
+        i = src.index('"SECTION 3. OUTSTANDING WORK THAT NEEDS NO DECISION"')
+        j = src.index('"SECTION 4.', i)
+        return src[i:j]
+
     def test_the_renderer_reads_the_status(self):
+        """★ ASSERTS ON THIS RENDER, NOT ON ANY MENTION OF THE FIELD.
+
+        The first version accepted `o.get("status")` OR `o.get('status')`
+        anywhere in the slice, and the slice already held the single-quoted
+        form at a pre-existing line that renders the status for items marked
+        already-built. So a mutation removing THIS read left the test green --
+        caught by the reversal harness, which is the only reason it is not
+        still vacuous. An assertion must name the thing it is about.
+        """
         body = self._section3()
-        assert 'o.get("status")' in body or "o.get('status')" in body, (
-            "section 3 does not read the status field, so the record can say a "
-            "defect is fixed while the report says its work is outstanding")
+        assert "RECORDED STATUS" in body, (
+            "the written section 3 no longer emits a RECORDED STATUS line, so "
+            "the record can say a defect is fixed while the report says its "
+            "work is outstanding")
+        assert '_st = str(o.get("status")' in body, (
+            "the RECORDED STATUS label is emitted without reading the status "
+            "field, so it would render something else or nothing")
 
     def test_the_cut_is_announced_rather_than_silent(self):
         body = self._section3()
@@ -105,3 +133,46 @@ class TestTheRendererShowsItAndSaysWhatItCut:
         assert "programme of study" in body, (
             "the status line is not scoped to study defects, so a task-list "
             "item would gain a RECORDED STATUS line it has no field for")
+
+    def test_the_SPOKEN_renderer_reads_the_status_too(self):
+        body = self._spoken_section3()
+        assert "Recorded status" in body and '_sst = str(o.get("status")' in body, (
+            "the SPOKEN section 3 does not read the status field. He reads "
+            "these by text-to-speech, so this is the copy that reaches him; "
+            "measured 2026-11-08, the written copy carried 7 status lines and "
+            "this one carried 0 while the fix was called applied.")
+
+    def test_the_spoken_cut_is_announced_as_a_sentence(self):
+        body = self._spoken_section3()
+        assert "characters are recorded" in body, (
+            "the spoken renderer trims the status without saying how much it "
+            "withheld, or says it in a form this file forbids. Parentheses and "
+            "ellipses read as noise aloud, so the amount must be a sentence.")
+
+    def test_the_spoken_status_goes_through_the_normaliser(self):
+        """★ ASSERTS ON THE LINE, NOT A WINDOW AROUND IT.
+
+        The first version took 200 characters either side, which holds 2
+        `_spoken(` calls -- the status one and the `what` one that follows --
+        so replacing the status call with `str(` left the test green. This is
+        the SAME too-wide-window error the reversal harness caught in a sibling
+        guard earlier the same session, repeated here within the hour.
+        """
+        body = self._spoken_section3()
+        line = next(ln for ln in body.splitlines() if "Recorded status" in ln)
+        assert "_spoken(" in line, (
+            f"the spoken status is emitted without the spoken normaliser, so "
+            f"backticks and markdown in a recorded status would be read aloud "
+            f"as noise. The line is:\n  {line.strip()}")
+
+    def test_both_renderers_use_the_same_character_cap(self):
+        """A difference in the cap would make the 2 copies disagree again."""
+        import re
+        caps = []
+        for body in (self._section3(), self._spoken_section3()):
+            m = re.search(r"\[:(\d+)\]", body)
+            caps.append(m.group(1) if m else None)
+        assert caps[0] is not None and caps[0] == caps[1], (
+            f"the written and spoken renderers cut the status at different "
+            f"lengths {caps}, so the 2 copies would report different amounts "
+            f"withheld for the same defect")

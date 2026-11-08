@@ -1147,6 +1147,22 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=()) -> s
             A(f"You ruled on this on {o['ruled']}. The work is outstanding, "
               f"not the decision.")
             A("")
+        #: ★ THE RECORDED STATUS IS SPOKEN TOO, 2026-11-08. The written copy
+        #: gained this earlier the same day and this loop did not, so the
+        #: written report carried 7 status lines while the spoken one carried
+        #: 0 -- and the spoken file is the one he actually reads. A fix applied
+        #: to 1 of 2 renderers is not applied. Normalised rather than copied,
+        #: because this file forbids markdown and backticks, and the withheld
+        #: amount is SAID rather than shown in parentheses.
+        _sst = str(o.get("status") or "").strip()
+        if _sst and str(o.get("source", "")).startswith("programme of study"):
+            _sshown = _sst[:200]
+            _srest = len(_sst) - len(_sshown)
+            A("")
+            A("Recorded status: " + _spoken(_sshown)
+              + (f" A further {_srest} characters are recorded in the study "
+                 f"record." if _srest > 0 else ""))
+        A("")
         A(_spoken(o.get("what", o.get("headline", ""))))
         if o.get("why"):
             A("")
