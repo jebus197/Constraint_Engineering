@@ -389,44 +389,46 @@ def validate_all_policies() -> dict[str, str]:
         results["universal"] = str(e)
         return results  # If universal itself is broken, stop.
 
-    # Validate each domain config
-    domains_dir = REGISTRY_DIR / "domains"
-    if domains_dir.exists():
-        for toml_file in sorted(domains_dir.glob("*.toml")):
-            name = f"domain/{toml_file.stem}"
+    # ★ EVERY LAYER DIRECTORY THAT EXISTS IS VALIDATED, DERIVED FROM DISK.
+    # This block enumerated `domains`, `models` and `tasks` by name, and that is
+    # exactly how the ROLE layer came to be skipped: B21's step 3 added
+    # `roles/` with 3 configs and the 3-item list was not updated, so
+    # `validate_all_policies()` returned 17 keys covering only domain, model
+    # and universal and reported 0 role entries. Found by EXECUTION on
+    # 2026-11-09 while measuring which of B21's steps were built.
+    #
+    # It matters because step 4 wires this function as a preflight that
+    # REFUSES A RUN. A preflight silent on one layer reads as a clean bill of
+    # health for a layer it never looked at.
+    #
+    # Walking the directories means layer 5 is covered the day it is created.
+    # The singular NAME of each layer is kept for the result key so existing
+    # readers of `domain/x` and `model/y` are unaffected.
+    _SINGULAR = {"domains": "domain", "models": "model", "tasks": "task",
+                 "roles": "role"}
+    for layer_dir in sorted(p for p in REGISTRY_DIR.iterdir()
+                            if p.is_dir() and any(p.glob("*.toml"))):
+        prefix = _SINGULAR.get(layer_dir.name, layer_dir.name.rstrip("s"))
+        for toml_file in sorted(layer_dir.glob("*.toml")):
+            name = f"{prefix}/{toml_file.stem}"
             try:
                 overlay = _load_toml(toml_file)
+            except Exception as e:                                # noqa: BLE001
+                # AN UNREADABLE FILE IS NOT A POLICY VIOLATION, and reporting
+                # it in the same field as one tells a reader the config is
+                # wrong when the truth is that it could not be read.
+                results[name] = f"UNREADABLE: {e}"
+                continue
+            try:
                 merged = _deep_merge(universal, overlay)
                 _check_monotonicity(merged, name)
                 results[name] = "ok"
-            except (PolicyViolationError, Exception) as e:
+            except PolicyViolationError as e:
                 results[name] = str(e)
+            except Exception as e:                                # noqa: BLE001
+                results[name] = f"MERGE FAILED: {e}"
 
-    # Validate each model config
-    models_dir = REGISTRY_DIR / "models"
-    if models_dir.exists():
-        for toml_file in sorted(models_dir.glob("*.toml")):
-            name = f"model/{toml_file.stem}"
-            try:
-                overlay = _load_toml(toml_file)
-                merged = _deep_merge(universal, overlay)
-                _check_monotonicity(merged, name)
-                results[name] = "ok"
-            except (PolicyViolationError, Exception) as e:
-                results[name] = str(e)
 
-    # Validate each task config
-    tasks_dir = REGISTRY_DIR / "tasks"
-    if tasks_dir.exists():
-        for toml_file in sorted(tasks_dir.glob("*.toml")):
-            name = f"task/{toml_file.stem}"
-            try:
-                overlay = _load_toml(toml_file)
-                merged = _deep_merge(universal, overlay)
-                _check_monotonicity(merged, name)
-                results[name] = "ok"
-            except (PolicyViolationError, Exception) as e:
-                results[name] = str(e)
 
     return results
 

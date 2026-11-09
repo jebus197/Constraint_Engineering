@@ -87,9 +87,37 @@ def test_it_is_registered_in_the_boot_order_as_well():
 
 
 def test_it_passes_on_the_live_layers_and_says_how_many():
+    """★ THE COUNT IS DERIVED FROM DISK, 2026-11-09, BECAUSE THE OLD PIN COULD
+    NOT FAIL.
+
+    It read `assert "17" in message or "layers merge" in message`, and the live
+    message is `'all 17 policy layers merge against universal'`. The second
+    disjunct holds for EVERY passing message, so the first could never fail the
+    test -- the count this test is named for was not checked. That is the
+    checker-that-decides-nothing shape, which `test_an_empty_validator_result_
+    is_a_failure_not_a_pass` below names explicitly.
+
+    It was also about to hide a real change: adding the role layer to the
+    validator moves the count from 17 to 20, and under the `or` nobody would
+    have noticed 3 further layers being checked.
+
+    The expected figure is now COMPUTED from the registry, so it tracks the
+    layers that exist and never needs re-pinning. Re-pinning a constant is what
+    produced the dead disjunct.
+    """
+    import bench.cdsfl_registry.registry as reg
+    expected = 1 + sum(                       # 1 universal, plus every config
+        len(list(d.glob("*.toml")))
+        for d in reg.REGISTRY_DIR.iterdir()
+        if d.is_dir() and any(d.glob("*.toml")))
+
     status, message, extra = PF.check_policy_layers_merge()
     assert status == PF.PASS, f"{message} {extra}"
-    assert "17" in message or "layers merge" in message
+    assert str(expected) in message, (
+        f"the preflight says {message!r} but {expected} policy layers exist on "
+        f"disk (1 universal plus every config file). Either a layer is not "
+        f"being validated or the message is stale")
+    assert "layers merge" in message, message
 
 
 def test_it_refuses_when_a_layer_does_not_merge(monkeypatch):

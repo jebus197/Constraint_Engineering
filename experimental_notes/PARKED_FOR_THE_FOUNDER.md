@@ -309,6 +309,26 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## NOT A BLOCKER — B21's 4 unbuilt steps each change how a run selects its models, so the next action is his ruling and not work (added 2026-11-09T15:12:00+00:00)
+
+*Parked 2026-11-09T14:43:26+00:00, body corrected in place 2026-11-09T15:12:00+00:00.*
+
+**THE FIRST BODY HERE WAS THE CLASSIFIER'S FALLBACK REASON AND SAID NOTHING.** It read that there was no distinctive term to match against the entries, which is what `scripts/blocker_triage.py` prints when `--title` carries no term its predicate can key on. It is corrected in place rather than appended a second time, because a reclassification is not a second ticket.
+
+**WHY IT IS NOT A BLOCKER, AND WHY IT IS ALSO NOT WORK.** Measured 2026-11-09 by `scripts/which_of_b21s_five_steps_are_built_2026-11-09.py`, walking the runner's syntax tree: **1 of B21's 5 dependency-ordered steps is built**, 0.200000, Wilson [0.036224, 0.624465], Clopper-Pearson [0.005051, 0.716418]. Step 3, the role dimension, is the one that is done. Of the 4 that are not, each changes how a run selects its models, which B21's own text records as the founder's decision.
+
+**AND THE RESUME POINTER CANNOT SEE THAT, WHICH IS WHY IT KEEPS NAMING B21.** `scripts/the_resume_pointer_names_his_decisions_as_work_2026-11-08.py` reports that of the 12 decisions in `Decisions_Awaiting_You_2026-11-09_GENERATED.md`, **0 of 12 carry the BLOCKED state the list reserves for a pending decision** — 0.000000, Wilson [0.000000, 0.242494], Clopper-Pearson [0.000000, 0.264648]. All 12 carry OPEN, so the pointer reads them as unstarted work, and **B21 is decision 1 of 12 in list order**. The Stop gate therefore prods at an item only he can move, repeatedly, and correctly by its own rules.
+
+**THE TRIAGE TOOL CANNOT CLASSIFY THIS CORRECTLY EITHER, AND THAT IS A SEPARATE SMALL FINDING.** Its predicate asks whether a task-list entry DECLARES a dependency on the obstacle. A pending ruling is not an entry, so the predicate falls through to its fallback branch and returns PARK with no reason. That is right by its own definition and it is why the first body here was empty. **`--check-only` EXISTS AND CLASSIFIES WITHOUT WRITING**, which is the flag that should have been used: running it unguarded is how this file was appended to while a commit board was reading the tree.
+
+**THE REMEDY IS HIS AND THE PRODUCER SAYS SO:** either the BLOCKED state is applied to the pending decisions, or the resume pointer learns to skip an entry that appears in the decisions file. Both change how his tracker behaves. **AND NEITHER SHOULD BE DONE BLIND**, because R1 is on this record as the mirror error: its marker said BLOCKED while its prose said his ruling had already made it workable, and the mis-marking excluded real work from the queue.
+
+## NOT A BLOCKER — `bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py` pays 72.75 seconds per board importing a producer that measures at module level (added 2026-11-09T15:15:40+00:00)
+
+*Parked 2026-11-09T15:15:40+00:00.*
+
+bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py loads every script under scripts/ that defines an _iv helper, 49 of them, by exec_module. 1 of those 49 (0.020408, Wilson [0.003612, 0.106935], Clopper-Pearson [0.000517, 0.108542]) runs its entire measurement at module level with no main() or __name__ guard: scripts/the_line_caps_were_never_his_2026-11-06.py, first module-level print at line 80, body lines 74 to 140. Measured import cost 14.550 seconds mean over 3 runs, 59 lines of stdout. The guard calls its _helpers() 5 times, so the commit board pays about 72.75 seconds and prints one producer output inside another guard. The sound predicate finds 0 of 49 can reach a writer at import, so nothing mutates the tree. The obvious fix, moving lines 74 to 140 behind a main(), is NOT safe as it stands: scripts/the_line_cap_guard_mutations_2026-11-06.py substitutes 3 module-level zero-indent statements into that file for mutations M2, M4 and M5, and re-indenting the body would place them at the wrong scope, breaking a harness currently at 5 of 5 red. A narrower fix, redirecting stdout inside the guard, removes the output contamination but not the 72.75 seconds. The 2 are alternatives rather than components and no measurement shows a combination better than the wider fix alone.
+
 ---
 
 # Settled — kept for the record, not for his attention (20)

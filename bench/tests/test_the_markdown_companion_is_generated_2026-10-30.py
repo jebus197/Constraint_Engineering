@@ -167,7 +167,7 @@ class TestTheCommittedMarkdownMatchesARebuild:
 
 
 class TestThePartStyleReportAndTheDateArgument:
-    """Added 2026-10-31, when `--date` and the PART renderer were added.
+    r"""Added 2026-10-31, when `--date` and the PART renderer were added.
 
     Without these the new code path is an addition nothing reaches, which is the
     shape this project has confirmed 11 times. Every assertion CALLS the

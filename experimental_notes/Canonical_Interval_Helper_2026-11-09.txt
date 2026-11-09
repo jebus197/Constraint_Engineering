@@ -1,0 +1,75 @@
+Canonical Interval Helper, 9 November 2026
+
+9 November 2026, 14:55 GMT
+
+SUMMARY
+
+A measurement helper written on 9 November 2026 computed the wrong pair of confidence intervals, and a guard that executes every copy of that helper refused the commit carrying it. The helper has been replaced with the project's canonical implementation, which is identical in 16 files. The figures it had already produced are unchanged. A correction reported to the founder the previous night went further than the evidence allowed, and that overstatement is withdrawn here.
+
+The work also records 3 process errors made while repairing it, each caught by an instrument rather than by reading.
+
+WHAT THE HELPER GOT WRONG
+
+Every proportion this project reports carries 2 confidence intervals computed by different constructions: a Wilson interval and a Clopper-Pearson interval. The 2 are not alternatives. They answer the same question by different mathematics, and reporting both is how a bound that is wrong in one construction gets caught by the other.
+
+The new helper returned the Wilson interval twice. Its first pair was Wilson computed from a written-out formula. Its second pair, where every other helper in the project returns Clopper-Pearson, was Wilson again, computed by the statsmodels library. No Clopper-Pearson interval was computed anywhere in the file.
+
+A guard dated 3 November 2026 loads every such helper in the project's scripts folder and compares all 4 returned numbers across all of them. 6 of its parametrised cases failed, because a Wilson pair sitting in the slot the others fill with Clopper-Pearson disagrees with them whatever the numbers are. That guard refused the commit, which is the guard working as designed.
+
+THE CORRECTION OF A CORRECTION
+
+The failure was first reported to the founder as making every agreement figure from that helper near-tautological, on the reasoning that 2 correct implementations of 1 formula must agree and so prove nothing. That reasoning is too strong, and the project's own instruments say so.
+
+The project has a route predicate, held in a script dated 3 November 2026, which decides whether a reported quantity rests on 1 route or 2. Run against the broken helper, it scores the Wilson interval as resting on 2 routes, the statsmodels library and written-out algebra. The guard protecting that predicate contains a test asserting that this exact pairing is itself a cross-check. So the pairing is the weaker kind of cross-check, 1 formulation computed by 2 independent implementations, and the project's independence rule of 31 October 2026 already describes it as the weaker kind. It is not worthless, and it may not be called near-tautological.
+
+SymPy confirms the point. Subtracting the closed form of the Wilson lower bound from the written-out version simplifies symbolically to 0, so the 2 routes were computing the same quantity rather than 2 quantities dressed as one.
+
+What was genuinely absent is the Clopper-Pearson interval, which was computed nowhere. That is the defect, and it is narrower than the first report claimed.
+
+WHY THE PUBLISHED FIGURES DID NOT MOVE
+
+The canonical helper reports a single disagreement magnitude, taken as the worse of the Wilson spread and the Clopper-Pearson spread. At 1 of 5, the case the entry quotes, the Wilson spread is the larger, so the published magnitude is identical before and after the repair. The Wilson bounds themselves were correct throughout.
+
+What the repair adds is the missing interval. For 1 of 5 steps built the Clopper-Pearson interval runs from 0.005051 to 0.716418, against a Wilson interval from 0.036224 to 0.624465. For 1 of 6 live harness files it runs from 0.004211 to 0.641235 against a Wilson interval from 0.030053 to 0.563503. Those Clopper-Pearson bounds were verified on 3 independent routes: the statsmodels library, the SciPy beta quantile, and an independently written bisection of the regularised incomplete beta function at 40 decimal digits using mpmath. All 3 agree to 1.11 times 10 to the power of minus 16, which is the limit of double-precision arithmetic.
+
+THE EMPTY DENOMINATOR
+
+The broken helper returned an interval from 0 to 0 when asked for a proportion with no observations, and the test guarding it pinned that value as correct. It is not correct. With no observations the binomial likelihood is 1 for every possible proportion, so no proportion is excluded by the data and the whole unit interval is the only honest answer. An interval from 0 to 0 asserts certainty that the proportion is 0 on the strength of no data at all. The canonical helper returns 0 to 1, and the guard now pins that with the reasoning written beside it.
+
+WHY THE GUARD COULD NOT HAVE CAUGHT THIS, AND WHAT NOW CAN
+
+The obvious test is containment: the Clopper-Pearson interval should contain the Wilson interval. That test cannot catch this defect, because an interval contains itself. Run against a helper returning Wilson twice, containment passes at every one of 741 interior points of a test grid.
+
+The discriminating property is strict width. The Clopper-Pearson interval is strictly wider than the Wilson interval at every point where the count is neither 0 nor the whole denominator. Measured across the grid of denominators from 2 to 39, it is strictly wider at 741 of 741 interior points, and a helper returning Wilson twice is rejected at 741 of 741, a rate of 1.000000 with a Wilson interval from 0.994843 to 1.000000 and a Clopper-Pearson interval from 0.995034 to 1.000000.
+
+That grid is walked by the guard itself rather than by a separate script, for 2 reasons. Any figure quoted to the founder must be reproducible by committed code, and the same loop doubles as the proof that the test is not vacuous, since it is also run against a deliberately broken helper and required to reject it. The cost is 5.24 seconds against a gate board of roughly 4000 seconds.
+
+4 reversions were applied and all 4 turned the guard red: the Wilson-twice form, the empty-denominator value, a single-character edit forking the canonical body, and the Clopper-Pearson interval computed but not printed.
+
+3 PROCESS ERRORS, EACH CAUGHT BY AN INSTRUMENT
+
+The mutation harness named a test that does not exist. Its anchor had been typed by hand rather than derived, so the test runner exited with a usage error reading no tests ran, which reads as a broken harness rather than as a bad anchor. The harness now derives its anchors from the test runner's own collection output and names any that fail to resolve.
+
+Sorting the pre-commit gate's guard list turned the addition of 2 entries into 131 insertions and 129 deletions. The list is not alphabetical. It is grouped by the commit that added each block, and sorting it destroyed that structure and buried the actual change. It was restored and the 2 entries appended, giving a difference of 3 lines added and 1 removed.
+
+The gate's guard list was edited twice while a board was reading it. A board whose own definition is being rewritten mid-run produces a timing artefact rather than a measurement. That board was stopped, and it was found to have written a row into the gate's duration ledger recording 705 seconds at exit code 0. That row is kept rather than removed, because the project's standing rule is to point at a questionable record rather than prune it, and because removing it changes the headline figure from 12 of 13 to 11 of 12, which carries no argument either way.
+
+A STALE FIGURE CORRECTED IN THE SAME PASS
+
+The master task list stated, in the present tense, that the commit gate exceeds its own stated limit on 7 of 8 recorded runs. The duration ledger has since grown from 8 rows to 14, because the boards of this session's own commits append to the file being measured. That is the same self-measurement problem that forced a withdrawal on 8 November 2026, reappearing in the denominator instead of in the mean. The figure is now stated as 12 of 13, a rate of 0.923077 with a Wilson interval from 0.666860 to 0.986290 and a Clopper-Pearson interval from 0.639703 to 0.998054, with the earlier reading kept beside it in the past tense. The conclusion is unchanged and marginally stronger. What changed is the recognition that a figure written in the present tense about a growing ledger goes stale by being correct at the time.
+
+WHAT THE OPEN WORK QUEUE ACTUALLY CONTAINS
+
+A separate reading of the master task list was made while the commit board ran. 20 entries are recorded as open. 12 of them appear in the generated decisions file put to the founder, and 0 of those 12 carry the BLOCKED state the list reserves for a pending decision, a rate of 0.000000 with a Wilson interval from 0.000000 to 0.242494. Because they carry the open state instead, the resume pointer names them as unstarted work, and it therefore directs work at items only the founder can move. The first of them in list order is entry B21.
+
+Of the remaining 8, 4 are marked as committed work while still recorded as open, and each of those 4 either asks the founder directly or is held open pending one of the 12 decisions. 1 is a panel question of his. 1 records a finding whose code path is switched off and says explicitly that closing it is his judgement. 1 is marked as reported rather than as a defect, and is deliberately left failing because the failure is the alert he asked for.
+
+The single remaining open defect record was also examined. It concerns a clause of the founder's own composition, that syntactic agreement should raise a classifier's confidence. A producer dated 8 November 2026 walks every assignment to that confidence variable and finds all 4 of them derive from the model's own reply or from a bare constant, with 0 of 4 deriving from any other signal. The value gates whether an override fires, so a rule that raised it would change how findings are classified and routed. The clause was therefore never built, and building it is a behavioural change to a gate, which is the founder's decision.
+
+1 LIVE FIGURE THE FOUNDER ASKED TO BE TOLD
+
+The master list carries an entry recording that the list can no longer be said to terminate, which exists because the founder asked to be told if that happened. Its recorded figure is a branching ratio of 0.914692 with a 95 per cent interval from 0.752709 to 1.111534, measured on 4 November 2026. Re-measured on 9 November 2026 the ratio is 0.9072 with an interval from 0.7545 to 1.0908. The upper bound is still above 1, so the guard is still failing and termination still cannot be asserted at 95 per cent confidence. The upper bound has narrowed from 1.1115 to 1.0908, so the movement is toward the condition clearing rather than away from it. The point estimate remains below 1 throughout, and no test rejects termination.
+
+A hypothesis that this alert was being hidden from the founder by a frozen number was checked and refuted. The generated morning report of 8 November 2026 computes the ratio live, states it as 186 entries added against 207 closed for a ratio of 0.8986, and names its producer. An older figure of 0.7791 exists only inside the correctly dated morning report of 30 October 2026. The alert reaches him as designed.
+
+Written under CDSFL note standard v1.9 (1 November 2026).
