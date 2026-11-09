@@ -47,7 +47,7 @@ The shadow has already produced its data: 13 records across 6 run logs. What it 
 - Records where the new measure changes the critical count: **0 of 13**, Wilson 95% [0.000000, 0.228095], Clopper-Pearson [0.000000, 0.247053].
 - Records with any finding crossing downward: **0 of 13**, same interval.
 - Verification factor totals across all 13 records: V_true 246, V_none 71, V_false **2**.
-- Findings refuted, of all the shadow saw: **2 of 319** = 0.006270, Wilson [0.001720, 0.022696], Clopper-Pearson [0.000760, 0.022463].
+- Findings refuted, of all the shadow saw: **2 of 319** = 0.006270, Wilson [0.001720, 0.022568], Clopper-Pearson [0.000760, 0.022463].
 
 The archive replay had predicted the new measure would move 835 of 3,298 entries downward, a 25.3% crossing rate, with the critical share falling from 41.6% to 16.3%. Live, it moves nothing, because with a refutation rate of 0.63% the verification factor almost never annihilates and the 2 measures are arithmetically indistinguishable at the cut.
 

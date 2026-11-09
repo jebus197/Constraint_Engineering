@@ -53,7 +53,7 @@ ROWS: list[tuple[int, str, str, list[str], str]] = [
      "severity_spec_shadow records the new one. It has already returned its "
      "answer -- 0 of 13 records move the critical count, Wilson [0.000000, "
      "0.228095] -- because the 2 measures can only differ on a REFUTED finding "
-     "and 2 of 319 were refuted, 0.006270, Wilson [0.001720, 0.022696]. So the "
+     "and 2 of 319 were refuted, 0.006270, Wilson [0.001720, 0.022568]. So the "
      "BUILD is complete and no further shadow criterion could resolve the "
      "promotion; building one would be an addition nothing reaches. What remains "
      "is HIS promotion decision on the evidence, and the cheap follow-on is B83, "
