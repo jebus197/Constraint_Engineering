@@ -58,7 +58,7 @@ The FIRST seat returned a verdict of NOT IMPLEMENTABLE YET, resting on measured 
 
 He is describing a quantity that **already exists in this harness and is not the one the 0.7 cut is applied to.**
 
-His words — *"the chances that a particular flaw, or class of flaws might remain after a given number of passes under severe scrutiny"* — are a verbatim statement of `R_k(i)`, computed by `compute_rk` (`bench/reference_runner_v3.py:16119`), recorded as `sk_result["R_new"]`, specified in `cdsfl_operational.md` §3/§16. It is Stage 5 of the model.
+His words — *"the chances that a particular flaw, or class of flaws might remain after a given number of passes under severe scrutiny"* — are a verbatim statement of `R_k(i)`, computed by `compute_rk` (`bench/reference_runner_v3.py:16134`), recorded as `sk_result["R_new"]`, specified in `cdsfl_operational.md` §3/§16. It is Stage 5 of the model.
 
 `entry["severity"]` is a different quantity: a model-asserted **consequence/materiality** rating, cut at `CRITICAL_SEVERITY_THRESHOLD = 0.7`. The CDSFL objective section defines it that way explicitly: *"V(f) = materiality(f) = consequence if defect f ships (= severity)"*.
 
@@ -306,7 +306,7 @@ All verification passes complete. Final answer, in the required shape.
 
 ## `definition`
 
-The founder's words — "the chances that a particular flaw, or class of flaws might remain after a given number of passes under severe scrutiny" — are `R_k` (`compute_rk`, `bench/reference_runner_v3.py:16119`; appendix §1.1), **not** `entry["severity"]`. Verified by execution on this tree, independently of both seats' figures:
+The founder's words — "the chances that a particular flaw, or class of flaws might remain after a given number of passes under severe scrutiny" — are `R_k` (`compute_rk`, `bench/reference_runner_v3.py:16134`; appendix §1.1), **not** `entry["severity"]`. Verified by execution on this tree, independently of both seats' figures:
 
 - **Anti-correlation reproduced on a larger corpus than either seat used:** scanning all non-harvest `bench/logs` JSON, 2,523 entries pair `severity` with `sk_result.R_new`. Spearman **ρ = −0.1610, p = 4.1×10⁻¹⁶** (scipy.stats.spearmanr), cross-checked by rank-then-Pearson in NumPy: **−0.1610** exact. Kendall τ = −0.1233, p = 1.6×10⁻¹⁵. The seats' −0.1408 over their 1,252-entry subset is the same phenomenon; both corpora confirm the two quantities are distinct and slightly *anti*-correlated.
 - **R_new is a pure function of S_k today:** `compute_rk(0.5, 0.5, 1.0) = 0.3666667` reproduces the archive's modal value (1,613 of 2,523 entries = 63.9% in my scan); `R_old` has **distinct count 1 (= 0.5)** across all 2,523 — both seats' claim, re-executed.

@@ -94,12 +94,75 @@ def test_the_producer_distinguishes_announced_from_silent():
     #: predicate `record()` uses -- `announced = bool(_rt.lookup_misses())` -- so
     #: it tests the discriminator rather than the tree's current contents, and
     #: it keeps working however many lookups are made loud.
-    assert "SILENT DEGRADE" in outcomes or "SILENT DEFAULT" in outcomes, (
-        "no step reports ANY silent outcome. That may be correct -- every "
-        "lookup may now be loud -- but the vocabulary must still be reachable, "
-        "so check "
-        "test_the_discriminator_still_tells_a_recorded_miss_from_an_unrecorded_one "
-        "has not been weakened before accepting it")
+    #: ★★ IT FIRED ON SUCCESS A SECOND TIME, 2026-11-09, AND IS NOW OFF THE
+    #: TREE ENTIRELY. The note above records the 2026-10-29 case, where the
+    #: count fell from 5 of 10 to 1 of 10 and `assert "SILENT DEFAULT" in
+    #: outcomes` refused the commit that earned it. The repair WIDENED the
+    #: pattern to accept either silent label, which kept the identical
+    #: property: it can only hold while a silent lookup STILL EXISTS IN THE
+    #: TREE. On 2026-11-09 the last one -- the composer-fallback SILENT
+    #: DEGRADE -- was made loud, the count fell to 0 of 10, and this line
+    #: refused a 26-minute board for the second time in 11 days. Widening a
+    #: pattern that should not have been looking at the tree is the treadmill
+    #: shape, and this is what it costs.
+    #:
+    #: WHAT THE ASSERTION WAS FOR, KEPT, AND MOVED TO A SUBJECT THAT CANNOT
+    #: GO AWAY. The intent is that the SILENT vocabulary stays REACHABLE, so a
+    #: future silent lookup is reported as silent rather than mislabelled or
+    #: dropped. That is a property of the CLASSIFIER, not of today's tree, and
+    #: the producer exposes it: `counts` is keyed by its whole declared
+    #: vocabulary and `silent` is the sum of both silent keys. So the checks
+    #: below hold at 0 silent steps and at 10, which is the anti-staleness
+    #: property this file's own docstring asks for -- *"the number may move
+    #: again, and should, as more lookups are made loud."*
+    #:
+    #: THE 3RD CHECK IS THE ONE WITH A RECORDED DEFECT BEHIND IT: the producer
+    #: once tallied 4 categories while emitting a 5th, so 1 of 10 steps was
+    #: printed and never counted. Asserting the sum rather than the presence
+    #: catches that, and it is strictly more than the old line could see.
+    counts = res["counts"]
+    assert {"SILENT DEFAULT", "SILENT DEGRADE"} <= set(counts), (
+        f"the producer's outcome vocabulary has lost a silent label; it now "
+        f"carries {sorted(counts)}. A silent lookup would be reported as "
+        f"something else, or as unknown, and the distinction this file exists "
+        f"to protect would be gone")
+    assert sum(counts.values()) == res["step_total"], (
+        f"the outcome partition does not close: {sum(counts.values())} counted "
+        f"against {res['step_total']} steps, so some step's outcome is "
+        f"uncounted")
+
+    #: ★ THE TALLY IS EXERCISED ON CONSTRUCTED INPUT, BECAUSE THE LIVE RESULT
+    #: CANNOT TEST IT. A first version of these checks asserted
+    #: `res["silent"] == counts["SILENT DEFAULT"] + counts["SILENT DEGRADE"]`
+    #: against the live result and was VACUOUS: with every silent count now 0,
+    #: dropping either term changes nothing, and the mutation that removed one
+    #: came back GREEN. A property only observable when a count is non-zero has
+    #: to be put a non-zero input, so `tally` was extracted from `method_b` --
+    #: 1 definition, 2 callers -- and is called here with synthetic steps.
+    #: These hold whether the tree has 0 silent lookups or 10.
+    assert mod.tally([{"outcome": "SILENT DEGRADE"}])["silent"] == 1, (
+        "a SILENT DEGRADE step is not counted as silent, which is exactly the "
+        "defect that once printed 1 of 10 steps without tallying it")
+    assert mod.tally([{"outcome": "SILENT DEFAULT"}])["silent"] == 1, (
+        "a SILENT DEFAULT step is not counted as silent")
+    assert mod.tally([{"outcome": "SILENT DEFAULT"},
+                      {"outcome": "SILENT DEGRADE"}])["silent"] == 2, (
+        "the silent tally is not the SUM of both labels, so one of them is "
+        "being dropped")
+    assert mod.tally([{"outcome": "PASS"},
+                      {"outcome": "ANNOUNCED DEFAULT"}])["silent"] == 0, (
+        "a loud outcome is being counted as silent, which would make the "
+        "headline figure unfalsifiable in the flattering direction")
+    #: AND THE REFUSAL MUST NAME THE OFFENDER, not merely happen. A reversion
+    #: that disabled the unknown-outcome check came back GREEN against a bare
+    #: `pytest.raises(AssertionError)`, because the partition check then fired
+    #: instead and the test could not tell the 2 apart. Matching the message
+    #: makes it discriminate. (The partition check is provably redundant given
+    #: the unknown check -- any outcome inside the vocabulary makes the counts
+    #: sum to the step total by construction -- so it is kept as a cheap
+    #: belt-and-braces assert and is NOT separately mutation-testable.)
+    with pytest.raises(AssertionError, match="uncounted outcome"):
+        mod.tally([{"outcome": "QUIET"}])
     # An announced default must NOT be inside the silent tally.
     silent = res["silent"]
     announced = sum(1 for o in outcomes if o == "ANNOUNCED DEFAULT")

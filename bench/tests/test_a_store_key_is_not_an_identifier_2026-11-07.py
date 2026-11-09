@@ -107,11 +107,31 @@ class TestTheBareSpellingIsUnchanged:
         assert mrb.ruling_is_spent("B21", "2026-10-17", "OPEN") is True, (
             "B21 carries questions dated after its ruling; calling it settled "
             "is the stale-ruling fault its own entry records as the 5th instance")
-        assert mrb.ruling_is_spent("B71", "2026-11-01", "BLOCKED") is True, (
-            "B71 was ruled and BLOCKED on 1 day on different questions")
+        #: ★ B71 WAS THE LIVE FIXTURE AND IT WAS REPAIRED. Corrected
+        #: 2026-11-09: B71 closed DONE on 2026-11-08 once his permission
+        #: arrived and the automatic local save was built, so `still_asks`
+        #: correctly returns False and this assertion went red because its
+        #: SUBJECT was fixed. No blocked entry remains in the list at all, so
+        #: no substitute ident helps. The BRANCH is exercised synthetically in
+        #: `test_the_blocked_branch_still_discriminates` below, which holds
+        #: whatever the tree contains.
         assert mrb.asks_newer_than_the_ruling("B21", "2026-10-17") is True
         assert mrb.asks_newer_than_the_ruling("B21", "2099-01-01") is False, (
             "the other direction: a ruling later than everything still settles it")
+
+    def test_the_blocked_branch_still_discriminates(self, mrb, monkeypatch):
+        """The branch B71 used to demonstrate, driven on constructed inputs.
+
+        A ruled entry that is BLOCKED and still asking is spent; the same entry
+        OPEN is not. Both halves are needed: without the second, a patched
+        `still_asks` alone would satisfy the first and the BLOCKED
+        discriminator would be doing nothing.
+        """
+        monkeypatch.setattr(mrb, "still_asks", lambda _i: True)
+        monkeypatch.setattr(mrb, "asks_newer_than_the_ruling",
+                            lambda _i, _r: False)
+        assert mrb.ruling_is_spent("SYNTH", "2026-11-01", "BLOCKED") is True
+        assert mrb.ruling_is_spent("SYNTH", "2026-11-01", "OPEN") is False
 
     def test_no_legitimate_identifier_contains_a_colon(self):
         """THE GUARD'S PREMISE, measured rather than assumed."""
@@ -150,10 +170,22 @@ class TestTheRejectedDesignStaysRejected:
 
     def test_the_decision_queue_is_the_measured_size(self, surfaces):
         n = len(surfaces.derived())
-        assert n == 29, (
-            f"the queue is {n}; it was 29 on 2026-11-07 and 36 under the "
-            f"rejected fail-open design. If this moved for a real reason, "
-            f"re-run the producer and update this pin WITH its reason.")
+        #: ★ 29 -> 13, RE-PINNED 2026-11-09 WITH ITS REASON, which is what
+        #: the superseded message asked of whoever moved it. On 2026-11-08 he
+        #: ruled on 29 decisions and 15 of the 30 annotated entries were built
+        #: and closed that night, so the queue shrank for the best possible
+        #: reason. 36 remains the figure under the rejected fail-open design
+        #: and is kept here because it is the one a reader might remember.
+        #: ★ 13 -> 12, RE-PINNED LATER THE SAME DAY. B103 was closed on
+        #: 2026-11-09 once every guard dated 2026-10-29 or later was put on
+        #: the commit gate, so the queue shrank by exactly the 1 entry whose
+        #: work landed. The cost bound B103 left to him did NOT leave the
+        #: queue: it is B81 and is still counted.
+        assert n == 12, (
+            f"the queue is {n}; it was 12 later on 2026-11-09, 13 earlier the "
+            f"same day, 29 on 2026-11-07, and 36 under the rejected fail-open "
+            f"design. If this moved for a real reason, re-run the producer and "
+            f"update this pin WITH its reason.")
 
 
 class TestTheProducerAnswersHisQuestion:
@@ -162,10 +194,19 @@ class TestTheProducerAnswersHisQuestion:
                            capture_output=True, text=True, cwd=REPO)
         assert r.returncode == 0, r.stdout[-3000:]
         out = r.stdout
-        assert "NOT NEW:     29 of 29" in out, out[-2000:]
-        assert "NOT REPEATS: 0 of 29" in out, out[-2000:]
-        assert "B20: REPEAT -> LIVE-AGAIN" in out, (
-            "the correction of yesterday's figure must be reproduced, not asserted")
+        #: 13 -> 12 for the same reason as the queue pin above: B103 closed.
+        assert "NOT NEW:     12 of 12" in out, out[-2000:]
+        assert "NOT REPEATS: 0 of 12" in out, out[-2000:]
+        #: ★ THE PROPERTY, NOT THE ENTRY. This named B20, and B20 was DEFERRED
+        #: on his ruling of 2026-11-09, so the live-again entry became B13 and
+        #: the assertion failed for a reason that had nothing to do with the
+        #: mechanism. What must be reproduced is that the REPEAT -> LIVE-AGAIN
+        #: correction still happens at all; which entry carries it is a fact
+        #: about tonight's queue and will move again.
+        assert "REPEAT -> LIVE-AGAIN" in out, (
+            "the correction of yesterday's figure must be reproduced, not "
+            "asserted -- no entry is reported as live-again, so the "
+            "reclassification is no longer happening")
 
     def test_the_producer_answers_help_for_free(self):
         r = subprocess.run([sys.executable, str(PRODUCER), "--help"],
@@ -181,6 +222,31 @@ class TestTheProducerAnswersHisQuestion:
         r = subprocess.run([sys.executable, str(YESTERDAY)],
                            capture_output=True, text=True, cwd=REPO)
         assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
-        assert "'REPEAT': 7" in r.stdout, (
-            "the corrected partition is 7 repeats of 41, not the 10 it reported "
-            "under the prefixed key")
+        #: ★ RE-PINNED 2026-11-09, AND THE NEW FIGURE COLLIDES WITH THE OLD
+        #: WRONG ONE, WHICH IS WHY THE DENOMINATOR IS NOW ASSERTED TOO.
+        #: The corrected partition was 7 REPEATS OF 41 on 2026-11-07. Tonight
+        #: it reads 10 of 26, because 15 of the 30 entries he annotated were
+        #: built and closed on 2026-11-08 and left the queue. **10 was also the
+        #: WRONG figure this test was written to catch** -- the count the
+        #: producer reported while passing a prefixed store key. The 2 are
+        #: different quantities: 10 of 41 was a miscount, 10 of 26 is a smaller
+        #: queue. A reader seeing `'REPEAT': 10` and remembering the bug would
+        #: reasonably think it had returned, so the TOTAL is pinned beside it
+        #: and the real guard against the regression stays the assertion above
+        #: that the prefixed key is absent from the source.
+        assert "'REPEAT': 10" in r.stdout, (
+            "the partition moved; it was 10 of 26 on 2026-11-09 and 7 of 41 on "
+            "2026-11-07. Re-run the producer and re-pin WITH the reason.")
+        _tot = sum(int(x) for x in __import__("re").findall(
+            r"'(?:LIVE-AGAIN|REPEAT|REAL)': (\d+)", r.stdout)[:3])
+        #: ★ 26 -> 25, AND THIS PIN HAS NOW EARNED ITS KEEP. Closing B103
+        #: moved the TOTAL while leaving `'REPEAT': 10` exactly where it was,
+        #: which is precisely the case the comment above anticipated: the
+        #: repeat count alone cannot distinguish a miscount from a smaller
+        #: queue, and only the denominator separates them.
+        assert _tot == 25, (
+            f"the partition totals {_tot}, not the 25 pinned later on "
+            f"2026-11-09 (26 earlier the same day, 41 on 2026-11-07). The "
+            f"repeat COUNT alone cannot be read without it: 10 of 41 was the "
+            f"miscount this test exists to catch, and 10 of 25 is a "
+            f"legitimately smaller queue.")

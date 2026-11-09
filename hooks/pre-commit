@@ -218,6 +218,65 @@ cd "$REPO" || exit 1
 #     that predates every log still held. A fabricated figure survived in the
 #     one document a post-compaction reader trusts most, precisely because the
 #     guard that would catch it ran only when someone remembered to run it.
+# ★★★ 104 GUARD FILES ADDED 2026-11-09 ON HIS INSTRUCTION (B103), AND THE GATE
+# NOW EXCEEDS THE LIMIT THIS FILE'S OWN HEADER STATES. Both halves are
+# deliberate. The second is RAISED FOR HIS RULING, not resolved here.
+#
+# HIS INSTRUCTION, verbatim: "Fix the 11 and then add the 103. If there are
+# still problems with the commit, I will address them in the morning." It
+# followed, earlier the same night, "B103 include the 55 in the commit. If the
+# commit takes too long monitor it and extend it within reasonable bounds."
+# The measured cost below was in his hands when he gave it.
+#
+# THE COUNT IS 104, NOT THE 103 PREPARED NOR THE 54 B103 RECORDS, because the
+# set is defined by a RULE and the rule admitted a new member while the work was
+# being done: every file in bench/tests/ outside this list whose name carries a
+# date of 2026-10-29 or later. B103 recorded 54 on 2026-11-04. 103 were outside
+# when the block was prepared hours before this commit. The 104th is
+# bench/tests/test_the_composer_fallback_is_recorded_2026-11-09.py, written the
+# same night, which the rule admits on its own terms. Pinning the count instead
+# of the set is the defect recorded as pin-a-set-not-a-count, 2026-10-16.
+#
+# WHAT IT COSTS, AND THE FIGURE I FIRST REACHED FOR COULD NOT BE QUOTED. A note
+# of mine cited 17 observations with a mean of 681.94 s. The ledger this gate
+# writes held 6 rows; the 17 came from a session log that is not committed, so
+# under measured-rate-travels-with-its-script it had no producer and was
+# dropped. Producer written instead:
+# scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py, reading
+# .cdsfl_tmp/precommit_durations.jsonl. It reports 5 full boards, mean 706.00 s
+# (11.77 min), sd 35.64, 95 per cent t-interval [661.75, 750.25], and EXCLUDES 1
+# short run of 12 s at exit 1 by naming it rather than averaging an
+# infrastructure refusal into the cost of a board. The 104 files were measured
+# at 1,271 tests in 890.45 s, so the gate becomes about 1,596.45 s = 26.61 min.
+#
+# ★ THE CONTRADICTION, STATED PLAINLY RATHER THAN LEFT FOR A READER TO FIND.
+# The header above says a per-commit gate costing 11 minutes would be bypassed
+# within a day, and that a guard which gets bypassed is not a guard. At a mean
+# of 706.00 s the gate ALREADY EXCEEDED that 660 s limit before this change, by
+# 7 per cent; at 1,596.45 s it exceeds it by a factor of 2.42. He ruled the
+# addition with the 26-minute figure in front of him, so THE ADDITION STANDS.
+# What may not stand is a file asserting a limit and breaking it in the same
+# breath, so the LIMIT is what is now open. The 3 options a reader should know
+# exist: raise the stated limit to match what he accepted; split this list into
+# a fast tier that gates every commit and a slow tier that gates a push; or run
+# the slow tier concurrently, which spends his 8 cores and 8 GiB and is
+# therefore his call and not mine. No measurement yet distinguishes them, so
+# none is recommended here -- composability-requires-a-measurement.
+#
+# THE WAITER ALREADY FITS AND NEEDED NO EDIT. scripts/cdsfl_sv.py derives its
+# commit timeout as max(300, 4 x the hook's last recorded seconds), which stood
+# at 2,724 s = 45.40 min when this was written, and it self-scales after the
+# first slow run. His "extend it within reasonable bounds" was already
+# satisfied by a mechanism, so nothing was typed.
+#
+# 11 TESTS ACROSS 5 OF THESE FILES WERE RED WHEN FIRST RUN TOGETHER, AND ALL 11
+# WERE CAUSED BY THIS SESSION'S OWN WORK rather than by a defect in the product:
+# 6 actuator citations into bench/reference_runner_v3.py that the night's edits
+# moved twice (+144, then +15), 2 queue pins his own rulings changed, and a
+# decision-surface fixture that had to become synthetic. That repeats what the
+# 2026-10-31 addition of 29 files found, where 6 of 440 were stale pins. A guard
+# outside the gate drifts in silence; the drift is discovered by the commit that
+# brings it inside, which is the argument for bringing it inside.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_the_gate_board_is_not_the_suite_2026-11-04.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
@@ -345,8 +404,111 @@ bench/tests/test_the_census_counts_only_his_writing_2026-11-04.py
 bench/tests/test_an_entrys_cited_evidence_must_exist_2026-11-04.py
 bench/tests/test_the_parked_reason_is_deterministic_2026-11-04.py
 bench/tests/test_b20s_status_instrument_measures_2026-11-04.py
-bench/tests/test_markdown_in_a_tts_file_2026-11-04.py"
-
+bench/tests/test_markdown_in_a_tts_file_2026-11-04.py
+bench/tests/test_a_bare_clock_is_dated_from_the_header_2026-11-03.py
+bench/tests/test_a_clean_mypy_is_not_an_unchecked_one_2026-11-02.py
+bench/tests/test_a_comment_cannot_contradict_the_default_2026-11-01.py
+bench/tests/test_a_decisions_producer_must_resolve_2026-11-08.py
+bench/tests/test_a_deliverable_pair_uses_the_right_check_2026-11-03.py
+bench/tests/test_a_dormant_memory_section_can_be_archived_2026-11-06.py
+bench/tests/test_a_foldback_credits_the_origin_not_the_copy_2026-11-02.py
+bench/tests/test_a_line_ending_in_his_marker_is_not_a_heading_2026-11-08.py
+bench/tests/test_a_line_reference_is_not_a_filename_2026-11-08.py
+bench/tests/test_a_listed_item_carries_its_ticket_id_2026-11-08.py
+bench/tests/test_a_markdown_heading_is_not_his_annotation_2026-11-02.py
+bench/tests/test_a_marker_is_compared_by_its_form_2026-10-31.py
+bench/tests/test_a_merge_carries_its_evidence_2026-11-02.py
+bench/tests/test_a_models_word_does_not_close_a_finding_2026-11-03.py
+bench/tests/test_a_narrowed_run_speaks_only_for_what_it_checked_2026-11-02.py
+bench/tests/test_a_png_named_md_is_not_his_writing_2026-11-03.py
+bench/tests/test_a_prior_ruling_is_acknowledged_2026-11-03.py
+bench/tests/test_a_queued_marker_is_harvested_2026-11-08.py
+bench/tests/test_a_restatement_must_see_the_anchor_2026-11-07.py
+bench/tests/test_a_retired_brief_is_not_owed_work_2026-10-31.py
+bench/tests/test_a_round_carries_its_own_time_2026-11-02.py
+bench/tests/test_a_ruling_after_the_file_is_not_a_divergence_2026-11-06.py
+bench/tests/test_a_seat_declares_what_it_is_missing_2026-11-02.py
+bench/tests/test_a_shell_naming_the_runner_is_not_a_run_2026-11-08.py
+bench/tests/test_a_simulated_run_can_be_resumed_2026-11-08.py
+bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py
+bench/tests/test_a_study_defects_status_reaches_him_2026-11-08.py
+bench/tests/test_a_tts_note_may_not_spell_a_path_2026-11-08.py
+bench/tests/test_an_authored_ruling_date_cannot_override_the_marker_2026-11-06.py
+bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py
+bench/tests/test_an_unreached_producer_set_cannot_grow_2026-11-08.py
+bench/tests/test_asking_is_not_answering_2026-11-02.py
+bench/tests/test_both_brief_builders_stamp_2026-11-08.py
+bench/tests/test_both_gates_must_agree_2026-11-08.py
+bench/tests/test_closing_an_entry_touches_all_three_surfaces_2026-11-02.py
+bench/tests/test_every_decision_names_a_standard_2026-11-06.py
+bench/tests/test_every_live_entry_carries_its_hash_2026-11-06.py
+bench/tests/test_his_annotations_arrive_with_their_context_2026-11-06.py
+bench/tests/test_his_command_is_the_union_over_the_turn_2026-11-08.py
+bench/tests/test_his_copy_is_the_index_2026-11-08.py
+bench/tests/test_his_two_directive_repairs_2026-11-02.py
+bench/tests/test_is_any_external_citation_verified_2026-11-04.py
+bench/tests/test_is_depth_alone_blinkered_2026-11-04.py
+bench/tests/test_no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py
+bench/tests/test_one_declaration_admits_a_model_2026-11-02.py
+bench/tests/test_quoted_text_is_exempt_in_the_spoken_copy_2026-11-08.py
+bench/tests/test_raising_an_entry_reaches_every_surface_2026-11-02.py
+bench/tests/test_rule_27_is_enforced_going_forward_2026-10-29.py
+bench/tests/test_severity_composition_key_property_2026-11-06.py
+bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py
+bench/tests/test_the_apply_back_gate_has_a_baseline_2026-11-02.py
+bench/tests/test_the_band_label_needs_an_estimable_gamma_2026-11-08.py
+bench/tests/test_the_brief_stamps_its_artefacts_2026-11-06.py
+bench/tests/test_the_census_producer_actually_runs_2026-11-04.py
+bench/tests/test_the_composer_fallback_is_recorded_2026-11-09.py
+bench/tests/test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py
+bench/tests/test_the_decisions_file_is_generated_2026-11-07.py
+bench/tests/test_the_disagreement_field_is_matchable_2026-10-31.py
+bench/tests/test_the_discrimination_outcome_is_stored_2026-11-08.py
+bench/tests/test_the_event_channel_reaches_the_actuator_2026-11-04.py
+bench/tests/test_the_feasibility_discrepancy_answer_2026-10-31.py
+bench/tests/test_the_fix_comparator_refuses_to_rank_2026-11-02.py
+bench/tests/test_the_follow_window_is_per_cycle_2026-11-01.py
+bench/tests/test_the_gate_records_its_own_cost_2026-11-08.py
+bench/tests/test_the_line_caps_were_never_his_2026-11-06.py
+bench/tests/test_the_note_ratchet_preflight_2026-11-01.py
+bench/tests/test_the_operating_point_is_imported_not_parsed_2026-11-07.py
+bench/tests/test_the_orchestrator_scorer_rule_2026-11-03.py
+bench/tests/test_the_pause_is_reachable_in_simulation_2026-11-03.py
+bench/tests/test_the_preflight_refuses_an_unregistered_seat_2026-11-02.py
+bench/tests/test_the_reference_point_producer_can_finish_2026-11-08.py
+bench/tests/test_the_report_structure_is_pinned_2026-11-03.py
+bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py
+bench/tests/test_the_roster_window_bound_is_sound_2026-11-02.py
+bench/tests/test_the_run_state_records_its_target_2026-11-08.py
+bench/tests/test_the_runway_is_measured_against_its_own_refusal_2026-11-08.py
+bench/tests/test_the_severity_bounds_come_from_the_archive_2026-11-01.py
+bench/tests/test_the_severity_confidence_has_a_lawful_source_2026-11-08.py
+bench/tests/test_the_severity_defaults_need_no_paid_run_2026-11-01.py
+bench/tests/test_the_severity_factor_values_are_pinned_2026-11-06.py
+bench/tests/test_the_severity_frame_counts_one_run_twice_2026-11-04.py
+bench/tests/test_the_severity_predictions_can_fail_2026-11-02.py
+bench/tests/test_the_severity_spec_effect_computes_2026-11-02.py
+bench/tests/test_the_spelled_number_exemptions_stay_narrow_2026-11-02.py
+bench/tests/test_the_staged_target_root_is_in_scope_2026-11-08.py
+bench/tests/test_the_superlative_has_two_routes_2026-11-03.py
+bench/tests/test_the_sv_gate_saves_locally_2026-11-08.py
+bench/tests/test_the_template_passes_its_own_validator_2026-11-01.py
+bench/tests/test_the_two_decision_surfaces_cannot_diverge_2026-11-01.py
+bench/tests/test_the_two_directive_repairs_hold_2026-11-02.py
+bench/tests/test_the_type_check_task_is_its_own_task_2026-11-01.py
+bench/tests/test_the_unadopted_designs_are_triaged_2026-11-02.py
+bench/tests/test_the_unattended_loop_producer_2026-11-04.py
+bench/tests/test_the_watchdog_events_reach_the_pulse_2026-11-03.py
+bench/tests/test_the_watchdog_probe_contract_holds_2026-11-03.py
+bench/tests/test_the_weighted_risk_is_not_a_probability_2026-11-04.py
+bench/tests/test_todays_producers_are_reached_2026-11-02.py
+bench/tests/test_tonights_producers_are_reached_2026-11-03.py
+bench/tests/test_tonights_producers_are_reached_2026-11-08.py
+bench/tests/test_two_seats_cannot_share_one_description_2026-11-02.py
+bench/tests/test_what_a_mypy_config_would_reveal_2026-11-04.py
+bench/tests/test_what_a_simulated_run_would_test_2026-11-03.py
+bench/tests/test_what_the_backtick_changed_2026-11-04.py
+bench/tests/test_what_the_commit_gate_runs_2026-11-01.py"
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
 # was run 5 times to discover 2 classes of defect that a commit-time check catches
@@ -555,9 +717,21 @@ if [ "$CODE" -ne 0 ]; then
     # hand, which is the hook costing time instead of saving it. The FAILED and
     # ERROR lines and the assertion text come first; the tail is kept as a
     # fallback for a failure that produces neither.
-    _F=$(printf '%s\n' "$OUT" | grep -E '^(FAILED|ERROR)|^E  ' | head -20)
-    if [ -n "$_F" ]; then
-        printf '%s\n' "$_F" >&2
+    # ★ THE NAMES ARE PRINTED SEPARATELY FROM THE DETAIL, AND UNCAPPED, 2026-11-09.
+    # This was 1 grep for '^(FAILED|ERROR)|^E  ' piped through `head -20`, and
+    # that cap structurally dropped the thing a reader needs most. pytest emits
+    # `E  ` traceback lines FIRST and its `FAILED` short summary LAST, so on a
+    # board with more than about 2 failures the 20 lines were consumed entirely
+    # by tracebacks and NOT ONE failing test was named. Measured on 2026-11-09:
+    # a refusal reporting `9 failed` named 0 of the 9, and the other 7 had to be
+    # hunted by re-running guards by hand -- which is the same cost this block's
+    # own comment below was written to prevent, recurring because the fix capped
+    # a stream it did not order. 2 greps: every name, then bounded detail.
+    _NAMES=$(printf '%s\n' "$OUT" | grep -E '^(FAILED|ERROR)')
+    _DETAIL=$(printf '%s\n' "$OUT" | grep -E '^E  ' | head -20)
+    if [ -n "$_NAMES" ] || [ -n "$_DETAIL" ]; then
+        if [ -n "$_NAMES" ]; then printf '%s\n' "$_NAMES" >&2; echo "" >&2; fi
+        if [ -n "$_DETAIL" ]; then printf '%s\n' "$_DETAIL" >&2; fi
         printf '%s\n' "$OUT" | grep -E '^[0-9]+ (passed|failed)|failed,' | tail -1 >&2
     else
         printf '%s\n' "$OUT" | tail -25 >&2

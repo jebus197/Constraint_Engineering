@@ -13332,6 +13332,21 @@ def _dispatch_single_model_inner(
         model_cdsfl = cdsfl_text
         _log(f"  COMPOSER FALLBACK for {mc.label}: "
              f"{type(_cmp_exc).__name__}: {str(_cmp_exc)[:140]}")
+        # ★ AND RECORDED, NOT ONLY LOGGED, 2026-11-09 (B21's 10th step). The
+        # line above has always printed; what was missing is a RECORD against
+        # the model's stable identity, which is what every instrument
+        # downstream counts. Without it this was the last of the 10 admission
+        # steps to degrade silently -- 1 of 10 by its own producer's
+        # measurement. Behaviour is unchanged: the run still continues on a
+        # degraded prompt.
+        try:
+            _cap_identity.record_miss(
+                "composer directive set", mc.label,
+                provider=getattr(mc, "provider", "") or "",
+                version=getattr(mc, "version", "") or "",
+                log=_log)
+        except Exception:                                          # noqa: BLE001
+            pass          # a record must never cost a round
         # `cdsfl_text`, NOT `model_cdsfl`. They are equal on this branch (the
         # line above), and `test_omission_precedes_every_use_of_the_prompt`
         # forbids ANY pre-omission read of `model_cdsfl` that is not an assembly

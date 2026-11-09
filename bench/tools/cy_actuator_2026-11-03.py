@@ -107,20 +107,35 @@ GUARANTEES = {
 # `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` reads this
 # dict and fails when a line no longer holds its substring, so drift is caught
 # at the commit that causes it rather than by a reader months later.
+# ★ ALL 6 A2 CITATIONS MOVED +144 LINES, 2026-11-09, AND THE SHIFT IS THE
+# EVIDENCE THAT THE MAPPING IS RIGHT. Work of 2026-11-08 added 2 functions to
+# `bench/reference_runner_v3.py` -- `both_gates_agree` for B76 and
+# `pre_run_target_description` for B84 -- which pushed everything below them
+# down. Every one of the 6 moved by exactly the same 144 lines, and each new
+# line holds the substring it is declared with, so this is a uniform
+# translation and not 6 separate guesses.
+#
+# THE 2 `sys.exit(42)` CITATIONS WERE AMBIGUOUS AND WERE RESOLVED BY ORDER,
+# not by taking the first match. The guard reported the text at BOTH 21498 and
+# 21568; the round block precedes the phase block in the file, so 21498 is
+# `A2.exit.round` and 21568 is `A2.exit.phase`. Picking the first for both
+# would have left 1 citation pointing at the wrong site while the guard went
+# green -- a citation that resolves is not the same as a citation that is
+# right.
 CITATIONS = {
     "A2.default":      ("bench/reference_runner_v3.py", 2308,
                         "hil_review: bool = False"),
-    "A2.gate.round":   ("bench/reference_runner_v3.py", 21330,
+    "A2.gate.round":   ("bench/reference_runner_v3.py", 21489,
                         "if cfg.hil_review and not"),
-    "A2.pause.round":  ("bench/reference_runner_v3.py", 21344,
+    "A2.pause.round":  ("bench/reference_runner_v3.py", 21503,
                         "if _hil_verdict.should_pause:"),
-    "A2.exit.round":   ("bench/reference_runner_v3.py", 21354,
+    "A2.exit.round":   ("bench/reference_runner_v3.py", 21513,
                         "sys.exit(42)"),
-    "A2.gate.phase":   ("bench/reference_runner_v3.py", 21394,
+    "A2.gate.phase":   ("bench/reference_runner_v3.py", 21553,
                         "if cfg.hil_review:"),
-    "A2.pause.phase":  ("bench/reference_runner_v3.py", 21399,
+    "A2.pause.phase":  ("bench/reference_runner_v3.py", 21558,
                         "if not _hil_verdict.should_pause:"),
-    "A2.exit.phase":   ("bench/reference_runner_v3.py", 21424,
+    "A2.exit.phase":   ("bench/reference_runner_v3.py", 21583,
                         "sys.exit(42)"),
     "A3.property":     ("bench/launch_exp39.py", 85,
                         "def hil_paused"),

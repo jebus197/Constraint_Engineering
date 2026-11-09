@@ -139,11 +139,42 @@ def check(ident: str) -> list[tuple[str, bool, str]]:
         out.append(("6. the spoken mirrors are byte-identical", False,
                     f"repo={repo_txt} desktop={desk_txt}"))
     else:
-        a = hashlib.sha256(repo_txt.read_bytes()).hexdigest()
-        b = hashlib.sha256(desk_txt.read_bytes()).hexdigest()
-        out.append(("6. the spoken mirrors are byte-identical", a == b,
-                    f"{repo_txt.name}: {a[:12]} / {b[:12]}"
-                    + ("" if a == b else "  <-- they diverged")))
+        # ★ SAME DECISIONS, NOT SAME BYTES. Corrected 2026-11-09, because
+        # byte-identity became the WRONG invariant on his own ruling. He
+        # objected on 2026-11-08 that the file he was handed ran to over 22,000
+        # words -- "an almost impossible workload" -- so the copy he reads is
+        # now the INDEX and the repo copy keeps the full render. Measured at
+        # the time: 8,031 characters against 130,243. A sha256 comparison
+        # therefore reported a divergence that his instruction created, and
+        # repairing the files to satisfy it would have undone what he asked
+        # for -- a guard accusing correct work.
+        #
+        # WHAT STILL MUST HOLD, and it is the property that was always the
+        # point: the 2 copies must name the SAME DECISIONS. He must never be
+        # handed a shorter file that also asks him about a DIFFERENT set. The
+        # detail may differ; the question set may not.
+        import re as _re
+        #: ★ THE ENTRY CODE IS THE MARKER, not the numbering. A first version
+        #: matched any `N. text` line and found 58 in the repo render against
+        #: 13 in his copy -- because the full render NUMBERS THE OPTIONS inside
+        #: each decision, so the pattern counted options as headings. The index
+        #: lines themselves were byte-identical for all 13. Matching the
+        #: explicit code is the recorded lesson that a marker and a fixed shape
+        #: beat an inferred one.
+        _H = _re.compile(r"^\s*(\d+)\.\s+((?:B|C|R)\d+\b.*?)\s*$", _re.M)
+        _ra = {h.strip().upper() for _n, h in
+               _H.findall(repo_txt.read_text(encoding="utf-8", errors="replace"))}
+        _db = {h.strip().upper() for _n, h in
+               _H.findall(desk_txt.read_text(encoding="utf-8", errors="replace"))}
+        _only_repo = sorted(_ra - _db)
+        _only_desk = sorted(_db - _ra)
+        _same = not _only_repo and not _only_desk
+        out.append(("6. the spoken mirrors name the same decisions", _same,
+                    f"{repo_txt.name}: {len(_ra)} in the repo render, "
+                    f"{len(_db)} in his copy"
+                    + ("" if _same else
+                       f"  <-- only in repo: {_only_repo[:2]}; "
+                       f"only in his copy: {_only_desk[:2]}")))
 
     # ★ CHECK 7 WAS ADDED AFTER THIS TOOL PASSED AN ENTRY THE GATE THEN REFUSED
     # TWICE, 2026-11-02. Checks 4 and 5 cover the GENERATOR (authored detail

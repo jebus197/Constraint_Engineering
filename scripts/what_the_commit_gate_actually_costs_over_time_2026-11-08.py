@@ -182,7 +182,28 @@ def split_rows(rs: list[dict]) -> tuple[list[dict], list[dict]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.parse_args()
+    # ★ FOLDED IN 2026-11-09 FROM A DUPLICATE I SHOULD NOT HAVE WRITTEN.
+    # `scripts/what_does_the_gate_actually_cost_2026-11-09.py` was written that
+    # night to answer the same question this script already answered, without
+    # checking whether an instrument existed -- the failure recorded as
+    # use-the-instrument-that-exists, 4 of 11 on 2026-10-12. Its 2 unique
+    # contributions are kept here and the duplicate is retired: a one-sided
+    # t-test against the stated limit, and a projection for added guard work.
+    #
+    # WHY --max-seconds EXISTS. This script's headline proportion pools every
+    # recorded board, and from 2026-11-09 the ledger holds 2 DIFFERENT gate
+    # configurations -- 128 guard files and 232. Pooling them measures 2 things
+    # at once, which is the ecological confound corrected elsewhere in this
+    # project, and it is why the pooled standard deviation jumped to 430.7 s.
+    # The flag bounds the sample to one configuration so the test speaks for
+    # one gate. It does NOT change the proportion above, which is deliberately
+    # a census of everything recorded.
+    ap.add_argument("--max-seconds", type=float, default=None,
+                    help="restrict the t-test sample to boards at or under "
+                         "this duration, to keep 1 gate configuration")
+    ap.add_argument("--add-seconds", type=float, default=None,
+                    help="project this much extra guard work on top of the mean")
+    args = ap.parse_args()
 
     rs = rows()
     print(f"the gate's stated limit, from its own header : "
@@ -222,6 +243,58 @@ def main() -> int:
           f"{statistics.median(secs):.1f}  max {max(secs)}")
     if len(secs) > 1:
         print(f"  standard deviation: {statistics.stdev(secs):.1f}")
+
+    # ── IS THE MEAN SIGNIFICANTLY OVER THE STATED LIMIT? ────────────────────
+    sample = [s for s in secs
+              if args.max_seconds is None or s <= args.max_seconds]
+    if args.max_seconds is not None:
+        print(f"\n  t-test sample bounded to <= {args.max_seconds:.0f} s: "
+              f"{len(sample)} of {len(secs)} board(s), so it speaks for 1 gate "
+              f"configuration rather than pooling 2")
+    if len(sample) >= 2:
+        n_s = len(sample)
+        mean_s = statistics.fmean(sample)
+        sd_s = statistics.stdev(sample)
+        se_s = sd_s / (n_s ** 0.5)
+        tstat = (mean_s - STATED_LIMIT_SECONDS) / se_s if se_s else float("nan")
+        print(f"\n  mean {mean_s:.6f} s over n={n_s}, sd {sd_s:.6f}")
+        print(f"  one-sided t against {STATED_LIMIT_SECONDS} s: "
+              f"t = {tstat:.6f}, df = {n_s - 1}")
+        p_sp = p_mp = None
+        try:
+            from scipy import stats as _st
+            p_sp = float(_st.t.sf(tstat, df=n_s - 1))
+            lo, hi = _st.t.interval(0.95, n_s - 1, loc=mean_s, scale=se_s)
+            print(f"  95% t-interval on the mean: [{lo:.6f}, {hi:.6f}] s -- the "
+                  f"limit lies "
+                  f"{'INSIDE' if lo <= STATED_LIMIT_SECONDS <= hi else 'OUTSIDE'}"
+                  f" it")
+        except ImportError:
+            pass
+        try:
+            import mpmath as _mp
+            _mp.mp.dps = 40
+            nu = _mp.mpf(n_s - 1)
+            xx = nu / (nu + _mp.mpf(tstat) ** 2)
+            p_mp = float(_mp.betainc(nu / 2, _mp.mpf(0.5), 0, xx,
+                                     regularized=True) / 2)
+        except ImportError:
+            pass
+        if p_sp is not None and p_mp is not None:
+            print(f"  p = {p_sp:.6f} (scipy)  {p_mp:.6f} (mpmath betainc)  "
+                  f"agree={abs(p_sp - p_mp) < 1e-9}")
+            print(f"  -> {'REJECT' if p_sp < 0.05 else 'CANNOT REJECT'} the null "
+                  f"that this gate sits at or below its stated limit")
+        else:
+            print("  p NOT COMPUTED on 2 routes, so under the cross-check rule "
+                  "nothing is claimed from it")
+
+    if args.add_seconds is not None and sample:
+        base = statistics.fmean(sample)
+        total = base + args.add_seconds
+        print(f"\n  projection: {base:.2f} + {args.add_seconds:.2f} = "
+              f"{total:.2f} s = {total / 60:.2f} min, which is "
+              f"{total / STATED_LIMIT_SECONDS:.6f} x the stated limit")
 
     for label, k in (("over the stated limit", len(over)),
                      ("refused the commit", len(refused))):

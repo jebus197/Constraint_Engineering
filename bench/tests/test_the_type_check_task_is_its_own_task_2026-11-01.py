@@ -40,13 +40,45 @@ def mod():
 
 class TestItIsItsOwnTask:
     def test_it_is_not_in_the_commit_check(self):
-        """His ruling: out of the commit check until it is clear."""
+        """His ruling: out of the commit check until it is clear.
+
+        ★ THIS ACCUSED CORRECT CODE ON 2026-11-09 AND THE PREDICATE IS
+        NARROWED. It read `assert "type_check_task" not in text` over the
+        hook's whole source. B103 then put every guard dated 2026-10-29 or
+        later on the gate, including THIS FILE, whose own name contains
+        `type_check_task` -- so the string matched a FILENAME IN THE GUARDS
+        LIST and the guard refused a 26-minute board over its own presence.
+
+        HIS RULING IS ABOUT THE TASK RUNNING, NOT ABOUT ITS GUARD BEING ON THE
+        GATE. Running a test ABOUT the task is not running the task, and the 2
+        are opposite in effect: the guard on the gate is what keeps the ruling
+        enforced at commit time. So the predicate now asks the question the
+        ruling asks -- is the task INVOKED -- in 2 narrower ways.
+
+        The GUARDS list and the comments are excluded before the name search.
+        Excluding comments is not cosmetic: this block now describes the
+        defect, so a predicate reading its own explanation would match the
+        scar and refuse forever, which is a shape recorded against 2026-11-02.
+        """
         if not PRECOMMIT.is_file():
             pytest.skip("no pre-commit hook in this checkout")
+        import re as _re
         text = PRECOMMIT.read_text(encoding="utf-8", errors="replace")
-        assert "type_check_task" not in text, (
-            "the type-check task is wired into the commit check, against his "
-            "ruling that it stays out until it is clear")
+
+        # 1. THE TASK'S OWN PATH MUST NEVER APPEAR. A GUARDS entry is under
+        #    bench/tests/, so this cannot be satisfied by a guard's filename.
+        assert "scripts/type_check_task" not in text, (
+            "the type-check task's script is invoked from the commit check, "
+            "against his ruling that it stays out until it is clear")
+
+        # 2. AND THE BARE NAME MUST NOT APPEAR OUTSIDE THE GUARDS LIST, so a
+        #    future wiring by some other spelling is still caught.
+        guards = _re.search(r'^GUARDS="(.*?)"\s*$', text, _re.M | _re.S)
+        body = text.replace(guards.group(0), "") if guards else text
+        live = "\n".join(l.split("#", 1)[0] for l in body.splitlines())
+        assert "type_check_task" not in live, (
+            "the type-check task is named in the commit check outside its "
+            "GUARDS entry, so something other than its guard reaches it")
 
     def test_help_is_answered_for_free(self):
         r = subprocess.run([sys.executable, str(TASK), "--help"],

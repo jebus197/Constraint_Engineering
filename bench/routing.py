@@ -286,6 +286,40 @@ def resolve_or_alarm(table: dict, key, what: str, default=None, log=None,
     """
     if key in table:
         return table[key]
+    record_miss(what, key, provider=provider, version=version,
+                log=log, announce_once=announce_once)
+    return default
+
+
+# ── B21's 10th ADMISSION STEP, 2026-11-09 ──────────────────────────────────
+# MEASURED FIRST. `scripts/how_many_places_must_change_to_add_a_model_2026-10-16.py`
+# computes how a new seat's 10 admission steps behave: 8 ANNOUNCE their
+# default, 1 fails LOUDLY, and exactly 1 was SILENT -- 1 of 10, 10.0000%,
+# Wilson [1.7876%, 40.4150%], Clopper-Pearson [0.2529%, 44.5016%]. That 1 is
+# directive composition: `compose()` RAISES for an unregistered seat, the
+# dispatcher catches it, logs a line, and the run continues ON A DEGRADED
+# PROMPT. The log line was never the problem -- the problem is that nothing
+# RECORDED the degradation against the model's identity, so no instrument
+# downstream could count it, which is exactly what C18 fixed for the other 8.
+#
+# SO THE RECORDING IS EXTRACTED RATHER THAN COPIED. `resolve_or_alarm` keeps
+# its behaviour by calling this, and the composer's fallback handler in
+# `bench/reference_runner_v3.py` calls the same function. 2 copies of a
+# recording keyed on 2 identity computations is the producer/consumer drift
+# this file's own docstring warns about, and a second copy is how it would
+# arrive.
+#
+# IT CHANGES NO BEHAVIOUR. The run still continues on a degraded prompt; the
+# difference is that the degradation is now countable. Raising instead would
+# turn a degradation into a dead run, which the C18 note gives as the reason
+# it was not done that way.
+def record_miss(what: str, key, provider: str = "", version: str = "",
+                log=None, announce_once: bool = True) -> str:
+    """RECORD a capability miss and announce it once. Returns the identity.
+
+    1 definition, 2 callers: `resolve_or_alarm` above for a table lookup, and
+    the runner's composer-fallback handler for a composition that raised.
+    """
     text = str(key or "")
     try:
         ident = capability_identity(provider, text or "unknown", version)
@@ -305,7 +339,7 @@ def resolve_or_alarm(table: dict, key, what: str, default=None, log=None,
                 f"nothing reported it.")
         except Exception:                                          # noqa: BLE001
             pass
-    return default
+    return ident
 
 
 def capability_provenance(provider: str, model_identifier: str,

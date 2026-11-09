@@ -110,8 +110,19 @@ class TestItRuns:
         assert "WHAT THE COMMIT GATE ACTUALLY RUNS" not in r.stdout
 
     def test_the_producer_reports_both_denominators(self):
-        """Runs 2 pytest collections, about 18 s. It is NOT in the hook's GUARDS
-        list, so it costs the commit gate nothing and still runs in the suite."""
+        """Runs 2 pytest collections, about 18 s.
+
+        ★ THIS DOCSTRING SAID THE FILE IS NOT IN THE HOOK'S GUARDS LIST AND
+        COSTS THE COMMIT GATE NOTHING. That was true until 2026-11-09, when
+        B103 added every guard dated 2026-10-29 or later to the gate on his
+        instruction, and this file qualified. It now costs the gate these 2
+        collections. The claim is corrected rather than deleted, because the
+        reason it was kept off the gate was stated in it, and a reader
+        comparing the gate's membership against this sentence would otherwise
+        conclude one of them was wrong.
+
+        It is still not a nested BOARD: a collection is not a run.
+        """
         r = subprocess.run([sys.executable, str(TOOL)], capture_output=True,
                            text=True, cwd=REPO)
         assert r.returncode == 0, r.stdout[-1200:]

@@ -118,9 +118,33 @@ class TestARulingIsSpentWhenTheEntryStillAsks:
     def test_no_ruling_is_never_spent(self, mrb):
         assert mrb.ruling_is_spent("B71", None, "BLOCKED") is False
 
-    def test_blocked_and_still_asking_is_spent(self, mrb):
-        """B71's own case: ruled and BLOCKED on the same day, different question."""
-        assert mrb.ruling_is_spent("B71", "2026-11-01", "BLOCKED") is True
+    def test_blocked_and_still_asking_is_spent(self, mrb, monkeypatch):
+        """B71's own case, now driven SYNTHETICALLY rather than off live state.
+
+        ★ CORRECTED 2026-11-09. This asserted on B71 itself, and B71 was closed
+        DONE on 2026-11-08 once his permission arrived and the work was built.
+        `ruling_is_spent` consults `still_asks`, which reads the LIVE entry, so
+        the test went red the moment its subject was repaired -- a guard that
+        needs a live defect, which this project has already recorded as a
+        defect of its own. There is now NO blocked entry in the list at all, so
+        no substitute ident would help either.
+
+        The BRANCH is what matters and it is exercised directly: a ruled entry
+        that is BLOCKED and still asking is spent, whatever the tree happens to
+        hold today.
+        """
+        monkeypatch.setattr(mrb, "still_asks", lambda _i: True)
+        monkeypatch.setattr(mrb, "asks_newer_than_the_ruling",
+                            lambda _i, _r: False)
+        assert mrb.ruling_is_spent("SYNTH", "2026-11-01", "BLOCKED") is True
+
+    def test_not_blocked_is_not_spent_by_that_branch(self, mrb, monkeypatch):
+        """ANTI-VACUITY for the monkeypatch. If the patched `still_asks` alone
+        made it spent, the BLOCKED discriminator would be doing nothing."""
+        monkeypatch.setattr(mrb, "still_asks", lambda _i: True)
+        monkeypatch.setattr(mrb, "asks_newer_than_the_ruling",
+                            lambda _i, _r: False)
+        assert mrb.ruling_is_spent("SYNTH", "2026-11-01", "OPEN") is False
 
     def test_the_state_is_what_discriminates(self, mrb):
         """A bare still-asks test took the list from 4 to 12 earlier the same
@@ -129,15 +153,36 @@ class TestARulingIsSpentWhenTheEntryStillAsks:
         assert mrb.ruling_is_spent("B71", "2026-11-01", "OPEN") is False
         assert mrb.ruling_is_spent("B71", "2026-11-01", "DONE") is False
 
-    def test_the_entry_is_in_the_decision_list(self, mrb):
+    def test_a_blocked_asking_entry_reaches_the_decision_list(self, mrb):
+        """THE PROPERTY, not one entry's name.
+
+        ★ CORRECTED 2026-11-09. This named B71 and asserted it was derived.
+        B71 closed DONE on 2026-11-08, so the assertion failed for the best
+        possible reason -- the entry it guarded had been repaired. The property
+        it was protecting is general: an entry that is BLOCKED and still asking
+        must appear in the decision list and must not be routed to the work
+        section, where he would never be asked the permission it waits on.
+
+        It holds VACUOUSLY when the list carries no such entry, and the live
+        count is printed rather than asserted, so a reader can tell the
+        difference between "none exist" and "the check stopped looking". The
+        branch itself is proven synthetically in
+        `TestARulingIsSpentWhenTheEntryStillAsks`.
+        """
         items = mrb.task_items() + mrb.study_items()
         decs, missing, orphan = mrb.decisions(items)
         assert not missing and not orphan, (missing, orphan)
-        b71 = [d for d in decs if d["key"] == "task:B71"]
-        assert b71, "B71 is not even derived"
-        assert not b71[0].get("no_ruling_needed"), (
-            "B71 is routed to the work section, so he is never asked the "
-            "permission it is blocked on")
+        blocked_asking = [
+            d for d in decs
+            if (d.get("state") or "").upper() == "BLOCKED"
+            and mrb.still_asks(str(d["key"]).split(":")[-1])]
+        print(f"blocked-and-asking entries in the decision list: "
+              f"{len(blocked_asking)}")
+        for d in blocked_asking:
+            assert not d.get("no_ruling_needed"), (
+                f"{d['key']} is BLOCKED and still asking, yet it is routed to "
+                f"the work section, so he is never asked the permission it "
+                f"waits on")
 
     def test_the_asking_pattern_reads_a_permission(self, mrb):
         """The pattern had only ruling words, so a permission went unseen."""
@@ -189,7 +234,29 @@ class TestTheInverseDirectionAlsoHolds:
     #: decision would ask him to rule again what he has already ruled, which is
     #: the complaint he has now made 5 times. `test_the_pin_is_not_stale`
     #: removes it from here automatically if it is ever rendered again.
-    RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = ("C0001", "B122")
+    #: ★ 4 ADDED 2026-11-09, EACH FOR THE SAME REASON IN HIS OWN WORDS.
+    #: B107, B123 and B128 -- he annotated all 3 on 2026-11-08 with "I accept
+    #: your recommendation", and in each case the recommendation was that NO
+    #: ACTION is owed. So the substance is settled and only the state is open:
+    #: B123 and B128 carry NO evidence path, so `set_marker` correctly refuses
+    #: to mark them DONE, and there is no test to name because there is no work.
+    #: Rendering them as decisions would ask him to accept again what he has
+    #: already accepted, which is the complaint he has now made 5 times.
+    #: B20 -- DEFERRED on his ruling of 2026-11-09, verbatim: "As for the
+    #: orchestrator experiment, we will run this once everything is cleared."
+    #: Its build is complete at 4 of 4 components and the simulated-and-
+    #: resumable seam landed 2026-11-08, so what waits is the RUN and it waits
+    #: on the queue rather than on him.
+    #:
+    #: WHY THEY ARE PINNED AND NOT ARCHIVED, which was tried first and was
+    #: wrong: removing their authored detail made the report builder REFUSE
+    #: with "NO AUTHORED DETAIL for a live item" for all 4, because an entry
+    #: the task list still carries as live needs its detail to be reportable at
+    #: all. Pinning says the same thing without breaking the builder, and
+    #: `test_the_pin_is_not_stale` removes any of them automatically the moment
+    #: it is rendered again.
+    RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = (
+        "C0001", "B122", "B107", "B123", "B128", "B20")
 
     @staticmethod
     def _authored() -> set[str]:

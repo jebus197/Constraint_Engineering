@@ -367,3 +367,181 @@ class TestTheDeclaredCitationsStillPointAtWhatTheyName:
             "the declaration no longer names the real symbol `hil_paused`")
         assert "A3.property" in A.CITATIONS, (
             "A3's symbol is no longer carried as a checkable citation")
+
+class TestTheRemedyForADriftedCitation:
+    """The guard above DETECTS drift. This is the thing that REPAIRS it.
+
+    `scripts/repoint_the_actuator_citations_2026-11-09.py` exists because the 6
+    A2 citations moved twice on 2026-11-09, +144 and then +15, and the
+    arithmetic was done by hand both times. `sys.exit(42)` occurs at the round
+    site AND the phase site, so a re-pointer that takes the first match leaves
+    one citation on the WRONG block while this guard goes green -- a worse
+    outcome than the red it replaces.
+
+    A remedy nothing calls is the addition-nothing-reaches half of the additive
+    standard, so it is executed here.
+    """
+
+    def _mod(self):
+        import importlib.util
+        p = (pathlib.Path(__file__).resolve().parents[2]
+             / "scripts/repoint_the_actuator_citations_2026-11-09.py")
+        assert p.exists(), "the remedy for a drifted citation is not present"
+        spec = importlib.util.spec_from_file_location("_repoint", p)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m
+
+    def test_it_reports_no_drift_on_the_current_tree(self):
+        """EXECUTED, not grepped: the citations are correct right now."""
+        m = self._mod()
+        src = m.ACTUATOR.read_text(encoding="utf-8")
+        plan = m._plan(src)
+        assert plan, "the citation table's shape has changed"
+        drifted = [(e[0].group("key"), e[1], e[2]) for e in plan if e[1] != e[2]]
+        assert not drifted, (
+            f"these citations no longer point at their substring: {drifted}. "
+            f"Run scripts/repoint_the_actuator_citations_2026-11-09.py --apply "
+            f"and READ the distinct-delta line before accepting it.")
+
+    def test_an_identical_substring_resolves_by_block_order(self):
+        """THE WHOLE POINT. 2 sites, 1 substring, and order decides.
+
+        Both A2 exit citations hold `sys.exit(42)`. A re-pointer that searched
+        from the top of the file for each would map BOTH to the round site.
+        """
+        m = self._mod()
+        src = m.ACTUATOR.read_text(encoding="utf-8")
+        plan = m._plan(src)
+        exits = [(e[0].group("key"), e[2]) for e in plan
+                 if e[3] == "sys.exit(42)"
+                 and e[0].group("path") == "bench/reference_runner_v3.py"]
+        assert len(exits) == 2, f"expected 2 sys.exit(42) citations, got {exits}"
+        keys = [k for k, _ in exits]
+        lines = [n for _, n in exits]
+        assert keys == ["A2.exit.round", "A2.exit.phase"], keys
+        assert lines[0] < lines[1], (
+            f"the round and phase exits resolved to {lines}; they must be "
+            f"distinct and in block order, or one citation is on the wrong "
+            f"block with this guard still green")
+
+    def test_the_drifted_case_is_what_the_floor_is_for(self):
+        """RE-RUN THE INPUT THAT FAILED, not the one that passes.
+
+        The sibling test above asserts the 2 `sys.exit(42)` citations resolve
+        in block order, and it was VACUOUS when written: with the citations
+        already correct, nearest-match alone returns each one's own line and
+        the floor never bites. Removing the floor left it green.
+
+        The floor bites on the DRIFTED input. Before the +144 shift the 2
+        exits were cited at 21354 and 21424 while the true sites were 21498
+        and 21568. Nearest-match maps 21354 -> 21498 correctly, then maps
+        21424 -> 21498 as well, because 74 is nearer than 144. Both citations
+        land on the ROUND site, the phase citation is wrong, and the contract
+        guard goes GREEN because the line it names does hold `sys.exit(42)`.
+        That is the exact failure this script was written to prevent, so it is
+        the input the test has to use.
+        """
+        m = self._mod()
+        true_round, true_phase = 21513, 21583
+        stale_round, stale_phase = true_round - 159, true_phase - 159
+        synthetic = (
+            'CITATIONS = {\n'
+            f'    "A2.exit.round":   ("bench/reference_runner_v3.py", {stale_round},\n'
+            '                        "sys.exit(42)"),\n'
+            f'    "A2.exit.phase":   ("bench/reference_runner_v3.py", {stale_phase},\n'
+            '                        "sys.exit(42)"),\n'
+            '}\n')
+        plan = m._plan(synthetic)
+        got = {e[0].group("key"): e[2] for e in plan}
+        assert got.get("A2.exit.round") == true_round, got
+        assert got.get("A2.exit.phase") == true_phase, (
+            f"the phase exit resolved to {got.get('A2.exit.phase')} instead of "
+            f"{true_phase}: both citations collapsed onto the nearer site, "
+            f"which is a wrong citation that the contract guard cannot see")
+        assert got["A2.exit.round"] < got["A2.exit.phase"], got
+
+    def test_a_new_occurrence_inside_the_block_does_not_capture_the_citation(
+            self, tmp_path, monkeypatch):
+        """WHY NEAREST-MATCH AND NOT MERELY FIRST-MATCH-ABOVE-THE-FLOOR.
+
+        A 3rd reversion came back GREEN: replacing nearest-match with
+        `cands[0]` changed nothing, because on the current table the floor
+        alone already separates the 2 `sys.exit(42)` sites. So nearest-match
+        looked redundant -- and it is redundant ON THAT INPUT, which is
+        precisely why that input cannot decide whether to keep it.
+
+        It stops being redundant on the edit that actually happens: a NEW
+        occurrence of the substring added INSIDE the block, between the floor
+        and the true site. First-match then captures the citation onto the new
+        line, which holds the substring, so the contract guard stays green
+        while the citation names code that has nothing to do with the claim.
+
+        The target here is synthetic because the behaviour needs an
+        interposed occurrence that the real runner does not have. The synthetic
+        file is the SUBJECT, not an artefact of where the probe runs.
+        """
+        m = self._mod()
+        target = tmp_path / "synthetic_runner.py"
+        lines = ["# filler"] * 120
+        lines[29] = "        sys.exit(42)      # the round site, line 30"
+        lines[59] = "        sys.exit(42)      # INTERPOSED later, line 60"
+        lines[99] = "        sys.exit(42)      # the phase site, line 100"
+        target.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        monkeypatch.setattr(m, "REPO", tmp_path)
+
+        synthetic = (
+            'CITATIONS = {\n'
+            '    "X.round": ("synthetic_runner.py", 30,\n'
+            '                "sys.exit(42)"),\n'
+            '    "X.phase": ("synthetic_runner.py", 100,\n'
+            '                "sys.exit(42)"),\n'
+            '}\n')
+        got = {e[0].group("key"): e[2] for e in m._plan(synthetic)}
+        assert got.get("X.round") == 30, got
+        assert got.get("X.phase") == 100, (
+            f"the phase citation resolved to {got.get('X.phase')} instead of "
+            f"100: a line inserted inside the block captured it. The line it "
+            f"names does hold the substring, so the contract guard cannot see "
+            f"that the citation is now wrong.")
+
+    def test_a_citation_whose_file_is_gone_is_reported_not_passed_over(self):
+        """THE BRANCH NOTHING ON THE CURRENT TABLE REACHES.
+
+        A 5th reversion came back green -- making a vanished file report
+        no-drift changed nothing, because every citation on the table names a
+        file that exists. An unreached branch is not a tested one, and this is
+        the branch that tells a human a citation CANNOT be repaired
+        mechanically. Reported as no-drift, a deleted subject reads as a
+        healthy citation.
+        """
+        m = self._mod()
+        synthetic = (
+            'CITATIONS = {\n'
+            '    "X.gone": ("bench/a_file_that_does_not_exist_2026-11-09.py", 7,\n'
+            '               "anything at all"),\n'
+            '}\n')
+        plan = m._plan(synthetic)
+        assert len(plan) == 1, plan
+        _, old_line, new_line, _, why = plan[0]
+        assert new_line is None, (
+            "a citation whose file is gone was given a line number, so it "
+            "reports as repaired rather than as needing a human")
+        assert old_line == 7
+        assert "gone" in why or "not found" in why, why
+
+    def test_reporting_is_the_default_and_writing_is_opt_in(self):
+        """A REMEDY THAT WRITES BY DEFAULT CAN DESTROY WORK.
+
+        Recorded 2026-11-04: an instrument's own remedy pointed at
+        destruction. This one must say what it would do unless asked to act.
+        """
+        m = self._mod()
+        import argparse, inspect
+        src = inspect.getsource(m.main)
+        assert '"--apply"' in src, "there is no opt-in flag at all"
+        assert 'action="store_true"' in src, (
+            "--apply is not a flag, so it cannot default to off")
+        assert "if args.apply and moved:" in src, (
+            "the write is not gated on --apply")
+

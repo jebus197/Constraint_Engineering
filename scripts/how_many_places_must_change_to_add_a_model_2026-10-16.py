@@ -53,6 +53,70 @@ SKIP_PARTS = {"logs", "experimental_notes", "fingerprints", ".git",
               "__pycache__", "exp40_baseline", "seat_evidence"}
 
 
+#: The whole outcome vocabulary. A step carrying anything else is REFUSED
+#: rather than silently uncounted.
+OUTCOMES = ("PASS", "ANNOUNCED DEFAULT", "SILENT DEFAULT", "SILENT DEGRADE",
+            "RAISE", "MISSING FILE")
+
+
+def tally(steps) -> dict:
+    """Count the outcomes and sum the silent ones. 1 definition, 2 callers.
+
+    ★ EXTRACTED 2026-11-09, AND THE REASON IS THAT ITS PROPERTY COULD NOT BE
+    TESTED WHILE IT WAS INLINE. The tally once counted 4 categories while
+    emitting a 5th, so 1 of 10 steps was printed and never counted. The guard
+    written against that read the LIVE result -- and once the last silent
+    lookup was made loud, every silent count became 0, so `silent ==
+    SILENT_DEFAULT + SILENT_DEGRADE` held trivially and the mutation that
+    dropped a term came back GREEN. A property that is only observable when a
+    count is non-zero cannot be guarded against today's tree; it has to be
+    exercised on constructed input. That is what this function makes possible,
+    and `bench/tests/test_admission_counts_announced_apart_from_silent_2026-10-18.py`
+    now calls it directly with a synthetic SILENT DEGRADE step.
+
+    Refuses an unknown outcome rather than dropping it, which is the original
+    defect, and refuses a partition that does not close.
+    """
+    counts = {k: sum(1 for s in steps if s["outcome"] == k) for k in OUTCOMES}
+    unknown = sorted({s["outcome"] for s in steps} - set(OUTCOMES))
+    assert not unknown, f"uncounted outcome(s): {unknown}"
+    assert sum(counts.values()) == len(steps), (counts, len(steps))
+    silent = counts["SILENT DEFAULT"] + counts["SILENT DEGRADE"]
+    loud = counts["RAISE"] + counts["MISSING FILE"]
+    return {"steps": list(steps), "counts": counts, "step_total": len(steps),
+            "silent": silent, "loud": loud}
+
+
+def _records_unconditionally(src: str, lo: int, hi: int,
+                             name: str = "record_miss") -> bool:
+    """True when `name` is called as a whole statement between lines lo..hi.
+
+    THE WHOLE-STATEMENT REQUIREMENT IS THE POINT. A call that is the direct
+    value of an expression, assignment or return statement runs whenever its
+    block runs. A call buried in a sub-expression need not: `None and
+    record_miss(...)` parses to a BoolOp, contains the name, and records
+    nothing. A substring search cannot tell those apart, and on 2026-11-09 it
+    reported a disabled call as a live one.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Expr, ast.Assign, ast.Return)):
+            value = node.value
+        else:
+            continue
+        if not isinstance(value, ast.Call):
+            continue
+        func = value.func
+        called = (func.attr if isinstance(func, ast.Attribute)
+                  else getattr(func, "id", ""))
+        if called == name and lo <= getattr(node, "lineno", 0) <= hi:
+            return True
+    return False
+
+
 def _roster() -> list[str]:
     sys.path.insert(0, str(REPO / "bench"))
     import reference_runner_v3 as runner  # noqa: PLC0415
@@ -308,14 +372,52 @@ def method_b(models: list[str]) -> dict:
     # handler logs "COMPOSER FALLBACK for <seat>" and continues on a degraded
     # prompt. So the run does not halt, and counting it as loud understated the
     # silent-degradation share.
-    _composer_caught = "COMPOSER FALLBACK for" in _runner_source()
+    # ★ CORRECTED AGAIN 2026-11-09: A LOG IS NOT A RECORD, and this predicate
+    # could not tell them apart. It classified the step SILENT purely because
+    # the string "COMPOSER FALLBACK for" appears in the runner -- so when the
+    # handler was changed to RECORD the degradation against the model's stable
+    # identity, the way C18 did for the other 8 steps, this instrument went on
+    # reporting 1 of 10 silent. The fix was real and the measurement could not
+    # see it: `execute-do-not-grep` applied to the measuring script, which is
+    # the same correction this function's own note below records.
+    #
+    # WHAT DISTINGUISHES THEM. A fallback that only LOGS leaves nothing any
+    # downstream instrument can count. A fallback that calls `record_miss`
+    # appends to `routing._LOOKUP_MISSES` keyed on `capability_identity` --
+    # the same ledger and the same identity function every announced default
+    # uses. So the predicate is whether the handler RECORDS, not whether it
+    # prints.
+    _src = _runner_source()
+    _composer_caught = "COMPOSER FALLBACK for" in _src
+    _composer_records = False
     if _composer_caught:
+        _i = _src.find("COMPOSER FALLBACK for")
+        _window = _src[_i:_i + 1400]
+        # A SUBSTRING IS NOT A CALL, and a textual predicate here let 2 of 2
+        # reversions come back GREEN on 2026-11-09. `None and record_miss(...)`
+        # contains the name and records nothing; a mid-line comment puts the
+        # name on a line that does not begin with one. So the test is
+        # STRUCTURAL: the call must be the WHOLE statement, which cannot be
+        # short-circuited, and it must sit inside the handler's own block.
+        _lo = _src.count("\n", 0, _i) + 1
+        _composer_records = _records_unconditionally(_src, _lo, _lo + 40)
+    if _composer_caught and not _composer_records:
         steps.append({
             "step": "directive composition (composer.compose) -- CAUGHT by the "
                     "dispatcher, run continues on a degraded prompt",
             "outcome": "SILENT DEGRADE",
             "detail": "compose() raises, but _dispatch_single_model_inner's "
                       "handler logs COMPOSER FALLBACK and carries on",
+        })
+    elif _composer_caught:
+        steps.append({
+            "step": "directive composition (composer.compose) -- CAUGHT by the "
+                    "dispatcher and RECORDED against the seat's identity",
+            "outcome": "ANNOUNCED DEFAULT",
+            "detail": "compose() raises; the handler logs COMPOSER FALLBACK AND "
+                      "calls routing.record_miss, so the degradation is "
+                      "countable. The run still continues on a degraded prompt: "
+                      "raising would turn a degradation into a dead run.",
         })
     else:
         record("directive composition (composer.compose)",
@@ -379,16 +481,7 @@ def method_b(models: list[str]) -> dict:
     # categories while emitting a 5th, "SILENT DEGRADE", so 1 of 10 steps was
     # reported and not counted -- the same shape of defect this script exists to
     # find. The assertion below refuses to print a total that does not add up.
-    OUTCOMES = ("PASS", "ANNOUNCED DEFAULT", "SILENT DEFAULT", "SILENT DEGRADE", "RAISE",
-                "MISSING FILE")
-    counts = {k: sum(1 for s in steps if s["outcome"] == k) for k in OUTCOMES}
-    unknown = sorted({s["outcome"] for s in steps} - set(OUTCOMES))
-    assert not unknown, f"uncounted outcome(s): {unknown}"
-    assert sum(counts.values()) == len(steps), (counts, len(steps))
-    silent = counts["SILENT DEFAULT"] + counts["SILENT DEGRADE"]
-    loud = counts["RAISE"] + counts["MISSING FILE"]
-    return {"steps": steps, "counts": counts, "step_total": len(steps),
-            "silent": silent, "loud": loud}
+    return tally(steps)
 
 
 
