@@ -53,12 +53,41 @@ DETAIL = REPO / "experimental_notes" / "data" / "morning_report_decisions.json"
 OK_WITH_DONE = ("COMMITTED", "ENABLED")
 
 
+#: ★ WIDENED 2026-11-10 AFTER IT REFUSED 7 OF 248 MARKERS AND SAID "NO
+#: MARKER", WHICH POINTS A READER AT THE WRONG THING. The old form spelled
+#: out `state`, `status`, `evidence` and `ruled` IN THAT ORDER and admitted
+#: nothing else. `responded:` was added to the marker vocabulary by entry N1
+#: on 2026-11-09, 7 days after this tool was written, so every entry carrying
+#: it became unclosable by the only instrument built to close one -- and the
+#: refusal read as though the entry did not exist. Measured: 7 of 248
+#: markers, 0.028226, Wilson 95% [0.013738, 0.057106], Clopper-Pearson
+#: [0.011422, 0.057289] -- B79, B88, B94, B104, B111, B125 and B131, ALL of
+#: them live at the time, and 4 of them decisions in his own queue.
+#: IT NOW MATCHES THE MARKER AS A WHOLE AND PARSES ITS FIELDS GENERICALLY, so
+#: a field added later cannot blind it again. The fields this tool does not
+#: manage are PRESERVED on rewrite rather than dropped, which the old rebuild
+#: would have done to `responded:` even with a widened pattern -- a silent
+#: loss of the thing N1 exists to record.
 def _marker_re(ident: str) -> re.Pattern:
     return re.compile(
-        r"<!--\s*task:\s*" + re.escape(ident) + r"\s*\|\s*state:\s*(\w+)"
-        r"\s*\|\s*status:\s*(\w+)"
-        r"(?:\s*\|\s*evidence:\s*([^>|]*?))?"
-        r"(?:\s*\|\s*ruled:\s*([^>|]*?))?\s*-->")
+        r"<!--\s*task:\s*" + re.escape(ident) + r"\s*\|([^>]*?)-->")
+
+
+#: The fields this tool sets itself. Everything else is carried through.
+_MANAGED = ("state", "status", "evidence")
+
+
+def _marker_fields(body: str) -> list:
+    """[(key, value)] in the marker's own order. Order is preserved because a
+    reader of the file reads it, and reordering a line he reads is noise."""
+    out = []
+    for part in body.split("|"):
+        part = part.strip()
+        if not part:
+            continue
+        k, _, v = part.partition(":")
+        out.append((k.strip(), v.strip()))
+    return out
 
 
 def stale_detail() -> list[str]:
@@ -107,16 +136,46 @@ def close_entry(ident: str, *, evidence: str, resolution: str,
     text = LIST.read_text()
     m = _marker_re(ident).search(text)
     if not m:
-        rec["refused"] = f"no marker for {ident} in {LIST.name}"
+        #: ★ THE REFUSAL NAMES THE REAL CAUSE. It used to say "no marker",
+        #: which a reader takes to mean the entry is absent; the actual cause
+        #: was a field this tool could not parse.
+        present = re.search(r"<!--\s*task:\s*" + re.escape(ident) + r"\s*\|",
+                            text) is not None
+        rec["refused"] = (
+            f"{ident}'s marker is present but could not be parsed; its field "
+            f"set is not what this tool expects"
+            if present else f"no marker for {ident} in {LIST.name}")
         return rec
-    if m.group(1).upper() == "DONE":
+    fields = _marker_fields(m.group(1))
+    got = {k: v for k, v in fields}
+    if (got.get("state") or "").upper() == "DONE":
         rec["refused"] = f"{ident} is already DONE; refusing to re-close it"
         return rec
-    ruled = (m.group(4) or "").strip()
-    new_marker = (f"<!-- task: {ident} | state: DONE | status: {status.upper()}"
-                  f" | evidence: {evidence}"
-                  + (f" | ruled: {ruled}" if ruled else "") + " -->")
+    if "state" not in got or "status" not in got:
+        rec["refused"] = (f"{ident}'s marker carries no {'state' if 'state' not in got else 'status'} "
+                          f"field; refusing to guess it")
+        return rec
+    #: Rebuild IN ORDER, setting what this tool manages and carrying the rest
+    #: through untouched. A field added to the vocabulary later survives a
+    #: close, which is the property the old rebuild lacked.
+    parts, seen = [], set()
+    for k, v in fields:
+        if k in seen:
+            continue
+        seen.add(k)
+        if k == "state":
+            parts.append("state: DONE")
+        elif k == "status":
+            parts.append(f"status: {status.upper()}")
+        elif k == "evidence":
+            parts.append(f"evidence: {evidence}")
+        else:
+            parts.append(f"{k}: {v}" if v else k)
+    if "evidence" not in seen:
+        parts.insert(min(2, len(parts)), f"evidence: {evidence}")
+    new_marker = "<!-- task: " + ident + " | " + " | ".join(parts) + " -->"
     rec["marker"] = {"was": m.group(0), "now": new_marker}
+    rec["carried_through"] = [k for k, _v in fields if k not in _MANAGED]
 
     st = TicketStore()
     tickets = [t for t in st.by_task_ref(ident)

@@ -50,13 +50,31 @@ def test_the_marker_is_matched_by_pattern_not_by_a_literal(mod):
     bare = "<!-- task: X9 | state: OPEN | status: PROPOSED -->"
     rich = ("<!-- task: X9 | state: OPEN | status: TESTED | evidence: "
             "bench/tests/a.py, bench/tests/b.py | ruled: 2026-10-30 -->")
+    #: ★ READ BY FIELD NAME, NOT BY GROUP POSITION, FROM 2026-11-10. This
+    #: test asserted `m.group(2)` and `m.group(4)`, which pinned the pattern's
+    #: group STRUCTURE rather than the property it protects -- so widening the
+    #: pattern to admit a field added later broke this test with
+    #: `IndexError: no such group` while the property held throughout.
+    #: THE WIDENING WAS NEEDED because `responded:`, added to the marker
+    #: vocabulary by entry N1 on 2026-11-09, made 7 of 248 markers unparsable
+    #: by the only tool that closes an entry. Reading by name is also the
+    #: stronger assertion: a field can move position without breaking it.
+    #: AND THIS BREAK WAS A FOLLOW MISS, recorded rather than quietly fixed:
+    #: nothing searched for the dependents of `_marker_re` before its pattern
+    #: was changed, and 6 test files and 4 scripts reference that tool.
     pat = mod._marker_re("X9")
     for form in (bare, rich):
         m = pat.search(form)
         assert m, f"the pattern does not match {form!r}"
-    m = pat.search(rich)
-    assert m.group(2) == "TESTED"
-    assert m.group(4).strip() == "2026-10-30", "the ruling date must be preserved"
+    got = dict(mod._marker_fields(pat.search(rich).group(1)))
+    assert got["status"] == "TESTED", got
+    assert got["ruled"] == "2026-10-30", "the ruling date must be preserved"
+    #: A field added later must survive the same read.
+    newer = ("<!-- task: X9 | state: OPEN | status: TESTED | evidence: a.py "
+             "| ruled: 2026-10-30 | responded: 2026-11-08 -->")
+    m2 = pat.search(newer)
+    assert m2, "a marker carrying `responded:` does not match"
+    assert dict(mod._marker_fields(m2.group(1)))["responded"] == "2026-11-08"
 
 
 def test_a_contradictory_status_is_REFUSED(mod):
