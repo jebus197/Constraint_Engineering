@@ -256,3 +256,105 @@ class TestEverySpokenGeneratorAppliesTheConvention:
         assert not foot[0].startswith("*"), (
             "the foot-line carries the marker; the note standard requires "
             "that exact line as the final content")
+
+
+class TestNoProseParagraphGoesUnmarked:
+    """★ THE DISCRIMINATING ASSERTION, ADDED AFTER A P-PASS SHOWED THE FIX
+    WAS UNGUARDED.
+
+    The class above asks whether the spoken decisions file carries marks AT
+    ALL, and 4 marks satisfies that. But 4 was the number the DEFECT produced:
+    `L = [head]` put the whole multi-line header block in 1 list element, so
+    the per-line walk saw a single line and the title exemption swallowed the
+    header, leaving 4 of my 6 header paragraphs unmarked. Reverting the split
+    left every test in this file GREEN -- the fix was real and nothing would
+    have caught its loss.
+
+    So the property is not "some marks exist" but "NO paragraph of mine is
+    unmarked", and every unmarked paragraph opener must therefore be
+    classifiable as something the convention deliberately spares: the title,
+    a heading, an all-caps label, a numbered item, a timestamp, or the
+    foot-line. Anything else is my prose going unmarked.
+    """
+
+    #: What the convention deliberately does NOT mark, each with its reason.
+    #: A line matching none of these and carrying no marker is a defect.
+    @staticmethod
+    def _spared(line: str, index: int, first_nonblank: int) -> bool:
+        s = line.strip()
+        if index == first_nonblank:
+            return True                      # the document title
+        if re.match(r"^DECISION \d+\.", s):
+            return True                      # a recorded heading
+        if re.match(r"^\d+\.", s):
+            return True                      # a numbered list item
+        if re.match(r"^\d+ \w+ \d{4}", s):
+            return True                      # a date stamp
+        if "Written under CDSFL note standard" in s:
+            return True                      # the foot-line
+        letters = [c for c in s if c.isalpha()]
+        if letters and all(c.isupper() for c in letters):
+            return True                      # an all-caps section label
+        return False
+
+    def test_every_prose_paragraph_in_the_spoken_file_is_marked(self):
+        files = sorted((REPO / "experimental_notes").glob(
+            "Decisions_Awaiting_You_*_GENERATED.txt"))
+        if not files:
+            pytest.skip("no generated spoken decisions file in this checkout")
+        lines = files[-1].read_text(encoding="utf-8").splitlines()
+        first_nb = next((i for i, l in enumerate(lines) if l.strip()), 0)
+        openers, at_start = [], True
+        for i, l in enumerate(lines):
+            if not l.strip():
+                at_start = True
+                continue
+            if at_start:
+                openers.append((i, l))
+            at_start = False
+        assert len(openers) > 20, (
+            f"only {len(openers)} paragraph openers found in "
+            f"{files[-1].name}; this guard's own walk has drifted")
+        unmarked = [(i, l.strip()[:70]) for i, l in openers
+                    if not l.startswith("*")
+                    and not self._spared(l, i, first_nb)]
+        assert unmarked == [], (
+            f"{len(unmarked)} prose paragraph(s) in {files[-1].name} carry no "
+            f"marker, so his convention reaches some of my prose and not the "
+            f"rest. This is the state `L = [head]` produced -- the header "
+            f"block in 1 list element, invisible to the per-line walk -- and "
+            f"the file still carried 4 marks, which a 'does it carry any "
+            f"marks' check passes: {unmarked}")
+
+    def test_the_header_is_a_list_of_lines_not_one_block(self):
+        """The mechanism, pinned directly, because the end-to-end test above
+        can only see the consequence."""
+        #: ★ READ THE PARSED ASSIGNMENT, NOT THE SOURCE TEXT. The first
+        #: version asserted `'L = [head]' not in src` and FAILED immediately,
+        #: because this file's own explanatory comment quotes that string --
+        #: a scar reading as a wound, which is the shape this project records
+        #: against a detector that spelled out its own pattern.
+        import ast
+        src = (REPO / "scripts" / "build_decisions_file_2026-11-07.py").read_text(
+            encoding="utf-8")
+        assigns = []
+        for node in ast.walk(ast.parse(src)):
+            if isinstance(node, ast.Assign) and any(
+                    isinstance(t, ast.Name) and t.id == "L" for t in node.targets):
+                assigns.append(node.value)
+        assert assigns, "no assignment to `L` found; the renderer moved"
+        single_block = [a for a in assigns
+                        if isinstance(a, ast.List) and len(a.elts) == 1
+                        and isinstance(a.elts[0], ast.Name)
+                        and a.elts[0].id == "head"]
+        assert single_block == [], (
+            "the header is back in a single list element, so the paragraph "
+            "walk cannot see inside it and the title exemption swallows every "
+            "paragraph in it")
+        split = [a for a in assigns
+                 if isinstance(a, ast.Call)
+                 and isinstance(a.func, ast.Attribute)
+                 and a.func.attr == "split"]
+        assert split, (
+            "the header is no longer split into lines; the marker's per-line "
+            "walk needs 1 line per element")
