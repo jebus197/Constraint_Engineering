@@ -44,8 +44,17 @@ for _c in (pathlib.Path(__file__).resolve().parent, pathlib.Path.cwd().resolve()
 else:
     raise SystemExit("cannot locate the repository")
 
-SPEC_READER = REPO / "scripts" / \
-    "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py"
+#: ★ 2 READERS, NOT 1, AND THE SECOND WAS FOUND BY THE FOLLOW STEP. A free
+#: panel seat named the first; searching the tree for every reader of `W_ROW`
+#: before editing turned up the second, carrying the identical fixed
+#: alternation and the identical completeness check. 1 reported instance, 2
+#: live ones -- which is why this producer now measures the CLASS.
+SPEC_READERS = (
+    REPO / "scripts"
+    / "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py",
+    REPO / "scripts" / "severity_is_an_expectation_not_a_magnitude_2026-11-04.py",
+)
+SPEC_READER = SPEC_READERS[0]
 STRAY = REPO / "the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py"
 CANON = REPO / "scripts" / \
     "the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py"
@@ -56,21 +65,41 @@ THREE_LEVEL = """| W(HARD) | 1 | Hard consequence |
 
 
 def finding_one() -> int:
-    """Return the number of W rows the LIVE pattern sees in a 3-level table."""
-    src = SPEC_READER.read_text(encoding="utf-8")
+    """The WORST number of W rows any live reader sees in a 3-level table."""
+    worst = 3
+    for _r in SPEC_READERS:
+        got = _one_reader(_r)
+        if got >= 0:
+            worst = min(worst, got)
+    return worst
+
+
+def _one_reader(path) -> int:
+    """How many W rows THIS reader's pattern captures from a 3-level table."""
+    src = path.read_text(encoding="utf-8")
     m = re.search(r"^W_ROW\s*=\s*re\.compile\(\s*r?\"(.+?)\"\s*\)", src, re.M)
     if not m:
-        print("      REFUSED: W_ROW not found; the reader moved")
+        print(f"      {path.name}: REFUSED, W_ROW not found; the reader moved")
         return -1
-    pat = m.group(1)
-    live = re.compile(pat.encode().decode("unicode_escape"))
+    #: The live compiled object, not a re-decoding of the source text.
+    import importlib.util as _ilu
+    spec = _ilu.spec_from_file_location(f"_rd_{path.stem}", path)
+    mod = _ilu.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    try:
+        spec.loader.exec_module(mod)
+    except SystemExit:
+        pass
+    live = getattr(mod, "W_ROW", None)
+    if live is None:
+        print(f"      {path.name}: W_ROW absent at import")
+        return -1
     seen = sorted({mm.group(1) for mm in live.finditer(THREE_LEVEL)})
-    print(f"      live W_ROW pattern : {pat}")
-    print(f"      rows in the table  : 3  (HARD, MEDIUM, SOFT)")
-    print(f"      rows it CAPTURES   : {len(seen)}  {seen}")
     fires = seen != ["HARD", "SOFT"]
-    print(f"      completeness check `sorted(W) != [HARD, SOFT]` fires: {fires}")
-    print(f"      => a 3rd level is {'VISIBLE' if fires else 'INVISIBLE'} to the guard")
+    print(f"      {path.name}")
+    print(f"        pattern  : {live.pattern}")
+    print(f"        captures : {len(seen)} of 3  {seen}")
+    print(f"        a 3rd level is {'VISIBLE' if fires else 'INVISIBLE'} to it")
     return len(seen)
 
 

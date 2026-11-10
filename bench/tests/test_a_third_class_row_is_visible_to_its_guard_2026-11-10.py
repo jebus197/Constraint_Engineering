@@ -44,8 +44,20 @@ import sys
 import pytest
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-READER = REPO / "scripts" / \
-    "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py"
+#: ★ 1 READER BECAME 2 ON 2026-11-10, AND THE SECOND WAS FOUND BY THE FOLLOW
+#: STEP RATHER THAN BY THE PANEL. A free panel seat reported the defect in the
+#: 2026-11-06 reader. Searching the tree for everything that reads `W_ROW`
+#: before editing turned up `severity_is_an_expectation_not_a_magnitude`,
+#: carrying the IDENTICAL fixed alternation and the IDENTICAL completeness
+#: check -- a second live instance neither seat named. This file now pins the
+#: PROPERTY over every reader that parses those tables, so a third copy
+#: cannot be fixed in 1 place and left broken in another.
+READERS = (
+    REPO / "scripts"
+    / "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py",
+    REPO / "scripts" / "severity_is_an_expectation_not_a_magnitude_2026-11-04.py",
+)
+READER = READERS[0]
 PRODUCER = REPO / "scripts" / \
     "a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py"
 
@@ -56,7 +68,7 @@ THREE_LEVEL = """| W(HARD) | 1 | Hard consequence |
 | W(SOFT) | 0.5 | Soft consequence |"""
 
 
-def _reader():
+def _reader(path=None):
     """Import the real module. ★ READ THE LIVE COMPILED OBJECT, NOT THE SOURCE
     TEXT. The first version of this file extracted the pattern with a regex
     over the source and re-decoded it with `unicode_escape`, which raised a
@@ -65,44 +77,52 @@ def _reader():
     `execute-do-not-grep` failure, inside a guard written to catch an
     unreachable check."""
     import importlib.util
-    spec = importlib.util.spec_from_file_location("_sev_reader_live", READER)
+    path = path or READER
+    spec = importlib.util.spec_from_file_location(f"_sev_live_{path.stem}", path)
     mod = importlib.util.module_from_spec(spec)
-    sys.modules["_sev_reader_live"] = mod
-    spec.loader.exec_module(mod)
+    sys.modules[spec.name] = mod
+    try:
+        spec.loader.exec_module(mod)
+    except SystemExit:
+        pass            # a reader may refuse at import when the spec moved
     return mod
 
 
-def _pattern(name: str) -> str:
-    mod = _reader()
+def _pattern(name: str, path=None) -> str:
+    mod = _reader(path)
     rx = getattr(mod, name, None)
-    assert rx is not None, f"{name} is gone from the reader; this guard is blind"
+    assert rx is not None, (
+        f"{name} is gone from {(path or READER).name}; this guard is blind")
     return rx.pattern
 
 
 class TestTheCompletenessCheckIsReachable:
+    @pytest.mark.parametrize("path", READERS, ids=lambda p: p.stem[:34])
     @pytest.mark.parametrize("name", ["W_ROW", "V_ROW"])
-    def test_the_row_pattern_is_not_a_fixed_alternation(self, name):
-        pat = _pattern(name)
+    def test_the_row_pattern_is_not_a_fixed_alternation(self, name, path):
+        pat = _pattern(name, path)
         assert "(HARD|SOFT)" not in pat and "(True|None|False)" not in pat, (
             f"{name} captures a FIXED SET, so the completeness check that "
             f"reads its captures can never fire on a new row. That is how a "
             f"third consequence level became invisible to the one instrument "
             f"built to detect it.")
 
-    def test_a_third_level_is_captured(self):
-        live = getattr(_reader(), "W_ROW")
+    @pytest.mark.parametrize("path", READERS, ids=lambda p: p.stem[:34])
+    def test_a_third_level_is_captured(self, path):
+        live = getattr(_reader(path), "W_ROW")
         seen = sorted({m.group(1) for m in live.finditer(THREE_LEVEL)})
         assert seen == ["HARD", "MEDIUM", "SOFT"], (
             f"the pattern captured {seen} from a 3-row table, so the "
             f"completeness check below it stays unreachable")
 
-    def test_the_completeness_check_still_exists(self):
+    @pytest.mark.parametrize("path", READERS, ids=lambda p: p.stem[:34])
+    def test_the_completeness_check_still_exists(self, path):
         """ANTI-VACUITY. Widening the pattern is worthless if the check it
         feeds was deleted; then nothing refuses the new table at all."""
-        src = READER.read_text(encoding="utf-8")
+        src = path.read_text(encoding="utf-8")
         assert 'sorted(W) != ["HARD", "SOFT"]' in src, (
-            "the W completeness check is gone, so a widened pattern reports "
-            "a third level to nobody")
+            f"the W completeness check is gone from {path.name}, so a widened "
+            f"pattern reports a third level to nobody")
 
     def test_the_real_reader_refuses_a_three_level_table(self, tmp_path):
         """EXECUTING, not a text check, and the appendix is never touched:

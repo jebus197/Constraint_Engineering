@@ -33,8 +33,22 @@ from _cli_help import answer_help  # noqa: E402
 REPO = pathlib.Path(__file__).resolve().parent.parent
 APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
 OPERATIONAL = REPO / "bench" / "directives" / "universal" / "cdsfl_operational.md"
-W_ROW = re.compile(r"\|\s*W\((HARD|SOFT)\)\s*\|\s*([0-9.]+)\s*\|")
-V_ROW = re.compile(r"\|\s*V\((True|None|False)\)\s*\|\s*([0-9.]+)\s*\|")
+#: ★ THESE 2 PATTERNS WERE FIXED ALTERNATIONS UNTIL 2026-11-10, exactly as
+#: `no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py`'s
+#: were, and the completeness check at the `read_spec` guard below reads the
+#: keys the pattern CAPTURED -- so a `W(MEDIUM)` row in the appendix was not
+#: missing from this producer's view, it was INVISIBLE.
+#: FOUND BY TRACING DEPENDENTS, NOT BY A PANEL. A free panel seat found the
+#: defect in the sibling producer; neither seat found this copy. It surfaced
+#: when the FFAFP Follow step searched the tree for everything reading
+#: `W_ROW` and turned up a second live file with the identical pattern and
+#: the identical check. That is the whole argument for searching before
+#: editing: 1 reported instance, 2 live ones.
+#: THE WIDENING WAS CHECKED FOR OVER-MATCH FIRST: over the live
+#: 195,218-character appendix the wide and narrow forms capture IDENTICAL
+#: sets -- W {HARD, SOFT}, V {False, None, True} -- 0 extra and 0 lost.
+W_ROW = re.compile(r"\|\s*W\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
+V_ROW = re.compile(r"\|\s*V\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
 
 def read_spec_constants():
     txt = APPENDIX.read_text(encoding="utf-8")
