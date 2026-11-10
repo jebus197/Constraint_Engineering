@@ -282,7 +282,7 @@ class TestTheInverseDirectionAlsoHolds:
     #: widening the exemption.
     RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = (
         "C0001", "B122", "B107", "B123", "B128", "B20",
-        "B79", "B104", "B131")
+        "B79", "B104", "B131", "B105")
 
     @staticmethod
     def _authored() -> set[str]:
