@@ -238,8 +238,8 @@ def main() -> int:
     print("=" * 78)
     acc, txt, inj, marked, unmarked = scan(T, args.window, hook)
     print(f"  window scanned              : {args.window / 1024 / 1024:.0f} MiB")
-    print(f"  predicate                   : the PRE-REPAIR one, "
-          f"so this stays re-runnable after the fix")
+    print("  predicate                   : the PRE-REPAIR one, "
+          "so this stays re-runnable after the fix")
     print(f"  user entries it accepts as his: {acc}")
     print(f"  of those, text-bearing      : {txt}")
     print(f"  of those, harness-injected  : {inj}")
@@ -255,6 +255,9 @@ def main() -> int:
             print("  ★ UNMARKED INJECTED ENTRIES -- the discriminator would miss these:")
             for u in unmarked[:5]:
                 print(f"      {u!r}")
+            if len(unmarked) > 5:
+                print(f"      ... and {len(unmarked) - 5} more withheld, of "
+                      f"{len(unmarked)} unmarked injected entries")
     else:
         print("  0 injected entries in this window, so the rate is not estimable here")
 

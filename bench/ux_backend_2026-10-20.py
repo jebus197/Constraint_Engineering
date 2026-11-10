@@ -333,6 +333,27 @@ def seats(models=None, counted_roster=None) -> dict:
     declared per run and there is no module-level roster to read.
     """
     from bench.seat_readiness import readiness, roster_declarations_agree
+    #: ★ THE CATALOGUE IS THE MODULE-LEVEL ROSTER THIS DOCSTRING SAYS DOES NOT
+    #: EXIST, wired 2026-11-10. `bench/model_catalogue.py` is B21 step 5, built
+    #: on 2026-11-10 and verified by execution, and until now it was reached by
+    #: its own guard and 1 producer and by **0 product modules** -- an addition
+    #: nothing reaches, which `additive-standard`'s symmetric form forbids as
+    #: firmly as it forbids a removal.
+    #:
+    #: IT IS A FALLBACK AND NEVER AN OVERRIDE. An explicit `models` still wins,
+    #: because routes are declared PER RUN and a run's own configuration is the
+    #: authority on what it dispatches; the catalogue answers only the case
+    #: where the caller supplied nothing, which previously came back as
+    #: *unknown* rather than as the registry's declared set. Nothing is
+    #: contacted and no credential value is read -- the catalogue is static
+    #: policy on disk, so this adds no dispatch and costs nothing.
+    catalogued = None
+    if models is None:
+        try:
+            from bench import model_catalogue as _mc
+            catalogued = _mc.registry_models()
+        except Exception:                             # noqa: BLE001
+            catalogued = None                          # absence stays absence
     r = readiness(models)
     # ★ THE 2-ROSTER CHECK, asked only when the caller supplies both lists. The
     # roster is declared twice -- the ModelConfigs dispatched, and a separate
@@ -350,6 +371,16 @@ def seats(models=None, counted_roster=None) -> dict:
         "rosters": rosters,
         "seats": r["seats"],
         "routes": r["routes"],
+        #: The registry's own declared roster, present only when the caller
+        #: supplied no per-run models. A front end can then offer a model list
+        #: without a run having been loaded first, which is what he asked for:
+        #: a search box that adds a model without the researcher thinking
+        #: about the mechanics.
+        "catalogue": catalogued,
+        "catalogue_source": (
+            "bench/model_catalogue.py:registry_models" if catalogued
+            else "not consulted: the caller supplied a per-run roster"
+            if models is not None else "unavailable"),
         "caveat": r["caveat"],
         "rule": "configuration is reported; liveness costs money and is separately authorised",
     }

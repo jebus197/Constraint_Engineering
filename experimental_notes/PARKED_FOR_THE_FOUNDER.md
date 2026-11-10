@@ -211,6 +211,18 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## awaiting his answer on B81 and the commit-gate cadence, under his d directive
+
+*Parked 2026-11-10T13:57:57+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## The Stop gate cannot see a mid-turn message, so his d override is dropped
+
+*Parked 2026-11-10T14:57:23+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (38)

@@ -266,11 +266,255 @@ def head_sha() -> str:
                           capture_output=True, text=True, cwd=REPO).stdout.strip()
 
 
+#: ★ THE MARKER IS LOCATED, THEN THE STATEMENT IS CAPTURED TO A SENTENCE
+#: BOUNDARY. Rewritten 2026-11-10 after a free panel found 4 defects in the
+#: first version, 2 seats independently and all reproduced by execution here.
+#: The marker is matched on its own; the statement is NOT delimited by the next
+#: `**`, because in this corpus an interior bold span is usually EMPHASIS
+#: inside a sentence rather than a heading.
+_OWED_MARKER_RE = re.compile(
+    r"\*\*\s*(?:★\s*)?(?:AND\s+)?(WHAT IS (?:STILL |ACTUALLY )?OWED"
+    r"[^*]{0,160}?)\s*\*\*",
+    re.S)
+#: A heading ends at a colon; what precedes it inside the bold span can carry
+#: the operative clause, which defect 2 discarded in 8 of 8 cases.
+_OWED_HEAD_SPLIT = re.compile(r"^WHAT IS (?:STILL |ACTUALLY )?OWED\b[\s,:-]*",
+                              re.I)
+#: Markdown emphasis is REMOVED from the captured statement rather than treated
+#: as a boundary.
+_EMPH_RE = re.compile(r"\*{1,3}")
+#: Where to cut. He is dyslexic and reads these aloud, so a sentence boundary is
+#: preferred, a word boundary is the floor, and mid-word never happens.
+#:
+#: ★ RAISED FROM 320 TO 900 ON THE PANEL'S EVIDENCE, 2026-11-10. Measured over
+#: the 8 live derivations: 3 were truncated, and in every one of the 3 the
+#: DROPPED text carried the operative ask -- B81's *"3 options are recorded ...
+#: and none is recommended"*, B125's *"what he is being asked for is
+#: awareness"*, and worst of all B103's *"1.35 times that stated limit"*, which
+#: CONTRADICTS the sentence the cut kept (*"inside the 660 s limit its own
+#: header states"*). A cut that stops before the clause reversing it does not
+#: shorten the statement, it inverts it. The longest full statement is 759
+#: characters, so 900 keeps all 8 whole with room to spare, and length is the
+#: cheaper cost: he reads these to DECIDE.
+STILL_OWED_MAX_CHARS = 900
+
+
+def _first_sentences(text: str, limit: int) -> str:
+    """Whole sentences up to `limit`, else a word-bounded cut with an ellipsis.
+
+    ★ APPLIED ON EVERY PATH. The first version ran its sentence rule ONLY on
+    the `len(out) > 260` arm, so a statement cut short by the regex lookahead
+    was never sentence-completed and reached him as an em-dash fragment -- the
+    stated fix present on 1 arm of an `if` and absent on the other, which is
+    the same shape as the `note` that was built and never emitted 40 lines
+    below.
+    """
+    text = text.strip()
+    if not text:
+        return ""
+    #: ★ A DECIMAL POINT IS NOT A SENTENCE BOUNDARY. My own first splitter
+    #: turned "1.35 times that stated limit" into "1. 35 times ...", which in
+    #: a file he reads aloud is read as two numbers. The terminator must not
+    #: sit between two digits, and must not be the dot of an ellipsis.
+    out, total = [], 0
+    for part in re.findall(r".*?(?<!\d)[.!?](?!\d)(?!\.)|.+$", text):
+        part = part.strip()
+        if not part:
+            continue
+        if total and total + 1 + len(part) > limit:
+            break
+        out.append(part)
+        total += (1 if total else 0) + len(part)
+    joined = " ".join(out).strip()
+    if joined and joined[-1] in ".!?":
+        return joined
+    #: ★ A TRAILING FRAGMENT IS DROPPED RATHER THAN ELLIPSISED, when whole
+    #: sentences were already found. My first version appended " ..." after a
+    #: complete sentence because a stray all-caps bold word survived the cut,
+    #: giving "...which gives way is yours. ..." -- an ellipsis implying more
+    #: was withheld when nothing was.
+    whole = [x for x in out if x.rstrip().endswith((".", "!", "?"))]
+    if whole:
+        return " ".join(whole).strip()
+    #: no complete sentence fitted: cut on a WORD boundary and say so
+    head = (joined or text)[:limit]
+    if " " in head:
+        head = head.rsplit(" ", 1)[0]
+    return head.rstrip(" ,;:-") + " ..."
+
+
+#: Tokens that must keep their case: an identifier, a path, a figure, or a
+#: hyphenated or slashed compound such as `HARD/SOFT`. Everything else that is
+#: shouted in markdown for emphasis is lowered, because a text-to-speech reader
+#: does not whisper.
+_KEEPCASE = ("`", "_", "/", "\\", ".", "-", "(")
+
+
+def _sentence_case(text: str) -> str:
+    """Lower an emphasis-shouted heading into readable speech.
+
+    ★ MY OWN 3rd DEFECT IN THIS REPAIR, and the rule that produced it was
+    backwards. It kept all-caps words of 4 characters or fewer and lowered the
+    rest, giving "WHAT is OWED IS HIS, AND IT IS THE limit rather THAN THE
+    addition" -- worse to read than the original. 1 rule replaces it: lower
+    every all-caps word that carries no identifier character, then capitalise
+    the first letter.
+    """
+    out = []
+    for w in text.split(" "):
+        #: ★ PUNCTUATION IS STRIPPED BEFORE THE TEST. "ONE." carries a full
+        #: stop, which is an identifier character, so the first version kept it
+        #: shouted; and a bare "A" was spared by the length guard.
+        core = w.strip(".,;:!?)")
+        if core == "I":
+            out.append(w)
+        elif core == "A":
+            out.append(w.replace("A", "a", 1))
+        elif (core.isupper() and core
+                and not any(c in core for c in _KEEPCASE)):
+            out.append(w.lower())
+        else:
+            out.append(w)
+    joined = " ".join(out).strip()
+    return (joined[:1].upper() + joined[1:]) if joined else joined
+
+
+def _owed_sentence(owed: str) -> str:
+    """The *what is still owed* sentence, which must read as English.
+
+    ★ DEFECT 4, FOUND BY A FREE PANEL 2026-11-10 AND NOT IN THE DERIVATION.
+    The frame was `f"What is still owed is {owed}."`, which assumes a NOUN
+    PHRASE and receives a CLAUSE -- live output included *"...is he ruled the
+    addition..."* and *"...is this is the 1 decision..."* -- and it DOUBLED the
+    full stop wherever the value already ended in one, which includes B77, the
+    only entry whose value is authored rather than derived. The copula is now
+    dropped for a clause and the terminator is never duplicated.
+    """
+    owed = (owed or "").strip()
+    if not owed:
+        return "What is still owed is recorded in the entry."
+    #: A VALUE THAT ALREADY OPENS "What is ... owed" IS ITS OWN SENTENCE and
+    #: must not be given a second lead.
+    if owed[:12].lower().startswith("what is"):
+        return owed if owed[-1] in ".!?" else owed + "."
+    #: ★ ALWAYS THE COLON FORM, AND THAT IS SIMPLER THAN WHAT IT REPLACES.
+    #: The first version classified the value as a clause or a noun phrase by
+    #: testing its opening word against a list of pronouns and determiners, and
+    #: took the copula form for anything else. The `cc2` seat's own guard then
+    #: fed it a VERB-initial value and got *"What is still owed is ends in a
+    #: stop."* -- a word list cannot enumerate English, and a classifier that
+    #: has to is the wrong mechanism. A colon is grammatical in front of a noun
+    #: phrase AND a clause, so there is nothing left to classify: 1 form, 0
+    #: word lists, and the ungrammatical output is unreachable rather than
+    #: merely unobserved.
+    body = owed if owed[-1] in ".!?" else owed + "."
+    return f"What is still owed: {body}"
+
+
+def derive_still_owed(entry_text: str, limit: int = STILL_OWED_MAX_CHARS) -> str:
+    """What an entry's own text says is still owed, or "" when it does not say.
+
+    ★ 4 DEFECTS FOUND BY A FREE PANEL ON 2026-11-10, both seats independently,
+    every one reproduced here by execution before being repaired. The first
+    version of this helper shipped in the same session, so this is a repair of
+    an hour-old fix rather than of old code.
+
+    D1 -- THE CAPTURE ENDED AT THE FIRST INTERIOR `**`. Its lookahead
+    treated every bold delimiter as a boundary, and in this
+    corpus bold is usually emphasis inside a sentence. B103's statement reached
+    him as *"taking it to about 891 s —"*: the magnitude and the operative ask
+    were both in the words after the emphasis. Now the statement is captured to
+    a SENTENCE boundary and emphasis markers are stripped, not obeyed.
+
+    D2 -- THE AUTHOR'S WORDS INSIDE THE MARKER'S OWN BOLD SPAN WERE DISCARDED,
+    in 8 of 8 live cases, and on B81 that INVERTED the meaning. The entry reads
+    `**WHAT IS OWED IS HIS, AND IT IS THE LIMIT RATHER THAN THE ADDITION:** he
+    ruled the addition ... so it stands.` He was shown only the second half --
+    told, under the heading *what is still owed*, that the thing was SETTLED,
+    while the open half was the limit. The heading's own clause is now kept.
+
+    D3 -- A SHORT STATEMENT DRAGGED THE NEXT HEADING IN. The `{30,1200}`
+    minimum forced the lazy capture past the following bold span, so a body of
+    `his ruling.` returned `his ruling. **DO NOT DELETE THE LEDGER.` -- literal
+    asterisks and an unrelated heading, quoted to him as the answer. There is
+    no minimum now; a sentence is a sentence.
+
+    D4 is in the FRAME rather than here and is repaired at the call site: the
+    sentence read `What is still owed is {value}.`, which assumes a noun phrase,
+    receives a clause, and doubled the full stop wherever the value already
+    ended in one -- including B77, the single entry whose value is AUTHORED.
+
+    WHAT SURVIVED THE ATTACK, and both seats said so independently: LAST MARKER
+    WINS, because entries are appended to and the freshest statement is
+    operative; and NO MARKER MEANS NO CLAIM, because this text goes under a
+    heading he decides from.
+    """
+    if not entry_text:
+        return ""
+    flat = re.sub(r"\s+", " ", entry_text)
+    hits = list(_OWED_MARKER_RE.finditer(flat))
+    if not hits:
+        return ""
+    m = hits[-1]                      # LAST marker wins, by MARKER not by hit
+    #: ★ THE HEADING IS KEPT WHOLE WHEN IT CONTINUES INTO A CLAUSE, because
+    #: stripping the words "WHAT IS OWED" off "WHAT IS OWED IS HIS, AND IT IS
+    #: THE LIMIT RATHER THAN THE ADDITION" leaves "IS HIS, AND IT IS THE
+    #: LIMIT ...", which under the frame read aloud as "What is still owed: is
+    #: his, and it is the limit". Repairing defect 2 by keeping the heading's
+    #: clause and then re-framing it produced ungrammatical speech in a file he
+    #: listens to -- a correct fix with a wrong surface.
+    head_raw = (m.group(1) or "").strip()
+    stripped = _OWED_HEAD_SPLIT.sub("", head_raw).strip(" ,:-")
+    continues = bool(stripped)
+    inside = head_raw if continues else ""
+    after = flat[m.end():]
+    #: stop at the next HEADING, which is a bold span whose content is a
+    #: sentence-like run ending in a colon -- not at every bold span.
+    #: ★ WHAT COUNTS AS THE NEXT HEADING, and this is the line that has to
+    #: separate a heading from mid-sentence EMPHASIS -- the distinction defect
+    #: 1 collapsed. A bold span is a heading when it opens with a star marker,
+    #: when it ends in a colon, or when it carries NO LOWERCASE LETTER at all
+    #: and is at least 3 characters. `**1.35 times that stated limit**` has
+    #: lowercase and no colon, so it is emphasis; `**END**` and
+    #: `**WHAT IS OWED:**` are headings.
+    cut = None
+    for mm in re.finditer(r"\*\*\s*(★?)\s*([^*]{1,200}?)\s*\*\*", after):
+        star, inner = mm.group(1), mm.group(2)
+        if (star or inner.rstrip().endswith(":")
+                or (len(inner.strip()) >= 3 and not any(c.islower()
+                                                        for c in inner))):
+            cut = mm
+            break
+    if cut:
+        after = after[:cut.start()]
+    body = _EMPH_RE.sub("", after).strip()
+    parts = [x for x in (inside, body) if x]
+    if not parts:
+        return ""
+    joined = ("; ".join(parts) if len(parts) > 1 and not inside.endswith((".", ":"))
+              else " ".join(parts))
+    #: SENTENCE CASE for a kept heading, which the author wrote in capitals for
+    #: emphasis in markdown and which is shouted by a text-to-speech reader.
+    if continues:
+        joined = _sentence_case(joined)
+    return _first_sentences(joined, limit)
+
+
 def collect():
     mrb = _load(REPO / "scripts" / "morning_report_build_2026-10-12.py", "mrb_dec")
     sf = _load(REPO / "scripts"
                / "do_the_two_decision_surfaces_agree_2026-11-01.py", "sf_dec")
     live = sf.derived()                        # [(ident, spoken_heading)]
+    #: THE ENTRY BODIES, for `derive_still_owed`. Read once, and a failure to
+    #: read them costs the DERIVATION and never the file: an empty map falls
+    #: back to exactly the previous wording.
+    _entry_text: dict = {}
+    try:
+        sys.path.insert(0, str(REPO / "scripts"))
+        import task_list_markers as _tlm           # noqa: PLC0415
+        _entry_text = {e.ident: e.text for e in _tlm.parse_entries()}
+    except Exception:                              # noqa: BLE001
+        _entry_text = {}
     items = mrb.task_items() + mrb.study_items()
     decs, _missing, _orphan = mrb.decisions(items)
     by_ident = {}
@@ -290,7 +534,12 @@ def collect():
             "options": list(opts),
             "standards": d.get("recommendation_standards") or "",
             "evidence": d.get("evidence_line") or "",
-            "owed": d.get("still_owed") or "",
+            #: AUTHORED FIRST, DERIVED SECOND, EMPTY LAST. The authored field
+            #: is kept as the primary because a human sentence beats a
+            #: regex; it is simply absent on 23 of 24 decisions.
+            "owed": (d.get("still_owed")
+                     or derive_still_owed(_entry_text.get(ident, ""))
+                     or ""),
             "ruled": d.get("ruled") or "",
             "responded": d.get("responded") or "",
             "title": d.get("title") or "",
@@ -461,17 +710,43 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
         _hd.append(len(L))
         A(hd if spoken else f"## {hd}{tag}")
         A("")
+        # ★★★ THE EMIT WAS INSIDE THE `elif` AND THE `if` BRANCH THREW ITS NOTE
+        # AWAY. Found 2026-11-10 by executing the renderer and reading its
+        # output, after a committed guard had been RED and off the gate.
+        #
+        # MEASURED BEFORE THE FIX, on the live queue of 7 decisions: 6 rows
+        # carry a ruling date and the ruling note was emitted for **0** of
+        # them; 3 rows carry a reply date and the reply note was emitted for
+        # **0**. In 36,943 bytes of the spoken file he reads there were 0
+        # mentions of his having ruled or replied on 6 of the 7 decisions put
+        # to him. `note` was an assignment with no consumer -- the same
+        # addition-that-nothing-reaches shape `additive-standard` names, and
+        # the very defect N1 was raised for, surviving in a different place
+        # from where it was looked for.
+        #
+        # THE PRECEDENCE IS DELIBERATE AND IS NOT A BUG. Where BOTH dates
+        # exist the RULING note alone is right: it already says the ruling was
+        # *on a different question* and names what is still owed, so adding
+        # "and it is still open" beside it would be redundant and would read
+        # as contradicting itself. The reply note is for the case the field was
+        # built for -- he answered WITHOUT settling it. All 3 responders today
+        # also carry a ruling date, so that case has 0 live instances, which is
+        # recorded as a finding rather than fixed by backfilling a date: the
+        # 2026-11-09 attempt at exactly that inverted its predicate and
+        # suppressed 5 live entries.
+        note = ""
         if r["ruled"]:
-            note = (f"You ruled on this entry on {r['ruled']}, on a different question. "
-                    f"What is still owed is {r['owed'] or 'recorded in the entry'}.")
+            note = (f"You ruled on this entry on {r['ruled']}, on a "
+                    f"different question. " + _owed_sentence(r['owed']))
         elif r.get("responded"):
             # ★ N1, 2026-11-09. He replied and the entry is STILL OPEN. Saying so
             # is the whole repair: before this, a reply recorded in an entry's
             # prose reached no surface, so the original question was put to him
             # again. 0 of 12 decisions in the file of 2026-11-09 mentioned that
             # he had answered on 2026-11-08, in 53,898 bytes.
-            note = (f"You responded on this on {r['responded']}, and it is still open. "
-                    f"What is still owed is {r['owed'] or 'recorded in the entry'}.")
+            note = (f"You responded on this on {r['responded']}, and it is "
+                    f"still open. " + _owed_sentence(r['owed']))
+        if note:
             A(sp(_wrap_free(note)) if spoken else f"*{_wrap_free(note)}*")
             A("")
         A("WHAT IT IS." if spoken else "**WHAT IT IS.**")

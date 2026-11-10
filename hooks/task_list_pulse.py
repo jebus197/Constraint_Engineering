@@ -63,12 +63,41 @@ def main():
     sys.modules["tlm_pulse"] = mod          # the dataclass needs this registered
     spec.loader.exec_module(mod)
 
-    line = mod.summarise(repo / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md")
+    lst = repo / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
+    line = mod.summarise(lst)
+    ctx = f"[tasks] {line}"
+
+    # ★ EVERY OPEN ENTRY WITH A SHORT DESCRIPTOR, 2026-11-10, HIS INSTRUCTION
+    # TWICE OVER: "I already asked you when you print these labels, to include
+    # a short descriptor, so I can know what you are talking about."
+    #
+    # WHY IT IS INJECTED RATHER THAN LOOKED UP. Note standard Rule 32 already
+    # states the rule and `scripts/note_vagueness_lint.py` already implements
+    # the predicate -- but Rule 32 is scoped to delivered DOCUMENTS, so it has
+    # never been applied to chat, which is the surface he reads. Measured over
+    # every assistant text block in the session transcripts: 8288 of 10496
+    # entry codes printed with NO descriptor, 0.789634, Wilson
+    # [0.781732, 0.797325]. The descriptor was missing because fetching it
+    # cost a tool call; putting it in the turn's context makes printing one
+    # free. Producer: scripts/a_bare_entry_code_in_chat_2026-11-10.py
+    #
+    # THE PREFIX `[tasks] ` IS PRESERVED EXACTLY, because
+    # bench/tests/test_task_list_markers_2026-09-09.py asserts
+    # `ctx.startswith("[tasks] ")`. The roster is a SECOND line, so that
+    # assertion is untouched -- checked before editing, not after.
+    try:
+        roster = mod.open_roster(lst)
+    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+        roster = ""
+    if roster:
+        ctx += ("\n[entries] print a code only WITH its descriptor — "
+                + roster)
+
     print(json.dumps({
         "suppressOutput": True,
         "hookSpecificOutput": {
             "hookEventName": "UserPromptSubmit",
-            "additionalContext": f"[tasks] {line}",
+            "additionalContext": ctx,
         },
     }))
 

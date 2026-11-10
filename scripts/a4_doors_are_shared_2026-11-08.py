@@ -77,6 +77,9 @@ def main() -> int:
                    and len(w) > 2})
     for k in keys[:14]:
         print(f"      {k}")
+    if len(keys) > 14:
+        print(f"      ... and {len(keys) - 14} more string literal(s) withheld "
+              f"from this listing of {len(keys)}")
 
     PROOF_SHAPES = [
         {"rk_validation": {"result": "PASS"}},

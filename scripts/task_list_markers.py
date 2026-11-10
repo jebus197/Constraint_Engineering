@@ -558,7 +558,24 @@ def _asserts_something(node, src: str) -> bool:
             if isinstance(test, ast.Constant) and bool(test.value):
                 continue
             return True
-    return "raises" in (ast.get_source_segment(src, node) or "")
+    #: ★ `raises` MUST BE CODE, NOT PROSE. Found by the `fable` seat in the
+    #: free round of 2026-11-10 as a CONSTRUCTED EXPLOIT: the fallback was a
+    #: substring test over the function's SOURCE TEXT, so
+    #: `def test_x(): x = "raises"` -- 0 assertions -- counted as asserting
+    #: something, and so did a docstring reading "pytest.raises would be used
+    #: here". A DONE entry could therefore name such a file as its evidence
+    #: and the guard would agree. The word now has to appear as an attribute
+    #: or a bare name in the parsed tree, which `execute-do-not-grep` is the
+    #: general form of: a source assertion cannot tell a mention from a use.
+    #: Measured by the seat before the change: 0 verdicts over the live list's
+    #: named evidence files differ, so this closes a hole rather than moving a
+    #: boundary.
+    for inner in ast.walk(node):
+        if isinstance(inner, ast.Attribute) and inner.attr == "raises":
+            return True
+        if isinstance(inner, ast.Name) and inner.id == "raises":
+            return True
+    return False
 
 
 #: A trailing `:123` or `:123-456` in an `evidence:` value is a LINE REFERENCE,
@@ -769,6 +786,79 @@ def _whose_move(entries) -> tuple[int, int, str] | None:
         return mine, his, nxt_kind
     except Exception:
         return None
+
+
+#: How many words of an entry's own title are enough to identify it to him.
+#: Short, because the roster carries 1 line per open entry on EVERY turn and a
+#: context line nobody reads is a context line that costs tokens for nothing.
+ROSTER_TITLE_WORDS = 9
+
+
+def entry_descriptor(text: str, words: int = ROSTER_TITLE_WORDS) -> str:
+    """The first few words of an entry's own TITLE, for printing beside its code.
+
+    THE TITLE, NOT THE BODY, and the reason is measured elsewhere in this
+    project: `parse_entries` requires the marker at `lines[i + 1]`, so several
+    entries have had paragraphs APPENDED to the heading line rather than
+    inserted below it, and `Entry.text` can therefore run to thousands of
+    characters of history. Taking all of it once made an entry's subject set
+    include "added", "absent" and "accepted" -- words near any identifier --
+    so the rule it fed passed on anything.
+    """
+    t = re.sub(r"\*\*|`", "", text or "").lstrip("*").strip()
+    t = re.sub(r"^[A-Z]?\d{1,4}[\w.]*\.\s*", "", t)      # drop the leading code
+    t = re.split(r"(?<=[a-z0-9])\.\s|\.\*\*", t)[0]
+    toks = t.split()[:words]
+    #: DO NOT END ON A DANGLING WORD. "...and whether this" reads worse than
+    #: "...and whether", and he is dyslexic, so a descriptor that trails into
+    #: nothing costs him a re-read. Trimmed from the END only, so the first
+    #: words -- the identifying ones -- are never touched.
+    _DANGLING = {"and", "or", "but", "the", "a", "an", "of", "to", "in", "on",
+                 "for", "with", "that", "this", "which", "whether", "is",
+                 "was", "are", "were", "be", "it", "its", "at", "by", "from",
+                 "as", "if", "so", "than", "then", "when", "while"}
+    while toks and toks[-1].lower().strip(",;:.-") in _DANGLING:
+        toks.pop()
+    return " ".join(toks).rstrip(" ,;:-")
+
+
+def open_roster(path: Path = LIST, words: int = ROSTER_TITLE_WORDS) -> str:
+    """Every OPEN entry as `CODE descriptor`, semicolon separated.
+
+    ★ WHY THIS EXISTS, and it is his instruction twice over. 2026-11-10,
+    verbatim: *"I can't always tell when you print identifiers like B102 or
+    C0003 (for example), if these are the same issues you may have been
+    discussing a few lines ago. I don't have access to your ticket store, or
+    any of the other resources you have to store these issues. Nor do I have
+    your ability to quickly look them up. I already asked you when you print
+    these labels, to include a short descriptor, so I can know what you are
+    talking about."*
+
+    MEASURED BEFORE BUILDING, because a rule already existed and was not the
+    missing piece. Note standard Rule 32 states exactly this and
+    `scripts/note_vagueness_lint.py` already implements the predicate -- but
+    Rule 32 is SCOPED TO DELIVERED DOCUMENTS, so it has never once been applied
+    to chat, which is the surface he reads. Running that same predicate over
+    every assistant text block in the session transcripts:
+    **8288 of 10496 entry codes printed with no descriptor, 0.789634**,
+    Wilson [0.781732, 0.797325], Clopper-Pearson [0.781710, 0.797398], both
+    intervals cross-checked on 2 routes agreeing to 2.220e-16. Producer:
+    `scripts/a_bare_entry_code_in_chat_2026-11-10.py`.
+
+    SO THE FIX IS AVAILABILITY, NOT RESOLVE. The descriptor was absent because
+    fetching it cost a tool call, and his own precedent on `no-word-numbers`
+    settles what a restated rule is worth: *"The failure was never the absence
+    of a rule or a checker; it was never running the checker."* This puts the
+    descriptor in the turn's context, so printing one costs nothing.
+
+    `summarise()` IS DELIBERATELY NOT TOUCHED. It has 3 callers and a guard
+    asserting it accounts for every entry; lengthening its single line would
+    put all of that at risk for no gain. This is a sibling, and the hook prints
+    both.
+    """
+    rows = [f"{e.ident} {entry_descriptor(e.text, words)}"
+            for e in parse_entries(path) if e.state == "OPEN"]
+    return "; ".join(rows)
 
 
 def summarise(path: Path = LIST) -> str:

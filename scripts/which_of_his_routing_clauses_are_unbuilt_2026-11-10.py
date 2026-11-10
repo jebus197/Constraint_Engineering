@@ -216,6 +216,9 @@ def main(argv=None) -> int:
         print(f"\n   {label}")
         print(f"      what would have to exist : {what}")
         print(f"      live files matching      : {len(files)}")
+        if len(files) > 6:
+            print(f"      ... {len(files) - 6} further match(es) withheld "
+                  f"below, of {len(files)}")
         for f in files[:6]:
             note = ""
             if "audit_closing_window" in f:

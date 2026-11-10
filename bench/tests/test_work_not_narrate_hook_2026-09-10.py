@@ -235,3 +235,227 @@ class TestTheRefusalBudget:
         assert "is NOT read as \"give up\"" in src, (
             "the hook still treats stop_hook_active as a reason to give up, which "
             "caps it at 1 refusal per turn")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OWNERSHIP: the entry the gate NAMES must be one I can actually move.
+#
+# ★ N3's REPAIR HAD NO TEST UNTIL 2026-11-10. `open_items()` used to return
+# `opens[0]` -- the first open entry in document order -- so the gate spent
+# turns pushing at entries that could not be advanced without him: it named
+# B21 (the model-and-role selection question) on every turn of 2026-11-09
+# while B21 awaited his ruling. The repair added `_first_movable`, which
+# prefers an entry that is not OWED. Measured 2026-11-10: `_first_movable`
+# was reached by **0** tests, so the repair was an addition nothing executed,
+# which `additive-standard`'s symmetric form forbids.
+#
+# THE FALLBACK IS KEPT AND IS TESTED TOO: naming nothing would make the
+# refusal useless, so an undecidable classification falls back to `opens[0]`
+# exactly as before, and the COUNT is never affected either way.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _E:
+    """A minimal stand-in for a task-list entry: ident, state, ruled."""
+
+    def __init__(self, ident, state="OPEN", ruled=None):
+        self.ident, self.state, self.ruled = ident, state, ruled
+
+
+class TestTheGateNamesAMovableEntry:
+
+    @staticmethod
+    def _synthetic_markers_dir(tmp_path, monkeypatch, bodies_map,
+                               all_owed=False):
+        """A stand-in `MARKERS` directory, with NO pollution of the real one.
+
+        ★ 2 FAILED ATTEMPTS ARE RECORDED HERE BECAUSE EACH WAS A DIFFERENT
+        MISTAKE, and both were found by running the tests rather than by
+        reading them.
+
+        FIRST: `MARKERS` serves 2 purposes in this hook. `open_items` does
+        `sys.path.insert(0, str(MARKERS))` and then imports
+        `task_list_markers` from it, while `_first_movable` loads the decision
+        classifier from the same directory. A temp dir holding only the
+        classifier made `open_items` return `(0, "")` -- the import failed and
+        the fail-safe swallowed it -- so the test failed for a reason that had
+        nothing to do with the property under test.
+
+        SECOND: copying `task_list_markers.py` into the temp dir fixed that and
+        broke the 2 tests that read the LIVE list, because the temp copy was
+        cached in `sys.modules` and its module-level `LIST` constant pointed
+        into a directory pytest had already removed. A test that leaves global
+        state behind fails its NEIGHBOURS, which is the worst kind to debug.
+
+        WHAT IS DONE INSTEAD: the REAL module is pinned in `sys.modules` with
+        `monkeypatch.setitem`, so the hook's own import finds it and the pin is
+        undone afterwards; `sys.path` is replaced by a copy so the hook's
+        insert cannot persist; and no second copy of the module is ever made.
+        `parse_entries` takes its path as an argument, so pinning the real
+        module and patching `TASKS` is sufficient.
+        """
+        import sys as _sys
+        #: ORDER MATTERS: copy `sys.path` FIRST so every mutation below -- mine
+        #: and the hook's own insert -- is undone, THEN make the real module
+        #: importable, THEN pin it.
+        monkeypatch.setattr(_sys, "path", list(_sys.path))
+        _sys.path.insert(0, str(ROOT / "scripts"))
+        import task_list_markers as _real
+        monkeypatch.setitem(_sys.modules, "task_list_markers", _real)
+        kind = ("    return {'kind': 'OWED'}\n" if all_owed else
+                "    return {'kind': 'OWED' if body == 'owed' else 'MINE'}\n")
+        (tmp_path / "how_many_decisions_actually_need_him_2026-11-01.py"
+         ).write_text(
+            f"def bodies():\n    return {bodies_map!r}\n"
+            "def classify_text(state, ruled, body):\n" + kind)
+        return tmp_path
+
+    def test_first_movable_skips_an_entry_that_still_asks_him(self, mod,
+                                                              tmp_path,
+                                                              monkeypatch):
+        """DRIVES THE SKIP DIRECTLY, by giving the real function a real
+        classifier to load.
+
+        `_first_movable` loads
+        `how_many_decisions_actually_need_him_2026-11-01.py` from the directory
+        named by `MARKERS`, so pointing `MARKERS` at a temporary directory
+        holding a stand-in classifier exercises the skip without stubbing the
+        function under test.
+
+        ★ MY FIRST VERSION OF THIS TEST ASSERTED ONLY `isinstance(got, str)`,
+        which every return value satisfies -- an addition that reached nothing,
+        and exactly what `additive-standard`'s symmetric form forbids. It was
+        replaced rather than kept beside this one.
+        """
+        (tmp_path / "how_many_decisions_actually_need_him_2026-11-01.py"
+         ).write_text(
+            "def bodies():\n"
+            "    return {'X1': 'this one is owed', 'X2': 'this one is mine'}\n"
+            "def classify_text(state, ruled, body):\n"
+            "    return {'kind': 'OWED' if 'owed' in body else 'MINE'}\n")
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+        got = mod._first_movable([_E("X1"), _E("X2")])
+        assert got == "X2", (
+            f"it named {got!r}; X1 is OWED and must be skipped in favour of X2")
+
+    def test_first_movable_returns_empty_when_every_entry_is_owed(
+            self, mod, tmp_path, monkeypatch):
+        """ANTI-VACUITY for the test above: if it always returned the 2nd
+        entry, this would still pass, so both directions are asserted."""
+        (tmp_path / "how_many_decisions_actually_need_him_2026-11-01.py"
+         ).write_text(
+            "def bodies():\n"
+            "    return {'X1': 'owed', 'X2': 'owed'}\n"
+            "def classify_text(state, ruled, body):\n"
+            "    return {'kind': 'OWED'}\n")
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+        assert mod._first_movable([_E("X1"), _E("X2")]) == ""
+
+    def test_open_items_prefers_a_movable_entry_over_document_order(
+            self, mod, tmp_path, monkeypatch):
+        """THE PROPERTY THE N3 REPAIR EXISTS FOR, on a subject that can fail.
+
+        ★ MY FIRST ATTEMPT AT THIS USED THE LIVE TASK LIST AND WAS VACUOUS.
+        The mutation board proved it: reverting `open_items` to `opens[0]`
+        left the guard GREEN, because today the first open entry (B22, the
+        general-purpose-STEM-calculator question) classifies GRANTED rather
+        than OWED, so `opens[0]` and `_first_movable` happen to agree. A probe
+        on data where the defect cannot show is a probe that tests nothing --
+        the same shape as a guard whose every input is refused for another
+        reason.
+
+        Both the task list and the classifier are therefore synthetic here, so
+        the first open entry IS owed and document order IS the wrong answer.
+        """
+        tasks = tmp_path / "LIST.md"
+        tasks.write_text(
+            "# t\n\n"
+            "**Z1. An entry that still asks him something.** body\n"
+            "<!-- task: Z1 | state: OPEN | status: PROPOSED -->\n\n"
+            "**Z2. An entry I can move myself.** body\n"
+            "<!-- task: Z2 | state: OPEN | status: PROPOSED -->\n")
+        self._synthetic_markers_dir(tmp_path, monkeypatch,
+                                    {"Z1": "owed", "Z2": "mine"})
+        monkeypatch.setattr(mod, "TASKS", tasks)
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+
+        n_open, named = mod.open_items()
+        assert n_open == 2, n_open
+        assert named == "Z2", (
+            f"the gate named {named!r}; Z1 awaits HIM and Z2 is movable, so "
+            f"document order is the N3 defect returning")
+
+    def test_open_items_falls_back_to_document_order_when_all_are_owed(
+            self, mod, tmp_path, monkeypatch):
+        """ANTI-VACUITY: naming nothing would make the refusal useless, so the
+        fallback is asserted on a subject where every entry is owed."""
+        tasks = tmp_path / "LIST.md"
+        tasks.write_text(
+            "# t\n\n**Z1. First.** body\n"
+            "<!-- task: Z1 | state: OPEN | status: PROPOSED -->\n\n"
+            "**Z2. Second.** body\n"
+            "<!-- task: Z2 | state: OPEN | status: PROPOSED -->\n")
+        self._synthetic_markers_dir(tmp_path, monkeypatch,
+                                    {"Z1": "owed", "Z2": "owed"},
+                                    all_owed=True)
+        monkeypatch.setattr(mod, "TASKS", tasks)
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+        n_open, named = mod.open_items()
+        assert (n_open, named) == (2, "Z1"), (n_open, named)
+
+    def test_the_named_entry_is_not_one_that_awaits_him(self, mod):
+        """EXECUTED against the live list, which is the only honest subject.
+
+        `_first_movable` reloads the classifier from disk by design, so a
+        stubbed classifier cannot reach it. The property that matters is
+        observable without stubbing: whatever it names must not classify OWED.
+        """
+        import importlib.util as _ilu
+        import pathlib as _pl
+        spec = _ilu.spec_from_file_location(
+            "_cls_probe",
+            _pl.Path(mod.MARKERS)
+            / "how_many_decisions_actually_need_him_2026-11-01.py")
+        cls = _ilu.module_from_spec(spec)
+        spec.loader.exec_module(cls)
+
+        n_open, named = mod.open_items()
+        if n_open == 0:
+            pytest.skip("no open entries, so there is nothing to name")
+        bodies = cls.bodies()
+        import sys as _s
+        _s.path.insert(0, str(ROOT / "scripts"))
+        import task_list_markers as _tlm
+        opens = [e for e in _tlm.parse_entries() if e.state == "OPEN"]
+        movable = [e.ident for e in opens
+                   if cls.classify_text(e.state, e.ruled,
+                                        bodies.get(e.ident, ""))["kind"]
+                   != "OWED"]
+        if not movable:
+            pytest.skip("every open entry awaits him; the fallback is correct")
+        assert named in movable, (
+            f"the gate named {named}, which awaits HIM, while {movable[:3]} "
+            f"could be moved — this is the N3 defect returning")
+
+    def test_the_count_is_never_affected_by_the_choice(self, mod):
+        import sys as _s
+        _s.path.insert(0, str(ROOT / "scripts"))
+        import task_list_markers as _tlm
+        n_open, _named = mod.open_items()
+        assert n_open == len([e for e in _tlm.parse_entries()
+                              if e.state == "OPEN"]), (
+            "the ownership choice changed the COUNT, which it must never do")
+
+    def test_an_undecidable_classification_falls_back_rather_than_losing_the_gate(
+            self, mod, monkeypatch):
+        """FAILS TOWARD NAMING SOMETHING. An exception inside the classifier
+        must give "" so the caller uses document order, never crash."""
+        monkeypatch.setattr(mod, "MARKERS", "/no/such/directory")
+        assert mod._first_movable([_E("B1"), _E("B2")]) == ""
+
+    def test_open_items_still_names_something_when_nothing_is_movable(
+            self, mod, monkeypatch):
+        monkeypatch.setattr(mod, "_first_movable", lambda opens: "")
+        n_open, named = mod.open_items()
+        if n_open == 0:
+            pytest.skip("no open entries")
+        assert named, "the gate named nothing, which makes its refusal useless"

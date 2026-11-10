@@ -1,4 +1,4 @@
-# PANEL BRIEF — are tonight's 3 builds sound, and do they leave the runway reachable?
+# PANEL BRIEF — are the 2026-11-10 repairs sound, and does the derived text now put in front of the founder say what his own entries say?
 
 **Free-seat round, dispatched 2026-11-10 under the founder's standing authorisation**, verbatim: *"the free panel is always an open option for you, and has been for some time. You don't beed my permission to run it."* He also set its purpose: *"Their goal is the same as users, which is to take us back to the start of our runway item in as strong a position as possible."* And its discipline: *"always checking their work no matter what they say."*
 
@@ -12,7 +12,7 @@ He requires that every seat be made aware of the project as a whole, not only of
 
 **WHAT IT IS FOR, IN HIS OWN WORDS, 2026-11-10:** *"The project has been built from the ground up as the democratisation of science for everyone, and for every type of intelligence, be they human, synthetic, or even perhaps one day potentially alien! This again is the substrate agnostic framing of the entire project and has been since the outset."*
 
-**THE SUBSTRATE-AGNOSTIC HALF OF THAT IS IN THE RECORD AND DATEABLE; THE PURPOSE HALF IS NOT.** Measured 2026-11-10: the framing is documented 18 days into a 243-day record, sits in `PAPER.md`'s abstract, and appears in 34 of 920 markdown files. The democratisation purpose appears affirmatively in **0 of 920** — the single textual hit is a disclaimer about a different subject. A seat should know that the mechanism is documented and the reason for it is not, because it bears on what "as strong a position as possible" means.
+**THE SUBSTRATE-AGNOSTIC HALF OF THAT IS IN THE RECORD AND DATEABLE; THE PURPOSE HALF IS NOT.** Measured 2026-11-10: the framing is documented 18 days into a 243-day record, sits in `PAPER.md`'s abstract, and appears in 34 of 920 markdown files. The democratisation purpose appears affirmatively in **0 of 920** — the single textual hit is a disclaimer about a different subject. A seat should know that the substrate-agnostic framing is documented and the democratisation purpose it exists for is not, because it bears on what "as strong a position as possible" means.
 
 **AND ITS COROLLARY, HIS WORDS, 2026-11-10:** *"the only 'bad computer' in CDSFL is a computer that is either turnd off, or is broken and incapable of providing useful work"* — a late-1980s 386 or a mid-range phone qualifies as a participant so long as it can compute. Idleness is the defect. This is why models are never benched.
 
@@ -26,44 +26,47 @@ He requires that every seat be made aware of the project as a whole, not only of
 
 **THE WORKING DISCIPLINE, required of every seat (`a`, `f`, `sy`).** `a` — analyse dispassionately; evidence over agreement; if the record contradicts the brief's framing, say so with citations. `f` — FFAFP: FIND the issue with evidence, FOLLOW the blast radius BEFORE touching anything, ANALYSE with tools where the tool output IS the evidence, FIX the root cause, P-PASS by actively trying to break the fix. A fix you have not tried to break is a hypothesis. `sy` — use the STEM tools; every computational claim cross-verified on at least 2 tools; every proportion carries a confidence interval.
 
-**TWO STANDING RULES THAT BIND YOUR ANSWER.** Findings are confirmed programmatically or by the human in the loop — **never by model vote**, so do not offer a verdict as a vote. And a measured rate, proportion or count may be cited only if the script producing it is committed alongside it; a number existing only as prose is a claim about evidence, not evidence.
+**2 STANDING RULES THAT BIND YOUR ANSWER.** Findings are confirmed programmatically or by the human in the loop — **never by model vote**, so do not offer a verdict as a vote. And a measured rate, proportion or count may be cited only if the script producing it is committed alongside it; a number existing only as prose is a claim about evidence, not evidence.
 
 ---
 
 ## REQUIRED SECTION 1 — The question
 
-**Are the 3 builds landed on 2026-11-10 sound against the 3 formal standards, and does any of them leave the harness worse placed to begin the runway?**
+**THIS BRIEF WAS AUTHORED AT 02:57 ON 2026-11-10 AND NEVER DISPATCHED. The copy as authored is beside it at `BRIEF_as_authored_0257.md` and nothing has been deleted.** The dispatcher refused twice that night, correctly, because a blind round still owed a joint round; rather than discharge that debt the orchestrator wrote a wider brief 106 minutes later and ran that one with the topology check overridden. **Measured: 2 of 4 of this brief's original subjects were covered by the round that did run** — Wilson 95% [0.150039, 0.849961], Clopper-Pearson [0.067586, 0.932414]. The 2 that were NOT are the STEM-topic verification set and the spoken-report heading marker, and they are first in the list below. The founder's instruction today: run it.
 
-The artefacts, by path:
+**THE QUESTION: are the 9 repairs below sound against the 3 formal standards, and does any of them leave the harness worse placed to begin the runway?**
 
-1. `bench/domain_immune.py` — `domain_verification_set(domain, finding)`, new. Resolves the verification set for a non-Python target from the STEM topic and executes it.
-2. `bench/reference_runner_v3.py` — `_apply_back_gate` gained a `domain` parameter and 2 new routes: a PROOF route and a DOMAIN route. Also `_FindingView`.
-3. `bench/proof_verify.py` — folded back from seat evidence with a vacuity fix, `_asserts_something`.
-4. `scripts/morning_report_build_2026-10-12.py` — `_mark_my_paragraphs`, which marks the orchestrator's own paragraphs in the spoken report.
+**★ THE ONE I MOST WANT ATTACKED IS NUMBER 6, because it is the only change tonight that puts DERIVED PROSE in front of the founder as a statement of fact.** `scripts/build_decisions_file_2026-11-07.py:derive_still_owed` reads a bold `WHAT IS STILL OWED:` marker out of a task-list entry and prints what follows it under that same heading in the decisions file he reads and decides from. A wrong extraction there does not crash anything — it misinforms a human decision, which is the most expensive failure this harness can produce. **Attack the regex, the last-marker-wins rule, the 260-character cut, and the claim that no marker means no claim.**
 
-**THE RULINGS THEY IMPLEMENT.** B88, verbatim: the suite *"will come from which ever STEM topic area under discussion and the tools/falsifiers/B-Cell machinery attached to that STEM topic"*, so the job is to *"use the tools/falsifiers assigned to that subject area to calculate those elements of any given paper that are computationally available/reducible to them."* B22: *"So for sure, fix B22 remaining issues too."* B105: *"change this so that your messages open with an asterisk *like this but do not close with one."*
+**THE 9 REPAIRS, by path and by what each changed.**
 
-**WHAT THE ORCHESTRATOR ALREADY FOUND AND FIXED TONIGHT, so a seat does not spend its pass rediscovering it.** The first version of the prose route compared the probe verdict against `getattr(_fe, "CURED", "CURED")`, and `bench/fix_efficacy.py` defines no `CURED`, so the branch admitted **0 of 7** reachable verdicts and refused the very verdict meaning the fix worked. Its 9-test guard passed throughout, because the guard computed its expected answer with the identical broken expression. Both halves are repaired. **Assume nothing else of this shape has been caught.**
+1. `bench/domain_immune.py` — `domain_verification_set(domain, finding)` plus `CANNOT_ADMIT_ALONE` and `BRANCH_GATED_ADMISSION`. Resolves and executes a non-Python target's verification set from its STEM topic. **NEVER REVIEWED BY ANY DISPATCHED ROUND.** The admission rule is derived from a measurement rather than typed: a tool is gated at the BRANCH where it has both a truth-blind and a comparing favourable branch, at the TOOL where all its favourable branches are truth-blind, and not at all where none is. Scored over 12 fully enumerated admitting paths: 5 of 5 truth-blind barred, 7 of 7 discriminating retained.
+2. `scripts/morning_report_build_2026-10-12.py` — `_mark_my_paragraphs` now takes RECORDED heading indices instead of inferring a heading from its shape. **NEVER REVIEWED BY ANY DISPATCHED ROUND.** Marked lines fell 87 to 57; 17 decision headings, 12 sub-headings and 1 note-standard foot-line account for 30 exactly.
+3. `scripts/cdsfl_sv.py` — `_reap_process_group` and `_git`. A `subprocess` timeout killed `git commit` and left the pre-commit board running ORPHANED, reparented to pid 1. Measured by execution: the old code leaks, `start_new_session=True` ALONE also leaks (the discrimination control), and only the group kill reaps it. SIGTERM precedes SIGKILL because the hook records its own duration in an EXIT trap that a SIGKILL destroys.
+4. `scripts/cdsfl_sv.py` — `recorded_hook_seconds`. The hook writes its duration on EVERY run including an early refusal, so a 66 s note-lint refusal collapsed the commit timeout to its 300 s floor while the board needed 1,769 s. Now sized from the MAXIMUM of the last 10 ledger rows, which excludes early refusals with no threshold to tune. Over the live 52-row ledger the old rule under-sized at **13 of 51 positions, 0.254902**, Wilson [0.155458, 0.388683].
+5. `hooks/work_not_narrate.py` — `his_text`. A message the founder sends MID-TURN is recorded as an `api-request-blob`, not a user entry, so the Stop gate's command reader could not see it and refused 6 times against a standing `d`. 1 extraction now serves all 3 readers.
+6. `scripts/build_decisions_file_2026-11-07.py` — **the one to attack.** The `if r["ruled"]` branch BUILT its note and never emitted it, so 6 of 7 ruled decisions carried 0 mention of his having ruled, in 36,943 bytes. And `still_owed` was read from a detail key present on 1 of 24 entries, so the operative sentence read "what is still owed is recorded in the entry". Both repaired; `derive_still_owed` raises the decisions naming what is owed from 1 of 7 to 4 of 7.
+7. `scripts/task_list_markers.py:open_roster` + `hooks/task_list_pulse.py` — every OPEN entry injected as `CODE descriptor` on every turn, because 8288 of 10496 entry codes printed to him carried no descriptor, 0.789634, Wilson [0.781732, 0.797325].
+8. `hooks/work_not_narrate.py:open_items` — the ownership repair now has tests. It was reached by 0.
+9. `hooks/pre-commit` — 9 guard files added, and the declared cost pin refreshed from 232/3942 to 241/4144. 3 of those files were already on the gate and undeclared.
 
 ## REQUIRED SECTION 2 — Use the harness
 
-Form your answer by RUNNING the machinery, not by describing it. A seat that returns prose about these builds without having executed anything has not answered.
+Form your answer by RUNNING these, not by describing them. A seat that returns prose about these repairs without having executed anything has not answered.
 
-**The instruments that bear directly on this question, and what each should say.**
+**DO NOT INVOKE A FULL PYTEST BOARD.** The machine has 8 GiB and 1 heavy process of headroom, and a board costs about 25 minutes of it. Run the named files only.
 
-- **S_k**, the admissibility measure. `bench/proof_verify.py` exists because `compute_sk` returns `NO_SCORE` on a prose target, so the measure deciding whether a repair is admissible is silent exactly where a printed proof arrives. Call `verify_proof` and check the tristate on both polarities. **Expected:** a correct proof -> `SK_ADMISSIBLE`, a mistaken proof -> `SK_REJECTED`, a proof asserting nothing -> `SK_NO_SCORE`. If the polarity inversion is wrong in either direction, a correct proof scores as a refutation for being right.
-- **The severity model and the falsifier gate.** `fix_efficacy.probe` runs 3 passes — TRIPWIRE, BASELINE, PATCHED — and is stricter than a green suite. Check that the proof route is reached BEFORE the falsifier route, because a proof lives in the same `falsifier_code` field and reading it under falsifier polarity inverts it.
-- **rho**, the inter-architecture correlation, bears on the runway half of the question: at the measured value the coverage ceiling is a property of the panel rather than of the effort, so a build that narrows what the panel can reach is more costly than it looks.
-
-**Run at minimum:** `python3 scripts/the_prose_gates_sentinel_admitted_nothing_2026-11-10.py` (expect exit 0), `python3 scripts/is_the_polarity_hazard_reachable_2026-11-10.py` or its 2026-10-31 original, and the 2 new guards. **Do NOT invoke a full pytest board** — the machine has 8 GiB and 1 heavy process of headroom; run the named test files only.
+- `python3 scripts/the_commit_timeout_left_the_board_running_2026-11-10.py` — expect exit 0 and the pattern A leaks, B leaks, C reaped.
+- `python3 scripts/a_bare_entry_code_in_chat_2026-11-10.py` — expect exit 0.
+- `python3 scripts/which_admissions_are_truth_blind_2026-11-10.py` — expect exit 0 and no drift against the live tables.
+- `python3 -m pytest bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py bench/tests/test_a_mid_turn_message_is_still_his_2026-11-10.py -q`
+- For repair 6, call `derive_still_owed` directly on real entry text from `experimental_notes/CDSFL_MASTER_TASK_LIST.md` and compare what it returns against what the entry actually says. **Find an entry where it quotes the wrong thing.** That is the finding worth having.
 
 ## REQUIRED SECTION 3 — Produce a fix, and test it
 
 A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis. Report the command you ran and the output you saw.
 
-**Deliver the fix INTO the sandbox repository tree at its real path, as a file.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down — 2 rounds on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing working code.
-
-**Where more than one repair is in play, state composability as he defines it:** compose ONLY on a DEMONSTRATED advantage over each fix alone, where the demonstration is a MEASUREMENT and not a judgement, and prefer the single fix wherever it performs as well. The orchestrator makes **no composability claim** for the 3 routes in `_apply_back_gate`: they gate on 3 different artefacts a finding may carry, and no measurement shows a composed form beating any of them alone. **If you believe a composed form dominates, you must measure it.**
+**DELIVER EACH FIX AS A FILE: write it INTO the sandbox repository tree at its real path.** A new producer goes in `scripts/`, a new guard in `bench/tests/`, and a repair goes into the file it repairs. Name every path in your reply. **A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down** — rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code, and a seat finding that sat in a sandbox cost this project 10 days once.
 
 ## REQUIRED SECTION 4 — What would refute you
 

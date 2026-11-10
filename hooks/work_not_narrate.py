@@ -207,18 +207,23 @@ def _looks_like_founder_line(line: str) -> bool:
     of JSON is what cost the hook its life, and a superset prefilter is the same
     device `TicketStore`'s chat harvester uses for the same reason.
     """
-    if '"type":"user"' not in line and '"type": "user"' not in line:
+    #: ★ ITS SUPERSET CLAIM WAS FALSE AND IS REPAIRED, 2026-11-10. The
+    #: docstring above asserted that *every* genuine founder entry is a
+    #: `"type":"user"` line. A message he sends MID-TURN is not: it is an
+    #: `api-request-blob`. So the prefilter was dropping the very lines the
+    #: decision would have accepted, which is precisely the prefilter-narrower-
+    #: than-the-decision defect the ticket harvester was repaired for on
+    #: 2026-10-28. The marker is a literal substring of the RAW line, so testing
+    #: for it needs no parsing and keeps this cheap: 117 candidate lines of a
+    #: 7,648-line tail rather than 338 if the entry type were matched instead.
+    if ('"type":"user"' not in line and '"type": "user"' not in line
+            and MIDTURN_MARKER not in line):
         return False
     try:
         d = json.loads(line)
     except Exception:
         return False
-    if not is_founder_message(d):
-        return False
-    c = d.get("message", {}).get("content")
-    if isinstance(c, list):
-        c = " ".join(x.get("text", "") for x in c if isinstance(x, dict))
-    return isinstance(c, str) and "<system-reminder>" not in c
+    return his_text(d) is not None
 
 
 def is_parked() -> bool:
@@ -282,6 +287,92 @@ def founder_commands(text: str) -> list[str]:
 #: asymmetry is his ruling of 2026-09-11 -- "all commands issued by me should
 #: be considered law, and are non-optional under any condition!" -- so the
 #: failure direction is to obey him, never to discard him.
+#: ★ A MESSAGE HE SENDS MID-TURN IS NOT RECORDED AS A USER ENTRY AT ALL.
+#: Measured on the live transcript 2026-11-10 by executing this module's own
+#: reader: his 14:51 message carrying `a, d` appears as a `queue-operation`
+#: (3 lines), an `attachment` with `userType: "external"`, and an
+#: `api-request-blob` -- and the BLOB is the one holding his words, its content
+#: a `tool_result` block followed by a `text` block. `is_founder_message`
+#: required `type == "user"`, so `turn_signals` saw exactly 1 founder message in
+#: a 7,648-line tail -- the previous night's -- and returned `had_d=False` while
+#: his message read `a, d`. `founder_commands` on the blob's own text returns
+#: `['a', 'd']`, so the PARSER was right and the ENTRY FILTER dropped it.
+#: THE GATE THEN REFUSED 6 TIMES AGAINST A STANDING `d`, bounded only by
+#: MAX_REFUSALS_PER_TURN. This is the 2026-09-11 defect in a new costume: that
+#: one was `isMeta` erasing his command, and his ruling then was that every
+#: command he issues is law and non-optional under any condition.
+MIDTURN_ENTRY_TYPE = "api-request-blob"
+#: The harness's own wrapper line. MEASURED SPECIFICITY: 1 of 222
+#: `api-request-blob` entries in the tail carries it, so accepting only marked
+#: blobs is tight rather than hopeful. IF THIS STRING EVER DRIFTS the gate
+#: reverts to exactly its pre-2026-11-10 behaviour -- a mid-turn `d` is missed
+#: again -- which is no worse than what it replaces and is why the fix fails
+#: this way rather than by accepting any blob.
+MIDTURN_MARKER = "The user sent a new message while you were working"
+#: The harness appends its own explanation AFTER his words. Cutting it matters
+#: because it is not his text and must not be read as his.
+MIDTURN_EPILOGUE = "This is how Claude Code surfaces messages"
+
+
+def his_text(d: dict) -> str | None:
+    """His words from an entry, or None when the entry is not his.
+
+    ONE EXTRACTION FOR ALL 3 READERS. Before this, each of the 3 call sites
+    rebuilt the content itself with its own `.get("text", "")` join and its own
+    `<system-reminder>` test, so 3 copies of 1 rule could disagree -- and they
+    did, which is the drift `is_founder_message`'s own docstring was written to
+    end and did not.
+
+    TEXT BLOCKS ONLY, NEVER A `tool_result`. A mid-turn blob carries my own
+    tool output in the same content list, and reading a command out of that
+    would let the session silence its own gate with its own words. The
+    pre-existing rejection of any content list holding a `tool_result` is
+    therefore kept for USER entries and replaced, for a mid-turn blob, by
+    reading the text blocks alone -- satisfied rather than bypassed.
+
+    ★ ONE DELIBERATE BEHAVIOUR CHANGE, NAMED RATHER THAN SLIPPED IN.
+    `last_founder_timestamp` did not previously apply the `<system-reminder>`
+    test and now does, because that test moved into this single predicate. A
+    user entry whose content is a system reminder is a harness injection and
+    not his words, so skipping it for the timestamp is MORE correct, not less.
+    The guard asserts it, so it is a decision on the record.
+    """
+    if d.get("isCompactSummary") or d.get("isMeta"):
+        return None
+
+    t = d.get("type")
+    c = (d.get("message", {}) or {}).get("content")
+
+    if t == MIDTURN_ENTRY_TYPE:
+        if not isinstance(c, list):
+            return None
+        txt = "\n".join(
+            x.get("text", "") or "" for x in c
+            if isinstance(x, dict) and x.get("type") == "text")
+        if MIDTURN_MARKER not in txt:
+            return None
+        after = txt.split(MIDTURN_MARKER, 1)[1].lstrip(": \n")
+        after = after.split(MIDTURN_EPILOGUE, 1)[0]
+        after = after.strip()
+        if not after or "<system-reminder>" in after:
+            return None
+        return after
+
+    if t != "user":
+        return None
+    if not_his(d):
+        return None
+    if isinstance(c, list):
+        if any(isinstance(x, dict) and x.get("type") == "tool_result"
+               for x in c):
+            return None
+        c = " ".join(x.get("text", "") or "" for x in c
+                     if isinstance(x, dict))
+    if not isinstance(c, str) or "<system-reminder>" in c:
+        return None
+    return c
+
+
 def not_his(d: dict) -> list[str]:
     """Which markers POSITIVELY identify this entry as machine-origin."""
     out = []
@@ -316,17 +407,11 @@ def is_founder_message(d: dict) -> bool:
     ONE predicate, both callers, so the two cannot drift apart again -- that
     being the shape of defect this project keeps withdrawing.
     """
-    if d.get("type") != "user":
-        return False
-    if d.get("isCompactSummary") or d.get("isMeta"):
-        return False
-    if not_his(d):
-        return False
-    c = d.get("message", {}).get("content")
-    if isinstance(c, list) and any(
-            isinstance(x, dict) and x.get("type") == "tool_result" for x in c):
-        return False
-    return True
+    #: ★ DELEGATES to `his_text`, 2026-11-10, so the predicate and the
+    #: extraction can never disagree. The body that used to live here required
+    #: `type == "user"` and therefore could not see a message he sent MID-TURN
+    #: at all -- see `his_text` for the measurement and the consequence.
+    return his_text(d) is not None
 
 
 def _turn_key(transcript: pathlib.Path) -> str:
@@ -335,13 +420,20 @@ def _turn_key(transcript: pathlib.Path) -> str:
     if not lines:
         return ""
     for line in reversed(lines):
-        if '"type":"user"' not in line and '"type": "user"' not in line:
+        #: ★ MID-TURN ENTRIES INCLUDED, 2026-11-10. The refusal BUDGET is keyed
+        #: on this timestamp, so a mid-turn instruction that was invisible here
+        #: did not start a fresh turn and the budget carried on counting
+        #: against his new message. This is NOT the 2026-09-11 defect returning:
+        #: that one reset the budget on the hook's OWN output, which `his_text`
+        #: still refuses by reading text blocks and never a `tool_result`.
+        if ('"type":"user"' not in line and '"type": "user"' not in line
+                and MIDTURN_MARKER not in line):
             continue
         try:
             d = json.loads(line)
         except Exception:
             continue
-        if not is_founder_message(d):
+        if his_text(d) is None:
             continue
         return str(d.get("timestamp") or "")
     return ""
@@ -460,18 +552,19 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
                 and '"tool_use"' in line:
             worked_since = True
             continue
-        if '"type":"user"' not in line and '"type": "user"' not in line:
+        #: ★ ONE EXTRACTION, 2026-11-10. This loop used to rebuild the content
+        #: itself and test `<system-reminder>` itself, a third copy of a rule
+        #: that lives in `his_text` -- and the copy that could not see a
+        #: mid-turn message.
+        if ('"type":"user"' not in line and '"type": "user"' not in line
+                and MIDTURN_MARKER not in line):
             continue
         try:
             d = json.loads(line)
         except Exception:
             continue
-        if not is_founder_message(d):
-            continue
-        c = d.get("message", {}).get("content")
-        if isinstance(c, list):
-            c = " ".join(x.get("text", "") for x in c if isinstance(x, dict))
-        if not isinstance(c, str) or "<system-reminder>" in c:
+        c = his_text(d)
+        if c is None:
             continue
         if worked_since:
             cmds = set()

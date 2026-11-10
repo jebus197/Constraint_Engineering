@@ -183,6 +183,9 @@ def main() -> int:
         print("REFUSING: the order does not match the file. Nothing written.")
         for n, code, got in bad[:6]:
             print(f"  decision {n}: expected {code}, the text before his mark names {got}")
+        if len(bad) > 6:
+            print(f"  ... and {len(bad) - 6} more mismatch(es) withheld, of "
+                  f"{len(bad)} in total")
         return 1
     print(f"alignment proved: all {len(DECISIONS)} marks follow the expected entry code")
 
@@ -230,6 +233,9 @@ def main() -> int:
     print(f"rows to add: {len(new)}")
     for r in new[:3]:
         print(f"  {r['anchor']:58s} {r['verdict']:9s} {r['text'][:40]!r}")
+    if len(new) > 3:
+        print(f"  ... and {len(new) - 3} more row(s) withheld from this "
+              f"listing; all {len(new)} would be written")
     if not a.write:
         print("\nDRY RUN -- nothing written. Re-run with --write.")
         return 0

@@ -40,6 +40,7 @@ import json
 import os
 import importlib.util
 import re
+import signal
 import statistics
 import subprocess
 import sys
@@ -617,7 +618,87 @@ COMMIT_TIMEOUT_FLOOR = 300
 #: and the same set has been seen at over 200 s while a panel was dispatching.
 COMMIT_TIMEOUT_HEADROOM = 4
 #: Where `hooks/pre-commit` records how long it took. Scratch, not committed.
+#: ★ IT RECORDS EVERY RUN, INCLUDING AN EARLY REFUSAL, which is the defect
+#: `recorded_hook_seconds` below exists to correct -- see its docstring.
 HOOK_SECONDS_FILE = ".cdsfl_tmp/precommit_seconds"
+#: The same hook APPENDS every run here, so unlike the single number above this
+#: is a history and a short refusal cannot hide a long board. Built for B81 on
+#: 2026-11-08; nothing read it to size this timeout until 2026-11-10.
+HOOK_LEDGER_FILE = ".cdsfl_tmp/precommit_durations.jsonl"
+#: How many trailing ledger rows the timeout is sized from. Bounded so a board
+#: set that has since been split does not keep an old worst case alive forever.
+COMMIT_TIMEOUT_LEDGER_ROWS = 10
+
+
+def recorded_hook_seconds(root: Path | None = None) -> tuple[int, str]:
+    """The hook duration to size the commit timeout from, and its provenance.
+
+    ★ THE DEFECT THIS CORRECTS, AND IT IS THE ROOT CAUSE OF THE 2026-11-10
+    FAILURE RATHER THAN A TIDY-UP. `hooks/pre-commit` writes
+    `.cdsfl_tmp/precommit_seconds` from its EXIT trap on EVERY run, so an
+    EARLY REFUSAL overwrites the number with the cost of refusing rather than
+    the cost of a board. The ledger shows exactly that on the night in
+    question: a note-lint refusal at 06:44:12Z recorded **66** seconds, while
+    the completed boards around it ran 1,635, 1,853, 1,925 and 2,023 seconds.
+    `max(300, 4 x 66) = 300`, the floor -- so `sv --commit` then waited 300 s
+    for a board that needed 1,769, timed out, and (before the group reap added
+    the same day) left that board running orphaned on his machine.
+
+    SO THE SIGNAL WAS NOT A MEASUREMENT. A 66 there is a 66 OF a refusal, not
+    of a board, and this project has already written that rule down: the
+    ledger's own producer NAMES AND EXCLUDES a 12 s run at exit 1 because
+    *an infrastructure refusal is not an observation of what a board costs*.
+    The exclusion existed in the ANALYSIS and had never reached the CONSUMER.
+
+    THE RULE, AND IT NEEDS NO THRESHOLD TO TUNE. Take the MAXIMUM over the
+    last `COMMIT_TIMEOUT_LEDGER_ROWS` ledger rows. A refusal exits EARLIER
+    than a completed board by construction, so it can never be the maximum
+    unless every recent row is a refusal -- in which case the floor applies
+    and the behaviour is exactly what it was. No duration threshold, no exit
+    code to interpret, nothing to go stale.
+
+    NEVER WORSE THAN WHAT IT REPLACES. The scratch number is still read and
+    the larger of the 2 wins, so a fresh checkout with no ledger behaves as
+    before and a ledger that is unreadable costs nothing.
+
+    THE TRADE-OFF IS RECORDED RATHER THAN RESOLVED. Sizing from a recent
+    maximum and then multiplying by `COMMIT_TIMEOUT_HEADROOM` is generous:
+    against a 2,023 s row it waits about 8,000 s, where the old formula
+    against a 745 s run waited 2,980. That lengthens how long a GENUINE hang
+    goes undetected, and shortening the headroom would be removing margin,
+    which `additive-standard` requires a measurement for. The failure being
+    traded away is certain and recurring; the one being lengthened is rare and
+    observed by a human monitoring the run, so correctness wins here and the
+    headroom is left alone.
+    """
+    base = Path(root) if root else repo_root()
+    scratch = 0
+    try:
+        scratch = int((base / HOOK_SECONDS_FILE).read_text().strip())
+    except (OSError, ValueError):
+        scratch = 0
+    scratch = max(0, scratch)
+
+    ledger_max = 0
+    try:
+        rows = (base / HOOK_LEDGER_FILE).read_text().splitlines()
+    except OSError:
+        rows = []
+    for line in rows[-COMMIT_TIMEOUT_LEDGER_ROWS:]:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            secs = int(json.loads(line).get("seconds", 0))
+        except (ValueError, TypeError, AttributeError):
+            continue             # a half-written row costs a row, not a commit
+        ledger_max = max(ledger_max, secs)
+
+    if ledger_max >= max(scratch, 1):
+        return ledger_max, f"ledger max over {COMMIT_TIMEOUT_LEDGER_ROWS} rows"
+    if scratch > 0:
+        return scratch, "last recorded run"
+    return 0, "no record"
 
 
 def commit_timeout(root: Path | None = None) -> int:
@@ -636,14 +717,76 @@ def commit_timeout(root: Path | None = None) -> int:
     reads them. With no record -- a fresh checkout, or a commit made with
     `--no-verify` -- the floor applies.
     """
-    base = Path(root) if root else repo_root()
-    try:
-        recorded = int((base / HOOK_SECONDS_FILE).read_text().strip())
-    except (OSError, ValueError):
-        return COMMIT_TIMEOUT_FLOOR
+    recorded, _why = recorded_hook_seconds(root)
     if recorded <= 0:
         return COMMIT_TIMEOUT_FLOOR
     return max(COMMIT_TIMEOUT_FLOOR, COMMIT_TIMEOUT_HEADROOM * recorded)
+
+
+#: Seconds given to an abandoned process group between SIGTERM and SIGKILL, and
+#: again after the SIGKILL. The grace exists so `hooks/pre-commit`'s EXIT trap
+#: and pytest's own teardown get a chance to run rather than leaving half-written
+#: artefacts under `.cdsfl_tmp`; it is short because nothing waits on it.
+GIT_REAP_GRACE_SECONDS = 2.0
+
+
+def _reap_process_group(
+    proc: "subprocess.Popen[str]",
+    grace: float = GIT_REAP_GRACE_SECONDS,
+) -> list[int]:
+    """SIGTERM then SIGKILL the process group a timed-out child leads.
+
+    Returns the signal numbers actually delivered, so a caller and a test can
+    see what was done rather than inferring it.
+
+    ★ B81 HALF 2, the half that needed no ruling to be a defect. `subprocess`
+    kills only the DIRECT child on a timeout. `sv` runs `git commit`, `git`
+    runs `hooks/pre-commit`, and the hook runs a pytest board, so on
+    2026-11-10 at 06:42 and again at 06:46 the 300 s timeout killed `git` and
+    left a 1,791 s board running ORPHANED, reparented to pid 1, burning a core
+    it could never produce a commit with -- and then competing with the retry
+    for this machine's 8 cores. His machine is a fixed resource of 8 cores and
+    8 GiB (ruling, 2026-10-11), so a timeout that abandons its own work
+    running is a leak against that resource.
+
+    MEASURED, NOT READ (`scripts/the_commit_timeout_left_the_board_running_2026-11-10.py`):
+    today's `proc.kill()` leaves the grandchild alive, `start_new_session=True`
+    ALONE also leaves it alive -- which is the discrimination control, because
+    it shows the session is not the fix -- and only the group kill reaps it.
+
+    ★ IT REFUSES TO SIGNAL THIS PROCESS'S OWN GROUP. If `start_new_session`
+    were ever absent or ineffective, the child would share `sv`'s group and a
+    `killpg` would take `sv`, its parent shell and any sibling work with it.
+    That refusal is why the group is created deliberately rather than assumed.
+    """
+    sent: list[int] = []
+    try:
+        pgid = os.getpgid(proc.pid)
+    except OSError:                      # already reaped, or no such process
+        pgid = None
+    if pgid is not None and pgid != os.getpgid(0):
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            try:
+                os.killpg(pgid, sig)
+            except OSError:              # group already gone
+                break
+            sent.append(int(sig))
+            try:
+                proc.wait(timeout=grace)
+                break
+            except subprocess.TimeoutExpired:
+                continue
+    # The direct child last, unconditionally, so this is never WORSE than the
+    # behaviour it replaces even when the group route did nothing.
+    try:
+        proc.kill()
+    except OSError:
+        pass
+    try:
+        proc.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        pass
+    return sent
 
 
 def _git(
@@ -652,18 +795,45 @@ def _git(
     timeout: int = 30,
     check: bool = True,
 ) -> str:
-    """Run a git command. Raises RuntimeError on failure if check=True."""
-    result = subprocess.run(
+    """Run a git command. Raises RuntimeError on failure if check=True.
+
+    On a timeout the WHOLE process group is reaped and `TimeoutExpired` is
+    re-raised unchanged, so every existing caller keeps the contract it had.
+
+    `start_new_session=True` detaches the child from this terminal. Checked
+    before adopting it rather than after: `commit.gpgsign` is unset, so no
+    pinentry prompt exists, and the remote is HTTPS behind the `osxkeychain`
+    credential helper, which answers without a tty. Where a credential ever
+    did need one, the call would FAIL LOUDLY instead of hanging on a prompt
+    nobody can see, which is the better of the 2 failures.
+    """
+    proc = subprocess.Popen(
         ["git", *args],
         cwd=root or repo_root(),
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         text=True,
-        timeout=timeout,
+        start_new_session=True,
     )
-    if check and result.returncode != 0:
-        stderr = result.stderr.strip()
-        raise RuntimeError(f"git {args[0]} failed (rc={result.returncode}): {stderr}")
-    return result.stdout.strip()
+    try:
+        out, err = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        sent = _reap_process_group(proc)
+        # A SWALLOWED REAP IS NOT A RECORD. Say what was abandoned and what was
+        # done about it, on stderr, before the exception leaves this frame.
+        names = ", ".join(signal.Signals(s).name for s in sent) or "none"
+        print(
+            f"  git {args[0]}: timed out after {timeout}s — reaped the whole "
+            f"process group (signals sent: {names}), so no board is left "
+            f"running orphaned.",
+            file=sys.stderr,
+            flush=True,
+        )
+        raise subprocess.TimeoutExpired(["git", *args], timeout) from None
+    if check and proc.returncode != 0:
+        stderr = (err or "").strip()
+        raise RuntimeError(f"git {args[0]} failed (rc={proc.returncode}): {stderr}")
+    return (out or "").strip()
 
 
 # ── Operational-tracker mirror parity (REPAIR S5) ─────────────────────────

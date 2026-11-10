@@ -116,6 +116,133 @@ def _iv_parts(k: int, n: int):
     }
 
 
+FIX_COMMIT_UTC = "20260929T193754Z"
+#: The commit that added the post-verifier recompute, 35117b28,
+#: 2026-09-29 20:37:54 +0100 = 19:37:54 UTC. Found with `git log -S` on the
+#: producer name the runner's own comment cites, not guessed from the date in
+#: a filename.
+
+
+def _numeric(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
+
+
+def split_at_the_recompute():
+    """Does the persisted count array align with the PRE- or POST-verifier rho?
+
+    ★ B77's REMAINING DISAMBIGUATION, AND THE OBVIOUS HYPOTHESIS IS FALSIFIED.
+    B77 says what it waits on is *"which of the 2 rho values per round the
+    de-confounded figure should use, pre-verifier or post-verifier"*, and that
+    this *"is answerable by reading the runner"*. The natural test is the run
+    DATE: if the persisted arrays align with the post-verifier value, runs made
+    from the recompute commit onward should reproduce at a far higher rate.
+
+    MEASURED 2026-11-10 over the 40 runs carrying all 3 arrays, split at the
+    commit: BEFORE, 61 of 72 per-round values exact, 0.847222, Wilson
+    [0.746777, 0.912493]; FROM it, 88 of 117 exact, 0.752137, Wilson
+    [0.666722, 0.821521]. **Fisher exact odds ratio 0.547202, p = 0.143828**,
+    cross-checked by a Yates-corrected chi-square at p = 0.170450. The post-fix
+    rate is if anything LOWER and the difference is not significant, so the
+    date does NOT separate the 2 sides and the residual has a cause other than
+    which side of the verifier the recompute ran on.
+
+    SO B77's DISAMBIGUATION IS NOT ANSWERED, and saying so is the finding. What
+    is excluded is the hypothesis that the persisted arrays are simply the
+    post-verifier ones; what remains is a per-round alignment question inside
+    the runner's own ordering, which no figure here settles.
+
+    73 non-numeric round values are SKIPPED AND COUNTED rather than coerced,
+    because a `rho_history` entry that is a string is not a rho.
+    """
+    import numpy as np
+    from scipy import stats as st
+    from statsmodels.stats.proportion import proportion_confint
+
+    rows, skipped = [], 0
+    for path in sorted((REPO / "bench" / "logs").rglob("*.json")):
+        try:
+            d = json.loads(path.read_text())
+        except Exception:                               # noqa: BLE001
+            continue
+        N, R, H = [], [], []
+        _collect(d, NUM_KEY, N)
+        _collect(d, DEN_KEY, R)
+        _collect(d, "rho_history", H)
+        if not (N and R and H):
+            continue
+        N, R, H = N[0], R[0], H[0]
+        if not all(isinstance(x, list) for x in (N, R, H)):
+            continue
+        k = min(len(N), len(R), len(H))
+        pairs = [(N[i], R[i], H[i]) for i in range(k)
+                 if _numeric(N[i]) and _numeric(R[i]) and _numeric(H[i])]
+        skipped += k - len(pairs)
+        if not pairs:
+            continue
+        exact = sum(1 for n_, r_, h_ in pairs
+                    if r_ and abs(n_ / r_ - h_) < 5e-4)
+        stamp = re.search(r"(\d{8}T\d{6}Z)", str(path))
+        rows.append((stamp.group(1) if stamp else "", exact, len(pairs)))
+
+    pre = [r for r in rows if r[0] and r[0] < FIX_COMMIT_UTC]
+    post = [r for r in rows if r[0] and r[0] >= FIX_COMMIT_UTC]
+    undated = [r for r in rows if not r[0]]
+
+    print()
+    print("-" * 76)
+    print("  B77's DISAMBIGUATION: DOES THE RUN DATE SEPARATE THE 2 SIDES?")
+    print("-" * 76)
+    print(f"  runs with all 3 arrays : {len(rows)}")
+    print(f"  non-numeric round values skipped, not coerced : {skipped}")
+    print(f"  undated paths EXCLUDED : {len(undated)}")
+
+    def rate(g, label):
+        if not g:
+            print(f"  {label}: 0 runs")
+            return 0, 0
+        ek = sum(x[1] for x in g)
+        tk = sum(x[2] for x in g)
+        full = sum(1 for x in g if x[1] == x[2])
+        sm = proportion_confint(ek, tk, alpha=0.05, method="wilson")
+        cp = proportion_confint(ek, tk, alpha=0.05, method="beta")
+        z = st.norm.ppf(0.975)
+        pr = ek / tk
+        den = 1 + z * z / tk
+        cen = (pr + z * z / (2 * tk)) / den
+        hw = z * np.sqrt(pr * (1 - pr) / tk + z * z / (4 * tk * tk)) / den
+        print(f"  {label} ({len(g)} runs)")
+        print(f"     per-round exact : {ek} of {tk} = {pr:.6f}")
+        print(f"       Wilson statsmodels [{sm[0]:.6f}, {sm[1]:.6f}]")
+        print(f"       Wilson written-out [{max(0.0, cen - hw):.6f}, "
+              f"{min(1.0, cen + hw):.6f}]")
+        print(f"       Clopper-Pearson    [{(cp[0] or 0.0):.6f}, {cp[1]:.6f}]")
+        print(f"     runs fully exact: {full} of {len(g)}")
+        return ek, tk
+
+    a = rate(pre, "BEFORE the recompute")
+    b = rate(post, "FROM the recompute ")
+    if not (a[1] and b[1]):
+        print("  one side is empty; no comparison is possible")
+        return None
+    tab = [[b[0], b[1] - b[0]], [a[0], a[1] - a[0]]]
+    odds, pf = st.fisher_exact(tab)
+    _chi, pc, _dof, _exp = st.chi2_contingency(tab, correction=True)
+    print(f"  2x2 (exact, not): post={tab[0]}  pre={tab[1]}")
+    print(f"  Fisher exact : odds ratio {odds:.6f}, p = {pf:.6e}")
+    print(f"  chi-square   : p = {pc:.6e}  (2nd route, Yates-corrected)")
+    print()
+    if pf < 0.05 and odds > 1.0:
+        print("  THE DATE SEPARATES THEM: the persisted arrays are the")
+        print("  POST-verifier ones and B77's disambiguation is answered.")
+    else:
+        print("  THE DATE DOES NOT SEPARATE THEM. The post-fix rate is not")
+        print("  higher and the difference is not significant, so the")
+        print("  hypothesis that the persisted arrays are simply the")
+        print("  post-verifier ones is REFUTED. B77's disambiguation stays")
+        print("  open, with 1 hypothesis fewer.")
+    return odds, pf
+
+
 def main(argv=None) -> int:
     #: A `--help` MUST NEVER COST MINUTES -- his standing rule, and the
     #: project enforces it. This producer had no argparse at all, so `--help`
@@ -213,6 +340,7 @@ def main(argv=None) -> int:
 
     ok = (has_num > 0 and has_den > 0 and reads_num == 0 and reads_den == 0
           and checked > 0 and exact > 0 and recompute)
+    split_at_the_recompute()
     print("\n" + "=" * 76)
     if ok:
         print("  PASS — both keys are in the archive, the replay reads neither,")

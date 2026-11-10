@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 10 November 2026 06:47 GMT (2026-11-10T06:47:08+00:00)
+Generated: 10 November 2026 18:52 GMT (2026-11-10T18:52:43+00:00)
 
 ---
 
@@ -18,34 +18,34 @@ Generated: 10 November 2026 06:47 GMT (2026-11-10T06:47:08+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `637fcd87` A reply is not a ruling, and the 554 was a line count
-- **Committed:** 2026-11-10 00:56:11 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
+- **Last commit (the PARENT of the commit containing this file):** `b0c32e02` He gave 2 routing rulings on 2026-11-10 that nothing implements, they lived in 1 paragraph of another entry, and the figure cited for them had no producer
+- **Committed:** 2026-11-10 13:41:23 +0000
+- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/domain_immune.py`
-- `M  bench/model_catalogue.py`
-- `M  bench/reference_runner_v3.py`
-- `A  bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`
-- `A  bench/tests/test_a_heading_is_recorded_not_guessed_2026-11-10.py`
-- `A  bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py`
-- `M  bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py`
-- `A  bench/tests/test_a_third_class_row_is_visible_to_its_guard_2026-11-10.py`
-- `M  bench/tests/test_apply_fixes_back.py`
-- `M  bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py`
-- `M  bench/tests/test_the_polarity_hazard_reachability_2026-10-31.py`
-- `M  bench/tests/test_the_two_decision_surfaces_cannot_diverge_2026-11-01.py`
-- `A  bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py`
-- `A  bench/tests/test_tonights_producers_are_reached_2026-11-10.py`
-- `A  bench/tests/test_what_models_are_in_use_is_derived_2026-11-10.py`
-- … and 87 more, not shown (list capped at 15 of 102 — run `git status --porcelain` for the full set)
+- `M  .claude/CLAUDE.md`
+- `A  bench/logs/tonights_build_review_b22_b88_b105_2026-11-10/sandbox_harvest/cc2/attempt-1/files/experimental_notes/data/morning_report_decisions.json`
+- `A  bench/logs/tonights_build_review_b22_b88_b105_2026-11-10/sandbox_harvest/fable/attempt-1/files/experimental_notes/data/morning_report_decisions.json`
+- `A  bench/tests/test_a_mid_turn_message_is_still_his_2026-11-10.py`
+- `M  bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py`
+- `A  bench/tests/test_a_timeout_reaps_the_board_it_abandons_2026-11-10.py`
+- `A  bench/tests/test_an_entry_code_never_travels_alone_in_chat_2026-11-10.py`
+- `A  bench/tests/test_prose_mentioning_raises_is_not_an_assertion_2026-11-10.py`
+- `AM bench/tests/test_what_is_owed_survives_interior_bold_2026-11-10.py`
+- `AM bench/tests/test_what_is_still_owed_is_quoted_whole_2026-11-10.py`
+- `A  bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py`
+- `M  bench/tests/test_work_not_narrate_hook_2026-09-10.py`
+- `M  bench/tickets/tickets.jsonl`
+- `M  bench/tickets/tickets_searches.jsonl`
+- `M bench/ux_backend_2026-10-20.py`
+- … and 49 more, not shown (list capped at 15 of 64 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**16810 tests collected** at 10 November 2026 06:47 GMT, HEAD `637fcd87` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**17030 tests collected** at 10 November 2026 18:52 GMT, HEAD `b0c32e02` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,13 +75,13 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `b0c32e02 He gave 2 routing rulings on 2026-11-10 that nothing implements, they lived in 1 paragraph of another entry, and the figure cited for them had no producer`
+- `012323bc The P-pass the Stop gate demanded found that B105's header-split fix was unguarded: reverting it left all 15 tests green, because 4 marks was the number the defect itself produced`
+- `a443012c The only tool that closes an entry could not parse 7 of 248 markers, 4 of them decisions in his own queue, and a wider pattern alone would have deleted the field it could not see`
+- `4565e0c3 B104's build half is done everywhere I control, and its residue is 1 word from him rather than work: the note standard's own amendment clause reserves the version bump to him`
+- `8045f04e B105 is closed, and the 2 defects found while closing it are why it stayed open: the asterisk convention reached 1 of 2 spoken generators, and a single-element header list hid 4 of my own paragraphs from the marker`
+- `ff4433f2 B22's claim-pattern decision now has its evidence, measured in shadow with the live configuration proved untouched, and the decision is still his`
+- `8c9bdf08 The FFAFP Follow step found a second live copy of the invisible-row defect that neither panel seat named, and the guard now pins the property over every reader instead of the one instance`
+- `1aba1fcf B105's spent ask is retired, which takes his queue from 8 decisions to 7, and B81 gains the gate cost measured twice tonight plus an orphaned-board leak that needs no ruling to be a defect`
+- `cd8021b5 The panel refuted 2 of my claims and both reproduced; acting on the second found my own committed fix had destroyed a live admission, and the corrected rule is derived from the measurement rather than named by hand`
 - `637fcd87 A reply is not a ruling, and the 554 was a line count`
-- `5e15076b A Wilson upper bound was wrong in 6 places, and the figure had no producer`
-- `897e0f94 The canonical interval helper, and the correction of my own correction`
-- `fc9edaf7 sv: state save 9 November 2026 04:11 GMT`
-- `fc0b2e60 104 guard files brought inside the gate, and the last silent admission step closed`
-- `2c50cf2d A board I killed by hand recorded as a fast refusal, and it moved the figure I had just quoted him`
-- `a76f5f61 The sv gate I added to keep local state fresh reintroduced the misreading sv's own banner exists to prevent, realised twice tonight`
-- `a1773584 sv: his 29 rulings worked through -- 13 entries built and closed, 9 of my own ruled dates withdrawn as wrong, and 12 decisions left that are his`
-- `675af51e I built 5 of his entries and left all 5 marked OPEN: the 2-surface lesson, applied all night and missed on my own work`
-- `655aa815 A stamper with 15 tests and its own mutation harness had stamped 0 of 148 briefs, because it was wired to 1 of 2 builders`

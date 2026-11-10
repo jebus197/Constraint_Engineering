@@ -127,9 +127,13 @@ def main() -> int:
     with_debt = sum(1 for v in by_date.values() if v[1])
     print(f"\n  dates carrying ANY unreached producer: {with_debt} of {len(by_date)}")
     print(f"\n  worst 8 dates by unreached count:")
-    for dt, (r, u) in sorted(by_date.items(), key=lambda x: -x[1][1])[:8]:
+    _by = sorted(by_date.items(), key=lambda x: -x[1][1])
+    for dt, (r, u) in _by[:8]:
         print(f"    {dt}  reached {r:3d}  unreached {u:3d}  "
               f"({u / (r + u):.4f} of {r + u})")
+    if len(_by) > 8:
+        print(f"    ... and {len(_by) - 8} more date(s) withheld, carrying "
+              f"{sum(v[1] for _d, v in _by[8:])} further unreached producer(s)")
     today = by_date.get("2026-11-08", [0, 0])
     print(f"\n  2026-11-08 alone: {today[1]} unreached of {sum(today)}")
     print(f"  CLOSING TODAY ALONE WOULD LEAVE {k - today[1]} unreached on "

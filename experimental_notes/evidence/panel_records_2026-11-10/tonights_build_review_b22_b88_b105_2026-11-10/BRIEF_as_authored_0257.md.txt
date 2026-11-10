@@ -1,0 +1,95 @@
+# PANEL BRIEF — are tonight's 3 builds sound, and do they leave the runway reachable?
+
+**Free-seat round, dispatched 2026-11-10 under the founder's standing authorisation**, verbatim: *"the free panel is always an open option for you, and has been for some time. You don't beed my permission to run it."* He also set its purpose: *"Their goal is the same as users, which is to take us back to the start of our runway item in as strong a position as possible."* And its discipline: *"always checking their work no matter what they say."*
+
+---
+
+## THE PROJECT, ITS AIMS, AND ITS SPECIFICATIONS — read this before answering
+
+He requires that every seat be made aware of the project as a whole, not only of the diff.
+
+**WHAT CDSFL IS.** Constraint-Driven Synthesis and Falsification: a methodology and a harness that couple generation with iterative adversarial self-testing, so that a claim is settled by a runnable demonstration rather than by agreement. Large language models produce confident, well-structured output that is frequently wrong in ways invisible to a non-expert; the 3 named drivers are a training bias toward agreeableness over accuracy, uniform certainty signalling regardless of evidential basis, and memory loss between sessions. The P-Pass is formalised as a corroboration model, superseded by a unified recursive state equation R_k(i) as the canonical claim-state representation. `PAPER.md` is the specification; `docs/MATHEMATICAL_APPENDIX.md` carries the framework.
+
+**WHAT IT IS FOR, IN HIS OWN WORDS, 2026-11-10:** *"The project has been built from the ground up as the democratisation of science for everyone, and for every type of intelligence, be they human, synthetic, or even perhaps one day potentially alien! This again is the substrate agnostic framing of the entire project and has been since the outset."*
+
+**THE SUBSTRATE-AGNOSTIC HALF OF THAT IS IN THE RECORD AND DATEABLE; THE PURPOSE HALF IS NOT.** Measured 2026-11-10: the framing is documented 18 days into a 243-day record, sits in `PAPER.md`'s abstract, and appears in 34 of 920 markdown files. The democratisation purpose appears affirmatively in **0 of 920** — the single textual hit is a disclaimer about a different subject. A seat should know that the mechanism is documented and the reason for it is not, because it bears on what "as strong a position as possible" means.
+
+**AND ITS COROLLARY, HIS WORDS, 2026-11-10:** *"the only 'bad computer' in CDSFL is a computer that is either turnd off, or is broken and incapable of providing useful work"* — a late-1980s 386 or a mid-range phone qualifies as a participant so long as it can compute. Idleness is the defect. This is why models are never benched.
+
+**THE 3 FORMAL STANDARDS. THESE ARE NOT THE CASUAL PHRASES THEY RESEMBLE, and he has said so explicitly. Every seat must apply them as defined here, and so must the orchestrator.**
+
+1. **ADDITIVE.** Work adds to reliability, functionality, accuracy, robustness and the project's stated aims. A feature is never disabled or removed; removal requires a COMMITTED MEASUREMENT showing the replacement dominates on a named property — a judgement that something is better is not evidence that it is. **SYMMETRICALLY, an addition that nothing reaches is not additive either:** every new flag, gate, branch or entry point must be wired to a caller and executed by a test. Measured over this project since 2026-08-01: 11 confirmed defects were additions that did nothing, against 0 removals of something needed.
+
+2. **SIMPLEST SUFFICIENT.** The smallest change addressing the ROOT CAUSE and the downstream consequences traced before the fix. Justified complexity is complexity that cannot be done without.
+
+3. **COMPOSABILITY — his definition, verbatim, 2026-10-02:** *"Composability doesn't mean composing two solutions just because they can be composed. It means this principle should be applied where two composed solutions demonstrably provide a better, more robust and/or more efficient solution than either fix in isolation. Where a single fix out performs a composed one, that fix should continue to be preferred. In all cases any fix should also take the first two conditions fully into consideration also."* **So it is a claim requiring a MEASUREMENT. Asking only whether 2 repairs coexist without conflicting is the weak non-interference form his definition explicitly excludes**, and 10 of 10 uses of the word in one night took that weak sense.
+
+**THE WORKING DISCIPLINE, required of every seat (`a`, `f`, `sy`).** `a` — analyse dispassionately; evidence over agreement; if the record contradicts the brief's framing, say so with citations. `f` — FFAFP: FIND the issue with evidence, FOLLOW the blast radius BEFORE touching anything, ANALYSE with tools where the tool output IS the evidence, FIX the root cause, P-PASS by actively trying to break the fix. A fix you have not tried to break is a hypothesis. `sy` — use the STEM tools; every computational claim cross-verified on at least 2 tools; every proportion carries a confidence interval.
+
+**TWO STANDING RULES THAT BIND YOUR ANSWER.** Findings are confirmed programmatically or by the human in the loop — **never by model vote**, so do not offer a verdict as a vote. And a measured rate, proportion or count may be cited only if the script producing it is committed alongside it; a number existing only as prose is a claim about evidence, not evidence.
+
+---
+
+## REQUIRED SECTION 1 — The question
+
+**Are the 3 builds landed on 2026-11-10 sound against the 3 formal standards, and does any of them leave the harness worse placed to begin the runway?**
+
+The artefacts, by path:
+
+1. `bench/domain_immune.py` — `domain_verification_set(domain, finding)`, new. Resolves the verification set for a non-Python target from the STEM topic and executes it.
+2. `bench/reference_runner_v3.py` — `_apply_back_gate` gained a `domain` parameter and 2 new routes: a PROOF route and a DOMAIN route. Also `_FindingView`.
+3. `bench/proof_verify.py` — folded back from seat evidence with a vacuity fix, `_asserts_something`.
+4. `scripts/morning_report_build_2026-10-12.py` — `_mark_my_paragraphs`, which marks the orchestrator's own paragraphs in the spoken report.
+
+**THE RULINGS THEY IMPLEMENT.** B88, verbatim: the suite *"will come from which ever STEM topic area under discussion and the tools/falsifiers/B-Cell machinery attached to that STEM topic"*, so the job is to *"use the tools/falsifiers assigned to that subject area to calculate those elements of any given paper that are computationally available/reducible to them."* B22: *"So for sure, fix B22 remaining issues too."* B105: *"change this so that your messages open with an asterisk *like this but do not close with one."*
+
+**WHAT THE ORCHESTRATOR ALREADY FOUND AND FIXED TONIGHT, so a seat does not spend its pass rediscovering it.** The first version of the prose route compared the probe verdict against `getattr(_fe, "CURED", "CURED")`, and `bench/fix_efficacy.py` defines no `CURED`, so the branch admitted **0 of 7** reachable verdicts and refused the very verdict meaning the fix worked. Its 9-test guard passed throughout, because the guard computed its expected answer with the identical broken expression. Both halves are repaired. **Assume nothing else of this shape has been caught.**
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it. A seat that returns prose about these builds without having executed anything has not answered.
+
+**The instruments that bear directly on this question, and what each should say.**
+
+- **S_k**, the admissibility measure. `bench/proof_verify.py` exists because `compute_sk` returns `NO_SCORE` on a prose target, so the measure deciding whether a repair is admissible is silent exactly where a printed proof arrives. Call `verify_proof` and check the tristate on both polarities. **Expected:** a correct proof -> `SK_ADMISSIBLE`, a mistaken proof -> `SK_REJECTED`, a proof asserting nothing -> `SK_NO_SCORE`. If the polarity inversion is wrong in either direction, a correct proof scores as a refutation for being right.
+- **The severity model and the falsifier gate.** `fix_efficacy.probe` runs 3 passes — TRIPWIRE, BASELINE, PATCHED — and is stricter than a green suite. Check that the proof route is reached BEFORE the falsifier route, because a proof lives in the same `falsifier_code` field and reading it under falsifier polarity inverts it.
+- **rho**, the inter-architecture correlation, bears on the runway half of the question: at the measured value the coverage ceiling is a property of the panel rather than of the effort, so a build that narrows what the panel can reach is more costly than it looks.
+
+**Run at minimum:** `python3 scripts/the_prose_gates_sentinel_admitted_nothing_2026-11-10.py` (expect exit 0), `python3 scripts/is_the_polarity_hazard_reachable_2026-11-10.py` or its 2026-10-31 original, and the 2 new guards. **Do NOT invoke a full pytest board** — the machine has 8 GiB and 1 heavy process of headroom; run the named test files only.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that has been EXECUTED is a hypothesis. Report the command you ran and the output you saw.
+
+**Deliver the fix INTO the sandbox repository tree at its real path, as a file.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down — 2 rounds on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing working code.
+
+**Where more than one repair is in play, state composability as he defines it:** compose ONLY on a DEMONSTRATED advantage over each fix alone, where the demonstration is a MEASUREMENT and not a judgement, and prefer the single fix wherever it performs as well. The orchestrator makes **no composability claim** for the 3 routes in `_apply_back_gate`: they gate on 3 different artefacts a finding may carry, and no measurement shows a composed form beating any of them alone. **If you believe a composed form dominates, you must measure it.**
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, before concluding, what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+**The specific falsifications the orchestrator most wants attempted:**
+
+1. **Find an input that makes the DOMAIN route admit something it should not.** It admits on a definitive verdict in favour with none against. Is there a claim the topic's tools CONFIRM that is nonetheless a bad repair? That would be `PROOF_VERIFIES_ARITHMETIC_NOT_RELEVANCE` reappearing on the domain side.
+2. **Find a vacuity hole in `_asserts_something` that the static check cannot see.** Its stated bound is that presence of an assertion is not proof it executed, and an assertion inside a never-taken branch counts as asserting something. Construct the exploit.
+3. **Show that `_mark_my_paragraphs` misattributes.** Marking a paragraph of HIS as mine is worse than not marking at all. The quoted spans are tracked by line index; find a quoted paragraph the span record misses.
+4. **Show any of the 3 builds is NOT additive** — that something which worked before now behaves differently.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, so replies compare without a parser guessing:
+
+- `verdict` — SOUND / UNSOUND / INDETERMINATE, per build, named individually.
+- `reasoning` — the derivation, not the conclusion.
+- `falsifier` — the code you wrote, and `falsifier_result` — the command and the output you actually saw.
+- `strongest_disagreement` — your strongest disagreement with THIS BRIEF's own framing. Disagreement is preserved as information and is not smoothed to consensus; there is no compelled convergence in this round.
+- `runway_cost` — whether any build leaves the harness worse placed to begin the runway, and on what evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop at diminishing returns, which is this project's own criterion: when a further pass produces no new above-threshold findings. A finding is above threshold if missing it could cause real-world failure. **Say how many passes you ran.** Do not nitpick, do not generate findings for their own sake, and do not push back on valid design choices.
+
+---
+
+Written under CDSFL note standard v1.9 (1 November 2026).
