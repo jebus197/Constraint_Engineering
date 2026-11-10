@@ -280,9 +280,20 @@ class TestTheInverseDirectionAlsoHolds:
     #: AND `test_the_pin_is_not_stale` BELOW IS THE GUARD ON THIS PIN: if any of
     #: these starts rendering again, the pin must come off rather than silently
     #: widening the exemption.
+    #: ★ B140, ADDED 2026-11-10, AND ITS REASON IS DIFFERENT FROM THE OTHERS
+    #: IN THIS LIST. B79, B104, B131 and B105 are here because their asking
+    #: sentences were RETIRED once his rulings settled them. B140 never had
+    #: one: it records 2 routing rulings he gave on 2026-11-10 that nothing
+    #: implements, and its recommendation -- build neither before the runway
+    #: resumes -- is what happens if he says nothing. An asking sentence would
+    #: have added an 8th item to the decision queue he asked to keep small,
+    #: for a question that blocks neither the orchestrator work nor the
+    #: zero-plant control. It carries authored detail so the 2 clauses are
+    #: VISIBLE and trackable, which is the defect it was raised for -- they
+    #: had been sitting in 1 paragraph of B56, reaching no ticket.
     RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = (
         "C0001", "B122", "B107", "B123", "B128", "B20",
-        "B79", "B104", "B131", "B105")
+        "B79", "B104", "B131", "B105", "B140")
 
     @staticmethod
     def _authored() -> set[str]:

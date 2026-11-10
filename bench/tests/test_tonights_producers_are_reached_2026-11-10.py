@@ -16,12 +16,12 @@ the sibling and reused here deliberately: 2 dated guards with different shapes
 would be 2 definitions of "reached".
 
 THE `--help` RULE WAS NOT MET WHEN THE PRODUCERS WERE WRITTEN, AND THAT IS
-RECORDED RATHER THAN QUIETLY FIXED. 7 of the 10 were written with NO argparse at all,
+RECORDED RATHER THAN QUIETLY FIXED. 7 of the 11 were written with NO argparse at all,
 so `--help` was ignored and the whole measurement ran -- and 1 of them walks the
 entire run archive. His standing rule is that a `--help` must never cost money
 or minutes. Each now parses `--help` and nothing else, taking its description
 from its own module docstring so the usage text cannot drift from the file.
-Measured after the change: 10 of 10 exit 0 with a usage line in 0.06 s. The
+Measured after the change: 11 of 11 exit 0 with a usage line in 0.06 s. The
 worst case repaired was 66.56 s of real measurement answering a `--help`.
 
 WHAT EACH PRODUCER MEASURES, so a reader need not run them to find out:
@@ -67,12 +67,13 @@ MUST_RUN = (
     "the_rho_replay_reads_the_wrong_two_keys_2026-11-10.py",
     "the_topics_tools_on_the_projects_own_corpus_2026-11-10.py",     # 61.55 s
     "what_a_claim_pattern_widening_would_route_2026-11-10.py",        # 1.06 s
+    "which_of_his_routing_clauses_are_unbuilt_2026-11-10.py",      # 13.43 s
     "which_admissions_are_truth_blind_2026-11-10.py",                # 11.31 s
     "a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py",
                                                                     # 4.79 s
 )
 
-#: ★ 4 -> 10 ON 2026-11-10, AND A FREE PANEL SEAT IS WHY. The 3 added here
+#: ★ 4 -> 11 ON 2026-11-10, AND A FREE PANEL SEAT IS WHY. The 3 added here
 #: were CITED as producers by task entries B22 and B136 while living only in
 #: a scratchpad directory, so those entries cited evidence a clone could not
 #: reach -- `measured-rate-travels-with-its-script` broken in the entries that
