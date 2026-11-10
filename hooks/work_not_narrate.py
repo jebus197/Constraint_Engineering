@@ -366,15 +366,64 @@ def spend_refusal(key: str) -> int:
 
 
 def open_items() -> tuple[int, str]:
-    """(open count, the next unstarted entry's identifier). (0, '') if unknown."""
+    """(open count, the next entry THIS SESSION CAN ACTUALLY MOVE). (0, '') if unknown.
+
+    ★ IT PREFERS AN ENTRY THAT NEEDS NO RULING, 2026-11-10, on his explicit
+    permission to modify this hook (entry B113, granted 2026-11-09).
+
+    WHAT IT DID BEFORE AND WHAT THAT COST. It returned `opens[0]` -- the first
+    OPEN entry in DOCUMENT order -- with no test for whose decision the entry
+    waits on. Through 2026-11-09 that entry was B21, which awaited his ruling,
+    so this gate named it on every turn and refused the stop 8 times a turn
+    against work nobody in the session could advance. A whole day of pushing at
+    an entry that could not move.
+
+    HOW IT CHOOSES NOW. The classifier that already exists --
+    `how_many_decisions_actually_need_him_2026-11-01.classify_text` -- labels an
+    entry OWED when its own text still asks him something. The first OPEN entry
+    NOT so labelled is named. If every open entry awaits him, the old behaviour
+    is kept exactly: `opens[0]` is named, because naming nothing would make this
+    gate silent in the one case where he most needs to see the queue.
+
+    IT IS FAIL-SAFE, AND THAT IS NOT DECORATION. This runs on every attempted
+    stop. A classifier that is missing, broken or slow must cost the PREFERENCE
+    and not the gate, so the whole selection is wrapped and degrades to
+    `opens[0]` -- which is what it always did. The count is never affected.
+    """
     try:
         sys.path.insert(0, str(MARKERS))
         from task_list_markers import parse_entries          # type: ignore
         es = parse_entries(TASKS)
         opens = [e for e in es if e.state == "OPEN"]
-        return len(opens), (opens[0].ident if opens else "")
+        if not opens:
+            return 0, ""
+        return len(opens), (_first_movable(opens) or opens[0].ident)
     except Exception:
         return 0, ""
+
+
+def _first_movable(opens) -> str:
+    """The first open entry whose own text does not still ask him something.
+
+    Returns "" when that cannot be decided, so the caller falls back to
+    document order rather than losing the gate.
+    """
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "_wnn_classify",
+            pathlib.Path(MARKERS) / "how_many_decisions_actually_need_him_2026-11-01.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules.setdefault("_wnn_classify", mod)
+        spec.loader.exec_module(mod)
+        bodies = mod.bodies()
+        for e in opens:
+            kind = mod.classify_text(e.state, e.ruled, bodies.get(e.ident, ""))["kind"]
+            if kind != "OWED":
+                return e.ident
+        return ""
+    except Exception:
+        return ""
 
 
 def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:

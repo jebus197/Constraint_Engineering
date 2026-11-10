@@ -1,0 +1,749 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-10 06:07:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5elgq475/repo/.cdsfl_deny_canonical_writes.sb	2026-11-10 05:55:44
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-10 06:06:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5elgq475/repo/bench/domain_immune.py	2026-11-10 05:25:08
+@@ -412,30 +412,11 @@
+ #: `scripts/which_admissions_are_truth_blind_2026-11-10.py`.
+ #:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;
+ #:       it tests dimensional homogeneity and reports it as correctness (B136)
+-#:   astronomical         -- NOT truth-blind, and the first version of this
+-#:       comment said it was. It is a TOLERANT COMPARATOR: it CONFIRMS
+-#:       `the speed of light is 299792458 m/s` and also
+-#:       `the speed of light is 299792459 m/s`, which is FALSE by 1 m/s but
+-#:       inside its own 1% tolerance, while REJECTING 3000000 m/s. So it
+-#:       discriminates coarsely and can still SOLELY ADMIT a false
+-#:       exact-value claim, which is why it may not admit alone. The earlier
+-#:       "truth-blind" reading came from a probe pair whose BOTH members were
+-#:       in km/s, where its separate unit defect (B136) rejects everything --
+-#:       the probe pair shared the feature that caused the result.
+-#: ★ `chemistry_structure` WAS IN THIS SET AND HAS BEEN MOVED TO THE BRANCH
+-#: GATE BELOW, 2026-11-10, ON A FREE PANEL SEAT'S FINDING THAT REPRODUCED.
+-#: Putting it here destroyed a LIVE, REACHABLE, DISCRIMINATING admission:
+-#: `the molecule 'CCO' has formula C2H6O` routes to chemistry/mathematical,
+-#: the tool is dispatched, its formula branch CONFIRMS with `matches claim`
+-#: and REJECTS the C3H8O variant -- and the tool-level bar refused the
+-#: admission anyway. That is `additive-standard`'s removal clause broken by
+-#: the very repair that cited it, and the measurement said it dominated only
+-#: because the probe set enumerated 1 of the tool's 3 favourable branches.
+-#: IT IS THE SAME 1-BRANCH-OF-N ERROR THIS FILE ALREADY RECORDS AGAINST A
+-#: PANEL SEAT'S READING OF `biological_sequence`, COMMITTED IMMEDIATELY
+-#: AFTER REFUSING IT. The 2 verifiers are anatomically identical: comparing
+-#: branches that print `matches claim`, plus 1 validity-only fallback that
+-#: cannot. They are now treated identically.
++#:   chemistry_structure  -- CONFIRMS `the molecule CCO is ethanol` AND
++#:       `the molecule CCO is benzene`; it validates the SMILES, not the claim
++#:   astronomical         -- REJECTS the CORRECT speed of light in km/s AND
++#:       a false value; its constant branch reads the last numeral and never
++#:       reads the unit, so a 1% tolerance cannot cover a factor of 1000
+ #: ★ MEMBERSHIP IS NOT PERMANENT AND MUST NOT OUTLIVE ITS EVIDENCE: the
+ #: producer's probe for a member FAILS if that tool learns to discriminate,
+ #: and the entry must then be removed.
+@@ -450,31 +431,18 @@
+ #: explicitly excludes composing 2 fixes merely because they can be composed.
+ CANNOT_ADMIT_ALONE = frozenset({
+     "dimensional_analysis",
++    "chemistry_structure",
+     "astronomical",
+ })
+ 
+ #: tool -> the substring its evidence must carry for a CONFIRMED verdict of
+-#: its to admit alone. BOTH members have the same anatomy, established by
+-#: bounding each verifier's body with the syntax tree rather than by a
+-#: character window, because a window scan leaked across the function
+-#: boundary and attributed one verifier's branches to its neighbour:
+-#:   biological_sequence -- 5 favourable branches, 4 COMPARING
+-#:       (translation, reverse complement, length, GC content), 1 validity-only
+-#:   chemistry_structure -- 3 favourable branches, 2 COMPARING
+-#:       (molecular formula, molecular weight), 1 validity-only
+-#: A COMPARING branch is one that computes a value and checks it against what
+-#: the claim states, so its verdict can come out either way; each prints
+-#: `matches claim` on its favourable arm and a MISMATCH line otherwise.
+-#: The marker is read off those verifiers' own sources and is TOOL-SCOPED --
+-#: applying it globally barred `stoichiometric_balance`, which discriminates
+-#: with no marker at all, having no truth-blind branch to be told apart from.
+-#: ★ A TOOL NEEDS BRANCH GATING ONLY IF IT HAS BOTH KINDS OF FAVOURABLE
+-#: BRANCH. `dimensional_analysis` has 0 comparing branches, so a tool-level
+-#: bar there removes nothing; `stoichiometric_balance` has 0 truth-blind
+-#: ones, so it needs no gate. That is the rule the 2 tables encode.
++#: its to admit alone. `biological_sequence` has 5 favourable branches: 4
++#: COMPARE a computed value against the claim and say `matches claim`, and 1
++#: reports only that a sequence parses. The marker is read off that
++#: verifier's own source and is TOOL-SCOPED -- applying it globally barred
++#: `stoichiometric_balance`, which the same measurement shows discriminating.
+ BRANCH_GATED_ADMISSION = {
+     "biological_sequence": "matches claim",
+-    "chemistry_structure": "matches claim",
+ }
+ 
+ 
+
+### cc2:attempt-1:bench/tests/test_a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py
+--- /dev/null	2026-11-10 06:07:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5elgq475/repo/bench/tests/test_a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py	2026-11-10 06:04:28
+@@ -0,0 +1,161 @@
++#!/usr/bin/env python3
++"""The 7.7 factor parse must be COMPLETE, not just correct on known keys.
++
++WHY THIS EXISTS. The 2026-11-06 free round delivered
++`scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py`,
++whose `refutation_condition` names exactly one reachable refutation -- "add a
++third row to section 7.7's W table with a value strictly between W(SOFT) and
++W(HARD)" -- and claims the producer is self-reporting against it: it would go
++red with `SPEC PARSE FAILED (the appendix moved)` or re-derive at the new
++values. MEASURED 2026-11-10: it did neither. The patterns captured a FIXED
++alternation `W\\((HARD|SOFT)\\)`, and the completeness check
++`sorted(W) != ["HARD", "SOFT"]` can only fire on a key the regex captured, so a
++third row was invisible. With `| W(MEDIUM) | 0.75 | Intermediate consequence |`
++in the table the producer printed `W = {HARD: 1, SOFT: 1/2}`, reported T2 PASS
++and exited 0, while z3 returns `sat` for a counterexample to T2 over a
++three-level W (W = 0.75, B = 0.9, c = 0.6 gives Sev = 0.675 >= c with
++W != W(HARD)). All 66 tests across the 3 severity guard files stayed green.
++
++That is `cdsfl_core.txt` section 10 category 3: the instrument built to detect
++a stale theorem read green in the one condition it was built for.
++
++`test_the_severity_factor_values_are_pinned_2026-11-06.py` pins the VALUES of
++the 5 known rows and cannot see a 6th, so it is not a substitute for these
++assertions and these are not a substitute for it.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import subprocess
++import sys
++import tempfile
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++PRODUCER = (REPO / "scripts"
++            / "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py")
++FALSIFIER = (REPO / "scripts"
++             / "a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py")
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++SOFT_ROW = "| W(SOFT) | 0.5 | Soft preference |"
++THIRD_ROW = "| W(MEDIUM) | 0.75 | Intermediate consequence |"
++
++
++@pytest.fixture(scope="module")
++def producer():
++    assert PRODUCER.is_file(), "the producer under test is missing"
++    spec = importlib.util.spec_from_file_location("_sev_shape_producer_t", PRODUCER)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules["_sev_shape_producer_t"] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++class TestTheParseIsComplete:
++    def test_the_w_pattern_captures_an_unknown_class_name(self, producer):
++        """A fixed alternation cannot report a row it never matched."""
++        row = "| W(MEDIUM) | 0.75 | Intermediate consequence |"
++        got = [m.group(1) for m in producer.W_ROW.finditer(row)]
++        assert got == ["MEDIUM"], (
++            f"W_ROW saw {got} in {row!r}. A class row the pattern does not "
++            f"capture cannot reach the `sorted(W) != ['HARD','SOFT']` check, "
++            f"so a third consequence level would be silently dropped and the "
++            f"two-valued shape theorem re-derived as though it still held.")
++
++    def test_the_v_pattern_captures_an_unknown_verification_name(self, producer):
++        row = "| V(Partial) | 0.75 | Partially assessed |"
++        got = [m.group(1) for m in producer.V_ROW.finditer(row)]
++        assert got == ["Partial"], f"V_ROW saw {got} in {row!r}"
++
++    def test_read_spec_refuses_a_three_level_table(self, producer, tmp_path):
++        """EXECUTED against the real `read_spec`, on a temp copy of the real
++        appendix. The repository's own appendix is never touched."""
++        assert APPENDIX.is_file(), "the appendix is missing"
++        text = APPENDIX.read_text(encoding="utf-8")
++        assert text.count(SOFT_ROW) == 1, (
++            "the W(SOFT) row moved; re-derive this test before trusting it")
++        tmp = tmp_path / "MATHEMATICAL_APPENDIX.md"
++        tmp.write_text(text.replace(SOFT_ROW, SOFT_ROW + "\n" + THIRD_ROW),
++                       encoding="utf-8")
++        original = producer.APPENDIX
++        producer.APPENDIX = tmp
++        try:
++            with pytest.raises(SystemExit) as exc:
++                producer.read_spec()
++        finally:
++            producer.APPENDIX = original
++        msg = str(exc.value)
++        assert "SPEC PARSE FAILED" in msg and "MEDIUM" in msg, (
++            f"read_spec refused, but not for the third row: {msg!r}")
++
++    def test_read_spec_still_accepts_the_appendix_as_it_stands(self, producer):
++        """The widened capture must not make the live spec unparseable."""
++        W, V, llr = producer.read_spec()
++        assert sorted(W) == ["HARD", "SOFT"]
++        assert sorted(V) == ["False", "None", "True"]
++        assert sorted(llr) == ["Dimensional", "Numerical", "SymPy"]
++
++
++class TestTheFalsifierRuns:
++    def test_the_falsifier_exits_zero_on_the_repaired_guard(self):
++        assert FALSIFIER.is_file(), "the falsifier for this finding is missing"
++        r = subprocess.run([sys.executable, str(FALSIFIER)],
++                           capture_output=True, text=True, cwd=str(REPO))
++        assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-2000:]
++        assert "NOT FALSIFIED" in r.stdout
++        assert "FALSIFIED\n" not in r.stdout.replace("NOT FALSIFIED", "")
++
++
++class TestSection7_11IsNotASecondVetoOnARefutedFinding:
++    """Added 2026-11-10. The joint round's other seat wrote that a disproved
++    finding "is rejected by EACH conjunct independently" of 7.11. The
++    `Sev(f) > tau_sev` conjunct does reject it. The `S_v >= 0.5` conjunct does
++    NOT, in general: `S_v` is computed over 7.8's determinate VERIFIER set,
++    while `V` comes from the runner's falsifier re-run, so the two can point
++    opposite ways. This matters because the overclaim, if believed, makes
++    deleting the `V` column look safe -- 7.11 would appear to catch refuted
++    findings anyway. It does not. COMPUTED here, from the 7.8 table, not read.
++    """
++
++    def test_a_refuted_finding_can_clear_the_credence_conjunct(self):
++        import sympy as sp
++        from z3 import Real, Solver, RealVal, And, Or, sat
++
++        # 7.8 table, exact rationals: Dimensional + 2.08, Numerical + 1.54,
++        # SymPy indeterminate so excluded from D_det.
++        lam = sp.Rational(52, 25) + sp.Rational(77, 50)
++        assert lam == sp.Rational(181, 50), lam
++        s_v = 1 / (1 + sp.exp(-lam))
++        assert s_v >= sp.Rational(1, 2), (
++            "the witness does not clear 7.11's credence threshold; "
++            f"S_v = {float(s_v)}")
++        assert abs(float(s_v) - 0.97391592485361706) < 1e-15, float(s_v)
++
++        # z3, independently: a refuted finding (V = 0, hence Sev = 0) with
++        # S_v >= 0.5 is satisfiable, so the credence conjunct does not veto it.
++        z = Solver()
++        sv, w, sev = Real("S_v"), Real("W"), Real("Sev")
++        z.add(sv >= 0, sv <= 1, sv >= RealVal(1) / 2)
++        z.add(Or(w == RealVal(1), w == RealVal(1) / 2))
++        z.add(sev == w * sv * RealVal(0))          # V(False) = 0
++        assert z.check() == sat, (
++            "z3 cannot build a refuted finding that clears S_v >= 0.5; if that "
++            "is genuinely unsatisfiable the 7.8 paragraph added 2026-11-10 is "
++            "wrong and must be withdrawn")
++        m = z.model()
++        assert m[sev].as_fraction() == 0, (
++            "the severity of the witness is not 0, so it is not the case that "
++            "`V` is what rejects it")
++
++    def test_the_rejection_really_comes_from_the_severity_conjunct(self):
++        """`Sev(f) > tau_sev` with Sev = 0 and tau_sev >= 0 is unsatisfiable."""
++        from z3 import Real, Solver, RealVal, unsat
++        z = Solver()
++        tau = Real("tau_sev")
++        z.add(tau >= 0, RealVal(0) > tau)
++        assert z.check() == unsat, (
++            "a zero severity passes `Sev > tau_sev` for some tau_sev >= 0, "
++            "which would remove the only conjunct that rejects a refuted "
++            "finding")
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-10 04:18:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5elgq475/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-10 06:04:08
+@@ -1392,6 +1392,25 @@
+ §7.7's formula with that substitution the disproved finding scores
+ `1 · 0.27289178365887046 · 0 = 0`, and the KEY PROPERTY holds.
+ 
++**And §7.11's `S_v ≥ 0.5` conjunct is NOT a second, independent veto on a
++disproved finding — only `V` inside `Sev(f)` is** (added 2026-11-10; executed by
++`bench/tests/test_a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py`).
++`S_v` is computed over `D_det`, the determinate **verifier** set of this
++section; the runner's falsifier re-run, which is what sets `V`, is a different
++channel. Take the two determinate verifiers positive and SymPy indeterminate
++(hence excluded from `D_det`): `Λ_total = 52/25 + 77/50 = 181/50 = 3.62` and
++`S_v = 1/(1 + exp(−3.62)) = 0.97391592485361706`, so `S_v ≥ 0.5` **passes**
++while the re-run says REFUTED and `V = 0`. z3 returns `sat` for that
++combination, so the conjunct does not exclude it. (SymPy and z3 independently;
++corroborated with Wolfram Language, `N[1/(1+Exp[-181/50]),17]` =
++`0.9739159248536170607912601125942435029` and `S_v ≥ 1/2` simplifying to
++`True`.) The reason a refuted finding is rejected by §7.11 is the
++`Sev(f) > τ_sev` conjunct with `τ_sev ≥ 0`, which is `0 > τ_sev` and false —
++and that zero exists **only because `V` is a factor of `Sev`**. So §7.11 is no
++backstop for deleting the `V` column: the single worked example in which
++`S_v = 0.273 < 0.5` is the case where SymPy itself vetoes, and it does not
++generalise.
++
+ ### 7.9 Capability Fingerprint
+ 
+ The four-dimensional fingerprint per model per condition per task:
+
+### cc2:attempt-1:scripts/a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py
+--- /dev/null	2026-11-10 06:07:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5elgq475/repo/scripts/a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py	2026-11-10 06:01:36
+@@ -0,0 +1,149 @@
++#!/usr/bin/env python3
++"""FALSIFIER: the 2026-11-06 shape-theorem producer did not detect the
++refutation its own `refutation_condition` named.
++
++THE CLAIM UNDER TEST, quoted from the delivering seat's reply:
++
++  "The reachable refutation is an edit, not a measurement: add a third row to
++   section 7.7's W table with a value strictly between W(SOFT) and W(HARD).
++   [...] I have made it self-reporting: both new producers parse the W and V
++   tables out of the appendix at run time, so the derivation goes red
++   (`SPEC PARSE FAILED (the appendix moved)`) or re-derives at the new values
++   rather than quoting a stale result."
++
++As delivered it did neither. The parse patterns were
++
++    W_ROW = r"\\|\\s*W\\((HARD|SOFT)\\)\\s*\\|\\s*([0-9.]+)\\s*\\|"
++    V_ROW = r"\\|\\s*V\\((True|None|False)\\)\\s*\\|\\s*([0-9.]+)\\s*\\|"
++
++and the completeness check `sorted(W) != ["HARD", "SOFT"]` can only fire on a
++key the regex CAPTURED. A third row is not captured, so it is not missing, so
++the check passes and the two-valued theorem is re-derived and reported PASS --
++while being FALSE of the spec on disk.
++
++WHY THIS IS ABOVE THRESHOLD (cdsfl_core.txt section 10, category 3 --
++verification-integrity corruption): the guard is the project's own instrument
++for detecting that caution 3's theorem has gone stale. An instrument that reads
++green in the single condition it was built to detect reports soundness it has
++not measured.
++
++WHAT THIS FALSIFIER DOES. It never touches the repository's appendix. It writes
++a three-level copy to a temporary directory, points the REAL producer module's
++APPENDIX at it, and calls the REAL `read_spec`.
++
++  * DEFECT PRESENT  -> `read_spec` returns a two-key W; this script prints
++                       FALSIFIED and raises AssertionError.
++  * DEFECT ABSENT   -> `read_spec` raises SystemExit("SPEC PARSE FAILED ...");
++                       this script exits 0.
++
++It also demonstrates the MECHANISM separately (re-binding the narrow pattern
++reproduces the green read) and the CONSEQUENCE with z3 (a counterexample to the
++theorem over a three-level W), so a reader can see both that the guard missed
++it and that there was something to miss. Neither of those decides the verdict.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import re
++import sys
++import tempfile
++
++import z3
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++PRODUCER = REPO / "scripts" / "no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py"
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++
++SOFT_ROW = "| W(SOFT) | 0.5 | Soft preference |"
++THIRD_ROW = "| W(MEDIUM) | 0.75 | Intermediate consequence |"
++
++#: The patterns EXACTLY AS DELIVERED on 2026-11-06, for the mechanism
++#: demonstration only. Retyped here deliberately and labelled as a historical
++#: quotation; the VERDICT below is computed from the live module, never from
++#: these.
++DELIVERED_W_ROW = re.compile(r"\|\s*W\((HARD|SOFT)\)\s*\|\s*([0-9.]+)\s*\|")
++
++
++def _load_producer():
++    """Import the REAL producer module, not a copy of its logic."""
++    spec = importlib.util.spec_from_file_location("_sev_shape_producer", PRODUCER)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules["_sev_shape_producer"] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def main() -> int:
++    assert PRODUCER.is_file(), "the producer under test is missing: %s" % PRODUCER
++    assert APPENDIX.is_file(), "the appendix is missing: %s" % APPENDIX
++    mod = _load_producer()
++
++    text = APPENDIX.read_text(encoding="utf-8")
++    assert text.count(SOFT_ROW) == 1, (
++        "the W(SOFT) row is not where this falsifier expects it; the 7.7 table "
++        "moved and this script must be re-derived before it is quoted.")
++    mutated = text.replace(SOFT_ROW, SOFT_ROW + "\n" + THIRD_ROW)
++
++    print("=" * 78)
++    print("FALSIFIER: a third class row against the guard that claims to catch it")
++    print("  producer : %s" % PRODUCER.relative_to(REPO))
++    print("  mutation : %s  (inserted into a TEMP copy, never the repo)" % THIRD_ROW)
++    print("=" * 78)
++
++    with tempfile.TemporaryDirectory() as td:
++        tmp = pathlib.Path(td) / "MATHEMATICAL_APPENDIX.md"
++        tmp.write_text(mutated, encoding="utf-8")
++        mod.APPENDIX = tmp
++
++        # ---- MECHANISM (not the verdict): the delivered pattern reads green --
++        hist = {m.group(1): m.group(2) for m in DELIVERED_W_ROW.finditer(mutated)}
++        live = {m.group(1): m.group(2) for m in mod.W_ROW.finditer(mutated)}
++        print("\nM1  W rows seen in the three-level table")
++        print("      delivered 2026-11-06 pattern : %s" % sorted(hist))
++        print("      pattern in the file today    : %s" % sorted(live))
++
++        # ---- CONSEQUENCE (not the verdict): the theorem is false of that spec
++        s = z3.Solver()
++        w, b, c = z3.Reals("W B c")
++        s.add(z3.Or(w == z3.RealVal(1) / 2, w == z3.RealVal(3) / 4, w == z3.RealVal(1)))
++        s.add(b >= 0, b <= 1, c > z3.RealVal(1) / 2, c <= z3.RealVal(1))
++        s.add(z3.Not((w * b >= c) == z3.And(w == z3.RealVal(1), b >= c)))
++        cex = s.check()
++        print("\nM2  z3 over a three-level W: counterexample to")
++        print("      `Sev >= c  <=>  W = W(HARD) and B >= c`  ->  %s" % cex)
++        assert cex == z3.sat, (
++            "z3 found no counterexample over a three-level W, so there was "
++            "nothing for the guard to detect and this falsifier is void.")
++        print("      witness: %s" % s.model())
++        print("      arithmetic check: W=0.75, B=0.9, c=0.6 -> Sev=%.4f >= c is %s, "
++              "while (W == W(HARD)) is False" % (0.75 * 0.9, 0.75 * 0.9 >= 0.6))
++
++        # ---- THE VERDICT: the live module's own read_spec, computed ----------
++        print("\nV1  calling the REAL `read_spec` on the three-level table")
++        try:
++            W, V, llr = mod.read_spec()
++        except SystemExit as exc:
++            msg = str(exc)
++            print("      SystemExit: %s" % msg)
++            assert "SPEC PARSE FAILED" in msg and "MEDIUM" in msg, (
++                "the parse refused, but not for the third row: %r" % msg)
++            print("\n" + "=" * 78)
++            print("NOT FALSIFIED: the guard detects the refutation it names.")
++            print("=" * 78)
++            return 0
++
++        print("      read_spec RETURNED, W = %s" % {k: str(v) for k, v in W.items()})
++        print("FALSIFIED")
++        print("=" * 78)
++        raise AssertionError(
++            "the guard did not detect a third class row. `read_spec` returned "
++            "W = %s from a table that declares %d class rows, so the two-valued "
++            "shape theorem is re-derived and reported PASS while a z3 "
++            "counterexample to it exists (M2 above). The producer's stated "
++            "self-reporting property does not hold."
++            % ({k: str(v) for k, v in W.items()}, len(hist) + 1))
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py	2026-11-06 22:16:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5elgq475/repo/scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py	2026-11-10 06:02:33
+@@ -66,8 +66,24 @@
+ REPO = pathlib.Path(__file__).resolve().parent.parent
+ APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
+ 
+-W_ROW = re.compile(r"\|\s*W\((HARD|SOFT)\)\s*\|\s*([0-9.]+)\s*\|")
+-V_ROW = re.compile(r"\|\s*V\((True|None|False)\)\s*\|\s*([0-9.]+)\s*\|")
++#: * THESE PATTERNS CAPTURE *ANY* FACTOR NAME, NOT A FIXED ALTERNATION,
++#: 2026-11-10. They read `W\((HARD|SOFT)\)` and `V\((True|None|False)\)`, and
++#: the `sorted(W) != ["HARD", "SOFT"]` completeness check below can only fire on
++#: a key the regex CAPTURED -- so a THIRD class row was invisible to it. This
++#: file's own refutation_condition, as delivered, names that exact edit ("add a
++#: third row to the 7.7 W table with a value strictly between W(SOFT) and
++#: W(HARD)") and claims the producer would then go red or re-derive at the new
++#: values. MEASURED 2026-11-10 with `| W(MEDIUM) | 0.75 | Intermediate
++#: consequence |` inserted into the 7.7 table: the producer printed
++#: `W = {HARD: 1, SOFT: 1/2}`, PASSED T2 and exited 0 -- while T2's conclusion
++#: was FALSE of the mutated spec, since W = 0.75, B = 0.9, c = 0.6 gives
++#: Sev = 0.675 >= c with W != W(HARD). All 66 tests across the 3 severity guard
++#: files stayed green too. The guard offered as a finding's own falsification
++#: detector did not detect the falsification it named.
++#: The root cause is the narrow capture group, so that alone changed; the
++#: completeness check that follows was already correct and is now REACHABLE.
++W_ROW = re.compile(r"\|\s*W\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
++V_ROW = re.compile(r"\|\s*V\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
+ LLR_ROW = re.compile(
+     r"\|\s*(SymPy|Dimensional|Numerical)\s*\|\s*[0-9.]+\s*\|\s*[0-9.]+\s*\|"
+     r"\s*([-−]?[0-9.]+)\s*\|\s*([-−]?[0-9.]+)\s*\|"
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-10 06:07:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/.cdsfl_deny_canonical_writes.sb	2026-11-10 05:56:04
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-10 06:06:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/bench/domain_immune.py	2026-11-10 05:25:08
+@@ -412,30 +412,11 @@
+ #: `scripts/which_admissions_are_truth_blind_2026-11-10.py`.
+ #:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;
+ #:       it tests dimensional homogeneity and reports it as correctness (B136)
+-#:   astronomical         -- NOT truth-blind, and the first version of this
+-#:       comment said it was. It is a TOLERANT COMPARATOR: it CONFIRMS
+-#:       `the speed of light is 299792458 m/s` and also
+-#:       `the speed of light is 299792459 m/s`, which is FALSE by 1 m/s but
+-#:       inside its own 1% tolerance, while REJECTING 3000000 m/s. So it
+-#:       discriminates coarsely and can still SOLELY ADMIT a false
+-#:       exact-value claim, which is why it may not admit alone. The earlier
+-#:       "truth-blind" reading came from a probe pair whose BOTH members were
+-#:       in km/s, where its separate unit defect (B136) rejects everything --
+-#:       the probe pair shared the feature that caused the result.
+-#: ★ `chemistry_structure` WAS IN THIS SET AND HAS BEEN MOVED TO THE BRANCH
+-#: GATE BELOW, 2026-11-10, ON A FREE PANEL SEAT'S FINDING THAT REPRODUCED.
+-#: Putting it here destroyed a LIVE, REACHABLE, DISCRIMINATING admission:
+-#: `the molecule 'CCO' has formula C2H6O` routes to chemistry/mathematical,
+-#: the tool is dispatched, its formula branch CONFIRMS with `matches claim`
+-#: and REJECTS the C3H8O variant -- and the tool-level bar refused the
+-#: admission anyway. That is `additive-standard`'s removal clause broken by
+-#: the very repair that cited it, and the measurement said it dominated only
+-#: because the probe set enumerated 1 of the tool's 3 favourable branches.
+-#: IT IS THE SAME 1-BRANCH-OF-N ERROR THIS FILE ALREADY RECORDS AGAINST A
+-#: PANEL SEAT'S READING OF `biological_sequence`, COMMITTED IMMEDIATELY
+-#: AFTER REFUSING IT. The 2 verifiers are anatomically identical: comparing
+-#: branches that print `matches claim`, plus 1 validity-only fallback that
+-#: cannot. They are now treated identically.
++#:   chemistry_structure  -- CONFIRMS `the molecule CCO is ethanol` AND
++#:       `the molecule CCO is benzene`; it validates the SMILES, not the claim
++#:   astronomical         -- REJECTS the CORRECT speed of light in km/s AND
++#:       a false value; its constant branch reads the last numeral and never
++#:       reads the unit, so a 1% tolerance cannot cover a factor of 1000
+ #: ★ MEMBERSHIP IS NOT PERMANENT AND MUST NOT OUTLIVE ITS EVIDENCE: the
+ #: producer's probe for a member FAILS if that tool learns to discriminate,
+ #: and the entry must then be removed.
+@@ -450,31 +431,18 @@
+ #: explicitly excludes composing 2 fixes merely because they can be composed.
+ CANNOT_ADMIT_ALONE = frozenset({
+     "dimensional_analysis",
++    "chemistry_structure",
+     "astronomical",
+ })
+ 
+ #: tool -> the substring its evidence must carry for a CONFIRMED verdict of
+-#: its to admit alone. BOTH members have the same anatomy, established by
+-#: bounding each verifier's body with the syntax tree rather than by a
+-#: character window, because a window scan leaked across the function
+-#: boundary and attributed one verifier's branches to its neighbour:
+-#:   biological_sequence -- 5 favourable branches, 4 COMPARING
+-#:       (translation, reverse complement, length, GC content), 1 validity-only
+-#:   chemistry_structure -- 3 favourable branches, 2 COMPARING
+-#:       (molecular formula, molecular weight), 1 validity-only
+-#: A COMPARING branch is one that computes a value and checks it against what
+-#: the claim states, so its verdict can come out either way; each prints
+-#: `matches claim` on its favourable arm and a MISMATCH line otherwise.
+-#: The marker is read off those verifiers' own sources and is TOOL-SCOPED --
+-#: applying it globally barred `stoichiometric_balance`, which discriminates
+-#: with no marker at all, having no truth-blind branch to be told apart from.
+-#: ★ A TOOL NEEDS BRANCH GATING ONLY IF IT HAS BOTH KINDS OF FAVOURABLE
+-#: BRANCH. `dimensional_analysis` has 0 comparing branches, so a tool-level
+-#: bar there removes nothing; `stoichiometric_balance` has 0 truth-blind
+-#: ones, so it needs no gate. That is the rule the 2 tables encode.
++#: its to admit alone. `biological_sequence` has 5 favourable branches: 4
++#: COMPARE a computed value against the claim and say `matches claim`, and 1
++#: reports only that a sequence parses. The marker is read off that
++#: verifier's own source and is TOOL-SCOPED -- applying it globally barred
++#: `stoichiometric_balance`, which the same measurement shows discriminating.
+ BRANCH_GATED_ADMISSION = {
+     "biological_sequence": "matches claim",
+-    "chemistry_structure": "matches claim",
+ }
+ 
+ 
+
+### fable:attempt-1:bench/tests/test_no_stray_producer_copies_at_repo_root_2026-11-10.py
+--- /dev/null	2026-11-10 06:07:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/bench/tests/test_no_stray_producer_copies_at_repo_root_2026-11-10.py	2026-11-10 06:04:36
+@@ -0,0 +1,38 @@
++"""A dated producer's byte-copy at repo root is a hazard, not a feature.
++
++EVIDENCE (joint round on `severity_corrected_2026-11-06`, 2026-11-10).
++`the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py` sat at
++repo root, byte-identical -- sha256
++917aa5d7d5c48fca9ff05cb5398abdfaad4c9635dd1d9fc291c4ce0eb92abea5 -- to the
++archived blind-half copy at
++bench/logs/severity_corrected_2026-11-06/sandbox_harvest/cc2/attempt-1/
++files/scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py,
++and superseded by the folded-back scripts/ version that declares its frame.
++The sandbox manifest records no root-level path for it: an accidental
++deposit. Executed at root it resolved `REPO` one directory too high,
++printed "NO ARCHIVE ... measurement not attempted" and EXITED 0 -- a
++measurement-shaped no-op, the exact failure mode
++`bench/tests/test_operational_scripts.py` documents for unreached scripts,
++at a path that suite does not scan.
++
++Removal satisfies the additive standard because the measurement is
++committed here: the byte-identical archived copy (hash above) preserves
++the original, and the named properties on which the scripts/ replacement
++dominates are (1) its archive path resolves (root copy: NO ARCHIVE, exit
++0) and (2) its frame is declared (root copy: undeclared, the defect of
++the round). This test makes the property executable so the deposit
++cannot silently recur at the next harvest fold-back.
++"""
++import pathlib
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++
++
++def test_repo_root_carries_no_copy_of_a_scripts_producer():
++    script_names = {p.name for p in (REPO / "scripts").glob("*.py")}
++    stray = sorted(p.name for p in REPO.glob("*.py") if p.name in script_names)
++    assert stray == [], (
++        f"copies of scripts/ producers found at repo root: {stray}. "
++        "scripts/ is the producer's real path; a root copy resolves its "
++        "archive one level too high and exits 0 having measured nothing."
++    )
+
+### fable:attempt-1:scripts/the_severity_census_has_three_frames_2026-11-06.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_severity_census_has_three_frames_2026-11-06.py	2026-11-06 22:16:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py	2026-11-10 06:03:18
+@@ -30,6 +30,19 @@
+ `exp36_evidence_latest` is a symlink the file pattern follows. Content-hash
+ dedup, which knows nothing about symlinks, removes exactly 217 from the
+ non-recursive frame. 2 independent routes to the same 217.
++
++THE DEDUP GRANULARITY IS NOW DECLARED TOO (joint round, 2026-11-10).
++As first delivered, this script printed one row labelled "content-hash
++dedup" that hashed EACH SERIALISED ENTRY, while the folded-back producer
++`scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py`
++declares a frame that hashes EACH WHOLE FILE (the 2026-10-12 method) --
++and both results travelled under the same name. On the recursive frame
++the two differ (file-digest keeps an entry repeated byte-identically in 2
++DISTINCT state files; entry-digest collapses it), so a reader comparing
++this script's figure with the producer's "authoritative" figure saw 2
++numbers under 1 label: the same defect genus -- an undeclared frame --
++this script exists to correct. Both granularities are now computed side
++by side under distinct names, and the reconciliation is printed.
+ """
+ from __future__ import annotations
+ import hashlib, json, pathlib, sys
+@@ -71,10 +84,30 @@
+ 
+ 
+ def _harvest(files):
+-    raw, dedup, seen = [], [], set()
++    """3 populations per frame, dedup granularity DECLARED for each.
++
++    raw                 every severity-bearing entry in every matched file.
++    file-digest dedup   skip a whole file whose sha256(bytes) was already
++                        seen -- the 2026-10-12 method the folded-back
++                        producer declares authoritative; collapses symlinks
++                        and byte-copies of state files.
++    entry-digest dedup  skip an entry whose serialised-JSON digest was
++                        already seen, across ALL files -- additionally
++                        collapses an entry repeated byte-identically in 2
++                        DISTINCT state files, which file-digest keeps.
++    """
++    raw, fdedup, ededup = [], [], []
++    seen_f, seen_e = set(), set()
+     for f in files:
+         try:
+-            d = json.loads(f.read_text(errors="replace"))
++            data = f.read_bytes()
++        except OSError:
++            continue
++        fdg = hashlib.sha256(data).hexdigest()
++        keep_file = fdg not in seen_f
++        seen_f.add(fdg)
++        try:
++            d = json.loads(data.decode("utf-8", errors="replace"))
+         except Exception:
+             continue
+         entries = ((d.get("registry") or {}).get("entries") or {})
+@@ -84,12 +117,14 @@
+             if not isinstance(e, dict) or e.get("severity") is None:
+                 continue
+             raw.append(e)
++            if keep_file:
++                fdedup.append(e)
+             h = hashlib.sha256(
+                 json.dumps(e, sort_keys=True, default=str).encode()).hexdigest()
+-            if h not in seen:
+-                seen.add(h)
+-                dedup.append(e)
+-    return raw, dedup
++            if h not in seen_e:
++                seen_e.add(h)
++                ededup.append(e)
++    return raw, fdedup, ededup
+ 
+ 
+ FRAMES = {
+@@ -107,12 +142,13 @@
+     results = {}
+     for name, (pattern, means) in FRAMES.items():
+         files = sorted(LOGS.glob(pattern.replace("logs/", "")))
+-        raw, dedup = _harvest(files)
++        raw, fdedup, ededup = _harvest(files)
+         print("=" * 74)
+         print(f"FRAME {name}")
+         print(f"  glob: bench/{pattern}   ({len(files)} file(s))")
+         print(f"  {means}")
+-        for label, pop in (("raw", raw), ("content-hash dedup", dedup)):
++        for label, pop in (("raw", raw), ("file-digest dedup", fdedup),
++                           ("entry-digest dedup", ededup)):
+             k = sum(1 for e in pop if e.get("falsifier_verdict") is not None)
+             kc = sum(1 for e in pop if e.get("confidence") is not None)
+             (wl, wh), (cl, ch), dis = _iv(k, len(pop))
+@@ -123,7 +159,9 @@
+             print(f"{'':26s}confidence present: {kc}")
+             assert dis < 1e-6, f"interval routes disagree by {dis}"
+             results[(name, label)] = (k, len(pop), kc)
+-        print(f"    dedup removed: {len(raw) - len(dedup)}")
++        print(f"    file-digest removed: {len(raw) - len(fdedup)}   "
++              f"entry-digest removed: {len(raw) - len(ededup)}   "
++              f"granularity gap: {len(fdedup) - len(ededup)}")
+ 
+     print("=" * 74)
+     print("WHAT DIFFERS AND WHAT DOES NOT")
+@@ -137,9 +175,16 @@
+         "conclusion that 7.7 is unsatisfiable today must be re-derived")
+     print("  => the brief's CONCLUSION is frame-independent; its FIGURE was not.")
+ 
++    b_fd = results[("B recursive, runs + seat copies", "file-digest dedup")][1]
++    b_ed = results[("B recursive, runs + seat copies", "entry-digest dedup")][1]
++    print(f"\nRECONCILIATION: the folded-back producer\'s authoritative frame is "
++          f"recursive + file-digest = {b_fd} here; its entry-digest sibling is "
++          f"{b_ed}. The gap of {b_fd - b_ed} is entries repeated byte-identically "
++          f"across DISTINCT state files.")
++
+     a_raw = results[("A non-recursive, runs only", "raw")][1]
+-    a_ded = results[("A non-recursive, runs only", "content-hash dedup")][1]
+-    print(f"\nB121 CROSS-CHECK: content-hash dedup removes {a_raw - a_ded} from "
++    a_ded = results[("A non-recursive, runs only", "entry-digest dedup")][1]
++    print(f"\nB121 CROSS-CHECK: entry-digest dedup removes {a_raw - a_ded} from "
+           f"frame A; B121 reports 217 counted twice via a symlink.")
+     print("  2 independent routes to the same duplicate population."
+           if a_raw - a_ded == 217 else

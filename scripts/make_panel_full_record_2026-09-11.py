@@ -34,6 +34,31 @@ import sys
 
 REPO = pathlib.Path("/Users/georgejackson/Developer_Projects/Constraint_Engineering")
 
+#: ★ A VERBATIM REGION MAY NOT NEST, AND A JOINT ROUND'S BRIEF CONTAINS ITS
+#: OWN REGIONS. Found 2026-11-10 when the 2 joint-round records refused the
+#: commit gate at 15 and 22 note findings against a baseline of 0. The cause
+#: was NOT the seats' prose: `scripts/build_joint_brief_2026-11-10.py` embeds
+#: each parent reply inside `verbatim-begin`/`verbatim-end` so a seat is
+#: exposed to the other's actual WORDS, and this generator then wraps that
+#: whole brief in one more region. The lint reported `3 begin against 5 end`
+#: and, with the region malformed, stopped exempting -- so every spelled
+#: number in a seat's own sentence became a finding against me.
+#: THE INNER MARKERS ARE MADE INERT RATHER THAN REMOVED, AND THE RECORD SAYS
+#: SO. Only the HTML-comment delimiter changes, to a visibly bracketed form;
+#: not 1 word of any seat's or any brief's prose is altered, which is what
+#: `never-paraphrase-inside-quotation-marks` protects. The alternative was to
+#: change the dispatched brief, whose sha256 is recorded in `topology.json`
+#: and checked against the committed copy, so editing it would have broken
+#: the integrity check it exists to provide.
+def _denest(text: str) -> tuple[str, int]:
+    """Make any nested verbatim marker inert. Returns (text, how many)."""
+    n = text.count("<!-- verbatim-begin") + text.count("<!-- verbatim-end")
+    out = (text.replace("<!-- verbatim-begin", "[verbatim-begin")
+               .replace("<!-- verbatim-end -->", "[verbatim-end]")
+               .replace("<!-- verbatim-end-->", "[verbatim-end]"))
+    return out, n
+
+
 def build(round_dir: str, title: str, out_name: str, context: str) -> pathlib.Path:
     R = REPO / "bench" / "logs" / round_dir
     stamp = subprocess.run(["date", "-Iseconds"], capture_output=True, text=True).stdout.strip()
@@ -58,8 +83,15 @@ def build(round_dir: str, title: str, out_name: str, context: str) -> pathlib.Pa
     brief = R / "BRIEF.md"
     if brief.is_file():
         parts.append("## The brief, as dispatched\n")
+        _b, _n = _denest(brief.read_text(encoding="utf-8", errors="replace"))
         parts.append("<!-- verbatim-begin: the brief as dispatched -->\n")
-        parts.append(brief.read_text(encoding="utf-8", errors="replace"))
+        if _n:
+            parts.append(
+                f"*{_n} nested verbatim marker(s) in this brief were made inert "
+                f"by the record generator, so this region stays well formed. "
+                f"Only the HTML-comment delimiter changed; no word of the brief "
+                f"or of any quoted reply was altered.*\n\n")
+        parts.append(_b)
         parts.append("\n<!-- verbatim-end -->\n")
     for s in seats:
         d = json.loads((R / f"{s}.json").read_text(encoding="utf-8", errors="replace"))
@@ -69,8 +101,15 @@ def build(round_dir: str, title: str, out_name: str, context: str) -> pathlib.Pa
         parts.append(f"## Seat: {s}\n")
         parts.append(f"Route `{route}`"
                      + (f", {calls} recorded tool call(s).\n" if calls is not None else ".\n"))
+        _body, _n = _denest(body)
         parts.append(f"<!-- verbatim-begin: {s} (panel {round_dir}) -->\n")
-        parts.append(body)
+        if _n:
+            parts.append(
+                f"*{_n} nested verbatim marker(s) in this reply were made inert "
+                f"by the record generator, so this region stays well formed. "
+                f"Only the HTML-comment delimiter changed; no word of the "
+                f"seat's reply was altered.*\n\n")
+        parts.append(_body)
         parts.append("\n<!-- verbatim-end -->\n")
     parts.append("## Where the raw record lives\n")
     parts.append(

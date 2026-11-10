@@ -12905,6 +12905,13 @@ def _apply_back_setup(cfg, target_path: "Path", logs_dir: "Path") -> "Path":
         "rel_target": _rel_to_repo(target_path),
         "cumulative_source": src_text,
         "test_cmd": getattr(cfg, "test_cmd", "") or "",
+        # HIS B88 RULING, 2026-11-10: the verification set for a
+        # non-Python target comes from the STEM topic, so the gate
+        # needs the topic. Read from the run config, never guessed;
+        # an empty string disables the domain route and leaves the
+        # pre-existing refusal exactly as it was, word for word.
+        "domain": (getattr(cfg, "domain", "")
+                   or getattr(cfg, "task_domain", "") or ""),
         "applied": [],   # canonical_ids promoted into the working copy
         "rejected": [],   # (canonical_id, reason) — gate/apply failures
     })
@@ -12920,8 +12927,34 @@ def _rel_to_repo(p: "Path") -> str:
         return str(p)
 
 
+class _FindingView:
+    """A registry entry seen as the object the domain classifier expects.
+
+    `domain_immune.domain_classify_claim` reads `.description`, and a registry
+    entry is a plain dict. This adapter is 6 lines rather than a change to
+    either side, because the classifier is shared with the immune pipeline and
+    the registry schema is consumed in dozens of places -- the simplest
+    sufficient fix is the view, not a migration.
+
+    The text it exposes is the entry's own description, title and proposed-fix
+    prose in that order of preference, so a finding whose computable content
+    sits in any of them is still reducible by the topic's tools.
+    """
+
+    __slots__ = ("description", "finding_id", "title", "evidence")
+
+    def __init__(self, entry: Optional[Dict[str, Any]]) -> None:
+        e = entry or {}
+        self.description = str(
+            e.get("description") or e.get("claim") or e.get("title") or "")
+        self.finding_id = str(e.get("canonical_id") or e.get("id") or "")
+        self.title = str(e.get("title") or "")
+        self.evidence = str(e.get("evidence") or "")
+
+
 def _apply_back_gate(candidate_source: str, rel_target: str,
-                     test_cmd: str) -> Tuple[bool, str]:
+                     test_cmd: str, finding: Optional[Dict[str, Any]] = None,
+                     domain: str = "") -> Tuple[bool, str]:
     """Full canonical-suite gate: overlay candidate_source at rel_target
     in a sandbox repo copy and run test_cmd. Green-only promotion (the
     C0001 lesson: the run-time S_k score tolerates regressions).
@@ -12985,6 +13018,164 @@ def _apply_back_gate(candidate_source: str, rel_target: str,
     # is a design change rather than a repair and is tracked separately, so
     # the honest behaviour for now is to refuse and SAY WHY.
     if not is_python_target(rel_target):
+        # ★ THE DESIGN CHANGE THE COMMENT ABOVE SAID WAS TRACKED SEPARATELY IS
+        # NOW MADE, 2026-11-10, ON HIS RULINGS OF THE SAME DAY.
+        #
+        # HIS WORDS ON B22: fold-back at the end of an experimental run, after
+        # dual orchestrator and HIL review, "applies to all experiments. Not
+        # just a prose target."
+        # HIS WORDS ON B88: the suite "will come from which ever STEM topic
+        # area under discussion and the tools/falsifiers/B-Cell machinery
+        # attached to that STEM topic", because a researcher submitting a STEM
+        # paper "will almost certainly have ... included both prose and
+        # calulations/formulas they wish to be considered", so the models' job
+        # is to "use the tools/falsifiers assigned to that subject area to
+        # calculate those elements of any given paper that are computationally
+        # available/reducible to them."
+        #
+        # SO A PROSE TARGET IS NO LONGER REFUSED OUT OF HAND. It is gated on
+        # the FINDING'S OWN FALSIFIER, through `bench/fix_efficacy.probe`,
+        # which this file's own comment already named as the thing that "knows
+        # how to ask". That probe is stricter than a green suite, not looser:
+        # it refuses unless the falsifier is first shown to READ the target
+        # (tripwire), then shown to DEMONSTRATE the defect on the original
+        # (baseline), and only then shown to fall quiet once the fix is applied.
+        #
+        # IT IS ADDITIVE. With no falsifier attached the refusal below is the
+        # one that was always given, word for word, so every existing caller
+        # and every existing guard sees unchanged behaviour. What changes is
+        # that a prose fix CAN now be admitted -- on evidence that a Python fix
+        # is never asked for.
+        # ★ B22, HIS INSTRUCTION 2026-11-10: *"So for sure, fix B22 remaining
+        # issues too."* A PROOF IS CHECKED BEFORE A FALSIFIER, AND THE ORDER IS
+        # THE WHOLE POINT. An entry declaring proof polarity carries its proof
+        # in the SAME `falsifier_code` field, and `reverify_falsifier`'s verdict
+        # strings collide with the finding vocabulary in the INVERTING
+        # direction: a correct proof exits cleanly, which reads as REFUTED, so
+        # under falsifier polarity it would score 0.0 for being right and 1.0
+        # for being wrong. `bench/proof_verify.verify_proof` normalises that and
+        # contributes nothing else.
+        #
+        # ADDITIVE BY CONSTRUCTION, AND THE PROJECT'S OWN INSTRUMENT SAYS SO
+        # RATHER THAN THIS COMMENT ASSERTING IT:
+        # `scripts/is_the_polarity_hazard_reachable_2026-10-31.py` returns
+        # DECLARED field in archive 0 and STRICT proof-sense bodies 0, verdict
+        # PROSPECTIVE-ONLY. So 0 existing entries take this branch.
+        #
+        # IT ALSO MAKES `bench/proof_verify.py` REACHED. The seat built it in
+        # the round he authorised on 2026-10-30 and it was never folded back;
+        # B22 recorded it as wired to no caller and guarded by no test, which is
+        # the `additive-standard` orphan this call removes. The seat's own copy
+        # under `experimental_notes/seat_evidence/` is untouched and stays
+        # byte-identical, because that is what makes it evidence.
+        #
+        # NO COMPOSABILITY CLAIM IS MADE for the 3 routes below. They gate on
+        # 3 different artefacts a finding may carry, and no measurement shows a
+        # composed form beating any of them alone, so `composability-requires-a-
+        # measurement` forbids calling them composed.
+        _pol = str((finding or {}).get("verification_polarity") or "").lower()
+        if _pol == "proof":
+            _proof = ((finding or {}).get("falsifier_code") or "").strip()
+            try:
+                from bench.proof_verify import SK_ADMISSIBLE as _PV_OK
+                from bench.proof_verify import verify_proof as _verify_proof
+                _pr = _verify_proof(_proof, repo_root=str(REPO_ROOT))
+                if _pr.tristate == _PV_OK:
+                    return True, f"proof:{_pr.tristate}"
+                return False, f"proof:{_pr.tristate}"
+            except Exception as _pv_exc:                      # noqa: BLE001
+                # A proof route that cannot run must not ADMIT.
+                return False, f"proof-verify-failed:{type(_pv_exc).__name__}"
+        _fal = ((finding or {}).get("falsifier_code") or "").strip()
+        if _fal:
+            try:
+                sys.path.insert(0, str(REPO_ROOT / "bench"))
+                import fix_efficacy as _fe
+                _probe = _fe.probe(dict(finding or {}), str(rel_target))
+                _verdict = getattr(_probe, "verdict", None)
+                # THE SENTINEL IS `FIX_CURES`, AND THE FIRST VERSION OF THIS
+                # BRANCH GOT IT WRONG. It read `getattr(_fe, "CURED", "CURED")`
+                # and `fix_efficacy` defines no `CURED`, so the fallback literal
+                # was compared against 7 reachable verdicts none of which is
+                # "CURED" -- the branch admitted 0 of 7, Wilson [0.000000,
+                # 0.354330], INCLUDING the cure verdict itself. A fix that did
+                # cure its own falsifier was refused with a detail line reading
+                # `falsifier:FIX_CURES_ITS_OWN_FALSIFIER` beside `ok=False`,
+                # which reads like success next to a refusal. Found by
+                # execution, not by reading: `hasattr(fix_efficacy, "CURED")`
+                # is False. Producer:
+                # `scripts/the_prose_gates_sentinel_admitted_nothing_2026-11-10.py`.
+                _cured = getattr(_fe, "FIX_CURES",
+                                 "FIX_CURES_ITS_OWN_FALSIFIER")
+                if _verdict == _cured:
+                    return True, f"falsifier:{_verdict}"
+                return False, f"falsifier:{_verdict or 'INDETERMINATE'}"
+            except Exception as _fe_exc:                       # noqa: BLE001
+                # A probe that cannot run must not ADMIT. Fail closed, and say
+                # which it was, because "no opinion" and "refused" are
+                # different facts and the ledger has to tell them apart.
+                return False, (f"falsifier-probe-failed:"
+                               f"{type(_fe_exc).__name__}")
+        # HIS B88 RULING, 2026-11-10, verbatim: the verification set "will
+        # come from which ever STEM topic area under discussion and the
+        # tools/falsifiers/B-Cell machinery attached to that STEM topic",
+        # because a researcher submitting a STEM paper "will almost certainly
+        # have ... included both prose and calulations/formulas they wish to be
+        # considered", so the job is to "use the tools/falsifiers assigned to
+        # that subject area to calculate those elements of any given paper that
+        # are computationally available/reducible to them."
+        #
+        # THE OPERATIVE WORDS ARE "AVAILABLE/REDUCIBLE TO THEM", and they make
+        # this strictly additive. The domain's B-Cell tools return UNCERTAIN on
+        # anything they cannot reduce -- measured 2026-11-10, 0 of 11 plain
+        # prose sentences drew a definitive verdict, while 4 of 5 formalised
+        # `Eq(...)` claims did, at confidence 0.95. So this route can only ADD
+        # an admission for content the topic's tools genuinely evaluate, and
+        # where it adds nothing the refusal below is unchanged, word for word.
+        #
+        # IT REVIVES AN ORPHAN RATHER THAN BUILDING A SECOND MECHANISM.
+        # `bench/domain_immune.py` is the purpose-built adapter over the 10
+        # per-domain immune configs and the 22-entry tool manifest, and until
+        # today it was imported by NOTHING -- an `additive-standard` addition
+        # nothing reached. This is its caller.
+        if domain:
+            try:
+                import domain_immune as _dimm
+                _dv = _dimm.domain_verification_set(domain, _FindingView(finding))
+                if _dv.get("admits"):
+                    return True, f"domain:{_dv.get('detail', '')[:160]}"
+                if _dv.get("verdicts"):
+                    # THE TOOLS RAN AND DID NOT ADMIT. The refusal is the
+                    # PRE-EXISTING one and the tool verdict is appended as
+                    # INFORMATION, never as the ground for refusing.
+                    #
+                    # WHY, MEASURED 2026-11-10 on the project's own STEM corpus
+                    # (`bench/tests/fixtures/stem/`, 29 tagged claims): of the
+                    # definitive verdicts these tools produce, 2 are REJECTIONS
+                    # of claims the corpus marks TRUE, and both corpus claims
+                    # are correct -- CM-03's concentration is exactly
+                    # 4167/41450 = 0.10053076 on pint, SymPy, NumPy and mpmath,
+                    # and CM-09's mass balance is 4.6280 kg in and out.
+                    #
+                    # IT CHANGES NO DECISION, because a prose target was
+                    # refused before this route existed. What it changes is
+                    # WHAT THE LEDGER RECORDS. B88's own defect wrote 34
+                    # refusals each blaming a model's fix for 3 failures it did
+                    # not cause, and this entry names those false reasons as
+                    # the actual cost. A decision can be right for a reason
+                    # that is false, and that is a defect here in its own
+                    # right. Producer:
+                    # `scripts/the_topics_tools_on_the_projects_own_corpus_2026-11-10.py`.
+                    return False, (
+                        "no suite can gate a non-Python target "
+                        f"({rel_target}); a prose fix needs its falsifier, "
+                        "not pytest "
+                        f"[advisory, {_dv.get('detail', '')[:110]}]")
+            except Exception as _d_exc:                       # noqa: BLE001
+                # A domain route that cannot run must not ADMIT, and must not
+                # suppress the refusal that already existed.
+                _log(f"  apply-back domain route failed: "
+                     f"{type(_d_exc).__name__}: {_d_exc}")
         return False, ("no suite can gate a non-Python target "
                        f"({rel_target}); a prose fix needs its falsifier, "
                        "not pytest")
@@ -13139,7 +13330,9 @@ def _apply_back_promote(registry, round_idx: int) -> Optional[str]:
             _APPLY_BACK_CTX["rejected"].append(
                 (cid, f"apply:{err or 'failed'}"))
             continue
-        ok, detail = _apply_back_gate(mod, rel, test_cmd)
+        ok, detail = _apply_back_gate(
+            mod, rel, test_cmd, finding=entry,
+            domain=_APPLY_BACK_CTX.get("domain") or "")
         if not ok:
             _APPLY_BACK_CTX["rejected"].append((cid, detail))
             _log(f"  apply-back REJECT {cid}: {detail} "

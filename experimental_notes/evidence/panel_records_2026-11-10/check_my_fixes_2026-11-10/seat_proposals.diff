@@ -1,0 +1,1289 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-10 05:07:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/.cdsfl_deny_canonical_writes.sb	2026-11-10 04:44:33
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/falsifier_verify.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/falsifier_verify.py	2026-11-10 03:05:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/bench/falsifier_verify.py	2026-11-10 04:55:51
+@@ -1525,6 +1525,31 @@
+ })
+ 
+ 
++#: The 2 patterns that decide whether output DECLARES the token. Extracted to
++#: module level 2026-11-10 so `bench/proof_verify.py` can READ this rule
++#: instead of restating it -- the same no-drift reasoning that made
++#: `_only_availability` importable rather than copied. `_read_verdict`'s
++#: behaviour is UNCHANGED: these are the identical patterns it carried inline,
++#: and `test_a_proof_asserting_nothing_is_not_admissible_2026-11-10.py` pins
++#: both the pattern text and `_read_verdict`'s verdicts over a token battery.
++NOT_FALSIFIED_RE = re.compile(r"\bNOT[\s_-]?FALSIFIED\b", re.IGNORECASE)
++FALSIFIED_TOKEN_RE = re.compile(r"(?<![A-Z_])FALSIFIED\b")
++
++
++def declares_falsified(text: str) -> bool:
++    """True when `text` declares the token, honest-negative form excluded.
++
++    The precedence is `_read_verdict`'s own and is NOT re-decided here: a
++    `NOT FALSIFIED` anywhere in the text wins, because that is an author
++    reporting a negative result rather than demonstrating a defect.
++    """
++    if not text:
++        return False
++    if NOT_FALSIFIED_RE.search(text):
++        return False
++    return bool(FALSIFIED_TOKEN_RE.search(text))
++
++
+ def _only_availability(expr: ast.expr) -> bool:
+     """True when this expression asks nothing but whether something exists."""
+     if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
+@@ -1625,9 +1650,9 @@
+     classed as a probe, because a pattern that no longer matches can be a real
+     finding about the document. That one is left to the human.
+     """
+-    if re.search(r"\bNOT[\s_-]?FALSIFIED\b", stdout, re.IGNORECASE):
++    if NOT_FALSIFIED_RE.search(stdout):
+         return "REFUTED"
+-    declared = bool(re.search(r"(?<![A-Z_])FALSIFIED\b", stdout))
++    declared = bool(FALSIFIED_TOKEN_RE.search(stdout))
+     assert_err = "AssertionError" in stderr
+     if assert_err:
+         # Retained: an author who SAYS it is a guard is believed.
+
+### cc2:attempt-1:bench/proof_verify.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/proof_verify.py	2026-11-10 04:30:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/bench/proof_verify.py	2026-11-10 04:56:15
+@@ -105,6 +105,7 @@
+ from dataclasses import dataclass
+ from typing import Optional
+ 
++from bench.falsifier_verify import declares_falsified as _declares_falsified
+ from bench.falsifier_verify import reverify_falsifier
+ from bench.reference_runner_v3 import (
+     SK_ADMISSIBLE,
+@@ -157,12 +158,77 @@
+     for node in _a.walk(tree):
+         if isinstance(node, (_a.Assert, _a.Raise)):
+             return True
+-        if (isinstance(node, _a.Constant) and isinstance(node.value, str)
+-                and "FALSIFIED" in node.value):
+-            return True
++        # ★ THE TOKEN PATH, NARROWED 2026-11-10 TO AN EMITTED TOKEN.
++        #
++        # THE HOLE, DEMONSTRATED BY EXECUTION RATHER THAN BY READING. This test
++        # was `isinstance(node, Constant) and "FALSIFIED" in node.value`, which
++        # matches a string literal ANYWHERE in the tree -- a module docstring
++        # included. So the 2-line proof
++        #
++        #     """Proof: prints FALSIFIED if the identity fails."""
++        #     print("ok")
++        #
++        # has 0 `Assert` and 0 `Raise` nodes, exits cleanly, and `verify_proof`
++        # returned SK_ADMISSIBLE with the reason "its own assertions held" --
++        # the exact vacuous sentence the 2026-11-01 fold-back added this
++        # predicate to prevent, reachable by a different route. So did
++        # `print("NOT FALSIFIED: the identity holds")`, which `_read_verdict`
++        # itself reads as an HONEST NEGATIVE. The documented contract is
++        # unambiguous: `docs/PROOF_AND_FALSIFIER_DEFINITION.md` section 2 says a
++        # proof "must contain an assertion or a raise", so the code was wider
++        # than the definition it is cited as implementing.
++        #
++        # WHY THE BRANCH IS NARROWED AND NOT DELETED. It is load-bearing. Under
++        # proof polarity a proof may signal failure with the token instead of an
++        # assertion -- `if not ok: print("FALSIFIED")` genuinely checks
++        # something, and deleting the branch would call that proof vacuous.
++        # Deleting it would also be a REMOVAL, which needs a committed
++        # measurement showing a replacement dominates. There is none. This only
++        # narrows: the token must be EMITTED (a string argument of a call)
++        # rather than merely present, and the text must declare the token under
++        # `falsifier_verify.declares_falsified` -- the SAME rule `_read_verdict`
++        # applies to stdout, imported rather than restated so the 2 sides
++        # cannot drift.
++        #
++        # STATED BOUND, because this is static and the property is dynamic:
++        # presence of an emitted token is not proof that it executed. A
++        # `print("FALSIFIED")` in a branch that never runs still counts here.
++        # That residual needs the run traced, which `reverify_falsifier` does
++        # not expose. Do not describe this as proving the token was reachable.
++        if isinstance(node, _a.Call):
++            for text in _emitted_strings(node):
++                if _declares_falsified(text):
++                    return True
+     return False
+ 
+ 
++def _emitted_strings(call: "ast.Call"):
++    """Yield the string literals this call is passed, f-strings included.
++
++    An `Assign` or a bare docstring is deliberately NOT a source: the question
++    is whether the proof EMITS the token, and a literal the proof never hands
++    to a call is not emitted. Concatenation and f-string interpolation are
++    followed because `print("FALSIFIED: " + why)` and `print(f"FALSIFIED {x}")`
++    are both ordinary ways to write the signal.
++    """
++    import ast as _a
++
++    def parts(node):
++        if isinstance(node, _a.Constant) and isinstance(node.value, str):
++            yield node.value
++        elif isinstance(node, _a.JoinedStr):
++            for v in node.values:
++                yield from parts(v)
++        elif isinstance(node, _a.FormattedValue):
++            return
++        elif isinstance(node, _a.BinOp) and isinstance(node.op, _a.Add):
++            yield from parts(node.left)
++            yield from parts(node.right)
++
++    for arg in list(call.args) + [k.value for k in call.keywords]:
++        yield from parts(arg)
++
++
+ def verify_proof(
+     proof_code: str,
+     repo_root: Optional[str] = None,
+
+### cc2:attempt-1:bench/tests/test_a_proof_asserting_nothing_is_not_admissible_2026-11-10.py
+--- /dev/null	2026-11-10 05:07:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/bench/tests/test_a_proof_asserting_nothing_is_not_admissible_2026-11-10.py	2026-11-10 04:56:55
+@@ -0,0 +1,127 @@
++"""A proof with 0 assertions must not score ADMISSIBLE by any route.
++
++THE DEFECT THIS PINS, FOUND BY EXECUTION 2026-11-10. The fold-back of
++2026-11-01 added `asserts_something` to stop a vacuous proof being admitted,
++and the predicate had a second route straight back into the hole: it accepted a
++string literal containing the token ANYWHERE in the tree, a module docstring
++included. Measured against the real module, both of
++
++    a module DOCSTRING reading "Proof: prints FALSIFIED if the identity
++    fails." followed by nothing but print("ok"), and
++    print("NOT FALSIFIED: the identity holds")
++
++have 0 `Assert` and 0 `Raise` nodes, exited cleanly and returned
++SK_ADMISSIBLE with the reason "its own assertions held". The second is the form
++`_read_verdict` itself reads as an honest negative.
++`docs/PROOF_AND_FALSIFIER_DEFINITION.md` section 2 states a proof "must contain
++an assertion or a raise", so the code was WIDER than the definition that cites
++it.
++
++WHAT IS GUARDED HERE, AND IN BOTH DIRECTIONS. The vacuous shapes must be
++refused (the repair) AND the legitimate token shape must still be accepted (the
++repair must not remove a working behaviour). The second half is the load-bearing
++one: a narrowing is only additive if nothing that worked stops working.
++
++IT ALSO PINS THE EXTRACTION. `declares_falsified` and the 2 named patterns were
++lifted out of `_read_verdict` so this module could read the rule rather than
++restate it. The lift is only safe if `_read_verdict` still returns what it
++returned, so its verdicts over a token battery are pinned here too.
++"""
++from __future__ import annotations
++
++import ast
++
++import pytest
++
++from bench.falsifier_verify import (
++    FALSIFIED_TOKEN_RE,
++    NOT_FALSIFIED_RE,
++    _read_verdict,
++    declares_falsified,
++)
++from bench.proof_verify import asserts_something
++
++#: Proofs with 0 Assert and 0 Raise nodes. None may be called a proof.
++VACUOUS = [
++    ('"""Proof: prints FALSIFIED if the identity fails."""\nprint("ok")\n',
++     "token in a docstring"),
++    ('print("NOT FALSIFIED: the identity holds")\n',
++     "the honest-negative form only"),
++    ('# FALSIFIED\nprint("ok")\n', "token in a comment"),
++    ('MSG = "FALSIFIED"\nprint("ok")\n', "token assigned, never emitted"),
++    ('"FALSIFIED"\n', "token as a bare expression"),
++    ('print("ok")\n', "no token at all"),
++    ('import os\nprint(os.getcwd())\n', "an import and a print"),
++    ('', "empty"),
++]
++
++#: Proofs that DO check something. Every one must still be accepted.
++SUBSTANTIVE = [
++    ('assert 2 + 2 == 4\n', "a plain assertion"),
++    ('if 2 + 2 != 4:\n    print("FALSIFIED: arithmetic")\n',
++     "a conditional token print"),
++    ('x = 5\nif x != 5:\n    print(f"FALSIFIED {x}")\n',
++     "an f-string token print"),
++    ('if False:\n    print("FALSIFIED: " + "why")\n',
++     "a concatenated token print"),
++    ('import sys\nif False:\n    sys.stdout.write("FALSIFIED\\n")\n',
++     "a stdout write"),
++    ('raise AssertionError("does not hold")\n', "an explicit raise"),
++    ('print("ok", end="FALSIFIED")\n', "a keyword argument"),
++]
++
++
++@pytest.mark.parametrize("code,why", VACUOUS, ids=[w for _, w in VACUOUS])
++def test_a_proof_with_no_assertion_is_not_a_proof(code: str, why: str) -> None:
++    if code.strip():
++        tree = ast.parse(code)
++        assert not any(isinstance(n, (ast.Assert, ast.Raise))
++                       for n in ast.walk(tree)), (
++            f"the fixture {why!r} is meant to contain no assertion")
++    assert asserts_something(code) is False, (
++        f"{why}: a proof with 0 assertions was treated as asserting something, "
++        "so a clean exit would be read as its assertions holding")
++
++
++@pytest.mark.parametrize("code,why", SUBSTANTIVE,
++                         ids=[w for _, w in SUBSTANTIVE])
++def test_a_proof_that_checks_something_is_still_accepted(code: str,
++                                                         why: str) -> None:
++    assert asserts_something(code) is True, (
++        f"{why}: this proof does check something and the narrowing of "
++        "2026-11-10 must not have removed it")
++
++
++def test_the_token_patterns_are_the_ones_read_verdict_carried() -> None:
++    """The extraction is only safe if the patterns are byte-identical."""
++    assert NOT_FALSIFIED_RE.pattern == r"\bNOT[\s_-]?FALSIFIED\b"
++    assert FALSIFIED_TOKEN_RE.pattern == r"(?<![A-Z_])FALSIFIED\b"
++
++
++@pytest.mark.parametrize("stdout,verdict", [
++    ("FALSIFIED", "CONFIRMED"),
++    ("FALSIFIED: x", "CONFIRMED"),
++    ("NOT FALSIFIED", "REFUTED"),
++    ("NOT_FALSIFIED", "REFUTED"),
++    ("not falsified", "REFUTED"),
++    ("UNFALSIFIED", "REFUTED"),
++    ("", "REFUTED"),
++])
++def test_read_verdict_still_returns_what_it_returned(stdout: str,
++                                                     verdict: str) -> None:
++    assert _read_verdict(stdout, "", 0) == verdict
++
++
++@pytest.mark.parametrize("text,declared", [
++    ("FALSIFIED", True),
++    ("FALSIFIED: why", True),
++    ("NOT FALSIFIED", False),
++    ("NOT_FALSIFIED", False),
++    ("UNFALSIFIED", False),
++    ("", False),
++])
++def test_declares_falsified_agrees_with_read_verdict(text: str,
++                                                     declared: bool) -> None:
++    """The helper and the verdict reader must not be able to disagree."""
++    assert declares_falsified(text) is declared
++    assert (_read_verdict(text, "", 0) == "CONFIRMED") is declared
+
+### cc2:attempt-1:bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py	2026-11-10 02:06:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py	2026-11-10 04:59:45
+@@ -211,8 +211,56 @@
+ 
+ 
+ class TestTheCallerHandsTheFindingOver:
++    """The gate is only reachable if the caller hands the entry over.
++
++    THIS WAS A SOURCE-SUBSTRING ASSERTION AND IT WENT RED WITHOUT THE WIRING
++    BREAKING. It required the literal text
++    `_apply_back_gate(mod, rel, test_cmd, finding=entry)`. The B88 domain route
++    added a `domain=` argument to the same call on 2026-11-10, which reflowed
++    it across 3 lines, and the assertion failed while `finding=entry` was still
++    being passed -- confirmed by parsing the module and reading the call's
++    keywords. A guard that fails when a sibling fix adds an argument reports a
++    broken wire that is not broken, and the project's own words are
++    "Re-pinning to silence this is how a ratchet becomes a rubber stamp": the
++    repair is to ask the QUESTION the guard means to ask rather than to update
++    the string it happened to match.
++
++    So this now parses the module and inspects the call. It is robust to
++    reflow, to argument order and to further keyword arguments, and it still
++    fails if `finding` stops being passed -- which is the only thing it was
++    ever for.
++    """
++
++    def _gate_calls(self):
++        import ast
++        src = (REPO / "bench" / "reference_runner_v3.py").read_text(
++            encoding="utf-8")
++        tree = ast.parse(src)
++        return [n for n in ast.walk(tree)
++                if isinstance(n, ast.Call)
++                and isinstance(n.func, ast.Name)
++                and n.func.id == "_apply_back_gate"]
++
+     def test_the_promote_loop_passes_the_entry(self):
+-        src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+-        assert "_apply_back_gate(mod, rel, test_cmd, finding=entry)" in src, (
+-            "the promote loop no longer hands the finding to the gate, so the "
+-            "falsifier branch can never be reached from a real run")
++        calls = self._gate_calls()
++        assert calls, (
++            "no call to _apply_back_gate survives in the runner, so the gate "
++            "cannot be reached from a real run")
++        for call in calls:
++            names = {k.arg for k in call.keywords}
++            # A 4th positional argument is `finding` under the signature
++            # `(candidate_source, rel_target, test_cmd, finding=None, domain="")`.
++            positional_finding = len(call.args) >= 4
++            assert "finding" in names or positional_finding, (
++                f"the call at line {call.lineno} no longer hands the finding "
++                "to the gate, so the falsifier branch can never be reached "
++                "from a real run")
++
++    def test_the_guard_can_still_detect_the_wire_being_cut(self):
++        """Anti-vacuity: the check above must fail on a call that omits it."""
++        import ast
++        cut = ast.parse("_apply_back_gate(mod, rel, test_cmd)").body[0].value
++        names = {k.arg for k in cut.keywords}
++        assert not ("finding" in names or len(cut.args) >= 4), (
++            "the detector cannot tell a cut wire from an intact one, so a "
++            "green result from it would mean nothing")
+
+### cc2:attempt-1:bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py	2026-11-10 05:03:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py	2026-11-09 23:30:07
+@@ -189,20 +189,8 @@
+         #: refused, which was the caveat attached to his acceptance. B21 and
+         #: C0001 and B111 also closed on his rulings of 2026-11-09 but were
+         #: already outside this queue.
+-        #: ★ 10 -> 7, RE-PINNED 2026-11-10 WITH ITS REASON, AND THE REASON
+-        #: WAS ESTABLISHED BY A CONTROLLED BEFORE-AND-AFTER rather than
+-        #: inferred from the diff: the real surface module was run against
+-        #: the task list at HEAD and against the working tree, with the file
+-        #: restored byte-identically afterwards. Exactly 3 entries LEFT and
+-        #: 0 joined -- B79, B104 and B131 -- which are precisely the 3 whose
+-        #: ASKING SENTENCES were retired in place that night, his ruling of
+-        #: 2026-11-08 having already settled each of them. An entry leaving
+-        #: this queue because its question is spent is the mechanism working;
+-        #: the 3 are pinned as RENDERED_NOWHERE_BY_DESIGN in
+-        #: `test_the_two_decision_surfaces_cannot_diverge_2026-11-01.py`.
+-        assert n == 7, (
+-            f"the queue is {n}; it was 7 on 2026-11-10, 10 late on "
+-            f"2026-11-09, 12 earlier that "
++        assert n == 10, (
++            f"the queue is {n}; it was 10 late on 2026-11-09, 12 earlier that "
+             f"day, 13 earlier still, 29 on 2026-11-07, and 36 under the "
+             f"rejected fail-open design. If this moved for a real reason, "
+             f"re-run the producer and update this pin WITH its reason.")
+@@ -220,12 +208,8 @@
+         #: recommendation" of 2026-11-08, B134 once his subagent cap of 6 was
+         #: stated as a number in both instruction files, and B128 once a
+         #: refused commit recorded WHY, which was the caveat on his acceptance.
+-        #: ★ 10 -> 7 ON 2026-11-10, same cause as the queue pin above and
+-        #: established the same way: B79, B104 and B131 left the queue when
+-        #: their asking sentences were retired in place, his ruling of
+-        #: 2026-11-08 having settled each. 0 entries joined.
+-        assert "NOT NEW:     7 of 7" in out, out[-2000:]
+-        assert "NOT REPEATS: 0 of 7" in out, out[-2000:]
++        assert "NOT NEW:     10 of 10" in out, out[-2000:]
++        assert "NOT REPEATS: 0 of 10" in out, out[-2000:]
+         #: ★ THE PROPERTY, NOT THE ENTRY. This named B20, and B20 was DEFERRED
+         #: on his ruling of 2026-11-09, so the live-again entry became B13 and
+         #: the assertion failed for a reason that had nothing to do with the
+@@ -284,23 +268,10 @@
+         #: B134 and B128 on his "I accept your recommendation" of 2026-11-08.
+         #: A smaller queue, not a miscount -- which is exactly the distinction
+         #: the denominator was pinned beside the count to preserve.
+-        #: ★ 5 -> 8 ON 2026-11-10, AND THE DENOMINATOR PIN BELOW HELD AT 17
+-        #: THROUGHOUT -- WHICH IS THIS FILE'S OWN DESIGN PROVING ITSELF IN
+-        #: THE OPPOSITE DIRECTION TO LAST TIME. On 2026-11-09 the TOTAL moved
+-        #: while REPEAT stood still, and the comment above records that only
+-        #: the denominator could tell a miscount from a smaller queue. Tonight
+-        #: the reverse happened: the total is unchanged at 17, so the live set
+-        #: did not move at all and the CLASSIFICATION did. The cause is this
+-        #: session's own work, measured by running the real producer against
+-        #: the task list at HEAD and in the working tree: his rulings of
+-        #: 2026-11-08 were carried in to entries that had recorded none, so
+-        #: REAL fell 11 -> 1 and those entries redistributed into
+-        #: LIVE-AGAIN 1 -> 8 and REPEAT 5 -> 8. A ruling being RECORDED
+-        #: against an entry is the opposite of drift.
+-        assert _part.get("REPEAT") == 8, (
+-            f"the partition moved: REPEAT is {_part.get('REPEAT')}, pinned at 8 "
+-            f"on 2026-11-10 (5 late on 2026-11-09, 10 earlier that day, 7 on "
+-            f"2026-11-07). Re-run the producer and re-pin WITH the reason.")
++        assert _part.get("REPEAT") == 5, (
++            f"the partition moved: REPEAT is {_part.get('REPEAT')}, pinned at 5 "
++            f"late on 2026-11-09 (10 earlier that day, 7 on 2026-11-07). "
++            f"Re-run the producer and re-pin WITH the reason.")
+         _tot = sum(int(v) for v in _part.values())
+         #: ★ 26 -> 25, AND THIS PIN HAS NOW EARNED ITS KEEP. Closing B103
+         #: moved the TOTAL while leaving `'REPEAT': 10` exactly where it was,
+
+### cc2:attempt-1:bench/tests/test_tonights_producers_are_reached_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_tonights_producers_are_reached_2026-11-10.py	2026-11-10 04:31:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/bench/tests/test_tonights_producers_are_reached_2026-11-10.py	2026-11-10 05:04:36
+@@ -61,6 +61,11 @@
+     "the_baselines_filename_changes_the_rule_set_2026-11-10.py",
+     "the_prose_gates_sentinel_admitted_nothing_2026-11-10.py",
+     "the_rho_replay_reads_the_wrong_two_keys_2026-11-10.py",
++    # Added by the free-seat round of 2026-11-10. It is in MUST_RUN rather than
++    # EXEMPT deliberately: it is the slowest producer here at roughly 140 s, and
++    # an exemption written by the author of the file the rule is about is how
++    # the accounting stops meaning anything. 140 s is inside the 600 s timeout.
++    "which_tools_can_admit_a_false_claim_alone_2026-11-10.py",
+ )
+ 
+ #: name -> the mechanical reason it is exempt from RUNNING. Empty today, and
+
+### cc2:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-11-10 04:44:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/resources/MEMORY_EXCLUSIONS.md	2026-11-10 03:54:14
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-11-10 04:44 GMT)
++## Accounting (counted 2026-11-10 03:54 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **338 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **337 individual memory files**. They partition as:
++The directory holds **336 files**, of which one is `MEMORY.md` itself
++(the index), leaving **335 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 280 |
++| Mirrored (in summarised form) in `MEMORY.md` | 278 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 337 |
++| total | 335 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### cc2:attempt-1:scripts/morning_report_build_2026-10-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/morning_report_build_2026-10-12.py	2026-11-10 04:58:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/scripts/morning_report_build_2026-10-12.py	2026-11-10 03:42:55
+@@ -1142,29 +1142,12 @@
+     r"^\s*(?:\d+[.)]\s|\d{4}-\d{2}-\d{2}|\d{1,2}:\d{2})")
+ 
+ 
+-def _mark_my_paragraphs(lines: list, exempt_spans: list,
+-                        heading_idx=()) -> int:
++def _mark_my_paragraphs(lines: list, exempt_spans: list) -> int:
+     """Prefix `*` to the first line of each paragraph that is MINE. In place.
+ 
+     Returns how many paragraphs were marked, so a caller or a test can assert
+     the count rather than trust the walk.
+-
+-    ★ `heading_idx` IS A RECORD, NOT A SHAPE, AND THAT IS THE WHOLE POINT.
+-    The all-caps test below cannot recognise a heading whose body is prose:
+-    `DECISION 1. B13, admitting a model is not trivial` is a structural
+-    heading with a mixed-case headline, so on the first build all 17 of them
+-    were marked -- 17 spoken instances of the word "asterisk" on the lines
+-    that give the report its structure, which his ruling of 2026-11-08 did
+-    not ask for (it governs PARAGRAPHS), and a sibling guard red because
+-    the guard pattern for a numbered decision heading no longer matched. The FOOT-LINE was marked too, and
+-    the note standard requires that exact line as the final content.
+-    B105's own finding was that a SHAPE heuristic misreading headings was 1
+-    of the 3 measured causes of his lost responses, so inferring a heading
+-    here would repeat the error it diagnosed. `render_tts` knows which lines
+-    it emits as headings, so it RECORDS them at the point of emission, the
+-    way `_ex` already records quoted spans -- 1 record, no second opinion.
+     """
+-    _headings = set(heading_idx or ())
+     quoted = set()
+     for _a, _b in (exempt_spans or []):
+         for _i in range(max(0, _a), min(len(lines), _b)):
+@@ -1196,9 +1179,6 @@
+             continue
+         if i in quoted:
+             continue
+-        #: A RECORDED HEADING, not a guessed one. See the docstring.
+-        if i in _headings:
+-            continue
+         if stripped[0] in "*#-":
+             continue
+         #: A LIST MARKER OR A TIMESTAMP, not every numeral. See
+@@ -1252,10 +1232,6 @@
+     #: by LINE INDEX here and converts them to character offsets at the end --
+     #: exact, rather than matched by text, and 0 bytes of what he hears change.
+     _ex: list = []
+-    #: ★ HEADING LINES, RECORDED WHERE THEY ARE EMITTED (B105). `L` is
+-    #: append-only in this function, so an index taken before an append
+-    #: stays correct for the life of the list.
+-    _hd: list = []
+     A(f"MORNING REPORT, {dt.date.today().strftime('%d %B %Y')}")
+     A("")
+     A(f"This report is generated from the project's own records rather than written by "
+@@ -1301,7 +1277,6 @@
+     # SKIPPED BY ITS ITERABLE rather than by re-indenting the block under an
+     # `if`: simplest sufficient, and a diff a reader can check.
+     for i, d in enumerate(decs if detail else [], 1):
+-        _hd.append(len(L))
+         A(f"DECISION {i}. {_spoken(d.get('title') or d['ident'])}")
+         A("")
+         A("What it is. " + _spoken(d.get("what", d.get("headline", ""))))
+@@ -1309,7 +1284,6 @@
+         A("Why it needs a decision. " + _spoken(d.get("why", "")))
+         A("")
+         if d.get("options"):
+-            _hd.append(len(L))
+             A("The options.")
+             A("")
+             for n, o in enumerate(d["options"], 1):
+@@ -1424,11 +1398,10 @@
+               f"than a decision.")
+     A("")
+     A("")
+-    _hd.append(len(L))
+     A(f"Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.")
+     # ★ B105, HIS RULING OF 2026-11-08. Marked BEFORE the offset conversion
+     # below, because that conversion measures `L` itself.
+-    _marked = _mark_my_paragraphs(L, _ex, _hd)
++    _marked = _mark_my_paragraphs(L, _ex)
+     if exempt_out is not None:
+         # Line index -> character offset, using the SAME join this returns, so
+         # the offsets cannot drift from the text they describe.
+
+### cc2:attempt-1:scripts/which_tools_can_admit_a_false_claim_alone_2026-11-10.py
+--- /dev/null	2026-11-10 05:07:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_oz1q9u3v/repo/scripts/which_tools_can_admit_a_false_claim_alone_2026-11-10.py	2026-11-10 04:53:15
+@@ -0,0 +1,231 @@
++#!/usr/bin/env python3
++"""Which B-Cell tools return a DEFINITIVE FOR to a claim and to its corrupted twin?
++
++WHY THIS EXISTS. `bench/domain_immune.domain_verification_set` sets
++``admits = bool(definitive_for) and not definitive_against``. So ONE tool
++returning CONFIRMED / VERIFIED / SUPPORTED admits a fix on its own. That is
++only sound for a tool whose definitive FOR DISCRIMINATES -- one that answers
++differently for a true claim and for a false one. A tool that answers CONFIRMED
++to both carries no information, and its admission is not evidence-backed.
++
++WHAT IT MEASURES. A paired discrimination control. For each claim pair
++(true, corrupted) and each manifest tool that can run without a file, it
++records the verdict on both halves and classifies the tool on that pair:
++
++  DISCRIMINATES   definitive FOR on the true half, not on the false half
++  NON_DISCRIM     definitive FOR on BOTH halves          <- the false-admit route
++  INVERTED        definitive FOR on the false half only
++  SILENT          no definitive FOR on either half
++
++Only NON_DISCRIM and INVERTED are faults. SILENT is the correct behaviour of a
++tool outside its competence and is NOT counted against it -- the B88 ruling's
++operative words are "available/reducible to them".
++
++SCOPE, STATED RATHER THAN IMPLIED. This is a sample, not a proof of the tools'
++general behaviour. A tool classed SILENT here may discriminate on claims this
++battery does not contain, so this script can establish that a tool DOES fail to
++discriminate and cannot establish that one never will. The reported proportion
++is over the pairs actually run, and each interval belongs to its own
++denominator only.
++
++Every proportion carries a 95% interval computed on 2 independent routes
++(`_iv`), as the project's stated-interval rule requires.
++"""
++from __future__ import annotations
++
++import argparse
++import math
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++
++#: Verdict strings `domain_verification_set` counts as a definitive FOR.
++DEFINITIVE_FOR = ("CONFIRMED", "VERIFIED", "SUPPORTED")
++#: ... and as a definitive AGAINST.
++DEFINITIVE_AGAINST = ("REFUTED", "REJECTED", "CONTRADICTED")
++
++#: (label, domain, true_claim, corrupted_claim). The corruption always makes
++#: the claim FALSE while leaving its SHAPE intact, so a tool that matches shape
++#: rather than checking the result is exposed.
++PAIRS = [
++    ("c_in_m_per_s", "physics",
++     "the speed of light is 299792458 m/s",
++     "the speed of light is 299792458 km/s"),
++    ("earth_radius", "astronomy",
++     "the radius of the Earth is 6371 km",
++     "the radius of the Earth is 6371 m"),
++    ("au_distance", "astronomy",
++     "1 astronomical unit is 149597870700 m",
++     "1 astronomical unit is 149597870700 km"),
++    ("water_formula", "chemistry",
++     "the molecular formula of water is H2O",
++     "the molecular formula of water is H3O"),
++    ("methane_formula", "chemistry",
++     "the molecular formula of methane is CH4",
++     "the molecular formula of methane is CH5"),
++    ("arith_identity", "mathematics",
++     "Eq(2 + 2, 4)",
++     "Eq(2 + 2, 5)"),
++    ("newton_second_law", "physics",
++     "Eq(force, mass * acceleration)",
++     "Eq(force, mass * velocity)"),
++    ("dna_complement", "biology",
++     "the complement of the DNA sequence ATGC is TACG",
++     "the complement of the DNA sequence ATGC is TAGC"),
++]
++
++
++def _iv(k: int, n: int):
++    """Wilson and Clopper-Pearson, each on 2 INDEPENDENT routes."""
++    from scipy import stats
++    from statsmodels.stats.proportion import proportion_confint
++    import mpmath
++    mpmath.mp.dps = 40
++    if n == 0:
++        return (0.0, 1.0), (0.0, 1.0), 0.0
++    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
++    z = stats.norm.ppf(0.975)
++    p = k / n
++    d = 1 + z * z / n
++    c = (p + z * z / (2 * n)) / d
++    hw = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
++    wdiff = max(abs(wl - (c - hw)), abs(wh - (c + hw)))
++    cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
++    ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
++
++    def bi(a, b, y):
++        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
++        for _ in range(200):
++            mid = (lo + hi) / 2
++            try:
++                v = mpmath.betainc(a, b, 0, mid, regularized=True)
++            except Exception:                                 # noqa: BLE001
++                return None
++            if v < y:
++                lo = mid
++            else:
++                hi = mid
++        return float((lo + hi) / 2)
++
++    m_lo = 0.0 if k == 0 else bi(k, n - k + 1, mpmath.mpf("0.025"))
++    m_hi = 1.0 if k == n else bi(k + 1, n - k, mpmath.mpf("0.975"))
++    cdiff = 0.0
++    for a, b in ((cl, m_lo), (ch, m_hi)):
++        if b is not None:
++            cdiff = max(cdiff, abs(a - b))
++    return (wl, wh), (cl, ch), max(wdiff, cdiff)
++
++
++def _load():
++    sys.path.insert(0, str(REPO))
++    sys.path.insert(0, str(REPO / "bench"))
++    import immune_agents as ia
++    return ia
++
++
++def _verdict(ia, entry, claim: str):
++    fn = entry.get("verifier")
++    f = fn if callable(fn) else getattr(ia, str(fn), None)
++    if not callable(f):
++        return "UNRESOLVED"
++    try:
++        v = f(claim)
++    except Exception as exc:                                  # noqa: BLE001
++        return f"RAISED_{type(exc).__name__}"
++    return getattr(v, "verdict", None)
++
++
++def classify(v_true, v_false) -> str:
++    for_t = v_true in DEFINITIVE_FOR
++    for_f = v_false in DEFINITIVE_FOR
++    if for_t and for_f:
++        return "NON_DISCRIM"
++    if for_f and not for_t:
++        return "INVERTED"
++    if for_t and not for_f:
++        return "DISCRIMINATES"
++    return "SILENT"
++
++
++def main() -> int:
++    ap = argparse.ArgumentParser(
++        description=("Which B-Cell tools give the SAME definitive FOR to a "
++                     "claim and to its corrupted twin?"))
++    ap.parse_args()
++
++    ia = _load()
++    manifest = ia._load_tool_manifest()
++    # NOT RUN, AND SAID RATHER THAN SILENTLY DROPPED. A first run of this
++    # script hung past 120 s because some verifiers leave the process: the
++    # `model` class calls a remote API, the `execute` class runs a test
++    # command, and `wolfram` shells out to a kernel queued against 1 licence.
++    # None can be timed inside a paired control that must finish, so they are
++    # EXCLUDED and named in the output. Their discrimination is UNMEASURED
++    # here -- which is not the same as measured-and-clean.
++    skipped = {n: e for n, e in manifest.items()
++               if e.get("needs_file")
++               or e.get("independence_class") in ("model", "execute")
++               or n == "wolfram"}
++    runnable = {n: e for n, e in manifest.items() if n not in skipped}
++
++    print("=" * 78)
++    print("WHICH TOOLS CAN ADMIT A FALSE CLAIM ALONE -- paired discrimination")
++    print("=" * 78)
++    print(f"\n  manifest tools: {len(manifest)}   measured here: {len(runnable)}"
++          f"   claim pairs: {len(PAIRS)}\n")
++    print(f"  EXCLUDED and therefore UNMEASURED ({len(skipped)}): "
++          f"{', '.join(sorted(skipped))}")
++    print("    needs_file, or leaves the process (model API / test run / "
++          "wolfram kernel).\n")
++
++    rows = []
++    for label, _domain, t_claim, f_claim in PAIRS:
++        for name, entry in sorted(runnable.items()):
++            vt = _verdict(ia, entry, t_claim)
++            vf = _verdict(ia, entry, f_claim)
++            rows.append((label, name, vt, vf, classify(vt, vf)))
++
++    faults = [r for r in rows if r[4] in ("NON_DISCRIM", "INVERTED")]
++    print(f"  {'pair':18} {'tool':22} {'true':11} {'false':11} class")
++    print("  " + "-" * 72)
++    for label, name, vt, vf, cls in rows:
++        if cls == "SILENT":
++            continue
++        print(f"  {label:18} {name:22} {str(vt):11} {str(vf):11} {cls}")
++
++    tools_seen = sorted(runnable)
++    bad_tools = sorted({r[1] for r in faults})
++    definitive_tools = sorted({r[1] for r in rows if r[4] != "SILENT"})
++
++    print(f"\n  tools that produced ANY definitive FOR: "
++          f"{len(definitive_tools)} of {len(tools_seen)}")
++    print(f"    {', '.join(definitive_tools) or '-'}")
++    print(f"\n  tools that FAILED to discriminate on >=1 pair: "
++          f"{len(bad_tools)} of {len(definitive_tools)}")
++    print(f"    {', '.join(bad_tools) or '-'}")
++
++    k, n = len(bad_tools), len(definitive_tools)
++    (wl, wh), (cl, ch), xd = _iv(k, n)
++    print(f"\n  proportion {k}/{n} = {0.0 if n == 0 else k / n:.6f}")
++    print(f"    wilson           [{wl:.6f}, {wh:.6f}]")
++    print(f"    clopper-pearson  [{cl:.6f}, {ch:.6f}]")
++    print(f"    2-route max gap  {xd:.3e}")
++
++    kp, np_ = len(faults), len(rows)
++    (wl2, wh2), (cl2, ch2), xd2 = _iv(kp, np_)
++    print(f"\n  (tool, pair) cells failing to discriminate {kp}/{np_} = "
++          f"{kp / np_:.6f}")
++    print(f"    wilson           [{wl2:.6f}, {wh2:.6f}]")
++    print(f"    clopper-pearson  [{cl2:.6f}, {ch2:.6f}]")
++    print(f"    2-route max gap  {xd2:.3e}")
++
++    print("\n  SCOPE. This establishes that the tools named above DO fail to "
++          "discriminate\n  on the pairs run. It does NOT establish that a "
++          "SILENT tool never will.")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-10 05:07:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/.cdsfl_deny_canonical_writes.sb	2026-11-10 04:44:53
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-10 03:42:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/bench/domain_immune.py	2026-11-10 04:54:25
+@@ -405,6 +405,22 @@
+         return domain
+ 
+ 
++#: Tools whose CONFIRMED verdict was demonstrated BY EXECUTION on 2026-11-10
++#: to take the same value on a claim and on a false variant of it, so a
++#: confirmation from them cannot be the basis of an admission -- alone or in
++#: company with each other. The demonstrations are committed in
++#: `bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`
++#: and re-run by it, so this set cannot outlive its evidence: if a listed
++#: tool learns to discriminate, that test FAILS and the entry is removed.
++#: The identifier matches the one chosen for the same repair in the canonical
++#: tree's round of 2026-11-10, deliberately, so the vocabulary does not fork.
++CANNOT_ADMIT_ALONE = frozenset({
++    "dimensional_analysis",
++    "astronomical",
++    "biological_sequence",
++})
++
++
+ def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
+     """The verification set a STEM topic assigns to one finding, and its verdicts.
+ 
+@@ -482,6 +498,7 @@
+ 
+     definitive_for: List[str] = []
+     definitive_against: List[str] = []
++    admit_capable: List[str] = []
+     for name in tools:
+         entry = manifest.get(name)
+         if not entry:
+@@ -506,12 +523,45 @@
+         out["verdicts"].append((name, verdict, conf))
+         if verdict in ("CONFIRMED", "VERIFIED", "SUPPORTED"):
+             definitive_for.append(name)
++            # ★ A CONFIRMATION COUNTS TOWARD ADMISSION ONLY IF IT COULD HAVE
++            # COME OUT THE OTHER WAY. Added 2026-11-10, demonstrated by
++            # execution in `bench/tests/
++            # test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`:
++            #   * `astronomical` returns CONFIRMED 0.9 for BOTH "the speed of
++            #     light is 299792458 m/s" AND the km/s variant, wrong by 1000x
++            #     -- its constant branch extracts the numeral and never reads
++            #     the unit.
++            #   * `dimensional_analysis` returns CONFIRMED 0.85 for BOTH
++            #     "1 km = 1000 m" AND "1 km = 1001 m" -- it tests dimensional
++            #     homogeneity, not numeric correctness.
++            #   * `biological_sequence` returns CONFIRMED 0.85 from its
++            #     pure-validity fallback for ANY claim containing a valid
++            #     sequence, including claims it never evaluated; its RC /
++            #     translation / length / GC branches DO discriminate, but at
++            #     admit time the branch that fired cannot be told apart
++            #     from the verdict alone.
++            # A verdict that takes the same value on a claim and on its false
++            # variant is not evidence for the claim, so none of these may be
++            # the basis of an admission. Their verdicts stay in `verdicts`
++            # and in the detail line as the record of what ran.
++            #
++            # `secondary_only` is HIS RULING of 2026-09-28 (Wolfram "should
++            # never be considered the primary falsifier route"), read from
++            # the manifest field of that name, never restated here.
++            if entry.get("secondary_only"):
++                pass  # named in detail below: confirmed but cannot admit
++            elif name in CANNOT_ADMIT_ALONE:
++                pass  # named in detail below: confirmed but cannot admit
++            else:
++                admit_capable.append(name)
+         elif verdict in ("REFUTED", "REJECTED", "CONTRADICTED"):
+             definitive_against.append(name)
+ 
+-    out["admits"] = bool(definitive_for) and not definitive_against
++    out["admits"] = bool(admit_capable) and not definitive_against
++    _excluded = [n for n in definitive_for if n not in admit_capable]
+     out["detail"] = (
+         f"{domain}/{claim_type} tools={','.join(tools)} "
+-        f"for={','.join(definitive_for) or '-'} "
++        f"for={','.join(admit_capable) or '-'} "
++        f"for_but_cannot_admit={','.join(_excluded) or '-'} "
+         f"against={','.join(definitive_against) or '-'}")
+     return out
+
+### fable:attempt-1:bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py
+--- /dev/null	2026-11-10 05:07:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py	2026-11-10 04:55:10
+@@ -0,0 +1,171 @@
++"""A CONFIRMED verdict admits a prose fix only if it could have come out the other way.
++
++THE DEFECT, DEMONSTRATED BY EXECUTION ON 2026-11-10 (free-seat round). Three
++B-Cell verifiers carry a CONFIRMED path whose value does not depend on the
++claim's truth:
++
++  * `_verify_astronomical` returns CONFIRMED 0.9 for BOTH "the speed of light
++    is 299792458 m/s" AND the km/s variant, wrong by a factor of 1000 -- its
++    constant branch extracts the numeral and never reads the unit.
++  * `_verify_dimensional` (tool `dimensional_analysis`) returns CONFIRMED 0.85
++    for BOTH "1 km = 1000 m" AND "1 km = 1001 m" -- it tests dimensional
++    homogeneity, not numeric correctness.
++  * `_verify_biological_sequence` returns CONFIRMED 0.85 from its
++    pure-validity fallback for ANY claim containing a valid sequence,
++    including a claim it never evaluated. Its reverse-complement branch DOES
++    discriminate, which is why the exclusion is at the ADMIT PATH and not in
++    the verifier: at admit time the branch that fired cannot be told apart
++    from the verdict alone.
++
++Driven through `_apply_back_gate` with `domain="physics"`, the unit-blind
++confirmation gave `ok=True` for the km/s claim -- the gate would fold back a
++claim wrong by 1000x. `bench/domain_immune.CANNOT_ADMIT_ALONE` now bars these
++three from being the basis of an admission, and the manifest's
++`secondary_only` field (his ruling of 2026-09-28: Wolfram "should never be
++considered the primary falsifier route") is honoured on the same path.
++
++THIS FILE IS THE COMMITTED MEASUREMENT behind that set, per the standing rule
++that a measured rate may be cited only if the script producing it is committed
++alongside it. The discrimination probes are re-run here, so the set cannot
++outlive its evidence: if a listed tool learns to discriminate, the matching
++probe test FAILS and the entry must be removed.
++
++ADDITIVE in both directions: the sympy-backed admissions pinned by
++`test_the_verification_set_comes_from_the_topic_2026-11-10.py` still admit
++(re-asserted below), and the only admissions removed are ones demonstrated
++here to be truth-blind.
++"""
++from __future__ import annotations
++
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++for _p in (str(REPO), str(REPO / "bench")):
++    if _p not in sys.path:
++        sys.path.insert(0, _p)
++
++
++@pytest.fixture(scope="module")
++def ia():
++    import immune_agents
++    return immune_agents
++
++
++@pytest.fixture(scope="module")
++def di():
++    import bench.domain_immune as domain_immune
++    return domain_immune
++
++
++@pytest.fixture(scope="module")
++def manifest(ia):
++    return ia._load_tool_manifest()
++
++
++class _FindingView:
++    def __init__(self, description: str) -> None:
++        self.description = description
++
++
++TRUE_C = "the speed of light is 299792458 m/s"
++FALSE_C = "the speed of light is 299792458 km/s"
++
++
++class TestTheProbesThatJustifyTheSet:
++    """Each exclusion rests on a re-runnable demonstration, not a citation."""
++
++    def test_astronomical_confirms_the_1000x_wrong_variant(self, ia, manifest):
++        fn = getattr(ia, manifest["astronomical"]["verifier"])
++        vt, vf = fn(TRUE_C), fn(FALSE_C)
++        assert vt.verdict == "CONFIRMED", vt
++        assert vf.verdict == "CONFIRMED", (
++            "astronomical now discriminates on units; remove it from "
++            "CANNOT_ADMIT_ALONE and retire this probe")
++
++    def test_dimensional_analysis_confirms_a_false_equality(self, ia, manifest):
++        fn = getattr(ia, manifest["dimensional_analysis"]["verifier"])
++        vt, vf = fn("1 km = 1000 m"), fn("1 km = 1001 m")
++        assert vt.verdict == "CONFIRMED", vt
++        assert vf.verdict == "CONFIRMED", (
++            "dimensional_analysis now checks values; remove it from "
++            "CANNOT_ADMIT_ALONE and retire this probe")
++
++    def test_biological_sequence_confirms_a_claim_it_never_evaluated(
++            self, ia, manifest):
++        fn = getattr(ia, manifest["biological_sequence"]["verifier"])
++        v = fn("the sequence 'ATGC' proves the defendant was present")
++        assert v.verdict == "CONFIRMED", (
++            "the pure-validity fallback no longer confirms blindly; remove "
++            "biological_sequence from CANNOT_ADMIT_ALONE and retire this probe")
++
++    def test_biological_sequence_RC_branch_DOES_discriminate(self, ia, manifest):
++        """Why the exclusion is at the admit path, not in the verifier."""
++        fn = getattr(ia, manifest["biological_sequence"]["verifier"])
++        t = fn("the reverse complement of 'ACGT' is 'ACGT'")
++        f = fn("the reverse complement of 'ACGT' is 'AAAA'")
++        assert t.verdict == "CONFIRMED", t
++        assert f.verdict == "REJECTED", f
++
++
++class TestTheAdmitPath:
++    def test_the_false_physics_claim_no_longer_admits(self, di):
++        dv = di.domain_verification_set("physics", _FindingView(FALSE_C))
++        assert dv["admits"] is False, dv
++        # astronomical's confirmation is RECORDED, never silently dropped
++        assert any(n == "astronomical" and v == "CONFIRMED"
++                   for n, v, _ in dv["verdicts"]), dv["verdicts"]
++        assert "for_but_cannot_admit=" in dv["detail"], dv["detail"]
++        assert "astronomical" in dv["detail"], dv["detail"]
++
++    def test_the_true_physics_claim_also_does_not_admit_on_a_blind_tool(self, di):
++        """Symmetry: the m/s claim's ONLY confirmation is the same blind
++        branch, so it cannot admit either -- a confirmation that cannot
++        distinguish this claim from its false variant is not evidence."""
++        dv = di.domain_verification_set("physics", _FindingView(TRUE_C))
++        assert dv["admits"] is False, dv
++
++    def test_a_sympy_backed_admission_still_admits(self, di):
++        """The additive direction: nothing evidence-backed was removed."""
++        dv = di.domain_verification_set(
++            "mathematics", _FindingView("Eq(x**2 - 1, (x-1)*(x+1))"))
++        assert dv["admits"] is True, dv
++
++    def test_a_secondary_only_tool_cannot_be_the_sole_admitter(
++            self, di, manifest, monkeypatch):
++        """His ruling of 2026-09-28, honoured where admission is decided.
++        Wolfram is not called live (1 licensed kernel); the manifest flag is
++        exercised with a stubbed verdict, which is the property under test:
++        the FLAG bars admission, whatever the tool said."""
++        assert manifest["wolfram"].get("secondary_only") is True
++        import bench.domain_immune as dimod
++
++        class _V:
++            verdict = "CONFIRMED"
++            confidence = 0.9
++
++        cfg = dimod.DomainConfig(
++            domain="physics",
++            claim_patterns={"mathematical": [r".*"]},
++            verification_tools={"mathematical": ["wolfram"]},
++        )
++        monkeypatch.setattr(dimod, "load_domain_config", lambda d: cfg)
++        import immune_agents as ia_mod
++        monkeypatch.setattr(
++            ia_mod, ia_mod._load_tool_manifest()["wolfram"]["verifier"],
++            lambda claim: _V(), raising=True)
++        dv = dimod.domain_verification_set("physics", _FindingView("any claim"))
++        assert dv["admits"] is False, dv
++        assert "wolfram" in dv["detail"], dv["detail"]
++
++
++class TestTheSetMatchesItsEvidence:
++    def test_every_member_has_a_probe_in_this_file(self, di):
++        """The set and the demonstrations cannot drift apart silently."""
++        src = pathlib.Path(__file__).read_text(encoding="utf-8")
++        for tool in di.CANNOT_ADMIT_ALONE:
++            assert f'"{tool}"' in src or f"'{tool}'" in src, (
++                f"{tool} is excluded from admission with no committed "
++                "demonstration in this file")
+
+### fable:attempt-1:bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py	2026-11-10 02:06:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py	2026-11-10 04:54:35
+@@ -213,6 +213,13 @@
+ class TestTheCallerHandsTheFindingOver:
+     def test_the_promote_loop_passes_the_entry(self):
+         src = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+-        assert "_apply_back_gate(mod, rel, test_cmd, finding=entry)" in src, (
++        # THE PIN IS THE ARGUMENT LINE, NOT THE WHOLE CALL. The first version
++        # pinned `_apply_back_gate(mod, rel, test_cmd, finding=entry)` as one
++        # string, and the call now spans 2 lines because the domain route of
++        # the same night added `domain=...` -- so the guard went red while the
++        # property it protects (the finding IS handed to the gate) still held.
++        # A guard red for a true property is a false reason, which is the B88
++        # harm. Corrected 2026-11-10 by the free-seat round.
++        assert "mod, rel, test_cmd, finding=entry" in src, (
+             "the promote loop no longer hands the finding to the gate, so the "
+             "falsifier branch can never be reached from a real run")
+
+### fable:attempt-1:bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py	2026-11-10 05:03:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py	2026-11-09 23:30:07
+@@ -189,20 +189,8 @@
+         #: refused, which was the caveat attached to his acceptance. B21 and
+         #: C0001 and B111 also closed on his rulings of 2026-11-09 but were
+         #: already outside this queue.
+-        #: ★ 10 -> 7, RE-PINNED 2026-11-10 WITH ITS REASON, AND THE REASON
+-        #: WAS ESTABLISHED BY A CONTROLLED BEFORE-AND-AFTER rather than
+-        #: inferred from the diff: the real surface module was run against
+-        #: the task list at HEAD and against the working tree, with the file
+-        #: restored byte-identically afterwards. Exactly 3 entries LEFT and
+-        #: 0 joined -- B79, B104 and B131 -- which are precisely the 3 whose
+-        #: ASKING SENTENCES were retired in place that night, his ruling of
+-        #: 2026-11-08 having already settled each of them. An entry leaving
+-        #: this queue because its question is spent is the mechanism working;
+-        #: the 3 are pinned as RENDERED_NOWHERE_BY_DESIGN in
+-        #: `test_the_two_decision_surfaces_cannot_diverge_2026-11-01.py`.
+-        assert n == 7, (
+-            f"the queue is {n}; it was 7 on 2026-11-10, 10 late on "
+-            f"2026-11-09, 12 earlier that "
++        assert n == 10, (
++            f"the queue is {n}; it was 10 late on 2026-11-09, 12 earlier that "
+             f"day, 13 earlier still, 29 on 2026-11-07, and 36 under the "
+             f"rejected fail-open design. If this moved for a real reason, "
+             f"re-run the producer and update this pin WITH its reason.")
+@@ -220,12 +208,8 @@
+         #: recommendation" of 2026-11-08, B134 once his subagent cap of 6 was
+         #: stated as a number in both instruction files, and B128 once a
+         #: refused commit recorded WHY, which was the caveat on his acceptance.
+-        #: ★ 10 -> 7 ON 2026-11-10, same cause as the queue pin above and
+-        #: established the same way: B79, B104 and B131 left the queue when
+-        #: their asking sentences were retired in place, his ruling of
+-        #: 2026-11-08 having settled each. 0 entries joined.
+-        assert "NOT NEW:     7 of 7" in out, out[-2000:]
+-        assert "NOT REPEATS: 0 of 7" in out, out[-2000:]
++        assert "NOT NEW:     10 of 10" in out, out[-2000:]
++        assert "NOT REPEATS: 0 of 10" in out, out[-2000:]
+         #: ★ THE PROPERTY, NOT THE ENTRY. This named B20, and B20 was DEFERRED
+         #: on his ruling of 2026-11-09, so the live-again entry became B13 and
+         #: the assertion failed for a reason that had nothing to do with the
+@@ -284,23 +268,10 @@
+         #: B134 and B128 on his "I accept your recommendation" of 2026-11-08.
+         #: A smaller queue, not a miscount -- which is exactly the distinction
+         #: the denominator was pinned beside the count to preserve.
+-        #: ★ 5 -> 8 ON 2026-11-10, AND THE DENOMINATOR PIN BELOW HELD AT 17
+-        #: THROUGHOUT -- WHICH IS THIS FILE'S OWN DESIGN PROVING ITSELF IN
+-        #: THE OPPOSITE DIRECTION TO LAST TIME. On 2026-11-09 the TOTAL moved
+-        #: while REPEAT stood still, and the comment above records that only
+-        #: the denominator could tell a miscount from a smaller queue. Tonight
+-        #: the reverse happened: the total is unchanged at 17, so the live set
+-        #: did not move at all and the CLASSIFICATION did. The cause is this
+-        #: session's own work, measured by running the real producer against
+-        #: the task list at HEAD and in the working tree: his rulings of
+-        #: 2026-11-08 were carried in to entries that had recorded none, so
+-        #: REAL fell 11 -> 1 and those entries redistributed into
+-        #: LIVE-AGAIN 1 -> 8 and REPEAT 5 -> 8. A ruling being RECORDED
+-        #: against an entry is the opposite of drift.
+-        assert _part.get("REPEAT") == 8, (
+-            f"the partition moved: REPEAT is {_part.get('REPEAT')}, pinned at 8 "
+-            f"on 2026-11-10 (5 late on 2026-11-09, 10 earlier that day, 7 on "
+-            f"2026-11-07). Re-run the producer and re-pin WITH the reason.")
++        assert _part.get("REPEAT") == 5, (
++            f"the partition moved: REPEAT is {_part.get('REPEAT')}, pinned at 5 "
++            f"late on 2026-11-09 (10 earlier that day, 7 on 2026-11-07). "
++            f"Re-run the producer and re-pin WITH the reason.")
+         _tot = sum(int(v) for v in _part.values())
+         #: ★ 26 -> 25, AND THIS PIN HAS NOW EARNED ITS KEEP. Closing B103
+         #: moved the TOTAL while leaving `'REPEAT': 10` exactly where it was,
+
+### fable:attempt-1:resources/MEMORY_EXCLUSIONS.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/resources/MEMORY_EXCLUSIONS.md	2026-11-10 04:44:29
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/resources/MEMORY_EXCLUSIONS.md	2026-11-10 03:54:14
+@@ -8,22 +8,22 @@
+ record is honest about the shape of what is withheld, not only what is
+ shown.
+ 
+-## Accounting (counted 2026-11-10 04:44 GMT)
++## Accounting (counted 2026-11-10 03:54 GMT)
+ 
+ The source index lives privately at
+ `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md`.
+ Every figure below was counted from that directory on the date in this
+ heading, not carried forward from a previous version of this file.
+-The directory holds **338 files**, of which one is `MEMORY.md` itself
+-(the index), leaving **337 individual memory files**. They partition as:
++The directory holds **336 files**, of which one is `MEMORY.md` itself
++(the index), leaving **335 individual memory files**. They partition as:
+ 
+ | bucket | count |
+ |---|---|
+-| Mirrored (in summarised form) in `MEMORY.md` | 280 |
++| Mirrored (in summarised form) in `MEMORY.md` | 278 |
+ | Named as excluded, with a reason, below | 15 |
+ | Session handoffs, declared in `MEMORY.md` as retained privately and deliberately not mirrored | 3 |
+ | **Unclassified — neither mirrored nor previously declared** | **39** |
+-| total | 337 |
++| total | 335 |
+ 
+ > **[Correction 2026-10-01.]** Total 158 -> 163, mirrored 101 -> 106. 5 memory files were written on 2026-10-01 recording the day's work on the simulation branch: `cdsfl_dated_claim_dated_denominator_2026-10-01.md` (6 of the 20 suite failures were one fault, a dated measurement checked against a grown archive, and nothing was broken in any of the 6), `cdsfl_claim_channel_is_on_2026-10-01.md` (the claim-level channel the free panel designed is built, wired and informative-only), `cdsfl_seat_writes_are_prevented_now_2026-10-01.md` (a kernel sandbox now DENIES a seat writing the canonical tree, measured on 6 properties, and the gitignored-harvest stranding is repaired at source with a ratchet), `cdsfl_marker_matched_a_modifier_2026-10-01.md` (the latent classifier tagged a live defect latent on "no caller override", which means the opposite) and `cdsfl_disagreement_was_stated_not_sectioned_2026-10-01.md` (2 seat replies preserved disagreement in full and a line-anchored pattern could not see it; 4 gained of 306, 0 lost). All 5 carry a pointer line in `MEMORY.md`, so all 5 fall in the mirrored bucket rather than needing a name under Excluded or Unclassified. Recorded 2026-10-01T16:06:03+01:00.
+ >
+
+### fable:attempt-1:scripts/morning_report_build_2026-10-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/morning_report_build_2026-10-12.py	2026-11-10 04:58:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_isuerutp/repo/scripts/morning_report_build_2026-10-12.py	2026-11-10 03:42:55
+@@ -1142,29 +1142,12 @@
+     r"^\s*(?:\d+[.)]\s|\d{4}-\d{2}-\d{2}|\d{1,2}:\d{2})")
+ 
+ 
+-def _mark_my_paragraphs(lines: list, exempt_spans: list,
+-                        heading_idx=()) -> int:
++def _mark_my_paragraphs(lines: list, exempt_spans: list) -> int:
+     """Prefix `*` to the first line of each paragraph that is MINE. In place.
+ 
+     Returns how many paragraphs were marked, so a caller or a test can assert
+     the count rather than trust the walk.
+-
+-    ★ `heading_idx` IS A RECORD, NOT A SHAPE, AND THAT IS THE WHOLE POINT.
+-    The all-caps test below cannot recognise a heading whose body is prose:
+-    `DECISION 1. B13, admitting a model is not trivial` is a structural
+-    heading with a mixed-case headline, so on the first build all 17 of them
+-    were marked -- 17 spoken instances of the word "asterisk" on the lines
+-    that give the report its structure, which his ruling of 2026-11-08 did
+-    not ask for (it governs PARAGRAPHS), and a sibling guard red because
+-    the guard pattern for a numbered decision heading no longer matched. The FOOT-LINE was marked too, and
+-    the note standard requires that exact line as the final content.
+-    B105's own finding was that a SHAPE heuristic misreading headings was 1
+-    of the 3 measured causes of his lost responses, so inferring a heading
+-    here would repeat the error it diagnosed. `render_tts` knows which lines
+-    it emits as headings, so it RECORDS them at the point of emission, the
+-    way `_ex` already records quoted spans -- 1 record, no second opinion.
+     """
+-    _headings = set(heading_idx or ())
+     quoted = set()
+     for _a, _b in (exempt_spans or []):
+         for _i in range(max(0, _a), min(len(lines), _b)):
+@@ -1196,9 +1179,6 @@
+             continue
+         if i in quoted:
+             continue
+-        #: A RECORDED HEADING, not a guessed one. See the docstring.
+-        if i in _headings:
+-            continue
+         if stripped[0] in "*#-":
+             continue
+         #: A LIST MARKER OR A TIMESTAMP, not every numeral. See
+@@ -1252,10 +1232,6 @@
+     #: by LINE INDEX here and converts them to character offsets at the end --
+     #: exact, rather than matched by text, and 0 bytes of what he hears change.
+     _ex: list = []
+-    #: ★ HEADING LINES, RECORDED WHERE THEY ARE EMITTED (B105). `L` is
+-    #: append-only in this function, so an index taken before an append
+-    #: stays correct for the life of the list.
+-    _hd: list = []
+     A(f"MORNING REPORT, {dt.date.today().strftime('%d %B %Y')}")
+     A("")
+     A(f"This report is generated from the project's own records rather than written by "
+@@ -1301,7 +1277,6 @@
+     # SKIPPED BY ITS ITERABLE rather than by re-indenting the block under an
+     # `if`: simplest sufficient, and a diff a reader can check.
+     for i, d in enumerate(decs if detail else [], 1):
+-        _hd.append(len(L))
+         A(f"DECISION {i}. {_spoken(d.get('title') or d['ident'])}")
+         A("")
+         A("What it is. " + _spoken(d.get("what", d.get("headline", ""))))
+@@ -1309,7 +1284,6 @@
+         A("Why it needs a decision. " + _spoken(d.get("why", "")))
+         A("")
+         if d.get("options"):
+-            _hd.append(len(L))
+             A("The options.")
+             A("")
+             for n, o in enumerate(d["options"], 1):
+@@ -1424,11 +1398,10 @@
+               f"than a decision.")
+     A("")
+     A("")
+-    _hd.append(len(L))
+     A(f"Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.")
+     # ★ B105, HIS RULING OF 2026-11-08. Marked BEFORE the offset conversion
+     # below, because that conversion measures `L` itself.
+-    _marked = _mark_my_paragraphs(L, _ex, _hd)
++    _marked = _mark_my_paragraphs(L, _ex)
+     if exempt_out is not None:
+         # Line index -> character offset, using the SAME join this returns, so
+         # the offsets cannot drift from the text they describe.

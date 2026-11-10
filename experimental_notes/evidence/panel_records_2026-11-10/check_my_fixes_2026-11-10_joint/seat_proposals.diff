@@ -1,0 +1,1152 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-10 05:54:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4vcigice/repo/.cdsfl_deny_canonical_writes.sb	2026-11-10 05:33:26
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-10 05:25:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4vcigice/repo/bench/domain_immune.py	2026-11-10 05:48:06
+@@ -446,8 +446,34 @@
+ }
+ 
+ 
+-def _may_admit_alone(name: str, evidence: str) -> bool:
+-    """Whether a favourable verdict from `name` may admit a fix by itself."""
++def _may_admit_alone(name: str, evidence: str,
++                     secondary_only: bool = False) -> bool:
++    """Whether a favourable verdict from `name` may admit a fix by itself.
++
++    3 independent bars, and they are 3 because they rest on 3 different kinds
++    of evidence:
++
++      `secondary_only`  -- a MANIFEST DECLARATION, discharging his ruling of
++          2026-09-28 that such a tool is NEVER the primary. Read from the
++          tool's own manifest entry rather than restated here, so the 2 cannot
++          drift. Found missing on this path in the joint round of 2026-11-10:
++          `wolfram` is the 1 tool the manifest marks `secondary_only`, it is
++          assigned in 12 (domain, claim_type) pairs, it is REACHED by 15 of 40
++          classified probes -- measured, not assumed -- and a CONFIRMED of its
++          admitted a fix BY ITSELF through this function. `needs_file` was the
++          only manifest field the admit path read, and `secondary_only` was
++          not among them.
++      `CANNOT_ADMIT_ALONE`     -- a MEASURED tool-level property.
++      `BRANCH_GATED_ADMISSION` -- a MEASURED per-branch property.
++
++    THE TOOL STILL RUNS AND IS STILL RECORDED. This bars sole ADMISSION only;
++    `definitive_for` keeps every favourable verdict, so a secondary tool is
++    still a corroborating voice. That is the difference between this and the
++    `needs_file` branch, which BYPASSES the tool entirely -- and it is why the
++    check belongs here and not beside that bypass.
++    """
++    if secondary_only:
++        return False
+     if name in CANNOT_ADMIT_ALONE:
+         return False
+     need = BRANCH_GATED_ADMISSION.get(name)
+@@ -561,7 +587,8 @@
+         out["verdicts"].append((name, verdict, conf))
+         if verdict in ("CONFIRMED", "VERIFIED", "SUPPORTED"):
+             definitive_for.append(name)
+-            if _may_admit_alone(name, getattr(v, "evidence", "")):
++            if _may_admit_alone(name, getattr(v, "evidence", ""),
++                                bool(entry.get("secondary_only"))):
+                 computing_for.append(name)
+         elif verdict in ("REFUTED", "REJECTED", "CONTRADICTED"):
+             definitive_against.append(name)
+
+### cc2:attempt-1:bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py	2026-11-10 05:24:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4vcigice/repo/bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py	2026-11-10 05:47:36
+@@ -20,6 +20,7 @@
+ 
+ Producer: `scripts/which_admissions_are_truth_blind_2026-11-10.py`.
+ """
++import ast
+ import pathlib
+ import sys
+ 
+@@ -177,3 +178,119 @@
+             f"cross_domain declares {len(tools)} tools, pinned at 11 on "
+             f"2026-11-10, every one unreachable because the domain has 0 "
+             f"claim_patterns so every claim classifies 'uncategorised'.")
++
++
++class TestASecondaryOnlyToolCannotAdmitAlone:
++    """His ruling of 2026-09-28: a `secondary_only` tool is NEVER the primary.
++
++    FOUND MISSING ON THIS PATH IN THE JOINT ROUND OF 2026-11-10, and it is a
++    DIFFERENT defect from the truth-blindness above: the bar rests on a
++    MANIFEST DECLARATION, not on a measurement, so no discrimination control
++    can surface it. `domain_verification_set` read exactly 1 manifest field,
++    `needs_file`, and `secondary_only` was not among them.
++
++    IT IS THE MORE LIVE OF THE 2 GAPS, measured. `wolfram` is the 1 tool the
++    manifest marks `secondary_only`; it is assigned in 12 (domain, claim_type)
++    pairs and REACHED by 15 of 40 classified probes, against 0 of 6 for the
++    branch-gated `biological_sequence`. So the repair this class guards is
++    exercised by real traffic where the branch gate is not.
++
++    THE KERNEL IS NOT CONSUMED TO TEST A FLAG. These tests stub the verdict.
++    Wolfram calls queue against 1 licensed kernel and a flag's behaviour does
++    not depend on what the kernel returns, so calling it would buy nothing and
++    would make the guard fail on every machine without a licence -- which the
++    project's aims rule out as a measure of anything.
++    """
++
++    def test_the_manifest_still_declares_exactly_one_secondary_only_tool(self):
++        """ANTI-VACUITY: the tests below are empty if the manifest declares none."""
++        import immune_agents as ia
++        man = ia._load_tool_manifest()
++        so = sorted(t for t, e in man.items() if (e or {}).get("secondary_only"))
++        assert so == ["wolfram"], (
++            f"the secondary_only set is {so}, pinned at ['wolfram'] on "
++            f"2026-11-10; if it changed, re-measure reachability before "
++            f"trusting the figures in this docstring")
++
++    def test_the_flag_bars_sole_admission(self):
++        assert di._may_admit_alone("wolfram", "", True) is False
++        assert di._may_admit_alone("wolfram", "", False) is True, (
++            "the bar must come from the MANIFEST FLAG and not from the tool's "
++            "name, or a renamed tool escapes it")
++
++    def test_the_default_is_the_pre_existing_behaviour(self):
++        """The parameter is additive: unflagged callers are unchanged."""
++        assert di._may_admit_alone("stoichiometric_balance", "") is True
++
++    def test_the_production_call_site_passes_the_flag(self):
++        """READ FROM THE SYNTAX TREE, NOT PINNED AS TEXT.
++
++        The same night, a sibling guard pinned a call as a one-line string and
++        went red when an argument split it across 2 lines -- a guard that was
++        itself a false reason. This reads the parsed call, so it survives
++        reformatting and further arguments while still failing if the flag is
++        dropped.
++        """
++        src = (REPO / "bench" / "domain_immune.py").read_text(encoding="utf-8")
++        calls = [n for n in ast.walk(ast.parse(src))
++                 if isinstance(n, ast.Call)
++                 and getattr(n.func, "id", None) == "_may_admit_alone"]
++        assert len(calls) == 1, (
++            f"{len(calls)} call sites of _may_admit_alone in domain_immune; "
++            f"the admit decision must have exactly 1 so there is no second "
++            f"path that can skip a bar")
++        args = calls[0].args + [k.value for k in calls[0].keywords]
++        assert len(args) == 3, (
++            f"the admit decision passes {len(args)} argument(s); the "
++            f"secondary_only flag is not being passed, so the manifest "
++            f"declaration is read nowhere and the bar is unreachable")
++        flag = ast.unparse(args[2])
++        assert "secondary_only" in flag, (
++            f"the 3rd argument is {flag!r}, which does not come from the "
++            f"manifest's secondary_only field")
++
++    def test_end_to_end_a_stubbed_secondary_confirmation_does_not_admit(self):
++        """The whole path, with the verdict stubbed and NO kernel call.
++
++        The premises are asserted so this cannot pass for the wrong reason --
++        the mistake the first version of this file made.
++        """
++        import immune_agents as ia
++
++        class _V:
++            verdict, confidence, evidence = "CONFIRMED", 0.99, "stub: holds"
++
++        real = ia._load_tool_manifest
++
++        def fake():
++            man = {k: dict(v) for k, v in real().items()}
++            man["wolfram"] = {**man["wolfram"], "verifier": lambda _c: _V(),
++                              "needs_file": False, "secondary_only": True}
++            #: Everything else must stay SILENT, or a refusal here could be a
++            #: rejection rather than the bar under test.
++            for k, v in man.items():
++                if k != "wolfram":
++                    v["verifier"] = lambda _c: None
++            return man
++
++        ia._load_tool_manifest = fake
++        try:
++            r = di.domain_verification_set("statistics",
++                                           _F("the p-value is 0.03"))
++        finally:
++            ia._load_tool_manifest = real
++
++        vs = r.get("verdicts") or []
++        assert "wolfram" in (r.get("tools") or []), (
++            f"wolfram is not in the set statistics assigns to this claim "
++            f"({r.get('tools')}), so this test exercises nothing")
++        assert any(n == "wolfram" and v == "CONFIRMED" for n, v, _c in vs), (
++            f"the stub did not land; verdicts={vs}")
++        assert not [n for n, v, _c in vs
++                    if v in ("REFUTED", "REJECTED", "CONTRADICTED")], (
++            "something rejected the claim, so a refusal would not be the "
++            "secondary_only bar's doing")
++        assert r["admits"] is False, r.get("detail")
++        assert "for_but_cannot_admit=wolfram" in (r.get("detail") or ""), (
++            f"the muted voice is not named, so the record cannot tell "
++            f"'nothing agreed' from 'only a secondary agreed': {r.get('detail')}")
+
+### cc2:attempt-1:bench/tests/test_the_vacuity_predicate_direction_is_measured_2026-11-10.py
+--- /dev/null	2026-11-10 05:54:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4vcigice/repo/bench/tests/test_the_vacuity_predicate_direction_is_measured_2026-11-10.py	2026-11-10 05:41:56
+@@ -0,0 +1,164 @@
++"""The vacuity predicate's direction is measured, and the raise probes cannot decide it.
++
++WHY IT EXISTS. In the blind round of 2026-11-10 a panel seat reported that
++HEAD's `bench/proof_verify.asserts_something` returns True on a strict superset
++of the discarded copy's, naming 3 HEAD-only cases: an availability-only
++`assert`, `raise SystemExit(0)`, and a dead `raise ValueError`. The joint brief
++then recorded that 1 of the 3 did not reproduce and asked whether the direction
++claim survives on the other 2.
++
++IT DOES NOT SURVIVE ON THOSE 2, AND THE 3RD WAS NOT AN ISOLATED SLIP. All 3
++named cases are `ast.Assert` or `ast.Raise` nodes, and BOTH predicates open
++their walk with the SAME clause -- `isinstance(node, (_a.Assert, _a.Raise))`
++-- which is `ast.dump`-identical between the 2 files, as is every statement
++before the walk. A probe that parses to an Assert or a Raise therefore returns
++True under both BY CONSTRUCTION, and no assert-shaped or raise-shaped probe can
++separate them. The 2 predicates differ in exactly 1 clause:
++
++    HEAD       any `ast.Constant` string containing "FALSIFIED" anywhere
++    discarded  only strings emitted by an `ast.Call` that satisfy
++               `_declares_falsified`
++
++So HEAD is indeed the broader predicate -- the brief's CONCLUSION is right --
++but it is broader on the FALSIFIED-string route, not on raises, and the cases
++that witness it are non-emitted FALSIFIED strings such as a docstring or a bare
++assignment. The reported figures (6 of 7 against 4 of 7) cannot have come from
++the dispatched tree, because the discarded clause calls `_declares_falsified`,
++which is defined NOWHERE in it: its module-level import of that name from
++`bench.falsifier_verify` raises ImportError, so the discarded file is not even
++loadable here. Any run of it supplied a substitute, and the differential is a
++measurement of that substitute.
++
++WHAT THIS FILE PINS, so the refuted reading cannot be re-asserted:
++  1. HEAD accepts all 3 of the cases reported as HEAD-only -- which is the
++     SAFE direction and is not a defect; a predicate deciding whether a clean
++     exit means anything should err towards UNTOOLABLE, not towards admissible.
++  2. HEAD's first walk clause is still exactly `(Assert, Raise)`. If that is
++     ever narrowed, this test fails loudly -- at which point raise probes DO
++     become discriminating and the direction must be re-measured.
++  3. `_declares_falsified` is still absent from `bench.falsifier_verify`. The
++     day it is folded back, this test fails, which is the day the discarded
++     predicate becomes loadable and the differential becomes reproducible.
++  4. `assert True` defeats HEAD's predicate. This is the residual the brief
++     asks about, and it is NOT what makes the distinction immaterial: `assert
++     True` is a DELIBERATE vacuous proof, while an availability-only assert or
++     a dead raise is an ACCIDENTAL one. The 2 predicates are equally unsound
++     against the first and identical against the second, so the distinction is
++     immaterial for a different and stronger reason than the brief offers --
++     on the whole accidental class they do not differ at all.
++"""
++from __future__ import annotations
++
++import ast
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++HEAD = REPO / "bench" / "proof_verify.py"
++
++#: The 3 cases reported as HEAD-only in the blind round, each paired with the
++#: AST node class that decides it. All 3 are matched by clause 1.
++REPORTED_HEAD_ONLY = [
++    ("availability-only assert", "import sympy\nassert sympy is not None",
++     ast.Assert),
++    ("raise SystemExit(0)", "print('x')\nraise SystemExit(0)", ast.Raise),
++    ("dead raise ValueError", "if False:\n    raise ValueError('x')",
++     ast.Raise),
++]
++
++
++def _pred():
++    from bench.proof_verify import asserts_something
++    return asserts_something
++
++
++def _head_clause_one():
++    """HEAD's first walk clause, read out of its syntax tree."""
++    tree = ast.parse(HEAD.read_text(encoding="utf-8"))
++    fn = next(n for n in tree.body
++              if isinstance(n, ast.FunctionDef) and n.name == "asserts_something")
++    loop = next(n for n in ast.walk(fn) if isinstance(n, ast.For))
++    return loop.body[0]
++
++
++class TestTheReportedHeadOnlyCasesAreNotHeadOnly:
++    @pytest.mark.parametrize("label,code,node", REPORTED_HEAD_ONLY,
++                             ids=[r[0] for r in REPORTED_HEAD_ONLY])
++    def test_the_case_parses_to_the_node_clause_one_matches(self, label, code,
++                                                            node):
++        """Each reported case really is an Assert/Raise, so clause 1 decides it."""
++        assert any(isinstance(n, node) for n in ast.walk(ast.parse(code))), (
++            f"{label} does not contain an {node.__name__}; the refutation in "
++            f"this file's docstring rests on it and must be re-derived")
++
++    @pytest.mark.parametrize("label,code,node", REPORTED_HEAD_ONLY,
++                             ids=[r[0] for r in REPORTED_HEAD_ONLY])
++    def test_head_accepts_it(self, label, code, node):
++        """HEAD returns True -- the safe direction, and the reported value."""
++        assert _pred()(code) is True, label
++
++    def test_clause_one_is_still_assert_or_raise(self):
++        """If clause 1 is narrowed, raise probes become discriminating."""
++        src = ast.unparse(_head_clause_one())
++        assert "_a.Assert" in src and "_a.Raise" in src, (
++            f"clause 1 is now {src!r}; a raise no longer necessarily returns "
++            f"True, so the direction claim must be RE-MEASURED rather than "
++            f"read off this file")
++
++
++class TestTheDiscardedPredicateIsNotLoadableHere:
++    def test_declares_falsified_is_absent(self):
++        """The symbol the discarded clause 2 calls is defined nowhere in-tree."""
++        import bench.falsifier_verify as fv
++        assert not hasattr(fv, "declares_falsified"), (
++            "`declares_falsified` has been folded back, so the discarded "
++            "predicate is now loadable and its differential against HEAD is "
++            "reproducible -- re-measure it and update this file")
++
++    def test_the_absent_symbol_is_what_the_discarded_clause_calls(self):
++        """Pin WHY absence matters: clause 2 of the discarded copy calls it."""
++        harvest = (REPO / "bench" / "logs" / "check_my_fixes_2026-11-10"
++                   / "sandbox_harvest" / "cc2" / "attempt-1" / "files"
++                   / "bench" / "proof_verify.py")
++        if not harvest.is_file():
++            pytest.fail(
++                "the discarded copy is no longer in the tree, so this file's "
++                "docstring cites evidence a reader cannot reach; either "
++                "restore the harvest or rewrite the docstring to stop "
++                "claiming a reproducible comparison")
++        src = harvest.read_text(encoding="utf-8")
++        assert "_declares_falsified" in src
++        assert "from bench.falsifier_verify import declares_falsified" in src
++
++    def test_clause_one_is_identical_between_the_two_copies(self):
++        """The core refutation: no assert/raise probe can separate them."""
++        harvest = (REPO / "bench" / "logs" / "check_my_fixes_2026-11-10"
++                   / "sandbox_harvest" / "cc2" / "attempt-1" / "files"
++                   / "bench" / "proof_verify.py")
++        if not harvest.is_file():
++            pytest.fail("the discarded copy is no longer in the tree; see the "
++                        "sibling test for why that breaks this file's claim")
++        tree = ast.parse(harvest.read_text(encoding="utf-8"))
++        fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef)
++                  and n.name == "asserts_something")
++        loop = next(n for n in ast.walk(fn) if isinstance(n, ast.For))
++        assert ast.dump(loop.body[0]) == ast.dump(_head_clause_one()), (
++            "clause 1 now DIFFERS between the 2 copies, so a raise probe can "
++            "separate them after all and the docstring's refutation is void")
++
++
++class TestTheResidualIsStatedNotHidden:
++    def test_assert_true_defeats_the_predicate(self):
++        """The declared residual. Neither predicate is sound against it."""
++        assert _pred()("assert True") is True, (
++            "`assert True` is now refused -- the residual this file records "
++            "has been repaired and the docstring must be corrected")
++
++    def test_an_import_only_proof_is_still_refused(self):
++        """The property the predicate does discharge, kept under test."""
++        assert _pred()("import sympy") is False
++        assert _pred()("") is False
+
+### cc2:attempt-1:bench/tests/test_tonights_producers_are_reached_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_tonights_producers_are_reached_2026-11-10.py	2026-11-10 05:25:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4vcigice/repo/bench/tests/test_tonights_producers_are_reached_2026-11-10.py	2026-11-10 05:44:07
+@@ -87,9 +87,33 @@
+ #: while the branch gate dominates the tool-level exclusion it was measured
+ #: against, and 1 if that ever reverses -- so it cannot outlive its finding.
+ 
+-#: name -> the mechanical reason it is exempt from RUNNING. Empty today, and
+-#: the key exists so an exemption must carry a reason rather than a silence.
+-EXEMPT: dict[str, str] = {}
++#: name -> the mechanical reason it is exempt from RUNNING.
++#: ★ THE FIRST ENTRY, 2026-11-10 JOINT ROUND, AND IT WAS WRITTEN BY A SEAT
++#: THAT DID NOT AUTHOR THE EXEMPTED FILE -- which is this file's own stated
++#: condition for an exemption meaning anything. The accounting test was RED in
++#: the dispatched tree: `build_joint_brief_2026-11-10.py` was in neither list,
++#: the 13th instance of the addition-nothing-reaches class and the 2nd time
++#: THIS guard has refused a commit. The reason is MEASURED, not asserted: a
++#: bare run exits 2, and `test_the_producer_still_runs` refuses anything
++#: outside (0, 1) as a broken producer, so MUST_RUN would be WRONG and not
++#: merely awkward. It is a brief BUILDER, not a measurement producer: it
++#: requires a parent round argument and WRITES `BRIEF.md` into that round's
++#: directory, so running it bare under test would either fail or overwrite a
++#: dispatched round's brief.
++#: ★ AN EXEMPTION FROM RUNNING IS NOT AN EXEMPTION FROM BEING REACHED. The
++#: `--help` test below is now parametrised over MUST_RUN *and* EXEMPT, so an
++#: exempt producer is still EXECUTED in the 1 way that costs nothing --
++#: measured at 0.03 s, exit 0, usage line present. Without that, EXEMPT would
++#: be a hole in the very accounting this file exists to keep, which is the
++#: symmetric form of the additive standard applied to the guard itself.
++EXEMPT: dict[str, str] = {
++    "build_joint_brief_2026-11-10.py":
++        "a brief BUILDER, not a measurement producer: it requires a parent "
++        "round argument and writes BRIEF.md into that round's directory, so a "
++        "bare run exits 2 (measured) -- which test_the_producer_still_runs "
++        "refuses -- and a non-bare run would overwrite a dispatched brief. It "
++        "is still executed by the --help test below.",
++}
+ 
+ 
+ @pytest.mark.parametrize("name", MUST_RUN)
+@@ -107,7 +131,7 @@
+         f"{name} printed nothing, so it measured nothing a reader can see")
+ 
+ 
+-@pytest.mark.parametrize("name", sorted(MUST_RUN))
++@pytest.mark.parametrize("name", sorted(set(MUST_RUN) | set(EXEMPT)))
+ def test_the_producer_answers_help_without_doing_the_work(name):
+     """A `--help` must never cost money or minutes -- his standing rule.
+ 
+@@ -148,6 +172,23 @@
+             f"{name} is exempt for {reason!r}, which is not a reason")
+ 
+ 
++def test_no_exemption_is_stale_or_double_counted():
++    """An exemption for a file that is gone is a silence, not an accounting.
++
++    Added with the first EXEMPT entry, 2026-11-10. Without this, dead names
++    could accumulate in EXEMPT and keep `missing` empty while covering
++    nothing -- the same vacuity the accounted-for test exists to refuse, moved
++    one dict along.
++    """
++    for name in EXEMPT:
++        assert (SCRIPTS / name).is_file(), (
++            f"{name} is exempt but is not on disk; a stale exemption covers "
++            f"nothing and must be deleted")
++        assert name not in MUST_RUN, (
++            f"{name} is in BOTH lists, so it is both required to run and "
++            f"excused from running")
++
++
+ def test_the_decision_can_actually_refuse():
+     """The accounting check must FAIL on an unaccounted producer.
+ 
+
+### cc2:attempt-1:scripts/which_admissions_are_truth_blind_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/which_admissions_are_truth_blind_2026-11-10.py	2026-11-10 05:21:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4vcigice/repo/scripts/which_admissions_are_truth_blind_2026-11-10.py	2026-11-10 05:40:38
+@@ -180,9 +180,29 @@
+     OPTION_B = {t for t, _l, _tv, _fv, _ev, _ad, dsc in rows
+                 if not dsc and t not in BRANCH_GATED}
+ 
++    #: ★ THE MEMBERSHIP-CONTROLLED ARM, ADDED 2026-11-10 AFTER THE JOINT
++    #: ROUND. Scoring A as the seat typed it against a B whose set is DERIVED
++    #: compares 2 things at once: WHICH tools are in the set (membership, a
++    #: function of how wide the proposer's probes were) and TOOL-LEVEL against
++    #: BRANCH-LEVEL granularity, which is the actual design question. A omits
++    #: `chemistry_structure` only because the seat's own probes never drew a
++    #: CONFIRMED from it and it concluded the tool was therefore safe -- an
++    #: absence of evidence read as evidence of absence, which THIS run refutes
++    #: directly: `CCO is ethanol` and `CCO is benzene` are both CONFIRMED at
++    #: 0.85 on byte-identical evidence. So 1 of the 2 points A loses on P1 is
++    #: a probe-coverage gap and not a property of tool-level exclusion.
++    #: A' holds membership fixed at what THIS run measured and varies only the
++    #: granularity, which is the comparison the adoption decision rests on.
++    #: A IS RETAINED, NOT REPLACED: it records what was actually proposed, and
++    #: the additive standard forbids dropping it in favour of A'.
++    OPTION_A_CTRL = OPTION_B | BRANCH_GATED
++
+     def barred_A(tool, ev):
+         return tool in OPTION_A
+ 
++    def barred_A_ctrl(tool, ev):
++        return tool in OPTION_A_CTRL
++
+     def barred_B(tool, ev):
+         #: ★ THE MARKER IS TOOL-SCOPED, AND THE FIRST VERSION APPLIED IT
+         #: GLOBALLY. `matches claim` is `biological_sequence`'s own wording,
+@@ -197,6 +217,7 @@
+         return False
+ 
+     print(f"\n      option A tool set (the seat's) : {sorted(OPTION_A)}")
++    print(f"      option A' set (CONTROLLED)     : {sorted(OPTION_A_CTRL)}")
+     print(f"      option B tool set (DERIVED)    : {sorted(OPTION_B)}")
+     print(f"      option B branch-gated          : {sorted(BRANCH_GATED)}")
+ 
+@@ -204,13 +225,13 @@
+     hdr = f"      {'':10s} {'P1 blind barred':>18s} {'P2 discriminating kept':>24s}"
+     print(hdr)
+     results = {}
+-    for tag, pred in (("A", barred_A), ("B", barred_B)):
++    for tag, pred in (("A", barred_A), ("A'", barred_A_ctrl), ("B", barred_B)):
+         p1 = sum(1 for t, l, tv, fv, ev, *_ in blind if pred(t, ev))
+         p2 = sum(1 for t, l, tv, fv, ev, *_ in disc if not pred(t, ev))
+         results[tag] = (p1, len(blind), p2, len(disc))
+-        print(f"      option {tag}   {p1:>8d} of {len(blind):<6d} {p2:>14d} of {len(disc):<6d}")
++        print(f"      option {tag:<2s} {p1:>8d} of {len(blind):<6d} {p2:>14d} of {len(disc):<6d}")
+ 
+-    for tag in ("A", "B"):
++    for tag in ("A", "A'", "B"):
+         p1, n1, p2, n2 = results[tag]
+         for nm, k, n in (("P1", p1, n1), ("P2", p2, n2)):
+             lo, hi, clo, chi, gw, gc = _iv_both(k, n)
+@@ -235,6 +256,30 @@
+     print(f"      (domain, claim_type) pairs assigning it : {len(assigning)}"
+           f"  {assigning}")
+ 
++    #: ★ EVERY GATED MEMBER IS MEASURED FOR REACHABILITY, NOT JUST THE
++    #: BRANCH-GATED ONE. Added 2026-11-10 after the joint round. Section 5
++    #: originally measured `biological_sequence` alone, found 0 of 10, and the
++    #: open question was then whether the WHOLE repair is an addition nothing
++    #: reaches. That question is answerable only by measuring the other
++    #: members too, and the answer separates the 2 parts of the repair: the
++    #: `CANNOT_ADMIT_ALONE` members carry live traffic, the
++    #: `BRANCH_GATED_ADMISSION` entry does not. Reporting one without the
++    #: other invites exactly the over-general reading the additive standard's
++    #: symmetric clause would otherwise license.
++    REACH_PROBES = {
++        "dimensional_analysis": ["1 km = 1000 m", "1 kg = 1000 g",
++                                 "the velocity is 5 m/s times 2 s = 10 m"],
++        "astronomical": ["the speed of light is 299792.458 km/s",
++                         "the mass of the sun is 1.989e30 kg",
++                         "1 parsec is 3.26 light years"],
++        "chemistry_structure": ["the molecule CCO is ethanol",
++                                "the SMILES c1ccccc1 is benzene",
++                                "the compound CC(=O)O is acetic acid"],
++        "biological_sequence": ["the reverse complement of ATGC is GCAT",
++                                "the DNA sequence ATGC has length 4",
++                                "the GC content of ATGC is 50%"],
++    }
++
+     SEQ = ["the reverse complement of ATGC is GCAT",
+            "the DNA sequence ATGC has length 4",
+            "ATGGCC translates to MA",
+@@ -259,6 +304,37 @@
+     print(f"            Wilson 95% [{lo:.6f}, {hi:.6f}]   2-route gap {gw:.3e}")
+     print(f"            Clopper-Pearson 95% [{clo:.6f}, {chi:.6f}]   2-route gap {gc:.3e}")
+ 
++    #: ★ PER-MEMBER REACHABILITY. `_may_admit_alone` is 1 call site, so if
++    #: ANY gated member is reached the gate itself is exercised by real
++    #: traffic; the question the symmetric additive clause asks is therefore
++    #: answered per member and not for the repair as a whole.
++    print("\n5b. WHICH GATED MEMBERS ARE REACHED BY A CLASSIFIED CLAIM")
++    live, latent = [], []
++    for tool in sorted(_di.CANNOT_ADMIT_ALONE) + sorted(
++            _di.BRANCH_GATED_ADMISSION):
++        where = "CANNOT_ADMIT_ALONE" if tool in _di.CANNOT_ADMIT_ALONE \
++            else "BRANCH_GATED_ADMISSION"
++        asg = [(d, ct) for d, c in sorted(cfgs.items())
++               for ct, tl in (c.verification_tools or {}).items()
++               if tool in (tl or [])]
++        hit = tot = 0
++        for d, _ct in asg:
++            for probe in REACH_PROBES[tool]:
++                tot += 1
++                kind, _ = _di.domain_classify_claim(_F(probe), cfgs[d])
++                if tool in (_di.domain_b_cell_tools(kind, cfgs[d]) or []):
++                    hit += 1
++        (live if hit else latent).append(tool)
++        print(f"      {tool:22s} {where:22s} assigned in {len(asg)} pair(s), "
++              f"REACHED {hit} of {tot} probes")
++    print(f"      LIVE (reached by real traffic) : {live}")
++    print(f"      LATENT (wired + tested, 0 traffic) : {latent}")
++    assert live, ("NO gated member is reachable -- the whole repair would "
++                  "then be an addition nothing reaches, which the symmetric "
++                  "form of the additive standard forbids")
++    assert latent == ["biological_sequence"], (
++        f"the latent set moved to {latent}; re-read the additive argument")
++
+     #: THE 2 ROOT CAUSES, each read off the configs rather than inferred.
+     vocab = ("sequence", "dna", "rna", "protein", "nucleotide", "complement",
+              "codon", "gc content")
+@@ -289,12 +365,31 @@
+     print(f"      branch, so it is worse on both counts.")
+ 
+     a1, an1, a2, an2 = results["A"]
++    c1, cn1, c2, cn2 = results["A'"]
+     b1, bn1, b2, bn2 = results["B"]
+     print("\n" + "=" * 78)
+     print("VERDICT")
+-    dominates = (b1 >= a1 and b2 > a2) or (b1 > a1 and b2 >= a2)
+-    print(f"\n  P1, truth-blind barred      : A {a1}/{an1}   B {b1}/{bn1}")
+-    print(f"  P2, discriminating retained : A {a2}/{an2}   B {b2}/{bn2}")
++
++    def _dom(x1, x2):
++        return (b1 >= x1 and b2 > x2) or (b1 > x1 and b2 >= x2)
++
++    #: ★ B MUST CLEAR THE CONTROLLED ARM, NOT ONLY THE SET AS TYPED.
++    #: Clearing A alone would let a probe-coverage gap in the proposal stand
++    #: in for a design advantage. Requiring BOTH is what makes the adopted
++    #: figure a measurement of granularity.
++    dominates_a = _dom(a1, a2)
++    dominates_ctrl = _dom(c1, c2)
++    dominates = dominates_a and dominates_ctrl
++    print(f"\n  P1, truth-blind barred      : A {a1}/{an1}   "
++          f"A' {c1}/{cn1}   B {b1}/{bn1}")
++    print(f"  P2, discriminating retained : A {a2}/{an2}   "
++          f"A' {c2}/{cn2}   B {b2}/{bn2}")
++    print(f"\n  B over A  (set AS TYPED)   : {dominates_a}")
++    print(f"  B over A' (CONTROLLED)     : {dominates_ctrl}")
++    if dominates_a and dominates_ctrl and (b1 - a1) > (b1 - c1):
++        print(f"  ★ {(b1 - a1) - (b1 - c1)} of B's {b1 - a1}-point P1 margin "
++              f"over A is MEMBERSHIP, not granularity. Controlled, B's whole "
++              f"advantage is P2: {b2}/{bn2} against {c2}/{cn2}.")
+     if dominates:
+         #: ★ THE DIRECTION IS READ OFF THE NUMBERS, NOT ASSERTED. The first
+         #: version printed a fixed sentence saying B tied on P1 and won on
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-10 05:54:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo/.cdsfl_deny_canonical_writes.sb	2026-11-10 05:33:46
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-10 05:25:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo/bench/domain_immune.py	2026-11-10 05:44:24
+@@ -412,8 +412,6 @@
+ #: `scripts/which_admissions_are_truth_blind_2026-11-10.py`.
+ #:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;
+ #:       it tests dimensional homogeneity and reports it as correctness (B136)
+-#:   chemistry_structure  -- CONFIRMS `the molecule CCO is ethanol` AND
+-#:       `the molecule CCO is benzene`; it validates the SMILES, not the claim
+ #:   astronomical         -- REJECTS the CORRECT speed of light in km/s AND
+ #:       a false value; its constant branch reads the last numeral and never
+ #:       reads the unit, so a 1% tolerance cannot cover a factor of 1000
+@@ -423,26 +421,47 @@
+ #: ★ 2 ROUTES WERE MEASURED AND THE WIDER ONE WAS REFUSED. A free panel seat
+ #: proposed excluding `biological_sequence` at the TOOL level. Measured on 2
+ #: named properties -- truth-blind paths barred, and discriminating paths
+-#: retained -- the tool-level set scores 2 of 3 and 1 of 2, while gating that
+-#: tool at the BRANCH scores 3 of 3 and 2 of 2. The tool-level exclusion
+-#: removes a capability that demonstrably works, so under the additive
+-#: standard's removal clause it is refused. There is NO composability claim:
+-#: the branch gate alone beats the exclusion alone, and his definition
+-#: explicitly excludes composing 2 fixes merely because they can be composed.
++#: retained -- the tool-level set scores worse on both than gating that tool
++#: at the BRANCH. The tool-level exclusion removes a capability that
++#: demonstrably works, so under the additive standard's removal clause it is
++#: refused. There is NO composability claim: the branch gate alone beats the
++#: exclusion alone, and his definition explicitly excludes composing 2 fixes
++#: merely because they can be composed.
++#: ★ `chemistry_structure` WAS IN THIS SET FOR PART OF 2026-11-10 AND THAT
++#: WAS THE SAME 1-BRANCH-OF-N ERROR A 3RD TIME. The producer's probe pair hit
++#: only its SMILES-validity fallback and generalised the tool as truth-blind.
++#: The tool has 3 favourable branches: formula and MW COMPARE a computed
++#: value against the claim -- CONFIRMED carrying `matches claim` on the true
++#: variant, REJECTED on the false one, executed 2026-11-10 -- and 1
++#: validity-only fallback that never reads a claimed value. Unlike
++#: `biological_sequence`'s comparing branches, chemistry's ARE reached by
++#: live traffic today: `the molecule 'CCO' has formula C2H6O` routes to it in
++#: the `chemistry` domain end-to-end, and the tool-level entry refused that
++#: discriminating admission (`for=- for_but_cannot_admit=chemistry_structure`).
++#: Re-scored with those branches in the denominator, tool-level-chemistry
++#: scores 3 of 3 and 2 of 4 while branch-gating it scores 3 of 3 and 4 of 4,
++#: so under the removal clause the tool-level entry is the one refused.
+ CANNOT_ADMIT_ALONE = frozenset({
+     "dimensional_analysis",
+-    "chemistry_structure",
+     "astronomical",
+ })
+ 
+ #: tool -> the substring its evidence must carry for a CONFIRMED verdict of
+-#: its to admit alone. `biological_sequence` has 5 favourable branches: 4
+-#: COMPARE a computed value against the claim and say `matches claim`, and 1
+-#: reports only that a sequence parses. The marker is read off that
+-#: verifier's own source and is TOOL-SCOPED -- applying it globally barred
++#: its to admit alone. Both members share the same 2-branch anatomy and both
++#: markers are read off the verifier's OWN source, never assumed:
++#:   biological_sequence -- 5 favourable branches: 4 COMPARE a computed value
++#:       against the claim and say `matches claim`; 1 reports only that a
++#:       sequence parses and CANNOT say it, because its candidate character
++#:       classes admit no whitespace, so the claim cannot inject the marker
++#:       either (executed: quoted 'MATCHESCLAIM' confirms WITHOUT the marker).
++#:   chemistry_structure -- 3 favourable branches: formula and MW COMPARE and
++#:       say `matches claim`; the SMILES-validity fallback says `parsed` and
++#:       its candidate classes are likewise whitespace-free.
++#: The marker is TOOL-SCOPED -- applying it globally barred
+ #: `stoichiometric_balance`, which the same measurement shows discriminating.
+ BRANCH_GATED_ADMISSION = {
+     "biological_sequence": "matches claim",
++    "chemistry_structure": "matches claim",
+ }
+ 
+ 
+
+### fable:attempt-1:bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py	2026-11-10 05:24:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo/bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py	2026-11-10 05:42:45
+@@ -6,7 +6,7 @@
+ favourable verdicts may admit ALONE, by 2 mechanisms:
+ 
+   CANNOT_ADMIT_ALONE      -- tools measured truth-blind at the TOOL level
+-  BRANCH_GATED_ADMISSION  -- 1 tool measured truth-blind on SOME branches only
++  BRANCH_GATED_ADMISSION  -- tools measured truth-blind on SOME branches only
+ 
+ PROVENANCE, because it matters for how this file reads. The defect was first
+ narrowed by me to 2 tools on a measurement that found `biological_sequence`
+@@ -18,6 +18,16 @@
+ turned up a third truth-blind tool, `chemistry_structure`, which the seat had
+ explicitly judged safe because its own probes never drew a CONFIRMED from it.
+ 
++AND THEN THE SAME ERROR A THIRD TIME, CAUGHT IN THE JOINT ROUND.
++`chemistry_structure` was first barred at the TOOL level on a probe pair that
++had hit only its SMILES-validity fallback. The tool also carries formula and
++MW branches that COMPARE a computed value against the claim -- CONFIRMED with
++`matches claim` on the true variant, REJECTED on the false one -- and, unlike
++`biological_sequence`'s comparing branches, those ARE reached by live traffic
++in the `chemistry` domain. Re-scored with them in the denominator, the
++tool-level entry scores 3 of 3 and 2 of 4 while branch-gating scores 3 of 3
++and 4 of 4, so `chemistry_structure` moved to `BRANCH_GATED_ADMISSION`.
++
+ Producer: `scripts/which_admissions_are_truth_blind_2026-11-10.py`.
+ """
+ import pathlib
+@@ -52,10 +62,18 @@
+         assert di.BRANCH_GATED_ADMISSION, "the branch gate is empty"
+ 
+     def test_the_measured_members_are_present(self):
+-        """Each was measured truth-blind by the producer named above."""
+-        for t in ("dimensional_analysis", "chemistry_structure", "astronomical"):
++        """Each was measured by the producer named above: tool-level where
++        EVERY favourable path is blind, branch-gated where the tool carries
++        both a blind and a comparing favourable branch."""
++        for t in ("dimensional_analysis", "astronomical"):
+             assert t in di.CANNOT_ADMIT_ALONE, f"{t} is no longer barred"
+         assert di.BRANCH_GATED_ADMISSION.get("biological_sequence") == MARKER
++        assert di.BRANCH_GATED_ADMISSION.get("chemistry_structure") == MARKER
++        assert "chemistry_structure" not in di.CANNOT_ADMIT_ALONE, (
++            "chemistry_structure is barred at the TOOL level again. Its "
++            "formula and MW branches DISCRIMINATE and are reached by live "
++            "chemistry traffic; the producer scores tool-level 2 of 4 on "
++            "discriminating-retained against 4 of 4 for the branch gate.")
+ 
+ 
+ class TestThePredicate:
+@@ -70,6 +88,13 @@
+         assert di._may_admit_alone(
+             "biological_sequence",
+             "biopython: BIO_VALID: DNA sequence 'ATGC' (len=4, GC=50.0%)") is False
++        assert di._may_admit_alone(
++            "chemistry_structure",
++            "rdkit: CHEM_VALID: SMILES=CCO formula=C2H6O matches claim") is True
++        assert di._may_admit_alone(
++            "chemistry_structure",
++            "rdkit: CHEM_VALID: SMILES=CCO parsed (3 atoms, 0 rings, "
++            "formula=C2H6O, MW=46.07)") is False
+ 
+     def test_an_unlisted_tool_is_unaffected(self):
+         """THE ADDITIVE DIRECTION. The repair must narrow admission for the
+@@ -115,7 +140,14 @@
+         assert not agst, (
+             f"{agst} rejected this claim, so a refusal here would not be the "
+             f"gate's doing and this test would pass for the wrong reason")
+-        assert all(t in di.CANNOT_ADMIT_ALONE for t in fors), fors
++        #: Every confirming tool must have been refused admission -- here by
++        #: the branch gate, whose marker the validity-only evidence cannot
++        #: carry. `for=-` in the detail is the gate's own record that nothing
++        #: was allowed to admit, and `for_but_cannot_admit` must name the
++        #: muted confirmer.
++        assert " for=- " in f" {r.get('detail')} ", r.get("detail")
++        assert "for_but_cannot_admit=chemistry_structure" in (
++            r.get("detail") or ""), r.get("detail")
+         assert r["admits"] is False, r.get("detail")
+ 
+     def test_the_rejection_path_still_fails_closed(self):
+@@ -127,6 +159,30 @@
+             "physics", _F("the speed of light is 299792.458 km/s"))
+         assert r["admits"] is False, r.get("detail")
+ 
++    def test_a_reachable_comparing_branch_admits_end_to_end(self):
++        """★ THE CAPABILITY THE TOOL-LEVEL ENTRY WAS DESTROYING, EXECUTED
++        THROUGH THE REAL GATE. `the molecule 'CCO' has formula C2H6O` is TRUE
++        and routes to `chemistry_structure` in the live `chemistry` domain;
++        its formula branch COMPARES RDKit's computed formula against the
++        claim (the false variant C3H8O is REJECTED -- asserted below so this
++        cannot rot into a truth-blind pass). Under the entry this test
++        replaced, this admission was refused:
++        `for=- for_but_cannot_admit=chemistry_structure`, executed
++        2026-11-10. Unlike `biological_sequence`'s comparing branches this
++        one IS reached by real traffic, so the capability loss was live."""
++        r = di.domain_verification_set(
++            "chemistry", _F("the molecule 'CCO' has formula C2H6O"))
++        assert "chemistry_structure" in (r.get("tools") or []), r
++        assert r["admits"] is True, r.get("detail")
++        assert "for=chemistry_structure" in (r.get("detail") or ""), (
++            r.get("detail"))
++        rf = di.domain_verification_set(
++            "chemistry", _F("the molecule 'CCO' has formula C3H8O"))
++        assert rf["admits"] is False, rf.get("detail")
++        assert "against=chemistry_structure" in (rf.get("detail") or ""), (
++            "the false variant was not REJECTED, so the branch this test "
++            "relies on no longer discriminates -- re-run the producer")
++
+     def test_a_discriminating_tool_still_admits(self):
+         """THE CAPABILITY THE ADOPTED OPTION EXISTS TO PRESERVE. If this fails,
+         the repair has become the tool-level exclusion it was measured against."""
+
+### fable:attempt-1:bench/tests/test_tonights_producers_are_reached_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_tonights_producers_are_reached_2026-11-10.py	2026-11-10 05:25:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo/bench/tests/test_tonights_producers_are_reached_2026-11-10.py	2026-11-10 05:45:56
+@@ -87,9 +87,20 @@
+ #: while the branch gate dominates the tool-level exclusion it was measured
+ #: against, and 1 if that ever reverses -- so it cannot outlive its finding.
+ 
+-#: name -> the mechanical reason it is exempt from RUNNING. Empty today, and
+-#: the key exists so an exemption must carry a reason rather than a silence.
+-EXEMPT: dict[str, str] = {}
++#: name -> the mechanical reason it is exempt from RUNNING. The key exists so
++#: an exemption must carry a reason rather than a silence, and every exempt
++#: entry still answers `--help` under the test below, so it cannot become an
++#: unreached accounting line.
++EXEMPT: dict[str, str] = {
++    "build_joint_brief_2026-11-10.py": (
++        "not a measurement producer: it BUILDS a joint-round brief, requires "
++        "a parent round argument (bare invocation exits 2 by argparse design, "
++        "outside the run test's 0-or-1 contract) and writes dispatch "
++        "artefacts under the round directory, which a guard must never do. "
++        "Found unaccounted by this file's own ratchet during the "
++        "check_my_fixes_2026-11-10 JOINT round -- the 13th instance of the "
++        "added-and-wired-to-nothing class, this one by the brief's author."),
++}
+ 
+ 
+ @pytest.mark.parametrize("name", MUST_RUN)
+@@ -107,12 +118,14 @@
+         f"{name} printed nothing, so it measured nothing a reader can see")
+ 
+ 
+-@pytest.mark.parametrize("name", sorted(MUST_RUN))
++@pytest.mark.parametrize("name", sorted(MUST_RUN) + sorted(EXEMPT))
+ def test_the_producer_answers_help_without_doing_the_work(name):
+     """A `--help` must never cost money or minutes -- his standing rule.
+ 
+     All 4 were written WITHOUT argparse, so this check would have failed on
+-    every one of them and the measurement would have run instead.
++    every one of them and the measurement would have run instead. EXEMPT
++    entries are covered too: exemption is from RUNNING the work, never from
++    answering for itself.
+     """
+     p = SCRIPTS / name
+     if not p.is_file():
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-10 05:28:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-10 05:46:59
+@@ -2009,7 +2009,7 @@
+ **B135. THE DETECTOR THAT RANKS PRODUCERS BY CROSS-CHECK INDEPENDENCE IS BLIND TO 52% OF THE ALGEBRA IT LOOKS FOR, BECAUSE ITS PATTERN FIXES THE VARIABLE'S SPELLING.** Added 2026-11-06T01:51:45+00:00. **FOUND BY THE COMPLETE BOARD OF 2026-11-05, which failed 12 tests in `bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py` and named `scripts/is_any_external_citation_verified_2026-11-04.py` as resting a quantity on a single route.** That producer had 2 genuine faults and only 1 was its own: it carried NO Clopper-Pearson at all, which is repaired, and its written-out Wilson algebra was invisible to the detector because it spelled the sample size `N`. **`scripts/counting_imports_ranks_producers_backwards_2026-11-03.py` matches the written-out Wilson route as `z \* z / \(2 \* n\)`, lowercase only.** Measured by `scripts/the_wilson_detector_is_blind_to_half_the_algebra_2026-11-06.py`, which lifts the detector's own route patterns at run time rather than restating them: **78 of 149 producers write the same algebra invisibly to that pattern, 0.523490**, Wilson [0.443717, 0.602082] by statsmodels and by an mpmath closed form agreeing to 1e-12, Clopper-Pearson [0.440175, 0.605852]. **A SUPERSEDED FIGURE IS NAMED HERE DELIBERATELY: commit `e2a87dac` and this entry's first draft both said 52 of 121, 0.429752, Wilson [0.345049, 0.518778].** That came from an ad-hoc measurement made BEFORE the producer existed, and it was narrower on both sides: it accepted only `n` or `N` as the sample size and missed `z**2` and multi-character names such as `nobs`. The producer is the authority and the ad-hoc figure understated the blind spot by about 9 percentage points. This is `measured-rate-travels-with-its-script` catching its own advocate again, and it was found by writing the producer rather than by re-reading the prose. **THE CONSEQUENCE IS A MIS-RANKING, NOT A FALSE ALARM TODAY:** only producers inside the guard's 19-file scope are judged, and 1 of those 19 was affected, but the detector exists to rank rigour and it cannot see 43% of the evidence for it. **THE WORK: the pattern must accept the algebra however the sample size is named, and the right form is to EXECUTE the helper and compare its 2 routes rather than to match its source text** -- `execute-do-not-grep` applies to this detector exactly as it applies to the producers it judges, and `bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py` already does the executing form 2 classes further down the same file, so the stronger route is present and unused. **★ RE-MEASURED 2026-11-07: THE BLINDNESS FELL FROM 0.523490 TO 0.084416, AND THE ENTRY IS STILL OPEN BECAUSE THE RECOMMENDED FIX IS UNBUILT. [TESTED]** The pattern was widened on 2026-11-06 and the producer now reports **13 of 154 producers invisible = 0.084416, Wilson [0.049995, 0.139064] on statsmodels and an mpmath closed form agreeing to 1e-12, Clopper-Pearson [0.045714, 0.140027]**, against 78 of 149 = 0.523490 when this entry was written. **BUT THE WIDENING WAS THIS ENTRY'S OPTION 2, WHICH THE ENTRY ITSELF CALLS A TREADMILL, AND IT BROKE THIS ENTRY'S OWN PRODUCER.** The producer read the detector's route table with a regex over its SOURCE anchored on `"name": r"pattern"` all on 1 line, and the widening split that value across lines inside parentheses, so the producer exited ANCHOR ABSENT and the instrument measuring B135 was silently disabled by a repair to B135's subject. The project's record already holds that shape: a producer outlives its defect. **REPAIRED BY APPLYING THIS ENTRY'S OWN OPTION 1 TO THE PRODUCER**: it now reads `QUANTITY_ROUTES` by IMPORTING the detector, which is immune to how the table is spelled, retains the source-text read as a fallback, and PRINTS which route it used so a future import failure is loud. **OPTION 1 REMAINS THE RECOMMENDATION FOR THE DETECTOR ITSELF**: 13 producers are still invisible to a source-text match, and executing the helper would take that to 0. **★ CORRECTED 2026-11-08: OPTION 1 AS WRITTEN REACHES 0 OF ITS OWN 13 TARGETS, BECAUSE NOT 1 OF THEM HAS A HELPER TO EXECUTE.** The executing form this entry points at, `TestEveryHelperIsExecutedNotJustRead` in `bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py`, discovers a producer by `def _iv` in its source, imports it and calls `_iv(k, n)` for the 2 intervals and the cross-check magnitude. Measured against the authoritative 13, reproduced with the producer's OWN `LOOSE` gate rather than a hand-rolled one: **0 of 13 define `_iv`, 0.000000, Wilson [0.000000, 0.228095] on statsmodels against an mpmath closed form agreeing to 9.5e-17, Clopper-Pearson [0.000000, 0.247053] on scipy against the k=0 closed form 1 - 0.025^(1/13) agreeing to 6.5e-17.** So the sentence 'executing the helper would take that to 0' names no helper that exists in any of the 13; they compute Wilson inline with a locally spelled sample size. **THE PREREQUISITE THE ENTRY DID NOT NAME: the canonical `_iv` must first be propagated INTO those 13 producers, and only then does the execution route credit them.** That is 13 file changes to producers that are already committed and already cited as evidence by other entries, for a defect this entry itself scopes as a mis-ranking rather than a false alarm, so the cost of option 1 is materially higher than the entry stated and the choice is worth re-reading before it is taken. **AND THE CHEAP ALTERNATIVE IS EXACTLY OPTION 2 AGAIN:** `LOOSE` already matches 13 of 13 BY CONSTRUCTION, since `hidden` is defined as strict-miss AND LOOSE-hit, so adopting `LOOSE` as the table pattern takes 13 to 0 in 1 line -- and that is the treadmill this entry rejected, having already broken this entry's own producer once. **THE DENOMINATOR ALSO MOVED AND THE SUPERSEDED FIGURE IS NAMED: 13 of 154 = 0.084416 when this entry was re-measured on 2026-11-07, and 13 of 165 = 0.078788 on 2026-11-08, Wilson [0.046620, 0.130123] agreeing between statsmodels and an mpmath closed form to 1e-12, Clopper-Pearson [0.042618, 0.130961].** The NUMERATOR held at 13 and the population grew by 11, so the rate fell without a single producer being repaired -- which is why the invisible-producer COUNT and not the invisible RATE is the figure to read here. **A MEASUREMENT OF MINE WAS WRONG BEFORE IT WAS RIGHT, AND THE CAUSE IS WORTH KEEPING:** a first pass re-derived the invisible set WITHOUT the producer's `LOOSE` gate and got 128 rather than 13, because strict-miss alone counts every producer that never writes the algebra at all. The producer is the authority; a hand-rolled re-derivation of its predicate is not.
+ <!-- task: B135 | state: DONE | status: COMMITTED | evidence: bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py | ruled: 2026-11-08 -->
+ 
+-**B136. `_verify_dimensional_analysis` TESTS DIMENSIONAL HOMOGENEITY AND REPORTS IT AS CORRECTNESS, SO IT FALSELY REJECTS EVERY TRUE CLAIM BUILT FROM A PRODUCT OR A QUOTIENT.** Added 2026-11-10T04:45:00+00:00. **STATUS: OBSERVED, root-caused, NOT FIXED. Carries 1 decision for him at the foot.** **FOUND BY POINTING THE PER-DOMAIN TOOL SETS AT THE PROJECT'S OWN STEM CORPUS, not by reading the tool.** `bench/tests/fixtures/stem/` holds 5 independently written STEM documents with 29 tagged claims, and B22 records that it is reached by **0** live-path modules. Driven through the topic's own `verification_tools`, 2 of the 5 definitive verdicts were REJECTIONS of claims the corpus marks TRUE. **THE FIRST READING WAS A RATE AND THE RATE WAS THE WRONG ANSWER.** "The tools are wrong 2 of 5 times" is true and says almost nothing. A DISCRIMINATION CONTROL — does the verdict vary with the input at all — gave a specific predicate error instead, which is the lesson `control_proves_discrimination` already records. **THE PREDICATE, READ FROM THE SOURCE RATHER THAN INFERRED.** In `bench/immune_agents.py`, when a claim contains `=` and at least 2 quantities parse: `if all(d == lhs_dim for d in rhs_dims)` yields `DIM_CONSISTENT` and CONFIRMED, else `DIM_INCONSISTENT` and REJECTED. **That requires every extracted quantity to share the FIRST one's dimension, which is the rule for the terms of a SUM.** It is not the rule for an equation: `v = 10 m / 2 s = 5 m/s` is correct physics whose quantities have 3 different dimensions by construction. **MEASURED: 3 of 3 TRUE product-or-quotient claims are REJECTED.** `speed is 10 m / 2 s = 5 m/s`; `E = m c^2` with 1 kg and 299792458 m/s giving 8.98755e16 J, which pint, SymPy and NumPy all confirm as 8.987552e16; and a 4.905 m free fall taking 1.0 s at 9.81 m/s², where SymPy and mpmath both give exactly 1.000000 s. The 1 shape it handles correctly is the 1 it models, a sum of like quantities — and even there `5 m plus 3 s equals 8 m`, which is FALSE, returns UNCERTAIN rather than REJECTED, so it fails in that direction too. **IT ALSO CONTAMINATES AN AGREEMENT, WHICH IS WHY THE CONTROL MATTERED.** On the corpus, SM-08 is a FALSE claim this tool REJECTED and that was counted as agreement. But it rejects mixed-dimension claims whatever their truth, so the agreement reflects how often such claims happen to be false rather than any judgement the tool made. Of the 3 agreements in that measurement only 2 are discriminating — `statsmodels` on ST-01 and `stoichiometric_balance` on CM-10, both CONFIRMED. **THE BLAST RADIUS IS THE K/L/M CELLS.** `dimensional_analysis` sits in the PRIMARY tool list for **physics, chemistry, engineering and cross_domain**. Physics, chemistry and engineering are the K, L and M specialist cells promoted from shadow to LIVE on 2026-07-27 on his own standing instruction, superseding constraint S5 of the Exp 40 plan, whose condition was that they *stay in shadow until their tool coverage is validated*. **That validation was never performed**: 0 files under `scripts/` or `bench/tests/` match `specialist.*accuracy` or `accuracy.*specialist`; `test_shadow_audit_klm.py` pins the audit RECORD'S SCHEMA, which its own docstring calls the instrument built to SUPPORT the check; and `test_specialist_live_promotion.py` asserts MEMBERSHIP in `LIVE_SPECIALIST_DOMAINS` while still quoting S5's unmet condition. **AND PHYSICS HAS 0 DOCUMENTS IN THE CORPUS**, so it is live with no content of ours to measure it on at all. **WHAT THIS DOES AND DOES NOT COST TODAY.** It does NOT change an apply-back decision: a prose target was refused before the 2026-11-10 domain route existed, so a false rejection yields the status quo. It DOES write a FALSE REASON, which is the precise harm B88's original defect caused 34 times, and the refusal detail was narrowed the same night so the tool verdict is appended as advisory rather than given as the ground. **AND IT MATTERS FOR BENCH RUN 2 RATHER THAN FOR TONIGHT:** a live specialist that rejects correct physics is a false-positive source in exactly the domains BR2 is meant to cover. **NO FIX IS PROPOSED, DELIBERATELY.** A correct check needs the expression's STRUCTURE — which quantities are summed and which multiplied — and `pint` can supply that given a parsed expression rather than a bag of extracted quantities. That is a build on a live specialist tool in the primary pool of 4 domains, so under `p-pass-high-consequence-check` it is his to authorise rather than mine to take from a measurement. **[NEEDS HIS RULING] on whether to repair the predicate before Bench Run 2, or to move `dimensional_analysis` to `secondary_only` in the manifest so it can corroborate but never refuse, which is the smaller change and removes no capability.** Producers: `scripts/the_dimensional_check_tests_homogeneity_not_correctness_2026-11-10.py`, which exits 1 rather than 0 once the predicate is repaired so it cannot outlive its own defect; and `scripts/the_topics_tools_on_the_projects_own_corpus_2026-11-10.py` for the corpus measurement it came from. ★★★ **THE FALSE-ADMIT HALF IS NOW BUILT, AND THE ROUTE ADOPTED IS NOT THE ONE EITHER I OR THE PANEL FIRST PROPOSED, 2026-11-10.** Producer: `scripts/which_admissions_are_truth_blind_2026-11-10.py`. **THE CONTROL: a verdict that takes the same value on a claim and on a FALSE VARIANT of that claim carries 0 bits about the claim**, so admitting a fix on it is admission by vocabulary and not by tool. **MY FIRST NARROWING WAS REFUTED BY A FREE PANEL SEAT AND THE REFUTATION REPRODUCES.** I had excluded 2 tools, having measured `biological_sequence` as DISCRIMINATING. It has 5 favourable branches: 4 compare a computed value against the claim and 1 reports only that a sequence parses. My probe hit a comparing branch and generalised from it. Executed here: `the sequence 'ATGC' proves the defendant was present` and `the sequence 'ATGC' proves the moon is made of cheese` both return CONFIRMED at 0.85 with identical evidence. **THE SEAT'S OWN FIX WAS THEN MEASURED AND REFUSED.** It proposed excluding the tool outright. Scored on 2 named properties — truth-blind paths BARRED, and discriminating paths RETAINED — the tool-level exclusion gives 2 of 3 and 1 of 2, while gating that tool at its BRANCH gives 3 of 3 and 2 of 2. The exclusion removes a capability that demonstrably works, so under `additive-standard`'s removal clause it is refused. **AND THERE IS NO COMPOSABILITY CLAIM**: the branch gate alone beats the exclusion alone, so under his definition the SINGLE fix is preferred and composing the 2 would be composition for its own sake. **THE SAME MEASUREMENT FOUND A 3RD TRUTH-BLIND TOOL THE SEAT HAD JUDGED SAFE.** `chemistry_structure` CONFIRMS `the molecule CCO is ethanol` AND `the molecule CCO is benzene`, because it validates the SMILES string and not the claim; the seat recorded that its own probes never drew a CONFIRMED from it and that it was therefore rightly not excluded. **BUILT:** `CANNOT_ADMIT_ALONE` holds `dimensional_analysis`, `chemistry_structure` and `astronomical`; `BRANCH_GATED_ADMISSION` holds `biological_sequence` against the marker `matches claim`, which is READ OFF that verifier's own source and is TOOL-SCOPED. **APPLYING THAT MARKER GLOBALLY WAS MY OWN ERROR AND IT COST A POINT**: it barred `stoichiometric_balance`, which the same run measures as discriminating. **`definitive_for` IS UNCHANGED, so no favourable verdict is discarded and a corroborating voice is still recorded; only the ADMISSION narrows**, and the refusal detail now carries `for_but_cannot_admit=` so the record can tell *nothing agreed* from *only blind tools agreed*. **GUARD:** `bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`, 13 tests, 4 of 4 mutations red. **ITS FIRST VERSION MISSED THE CORE DEFECT AND THAT IS RECORDED RATHER THAN QUIETLY FIXED**: reverting the admit line to the original `bool(definitive_for)` left all 12 of its tests GREEN, because every end-to-end probe it used was refused by a REJECTION from another tool, so the verdict never depended on the gate. The discriminating case is `the molecule CCO is benzene` in chemistry — FALSE, confirmed only by a truth-blind tool, with nothing speaking against it — and the guard now asserts that premise so it cannot rot into a probe that passes for the wrong reason.
++**B136. `_verify_dimensional_analysis` TESTS DIMENSIONAL HOMOGENEITY AND REPORTS IT AS CORRECTNESS, SO IT FALSELY REJECTS EVERY TRUE CLAIM BUILT FROM A PRODUCT OR A QUOTIENT.** Added 2026-11-10T04:45:00+00:00. **STATUS: OBSERVED, root-caused, NOT FIXED. Carries 1 decision for him at the foot.** **FOUND BY POINTING THE PER-DOMAIN TOOL SETS AT THE PROJECT'S OWN STEM CORPUS, not by reading the tool.** `bench/tests/fixtures/stem/` holds 5 independently written STEM documents with 29 tagged claims, and B22 records that it is reached by **0** live-path modules. Driven through the topic's own `verification_tools`, 2 of the 5 definitive verdicts were REJECTIONS of claims the corpus marks TRUE. **THE FIRST READING WAS A RATE AND THE RATE WAS THE WRONG ANSWER.** "The tools are wrong 2 of 5 times" is true and says almost nothing. A DISCRIMINATION CONTROL — does the verdict vary with the input at all — gave a specific predicate error instead, which is the lesson `control_proves_discrimination` already records. **THE PREDICATE, READ FROM THE SOURCE RATHER THAN INFERRED.** In `bench/immune_agents.py`, when a claim contains `=` and at least 2 quantities parse: `if all(d == lhs_dim for d in rhs_dims)` yields `DIM_CONSISTENT` and CONFIRMED, else `DIM_INCONSISTENT` and REJECTED. **That requires every extracted quantity to share the FIRST one's dimension, which is the rule for the terms of a SUM.** It is not the rule for an equation: `v = 10 m / 2 s = 5 m/s` is correct physics whose quantities have 3 different dimensions by construction. **MEASURED: 3 of 3 TRUE product-or-quotient claims are REJECTED.** `speed is 10 m / 2 s = 5 m/s`; `E = m c^2` with 1 kg and 299792458 m/s giving 8.98755e16 J, which pint, SymPy and NumPy all confirm as 8.987552e16; and a 4.905 m free fall taking 1.0 s at 9.81 m/s², where SymPy and mpmath both give exactly 1.000000 s. The 1 shape it handles correctly is the 1 it models, a sum of like quantities — and even there `5 m plus 3 s equals 8 m`, which is FALSE, returns UNCERTAIN rather than REJECTED, so it fails in that direction too. **IT ALSO CONTAMINATES AN AGREEMENT, WHICH IS WHY THE CONTROL MATTERED.** On the corpus, SM-08 is a FALSE claim this tool REJECTED and that was counted as agreement. But it rejects mixed-dimension claims whatever their truth, so the agreement reflects how often such claims happen to be false rather than any judgement the tool made. Of the 3 agreements in that measurement only 2 are discriminating — `statsmodels` on ST-01 and `stoichiometric_balance` on CM-10, both CONFIRMED. **THE BLAST RADIUS IS THE K/L/M CELLS.** `dimensional_analysis` sits in the PRIMARY tool list for **physics, chemistry, engineering and cross_domain**. Physics, chemistry and engineering are the K, L and M specialist cells promoted from shadow to LIVE on 2026-07-27 on his own standing instruction, superseding constraint S5 of the Exp 40 plan, whose condition was that they *stay in shadow until their tool coverage is validated*. **That validation was never performed**: 0 files under `scripts/` or `bench/tests/` match `specialist.*accuracy` or `accuracy.*specialist`; `test_shadow_audit_klm.py` pins the audit RECORD'S SCHEMA, which its own docstring calls the instrument built to SUPPORT the check; and `test_specialist_live_promotion.py` asserts MEMBERSHIP in `LIVE_SPECIALIST_DOMAINS` while still quoting S5's unmet condition. **AND PHYSICS HAS 0 DOCUMENTS IN THE CORPUS**, so it is live with no content of ours to measure it on at all. **WHAT THIS DOES AND DOES NOT COST TODAY.** It does NOT change an apply-back decision: a prose target was refused before the 2026-11-10 domain route existed, so a false rejection yields the status quo. It DOES write a FALSE REASON, which is the precise harm B88's original defect caused 34 times, and the refusal detail was narrowed the same night so the tool verdict is appended as advisory rather than given as the ground. **AND IT MATTERS FOR BENCH RUN 2 RATHER THAN FOR TONIGHT:** a live specialist that rejects correct physics is a false-positive source in exactly the domains BR2 is meant to cover. **NO FIX IS PROPOSED, DELIBERATELY.** A correct check needs the expression's STRUCTURE — which quantities are summed and which multiplied — and `pint` can supply that given a parsed expression rather than a bag of extracted quantities. That is a build on a live specialist tool in the primary pool of 4 domains, so under `p-pass-high-consequence-check` it is his to authorise rather than mine to take from a measurement. **[NEEDS HIS RULING] on whether to repair the predicate before Bench Run 2, or to move `dimensional_analysis` to `secondary_only` in the manifest so it can corroborate but never refuse, which is the smaller change and removes no capability.** Producers: `scripts/the_dimensional_check_tests_homogeneity_not_correctness_2026-11-10.py`, which exits 1 rather than 0 once the predicate is repaired so it cannot outlive its own defect; and `scripts/the_topics_tools_on_the_projects_own_corpus_2026-11-10.py` for the corpus measurement it came from. ★★★ **THE FALSE-ADMIT HALF IS NOW BUILT, AND THE ROUTE ADOPTED IS NOT THE ONE EITHER I OR THE PANEL FIRST PROPOSED, 2026-11-10.** Producer: `scripts/which_admissions_are_truth_blind_2026-11-10.py`. **THE CONTROL: a verdict that takes the same value on a claim and on a FALSE VARIANT of that claim carries 0 bits about the claim**, so admitting a fix on it is admission by vocabulary and not by tool. **MY FIRST NARROWING WAS REFUTED BY A FREE PANEL SEAT AND THE REFUTATION REPRODUCES.** I had excluded 2 tools, having measured `biological_sequence` as DISCRIMINATING. It has 5 favourable branches: 4 compare a computed value against the claim and 1 reports only that a sequence parses. My probe hit a comparing branch and generalised from it. Executed here: `the sequence 'ATGC' proves the defendant was present` and `the sequence 'ATGC' proves the moon is made of cheese` both return CONFIRMED at 0.85 with identical evidence. **THE SEAT'S OWN FIX WAS THEN MEASURED AND REFUSED.** It proposed excluding the tool outright. Scored on 2 named properties — truth-blind paths BARRED, and discriminating paths RETAINED — the tool-level exclusion gives 2 of 3 and 1 of 2, while gating that tool at its BRANCH gives 3 of 3 and 2 of 2. The exclusion removes a capability that demonstrably works, so under `additive-standard`'s removal clause it is refused. **AND THERE IS NO COMPOSABILITY CLAIM**: the branch gate alone beats the exclusion alone, so under his definition the SINGLE fix is preferred and composing the 2 would be composition for its own sake. **THE SAME MEASUREMENT FOUND A 3RD TRUTH-BLIND TOOL THE SEAT HAD JUDGED SAFE.** `chemistry_structure` CONFIRMS `the molecule CCO is ethanol` AND `the molecule CCO is benzene`, because it validates the SMILES string and not the claim; the seat recorded that its own probes never drew a CONFIRMED from it and that it was therefore rightly not excluded. **BUILT:** `CANNOT_ADMIT_ALONE` holds `dimensional_analysis`, `chemistry_structure` and `astronomical`; `BRANCH_GATED_ADMISSION` holds `biological_sequence` against the marker `matches claim`, which is READ OFF that verifier's own source and is TOOL-SCOPED. **APPLYING THAT MARKER GLOBALLY WAS MY OWN ERROR AND IT COST A POINT**: it barred `stoichiometric_balance`, which the same run measures as discriminating. **`definitive_for` IS UNCHANGED, so no favourable verdict is discarded and a corroborating voice is still recorded; only the ADMISSION narrows**, and the refusal detail now carries `for_but_cannot_admit=` so the record can tell *nothing agreed* from *only blind tools agreed*. **GUARD:** `bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`, 13 tests, 4 of 4 mutations red. **ITS FIRST VERSION MISSED THE CORE DEFECT AND THAT IS RECORDED RATHER THAN QUIETLY FIXED**: reverting the admit line to the original `bool(definitive_for)` left all 12 of its tests GREEN, because every end-to-end probe it used was refused by a REJECTION from another tool, so the verdict never depended on the gate. The discriminating case is `the molecule CCO is benzene` in chemistry — FALSE, confirmed only by a truth-blind tool, with nothing speaking against it — and the guard now asserts that premise so it cannot rot into a probe that passes for the wrong reason. ★★★ **CORRECTED IN THE check_my_fixes_2026-11-10 JOINT ROUND: `chemistry_structure` MOVED FROM `CANNOT_ADMIT_ALONE` TO `BRANCH_GATED_ADMISSION`, BECAUSE THE TOOL-LEVEL ENTRY WAS THE SAME 1-BRANCH-OF-N ERROR A 3RD TIME.** The probe pair behind its tool-level entry hit only the SMILES-validity fallback. The tool has 3 favourable branches: formula and MW COMPARE a computed value against the claim — executed 2026-11-10: `the molecule 'CCO' has formula C2H6O` CONFIRMED carrying `matches claim`, `C3H8O` variant REJECTED — and unlike `biological_sequence`'s comparing branches these ARE reached by live `chemistry` traffic, so the tool-level entry refused a true, discriminating, reachable admission (`for=- for_but_cannot_admit=chemistry_structure`, executed). Re-scored with those branches in the P2 denominator: seat's tool-level option 2 of 3 and 3 of 4; the as-committed option 3 of 3 and 2 of 4; branch-gating BOTH 2-branch tools 3 of 3 and 4 of 4, Wilson 95% [0.510109, 1.000000] (statsmodels, NumPy and Wolfram Language agreeing to 6 figures). The adopted tables: `CANNOT_ADMIT_ALONE` = {`dimensional_analysis`, `astronomical`}; `BRANCH_GATED_ADMISSION` = {`biological_sequence`: `matches claim`, `chemistry_structure`: `matches claim`}, each marker read off its own verifier's source, injection-checked (the candidate character classes admit no whitespace, so a claim cannot smuggle the marker — quoted 'MATCHESCLAIM' confirms WITHOUT it, executed). The producer now scores all 3 options, DERIVES the adopted one from its own rows, and exits 1 if the adopted option ever stops dominating. Guard: 14 tests, 3 of 3 mutations red, including a new end-to-end admission through the comparing branch — the capability the tool-level entry was destroying, now executed by a test.
+ <!-- task: B136 | state: OPEN | status: PROPOSED | evidence: scripts/the_dimensional_check_tests_homogeneity_not_correctness_2026-11-10.py, scripts/the_topics_tools_on_the_projects_own_corpus_2026-11-10.py -->
+ 
+ **B137. `cross_domain` DECLARES 11 VERIFICATION TOOLS ACROSS 3 CLAIM TYPES AND HAS 0 CLAIM PATTERNS, SO EVERY ONE OF THEM IS UNREACHABLE BY CONSTRUCTION — AND `biology`'s PATTERNS CONTAIN 0 SEQUENCE WORDS.** Added 2026-11-10T06:05:00+00:00. **STATUS: PROPOSED, measured, root-caused, NOT FIXED. No ruling is requested yet; it is the same defect class B22 already records and belongs with that entry's repair.** **FOUND WHILE CHECKING WHETHER A GATE BUILT THE SAME NIGHT WAS REACHABLE**, which is the `additive-standard` symmetric question asked of my own work rather than of someone else's. Producer: `scripts/which_admissions_are_truth_blind_2026-11-10.py`, section 5. **THE MECHANISM.** `domain_classify_claim` returns `uncategorised` when a domain config carries no claim patterns, and `domain_b_cell_tools` then returns no tools for that claim type. **`cross_domain` has 0 compiled claim patterns against 3 claim types that each carry tools**, so all 11 distinct tools named there — `biological_sequence`, `chemistry_structure`, `dimensional_analysis`, `graph_property`, `ml_claim`, `scipy`, `statsmodels`, `sympy`, `uncertainty_propagation`, `wolfram` and `z3` — can never be dispatched in that domain. 1 of the 10 loaded domains is in this state, Wilson 95% [0.017876, 0.404150], Clopper-Pearson [0.002529, 0.445016]. **`biology` IS A DIFFERENT AND SUBTLER CASE and my first inference about it was wrong.** It is NOT pattern-less: it has 3 patterns for its 3 claim types. But **0 of them contain any of `sequence`, `dna`, `rna`, `protein`, `nucleotide`, `complement`, `codon` or `gc content`** — its `mathematical` pattern matches operators and enzyme-kinetics terms such as Km, Vmax and IC50 — so a sequence claim matches nothing. **MEASURED: 0 of 10 sequence claims reach `biological_sequence` across the 2 domain and claim-type pairs that assign it, Wilson 95% [0.000000, 0.277533], Clopper-Pearson [0.000000, 0.308497].** **THIS IS B22's `graph_property` FINDING GENERALISED**: a tool declared for a claim type whose patterns do not contain the vocabulary that would route a claim to it. B22 recorded 7 of 29 corpus claims routed to 0 tools; this names 2 structural causes behind that number. **WHAT IT COSTS TODAY: nothing is mis-decided, because an unreached tool returns no verdict and the gate fails closed.** What it costs is COVERAGE, and it matters for Bench Run 2 rather than for tonight: `cross_domain` is the domain a multi-disciplinary target would route to, and it currently dispatches nothing. **IT ALSO BOUNDS A CLAIM I WOULD OTHERWISE HAVE MADE**: the branch gate built tonight for `biological_sequence` is correct and guarded, and is NOT exercised by real traffic, which is stated beside the build rather than left to be discovered. A guard pins both facts and tells whoever repairs the classifier to re-measure and add an end-to-end admission test, because the pin going red will mean the classifier got BETTER.
+
+### fable:attempt-1:scripts/which_admissions_are_truth_blind_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/which_admissions_are_truth_blind_2026-11-10.py	2026-11-10 05:21:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo/scripts/which_admissions_are_truth_blind_2026-11-10.py	2026-11-10 05:41:48
+@@ -17,18 +17,26 @@
+ sequence parses. The earlier probe hit a comparing branch and generalised from
+ it. That is the measurement hitting 1 branch of 3 and reporting the function.
+ 
+-THE 2 OPTIONS, and the 2 properties they are scored on.
++THE 3 OPTIONS, and the 2 properties they are scored on.
+   A  TOOL-LEVEL EXCLUSION, the seat's fix: add `biological_sequence` to
+      `CANNOT_ADMIT_ALONE`, so no verdict of its may admit by itself.
+-  B  BRANCH-LEVEL GATE: keep the tool, and let a CONFIRMED verdict admit alone
+-     only where its own evidence shows a COMPARING branch.
++  B  AS FIRST COMMITTED on 2026-11-10: `chemistry_structure` at the TOOL
++     level, `biological_sequence` at the BRANCH. Its 3-of-3 and 2-of-2 rested
++     on a probe set that hit only chemistry's SMILES-validity fallback -- the
++     SAME 1-branch-of-N error this producer's own history records twice --
++     so its P2 denominator was missing chemistry's formula and MW branches.
++  C  BRANCH-LEVEL GATE for EVERY tool measured to carry BOTH a blind and a
++     comparing favourable branch; tool-level only where every favourable
++     path is blind. C is DERIVED from the measurement below, not typed.
+   P1 truth-blind CONFIRMED paths BARRED from sole admission  (higher is better)
+   P2 discriminating CONFIRMED paths RETAINED for sole admission (higher better)
+ 
+-The marker is DERIVED, not guessed: all 4 comparing branches end their evidence
+-in `matches claim`, and the validity-only fallback cannot, because it never
+-reads a claimed value. The producer asserts that structural fact against the
+-verifier's own source rather than trusting the string.
++The marker is DERIVED, not guessed: in BOTH 2-branch verifiers the comparing
++branches end their evidence in `matches claim`, and the validity-only fallback
++cannot, because it never reads a claimed value and its candidate character
++classes admit no whitespace, so a claim cannot inject the marker. The producer
++asserts those structural facts against each verifier's own source rather than
++trusting the string.
+ """
+ from __future__ import annotations
+ 
+@@ -84,6 +92,12 @@
+      "2 H2 + O2 -> 2 H2O", "3 H2 + O2 -> 5 H2O"),
+     ("chemistry_structure", "SMILES validity",
+      "the molecule CCO is ethanol", "the molecule CCO is benzene"),
++    ("chemistry_structure", "formula",
++     "the molecule 'CCO' has formula C2H6O",
++     "the molecule 'CCO' has formula C3H8O"),
++    ("chemistry_structure", "molecular weight",
++     "the molecule 'CCO' has molecular weight 46.07 g/mol",
++     "the molecule 'CCO' has molecular weight 99.9 g/mol"),
+ ]
+ 
+ 
+@@ -119,16 +133,20 @@
+ 
+     # ---- the marker is derived from the source, not assumed ---------------
+     src = (REPO / "bench" / "immune_agents.py").read_text(encoding="utf-8")
+-    body = src[src.index("def _verify_biological_sequence"):][:9000]
+-    valid = re.findall(r"BIO_VALID: [^\"']*", body)
+-    comparing = [v for v in valid if COMPARES in v]
+-    fallback = [v for v in valid if COMPARES not in v]
+-    print(f"\n1. THE MARKER, DERIVED FROM THE VERIFIER'S OWN SOURCE")
+-    print(f"      BIO_VALID branches found      : {len(valid)}")
+-    print(f"      containing {COMPARES!r:17s}  : {len(comparing)}")
+-    print(f"      validity-only (no comparison) : {len(fallback)}")
+-    assert len(comparing) >= 3 and len(fallback) >= 1, (
+-        "the branch structure this producer rests on is not present")
++    print(f"\n1. THE MARKER, DERIVED FROM EACH VERIFIER'S OWN SOURCE")
++    for fn_name, prefix in (("_verify_biological_sequence", "BIO_VALID"),
++                            ("_verify_chemistry_structure", "CHEM_VALID")):
++        body = src[src.index(f"def {fn_name}"):][:9000]
++        valid = re.findall(prefix + r": [^\"']*", body)
++        comparing = [v for v in valid if COMPARES in v]
++        fallback = [v for v in valid if COMPARES not in v]
++        print(f"      {fn_name}")
++        print(f"        {prefix} branches found       : {len(valid)}")
++        print(f"        containing {COMPARES!r:17s} : {len(comparing)}")
++        print(f"        validity-only (no comparison) : {len(fallback)}")
++        assert len(comparing) >= 2 and len(fallback) >= 1, (
++            f"the branch structure this producer rests on is not present "
++            f"in {fn_name}")
+ 
+     # ---- the discrimination control ---------------------------------------
+     print(f"\n2. THE DISCRIMINATION CONTROL, 1 true claim against 1 false variant")
+@@ -169,48 +187,67 @@
+     #: ★ OPTION A IS THE SEAT'S PROPOSAL, TYPED OUT AS IT PROPOSED IT.
+     OPTION_A = {"dimensional_analysis", "astronomical", "biological_sequence"}
+ 
+-    #: ★ OPTION B IS DERIVED FROM THE MEASUREMENT ABOVE, NOT TYPED.
+-    #: The first version of this producer hardcoded B's tool set from what
+-    #: the author expected, and the measurement then disagreed with the
+-    #: producer's own prose. Deriving it means the producer cannot differ
+-    #: from what it just measured. `biological_sequence` is held out because
+-    #: it is the 1 tool measured to have BOTH a comparing and a
+-    #: validity-only branch, so it is gated at the branch and not the tool.
+-    BRANCH_GATED = {"biological_sequence"}
+-    OPTION_B = {t for t, _l, _tv, _fv, _ev, _ad, dsc in rows
+-                if not dsc and t not in BRANCH_GATED}
++    #: ★ OPTION B IS WHAT THE TREE CARRIED FOR PART OF 2026-11-10, TYPED OUT
++    #: AS IT WAS COMMITTED. Its own adoption measurement scored it 3 of 3 and
++    #: 2 of 2 -- against a probe set that had hit only `chemistry_structure`'s
++    #: SMILES-validity fallback, so chemistry's formula and MW comparing
++    #: branches were missing from P2's denominator.
++    OPTION_B_TOOLS = {"dimensional_analysis", "chemistry_structure",
++                      "astronomical"}
++    OPTION_B_BRANCH = {"biological_sequence"}
+ 
++    #: ★ OPTION C IS DERIVED FROM THE MEASUREMENT ABOVE, NOT TYPED. A tool
++    #: with BOTH a blind and a comparing favourable branch is gated at the
++    #: branch; a tool whose every favourable path is blind is barred at the
++    #: tool. Deriving it means the producer cannot differ from what it just
++    #: measured -- the defect option B carried was exactly a typed set
++    #: contradicting an under-sampled measurement.
++    _blind_tools = {t for t, _l, _tv, _fv, _ev, ad, dsc in rows if ad and not dsc}
++    _disc_tools = {t for t, _l, _tv, _fv, _ev, ad, dsc in rows if ad and dsc}
++    OPTION_C_BRANCH = _blind_tools & _disc_tools
++    OPTION_C_TOOLS = {t for t, _l, _tv, _fv, _ev, _ad, dsc in rows
++                      if not dsc and t not in OPTION_C_BRANCH}
++
+     def barred_A(tool, ev):
+         return tool in OPTION_A
+ 
++    #: ★ THE MARKER IS TOOL-SCOPED, AND THE FIRST VERSION APPLIED IT
++    #: GLOBALLY. `matches claim` is the gated verifiers' own wording, so a
++    #: global test barred `stoichiometric_balance` -- a tool this same run
++    #: measures as DISCRIMINATING -- and cost the gated option a point it
++    #: should never have lost. A marker read off a verifier's source may
++    #: only be applied to that verifier.
+     def barred_B(tool, ev):
+-        #: ★ THE MARKER IS TOOL-SCOPED, AND THE FIRST VERSION APPLIED IT
+-        #: GLOBALLY. `matches claim` is `biological_sequence`'s own wording,
+-        #: so a global test barred `stoichiometric_balance` -- a tool this
+-        #: same run measures as DISCRIMINATING -- and cost option B a point
+-        #: it should never have lost. A marker read off 1 verifier's source
+-        #: may only be applied to that verifier.
+-        if tool in OPTION_B:
++        if tool in OPTION_B_TOOLS:
+             return True
+-        if tool in BRANCH_GATED:
++        if tool in OPTION_B_BRANCH:
+             return COMPARES not in (ev or "")
+         return False
+ 
+-    print(f"\n      option A tool set (the seat's) : {sorted(OPTION_A)}")
+-    print(f"      option B tool set (DERIVED)    : {sorted(OPTION_B)}")
+-    print(f"      option B branch-gated          : {sorted(BRANCH_GATED)}")
++    def barred_C(tool, ev):
++        if tool in OPTION_C_TOOLS:
++            return True
++        if tool in OPTION_C_BRANCH:
++            return COMPARES not in (ev or "")
++        return False
+ 
+-    print(f"\n4. THE 2 OPTIONS ON 2 NAMED PROPERTIES")
++    print(f"\n      option A tool set (the seat's)    : {sorted(OPTION_A)}")
++    print(f"      option B tool set (as committed)  : {sorted(OPTION_B_TOOLS)}")
++    print(f"      option B branch-gated             : {sorted(OPTION_B_BRANCH)}")
++    print(f"      option C tool set (DERIVED)       : {sorted(OPTION_C_TOOLS)}")
++    print(f"      option C branch-gated (DERIVED)   : {sorted(OPTION_C_BRANCH)}")
++
++    print(f"\n4. THE 3 OPTIONS ON 2 NAMED PROPERTIES")
+     hdr = f"      {'':10s} {'P1 blind barred':>18s} {'P2 discriminating kept':>24s}"
+     print(hdr)
+     results = {}
+-    for tag, pred in (("A", barred_A), ("B", barred_B)):
++    for tag, pred in (("A", barred_A), ("B", barred_B), ("C", barred_C)):
+         p1 = sum(1 for t, l, tv, fv, ev, *_ in blind if pred(t, ev))
+         p2 = sum(1 for t, l, tv, fv, ev, *_ in disc if not pred(t, ev))
+         results[tag] = (p1, len(blind), p2, len(disc))
+         print(f"      option {tag}   {p1:>8d} of {len(blind):<6d} {p2:>14d} of {len(disc):<6d}")
+ 
+-    for tag in ("A", "B"):
++    for tag in ("A", "B", "C"):
+         p1, n1, p2, n2 = results[tag]
+         for nm, k, n in (("P1", p1, n1), ("P2", p2, n2)):
+             lo, hi, clo, chi, gw, gc = _iv_both(k, n)
+@@ -280,45 +317,72 @@
+         hits = [w for w in vocab if w in allpat]
+         print(f"      {dom:14s}: {len(pats)} claim_pattern(s), sequence words "
+               f"present in any of them: {hits or 'NONE'}")
+-    print(f"\n      SO THE BRANCH GATE IS CORRECT AND CURRENTLY UNEXERCISED BY")
+-    print(f"      REAL TRAFFIC. That is the same defect B22 records for")
+-    print(f"      `graph_property`: a tool declared for a claim type whose")
+-    print(f"      patterns do not contain the vocabulary that would match it.")
+-    print(f"      It is NOT a reason to prefer option A -- A is unreachable by")
+-    print(f"      the identical route and additionally bars the comparing")
+-    print(f"      branch, so it is worse on both counts.")
++    print(f"\n      SO THE biological_sequence BRANCH GATE IS CORRECT AND")
++    print(f"      CURRENTLY UNEXERCISED BY REAL TRAFFIC. That is the same")
++    print(f"      defect B22 records for `graph_property`: a tool declared")
++    print(f"      for a claim type whose patterns do not contain the")
++    print(f"      vocabulary that would match it. It is NOT a reason to")
++    print(f"      prefer option A -- A is unreachable by the identical route")
++    print(f"      and additionally bars the comparing branch, so it is worse")
++    print(f"      on both counts.")
+ 
++    #: ★ THE OTHER BRANCH-GATED TOOL IS REACHED, measured the same way
++    #: rather than asserted: a formula claim in the `chemistry` domain
++    #: classifies to a type whose tool list carries `chemistry_structure`.
++    chem_probe = "the molecule 'CCO' has formula C2H6O"
++    ccfg = cfgs.get("chemistry")
++    ckind, _ = _di.domain_classify_claim(_F(chem_probe), ccfg)
++    creached = "chemistry_structure" in (_di.domain_b_cell_tools(ckind, ccfg) or [])
++    print(f"\n      chemistry_structure, same question   : a formula claim in")
++    print(f"      `chemistry` classifies `{ckind}` and the tool list "
++          f"{'CARRIES' if creached else 'DOES NOT CARRY'} it,")
++    print(f"      so ITS branch gate IS exercised by live traffic -- which is")
++    print(f"      why barring that tool at the TOOL level was a live")
++    print(f"      capability loss and not a latent one.")
++    assert creached, (
++        "chemistry_structure is no longer reachable from the chemistry "
++        "domain; section 4's P2 stakes rest on this routing -- re-measure")
++
+     a1, an1, a2, an2 = results["A"]
+     b1, bn1, b2, bn2 = results["B"]
++    c1, cn1, c2, cn2 = results["C"]
+     print("\n" + "=" * 78)
+     print("VERDICT")
+-    dominates = (b1 >= a1 and b2 > a2) or (b1 > a1 and b2 >= a2)
+-    print(f"\n  P1, truth-blind barred      : A {a1}/{an1}   B {b1}/{bn1}")
+-    print(f"  P2, discriminating retained : A {a2}/{an2}   B {b2}/{bn2}")
++
++    def _dom(x1, x2, y1, y2):
++        return (x1 >= y1 and x2 > y2) or (x1 > y1 and x2 >= y2)
++
++    dominates = _dom(c1, c2, a1, a2) and _dom(c1, c2, b1, b2)
++    print(f"\n  P1, truth-blind barred      : A {a1}/{an1}   B {b1}/{bn1}   C {c1}/{cn1}")
++    print(f"  P2, discriminating retained : A {a2}/{an2}   B {b2}/{bn2}   C {c2}/{cn2}")
+     if dominates:
+-        #: ★ THE DIRECTION IS READ OFF THE NUMBERS, NOT ASSERTED. The first
+-        #: version printed a fixed sentence saying B tied on P1 and won on
+-        #: P2. The measurement said the opposite, and the prose did not
+-        #: notice -- a producer contradicting its own figures in the same
+-        #: output. Stating which property carried it is the whole finding.
++        #: ★ THE DIRECTION IS READ OFF THE NUMBERS, NOT ASSERTED. An earlier
++        #: version printed a fixed sentence saying the gated option tied on
++        #: P1 and won on P2. The measurement said the opposite, and the prose
++        #: did not notice -- a producer contradicting its own figures in the
++        #: same output. Stating which property carried it is the whole finding.
+         def _rel(b, a):
+             return "better on" if b > a else ("ties on" if b == a else "WORSE on")
+-        print(f"\n  OPTION B DOMINATES OPTION A: it is "
+-              f"{_rel(b1, a1)} P1 ({b1}/{bn1} against {a1}/{an1}) and "
+-              f"{_rel(b2, a2)} P2 ({b2}/{bn2} against {a2}/{an2}).")
++        print(f"\n  OPTION C DOMINATES BOTH. Against A it is "
++              f"{_rel(c1, a1)} P1 ({c1}/{cn1} against {a1}/{an1}) and "
++              f"{_rel(c2, a2)} P2 ({c2}/{cn2} against {a2}/{an2}).")
++        print(f"  Against B (as committed) it is "
++              f"{_rel(c1, b1)} P1 ({c1}/{cn1} against {b1}/{bn1}) and "
++              f"{_rel(c2, b2)} P2 ({c2}/{cn2} against {b2}/{bn2}).")
+         print(f"  Under the additive standard's removal clause -- removal only")
+         print(f"  where a COMMITTED MEASUREMENT shows the replacement dominates")
+-        print(f"  on a named property -- A is refused and B is adopted.")
+-        print(f"  AND THERE IS NO COMPOSABILITY CLAIM: B alone beats A alone,")
+-        print(f"  so under his definition the SINGLE fix is preferred and")
+-        print(f"  composing them would be composition for its own sake, which")
+-        print(f"  is the sense his wording explicitly excludes.")
++        print(f"  on a named property -- A and B are refused and C is adopted.")
++        print(f"  AND THERE IS NO COMPOSABILITY CLAIM: C alone beats each")
++        print(f"  alternative alone, so under his definition the SINGLE fix is")
++        print(f"  preferred and composing them would be composition for its own")
++        print(f"  sake, which is the sense his wording explicitly excludes.")
+     else:
+-        print(f"\n  OPTION B DOES NOT DOMINATE. The simpler tool-level exclusion")
+-        print(f"  stands, and this producer refuses the branch gate.")
++        print(f"\n  OPTION C DOES NOT DOMINATE BOTH ALTERNATIVES. The adopted")
++        print(f"  tables must be re-measured; this producer refuses to exit 0")
++        print(f"  while the tree carries a set its own measurement cannot back.")
+     mp.mp.dps = 30
+-    print(f"\n  mpmath cross-check of P2 ratio B: "
+-          f"{mp.mpf(b2)/mp.mpf(bn2) if bn2 else mp.mpf('nan')}")
++    print(f"\n  mpmath cross-check of P2 ratio C: "
++          f"{mp.mpf(c2)/mp.mpf(cn2) if cn2 else mp.mpf('nan')}")
+     return 0 if dominates else 1
+ 
+ 

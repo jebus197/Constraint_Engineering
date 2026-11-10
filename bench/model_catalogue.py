@@ -139,6 +139,122 @@ def catalogue(include_remote: bool = False, include_local: bool = True) -> list[
     return sorted(seen.values(), key=lambda r: (order[r["source"]], r["id"]))
 
 
+#: ★ B79, HIS RULING OF 2026-11-08, verbatim: *"This is about naming models that
+#: no longer exist? Correct? So what we need is a way to dynamically record what
+#: models do exist and which are in use, rather than going back and renaming them
+#: by hand? fr"*
+#:
+#: `catalogue()` above answers WHAT EXISTS. This answers WHICH ARE IN USE, and
+#: the 2 are different questions: a label can be declared in the registry and
+#: never dispatched, or dispatched for months and then quietly dropped. Neither
+#: is visible from the registry alone, which is why the record was being
+#: corrected by hand -- the failure his ruling names.
+#:
+#: DERIVED FROM THE RUN ARCHIVE, NEVER FROM A HAND-MAINTAINED LIST. The source
+#: is each run's own `completion_signal.json`, which records the `active_models`
+#: that run actually dispatched plus its timestamp. So a model falls out of this
+#: answer by not being used, with no edit anywhere, which is exactly the
+#: "rather than going back and renaming them by hand" he asked for.
+def in_use(since: str = "", logs_dir: "pathlib.Path | None" = None) -> list[dict]:
+    """Which model labels the run archive shows actually dispatched.
+
+    `since` is an optional ISO date; a run older than it is not counted. Rows
+    carry `label`, `runs`, `first`, `last` and `simulated`, sorted by `last`
+    descending so the most recently used label is first.
+
+    THE `simulated` FLAG IS STRUCTURAL, NOT A GUESS. A simulated stand-in
+    carries the `-SIM` suffix by the project's standing rule that a simulated
+    agent is never labelled with a real model's name, so the suffix IS the
+    record of what it was. Reading it here rather than inferring from a run's
+    config means a row cannot claim a paid dispatch it did not make.
+    """
+    import collections
+    import json as _json
+
+    root = pathlib.Path(logs_dir) if logs_dir else (REPO / "bench" / "logs")
+    runs = collections.Counter()
+    first: dict = {}
+    last: dict = {}
+    for sig in sorted(root.glob("*/completion_signal.json")):
+        try:
+            j = _json.loads(sig.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        stamp = str(j.get("timestamp") or "")[:10]
+        if since and stamp and stamp < since:
+            continue
+        for label in (j.get("active_models") or []):
+            label = str(label).strip()
+            if not label:
+                continue
+            runs[label] += 1
+            if stamp:
+                if label not in first or stamp < first[label]:
+                    first[label] = stamp
+                if label not in last or stamp > last[label]:
+                    last[label] = stamp
+    out = []
+    for label, n in runs.items():
+        out.append({
+            "label": label,
+            "runs": n,
+            "first": first.get(label, ""),
+            "last": last.get(label, ""),
+            "simulated": label.upper().endswith("-SIM"),
+        })
+    out.sort(key=lambda r: (r["last"], r["runs"]), reverse=True)
+    return out
+
+
+def declared_but_unused(since: str = "",
+                        logs_dir: "pathlib.Path | None" = None) -> list[str]:
+    """Labels the registry declares that the archive shows 0 dispatches for.
+
+    This is the half that cannot be seen from either source alone, and it is
+    the answer to his question about names that no longer correspond to
+    anything: a label here is declared and never used.
+    """
+    used = {r["label"].upper()
+            for r in in_use(since=since, logs_dir=logs_dir)}
+    # A registry label matches a used label either exactly or as its -SIM
+    # stand-in, because a simulated run of a seat still evidences that the
+    # seat is IN USE as a configuration.
+    out = []
+    for row in registry_models():
+        name = str(row.get("label") or row.get("name") or "").strip()
+        if not name:
+            continue
+        if name.upper() in used or f"{name.upper()}-SIM" in used:
+            continue
+        out.append(name)
+    return sorted(out)
+
+
+def never_dispatched_for_real(since: str = "",
+                              logs_dir: "pathlib.Path | None" = None) -> list[str]:
+    """Labels the archive shows ONLY as a simulated stand-in.
+
+    WHY THIS IS SEPARATE FROM `declared_but_unused`, AND WHY THE FIRST
+    VERSION OF THIS MODULE HID IT. `declared_but_unused` treats a `-SIM` run
+    as evidence that a seat is in use as a CONFIGURATION, which is true and
+    which is also how `Fable` disappeared from that answer: it has 15
+    simulated runs and **0** real ones, so it was reported as in use while no
+    paid dispatch of it has ever been recorded. A seat that has only ever been
+    stood in for is exactly the case his ruling is about, so it gets its own
+    answer rather than being absorbed into a kinder one.
+    """
+    rows = in_use(since=since, logs_dir=logs_dir)
+    real = {r["label"].upper() for r in rows if not r["simulated"]}
+    sim_only = []
+    for r in rows:
+        if not r["simulated"]:
+            continue
+        base = r["label"][:-4] if r["label"].upper().endswith("-SIM") else r["label"]
+        if base.upper() not in real:
+            sim_only.append(base)
+    return sorted(set(sim_only))
+
+
 def render(rows: list[dict]) -> str:
     lines = [f"{len(rows)} selectable model(s). Local first, as he specified.",
              f"roles available: {', '.join(known_roles()) or 'none'}", ""]
@@ -159,7 +275,41 @@ def main(argv=None) -> int:
     ap.add_argument("--no-local", action="store_true",
                     help="skip the local-daemon probe")
     ap.add_argument("--json", action="store_true")
+    #: ★ B79: WHAT EXISTS AND WHAT IS IN USE ARE 2 QUESTIONS, so the CLI
+    #: answers both. `--in-use` is the half his 2026-11-08 ruling asked for,
+    #: derived from each run's own completion signal rather than from a list
+    #: anyone maintains by hand.
+    ap.add_argument("--in-use", action="store_true",
+                    help="which model labels the run archive shows dispatched")
+    ap.add_argument("--since", default="",
+                    help="with --in-use, ignore runs older than this ISO date")
     a = ap.parse_args(argv)
+    if a.in_use:
+        rows = in_use(since=a.since)
+        unused = declared_but_unused(since=a.since)
+        if a.json:
+            print(json.dumps({"in_use": rows, "declared_but_unused": unused},
+                             indent=1))
+            return 0
+        print(f"{'LABEL':20s} {'RUNS':>5s}  {'FIRST':10s} {'LAST':10s} KIND")
+        for r in rows:
+            kind = "simulated" if r["simulated"] else "paid/real"
+            print(f"{r['label']:20s} {r['runs']:5d}  {r['first']:10s} "
+                  f"{r['last']:10s} {kind}")
+        print(f"\n{len(rows)} label(s) dispatched"
+              + (f" since {a.since}" if a.since else " in the whole archive"))
+        if unused:
+            print(f"declared in the registry but never dispatched: "
+                  f"{', '.join(unused)}")
+        sim_only = never_dispatched_for_real(since=a.since)
+        if sim_only:
+            print(f"stood in for but NEVER dispatched for real: "
+                  f"{', '.join(sim_only)}")
+        _real = [r for r in rows if not r["simulated"]]
+        if _real:
+            print(f"most recent REAL dispatch: "
+                  f"{max(r['last'] for r in _real)}")
+        return 0
     rows = catalogue(include_remote=a.remote, include_local=not a.no_local)
     print(json.dumps(rows, indent=1) if a.json else render(rows))
     return 0

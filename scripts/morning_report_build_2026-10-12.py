@@ -1105,6 +1105,121 @@ def _spoken(text: str) -> str:
     return t.strip()
 
 
+#: ★ B105: HIS RULING OF 2026-11-08, AND IT AMENDS HIS OWN EARLIER PROPOSAL.
+#: Verbatim: *"I accept your recommendation. But because a double asterisk
+#: *like this* can be misread in some situations, change this so that your
+#: messages open with an asterisk *like this but do not close with one. stm"*
+#:
+#: HIS ORIGINAL PROPOSAL was that his comments always open with a `#` and mine
+#: always open AND CLOSE with a `*`. The measurement argued against the pair and
+#: he accepted that, then kept the open-only half: Read Aloud speaks every
+#: asterisk as the word "asterisk", so 2 per paragraph is twice the noise of 1.
+#: A report of 100 paragraphs costs him 100 spoken noises instead of 200.
+#:
+#: WHAT IS MARKED AND WHAT IS NOT, because marking the wrong line MISATTRIBUTES
+#: HIS OWN WORDS TO ME, which is worse than not marking at all:
+#:   * MY PROSE PARAGRAPHS        -> marked
+#:   * his quoted material        -> NOT marked. The spans are already tracked
+#:                                  by line index in `_ex` for the lint, so the
+#:                                  same record governs both.
+#:   * section titles             -> NOT marked. The note standard's own words
+#:                                  are "a blank line and a capitalised section
+#:                                  title on its own line", so a lone
+#:                                  capitalised line is structure, not prose.
+#:   * numbered list items        -> NOT marked. The standard permits
+#:                                  "numbered lists with digits and full stops
+#:                                  only", and an asterisk before a digit reads
+#:                                  as 2 noises in a row.
+#:   * a line already marked      -> NOT marked twice.
+#:
+#: IT RUNS BEFORE THE OFFSET CONVERSION BELOW, deliberately. `exempt_out`
+#: converts line indices to CHARACTER offsets from `L` itself, so inserting
+#: characters afterwards would slide every offset by the number of asterisks
+#: above it and the lint's exempt spans would describe the wrong text.
+#: A numbered or bracketed list item, an ISO date, or a clock time.
+#: These are structure or ledger lines rather than prose of mine.
+_LIST_OR_STAMP = re.compile(
+    r"^\s*(?:\d+[.)]\s|\d{4}-\d{2}-\d{2}|\d{1,2}:\d{2})")
+
+
+def _mark_my_paragraphs(lines: list, exempt_spans: list,
+                        heading_idx=()) -> int:
+    """Prefix `*` to the first line of each paragraph that is MINE. In place.
+
+    Returns how many paragraphs were marked, so a caller or a test can assert
+    the count rather than trust the walk.
+
+    ★ `heading_idx` IS A RECORD, NOT A SHAPE, AND THAT IS THE WHOLE POINT.
+    The all-caps test below cannot recognise a heading whose body is prose:
+    `DECISION 1. B13, admitting a model is not trivial` is a structural
+    heading with a mixed-case headline, so on the first build all 17 of them
+    were marked -- 17 spoken instances of the word "asterisk" on the lines
+    that give the report its structure, which his ruling of 2026-11-08 did
+    not ask for (it governs PARAGRAPHS), and a sibling guard red because
+    the guard pattern for a numbered decision heading no longer matched. The FOOT-LINE was marked too, and
+    the note standard requires that exact line as the final content.
+    B105's own finding was that a SHAPE heuristic misreading headings was 1
+    of the 3 measured causes of his lost responses, so inferring a heading
+    here would repeat the error it diagnosed. `render_tts` knows which lines
+    it emits as headings, so it RECORDS them at the point of emission, the
+    way `_ex` already records quoted spans -- 1 record, no second opinion.
+    """
+    _headings = set(heading_idx or ())
+    quoted = set()
+    for _a, _b in (exempt_spans or []):
+        for _i in range(max(0, _a), min(len(lines), _b)):
+            quoted.add(_i)
+
+    def _is_section_title(text: str) -> bool:
+        letters = [c for c in text if c.isalpha()]
+        if not letters:
+            return False
+        return all(c.isupper() for c in letters)
+
+    #: THE DOCUMENT TITLE IS NOT A PARAGRAPH OF MINE, and the all-caps rule
+    #: below does not catch it: the title reads "MORNING REPORT, 10 November
+    #: 2026" and the month name is mixed case, so it failed the section-title
+    #: test and was marked on the first run of this function. The first
+    #: non-blank line of the file is the title by construction.
+    _first_nonblank = next((i for i, ln in enumerate(lines) if ln.strip()), None)
+
+    marked, at_start = 0, True
+    for i, ln in enumerate(lines):
+        stripped = ln.strip()
+        if not stripped:
+            at_start = True
+            continue
+        if not at_start:
+            continue
+        at_start = False
+        if i == _first_nonblank:
+            continue
+        if i in quoted:
+            continue
+        #: A RECORDED HEADING, not a guessed one. See the docstring.
+        if i in _headings:
+            continue
+        if stripped[0] in "*#-":
+            continue
+        #: A LIST MARKER OR A TIMESTAMP, not every numeral. See
+        #: `refine_the_digit_rule` in the 2026-11-10 apply script:
+        #: `no-word-numbers` requires my sentences to OPEN with a
+        #: digit, so skipping every digit-initial line left my own
+        #: prose unmarked in the real report.
+        if _LIST_OR_STAMP.match(stripped):
+            continue
+        if _is_section_title(stripped):
+            continue
+        #: A DIGIT-INITIAL LINE PASSES HERE TOO. Without this the
+        #: list-marker refinement above is inert, because this gate
+        #: rejected every numeral the other one admitted.
+        if not (stripped[0].isalpha() or stripped[0].isdigit()):
+            continue
+        lines[i] = "*" + ln
+        marked += 1
+    return marked
+
+
 def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
                detail: bool = True, exempt_out=None) -> str:
     """The spoken report. `detail=False` drops the per-decision argument.
@@ -1137,6 +1252,10 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
     #: by LINE INDEX here and converts them to character offsets at the end --
     #: exact, rather than matched by text, and 0 bytes of what he hears change.
     _ex: list = []
+    #: ★ HEADING LINES, RECORDED WHERE THEY ARE EMITTED (B105). `L` is
+    #: append-only in this function, so an index taken before an append
+    #: stays correct for the life of the list.
+    _hd: list = []
     A(f"MORNING REPORT, {dt.date.today().strftime('%d %B %Y')}")
     A("")
     A(f"This report is generated from the project's own records rather than written by "
@@ -1182,6 +1301,7 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
     # SKIPPED BY ITS ITERABLE rather than by re-indenting the block under an
     # `if`: simplest sufficient, and a diff a reader can check.
     for i, d in enumerate(decs if detail else [], 1):
+        _hd.append(len(L))
         A(f"DECISION {i}. {_spoken(d.get('title') or d['ident'])}")
         A("")
         A("What it is. " + _spoken(d.get("what", d.get("headline", ""))))
@@ -1189,6 +1309,7 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
         A("Why it needs a decision. " + _spoken(d.get("why", "")))
         A("")
         if d.get("options"):
+            _hd.append(len(L))
             A("The options.")
             A("")
             for n, o in enumerate(d["options"], 1):
@@ -1303,7 +1424,11 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
               f"than a decision.")
     A("")
     A("")
+    _hd.append(len(L))
     A(f"Written under CDSFL note standard {CURRENT_NOTE_STANDARD}.")
+    # ★ B105, HIS RULING OF 2026-11-08. Marked BEFORE the offset conversion
+    # below, because that conversion measures `L` itself.
+    _marked = _mark_my_paragraphs(L, _ex, _hd)
     if exempt_out is not None:
         # Line index -> character offset, using the SAME join this returns, so
         # the offsets cannot drift from the text they describe.

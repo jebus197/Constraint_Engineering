@@ -44,10 +44,37 @@ SUBJECT = REPO / "scripts" / "how_many_decisions_actually_need_him_2026-11-01.py
 #: (name, original fragment, replacement, direction) -- direction is what the
 #: owed set must do: 'shrink', 'grow', or 'change'.
 MUTATIONS = [
+    #: ★ DIRECTION CHANGED FROM "shrink" TO "constructed", 2026-11-10, AND THE
+    #: REASON IS THE SAME ONE ALREADY RECORDED FOR `DEPENDS` BELOW: the live
+    #: list stopped supplying the case. On 2026-11-10 his rulings of 2026-11-08
+    #: were written onto 10 markers, so 6 entries that had been OWED became
+    #: GRANTED and the owed set fell from 10 to 5. This mutation needs an OWED
+    #: entry whose body carries a free-panel phrase in a DIFFERENT sentence
+    #: from the asking one; every live entry of that shape was reclassified,
+    #: so the mutation stopped shrinking anything and SURVIVED -- the harness
+    #: reporting 2 of 4 where it had reported 3 of 4.
+    #:
+    #: THE PREDICATE DID NOT WEAKEN AND THE POPULATION DID. Driving it with a
+    #: constructed entry restores the test without waiting for the live list to
+    #: happen to contain one, which is this file's own stated standard: "the
+    #: difference between a guard that is tested and a guard that is described."
     ("body-scoped FREE (the original defect)",
      "        free = bool(FREE.search(sent))",
      "        free = bool(FREE.search(txt))",
-     "shrink"),
+     "constructed",
+     {
+         "state": "OPEN",
+         "ruled": None,
+         #: NO BOLD MARKERS. The first draft wrapped the ask in `**...**` and
+         #: `_SENT` returned ONE sentence, so the free-panel phrase shared a
+         #: sentence with the ask and the BASELINE already read GRANTED --
+         #: the fixture destroying the contrast it exists to create.
+         "text": ("NEEDS HIS RULING on whether the demotion rule should be "
+                  "wired. The earlier review was a free panel and cost "
+                  "nothing."),
+         "baseline_kind": "OWED",
+         "mutant_kind": "GRANTED",
+     }),
     ("DEPENDS blinded",
      'DEPENDS = re.compile(\n    r"AWAITS THE SHARED SCOPE DECISION AT ([A-Z]\\d+)"\n    r"|awaits? the (?:shared )?(?:scope )?decision at ([A-Z]\\d+)"\n    r"|NOT A RULING OF ITS OWN", re.I)',
      'DEPENDS = re.compile(\n    r"THIS PHRASE OCCURS IN NO ENTRY ([A-Z]\\d+)"\n    r"|NOR DOES THIS ONE ([A-Z]\\d+)", re.I)',
@@ -120,7 +147,12 @@ def main() -> int:
     scratch.mkdir(exist_ok=True)
     written: list[pathlib.Path] = []
     try:
-        for i, (label, old, new, direction) in enumerate(MUTATIONS):
+        for i, _m in enumerate(MUTATIONS):
+            label, old, new, direction = _m[:4]
+            #: A mutation may carry its OWN constructed case as a 5th
+            #: element. Without this every `constructed` mutation shared
+            #: one case and only the DEPENDS branch could be driven.
+            case = _m[4] if len(_m) > 4 else CONSTRUCTED
             if old not in text:
                 print(f"\n  [{i+1}] {label}\n      NOT APPLIED: anchor absent. The "
                       f"harness is stale against its subject, which is a FAILURE "
@@ -151,20 +183,20 @@ def main() -> int:
                 base_mod = sys.modules["decisions_baseline"]
                 mut_mod = sys.modules[f"decisions_mutant_{i}"]
                 base_kind = base_mod.classify_text(
-                    CONSTRUCTED["state"], CONSTRUCTED["ruled"],
-                    CONSTRUCTED["text"])["kind"]
+                    case["state"], case["ruled"],
+                    case["text"])["kind"]
                 mut_kind = mut_mod.classify_text(
-                    CONSTRUCTED["state"], CONSTRUCTED["ruled"],
-                    CONSTRUCTED["text"])["kind"]
-                ok = (base_kind == CONSTRUCTED["baseline_kind"]
-                      and mut_kind == CONSTRUCTED["mutant_kind"])
+                    case["state"], case["ruled"],
+                    case["text"])["kind"]
+                ok = (base_kind == case["baseline_kind"]
+                      and mut_kind == case["mutant_kind"])
                 print(f"\n  [{i+1}] {label}")
                 print(f"      live owed set UNCHANGED at {sorted(got)}, so the "
                       f"real list does not exercise this branch")
                 print(f"      constructed entry that asks AND depends: baseline "
                       f"{base_kind}, mutant {mut_kind}")
-                print(f"      expected {CONSTRUCTED['baseline_kind']} then "
-                      f"{CONSTRUCTED['mutant_kind']}: "
+                print(f"      expected {case['baseline_kind']} then "
+                      f"{case['mutant_kind']}: "
                       f"{'CAUGHT' if ok else 'SURVIVED'}")
                 if ok:
                     caught += 1

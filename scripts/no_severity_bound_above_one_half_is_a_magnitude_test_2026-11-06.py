@@ -66,8 +66,22 @@ from sympy import Rational as R
 REPO = pathlib.Path(__file__).resolve().parent.parent
 APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
 
-W_ROW = re.compile(r"\|\s*W\((HARD|SOFT)\)\s*\|\s*([0-9.]+)\s*\|")
-V_ROW = re.compile(r"\|\s*V\((True|None|False)\)\s*\|\s*([0-9.]+)\s*\|")
+#: ★ THESE 2 PATTERNS WERE FIXED ALTERNATIONS UNTIL 2026-11-10 AND THEIR
+#: COMPLETENESS CHECKS BELOW WERE THEREFORE UNREACHABLE. A free panel seat
+#: found it. `sorted(W) != ["HARD", "SOFT"]` can only fire on a key the
+#: pattern CAPTURED, so a `W(MEDIUM)` row added to the appendix was not
+#: missing -- it was INVISIBLE, and this producer reported its theorem PASS
+#: and exited 0 while z3 returns `sat` for a counterexample over that table.
+#: The theorem is the project's only instrument for detecting that the
+#: appendix's caution 3 has gone stale, and adding a third consequence level
+#: is precisely the change that caution invites.
+#: WIDENED TO A CHARACTER CLASS, AND THE WIDENING WAS CHECKED FOR OVER-MATCH
+#: BEFORE IT LANDED: over the live 195,218-character appendix the wide and
+#: narrow forms capture the IDENTICAL sets -- W {HARD, SOFT}, V {False, None,
+#: True} -- with 0 extra and 0 lost, so the completeness checks become
+#: reachable without changing what they read today.
+W_ROW = re.compile(r"\|\s*W\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
+V_ROW = re.compile(r"\|\s*V\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
 LLR_ROW = re.compile(
     r"\|\s*(SymPy|Dimensional|Numerical)\s*\|\s*[0-9.]+\s*\|\s*[0-9.]+\s*\|"
     r"\s*([-−]?[0-9.]+)\s*\|\s*([-−]?[0-9.]+)\s*\|"

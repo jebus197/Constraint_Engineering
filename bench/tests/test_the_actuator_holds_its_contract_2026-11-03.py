@@ -425,7 +425,7 @@ class TestTheRemedyForADriftedCitation:
             f"distinct and in block order, or one citation is on the wrong "
             f"block with this guard still green")
 
-    def test_the_drifted_case_is_what_the_floor_is_for(self):
+    def test_the_drifted_case_is_what_the_floor_is_for(self, A):
         """RE-RUN THE INPUT THAT FAILED, not the one that passes.
 
         The sibling test above asserts the 2 `sys.exit(42)` citations resolve
@@ -443,15 +443,42 @@ class TestTheRemedyForADriftedCitation:
         the input the test has to use.
         """
         m = self._mod()
-        #: ★ 21513, 21583 -> 21613, 21683 ON 2026-11-09. B21 step 1 added a
-        #: 100-line policy block to bench/reference_runner_v3.py ABOVE these
-        #: 2 sites, so both shifted by exactly 100. The repointer reported
-        #: "distinct deltas: [100] -- a clean block shift, nothing moved
-        #: WITHIN the block", which is the condition under which a repoint
-        #: is a renumbering rather than a change of meaning. The substrings
-        #: are unchanged and the sibling test resolves them live.
-        true_round, true_phase = 21613, 21683
-        stale_round, stale_phase = true_round - 159, true_phase - 159
+        #: ★ THE TRUE SITES ARE READ FROM THE LIVE TABLE, NOT RETYPED —
+        #: CHANGED 2026-11-10 AFTER THE 3rd STALE PIN IN 2 DAYS. They were
+        #: pinned as 21513/21583, re-pinned to 21613/21683 on 2026-11-09 when
+        #: B21 step 1 added a 100-line block above them, and went stale AGAIN
+        #: on 2026-11-10 when the B22 and B88 routes added 170 lines above
+        #: them. Each time the guard accused correct code and the repair was
+        #: to retype 2 integers, which is `a_pin_must_live_outside_what_it_
+        #: measures` with the pin INSIDE what it measures.
+        #:
+        #: READING THE ANCHOR FROM THE SUBJECT IS CORRECT HERE AND READING
+        #: THE EXPECTATION FROM IT WOULD NOT BE. The anchor is WHERE the 2
+        #: `sys.exit(42)` sites are, and that is a fact about the runner which
+        #: only the runner can state. The EXPECTATION is independent and
+        #: stays here: that a DRIFTED pair of citations is mapped back to
+        #: those 2 sites in BLOCK ORDER rather than collapsing onto the
+        #: nearer one. The sibling `test_every_citation_points_at_a_line_
+        #: holding_its_substring` independently establishes that the live
+        #: table's lines do hold `sys.exit(42)`, so this is not circular.
+        _cites = getattr(A, "CITATIONS", {})
+        assert "A2.exit.round" in _cites and "A2.exit.phase" in _cites, (
+            "the live table no longer declares both exit citations, so the "
+            f"drifted case cannot be constructed from it: {sorted(_cites)}")
+        true_round = int(_cites["A2.exit.round"][1])
+        true_phase = int(_cites["A2.exit.phase"][1])
+        assert true_round < true_phase, (true_round, true_phase)
+        #: The offset must be large enough that nearest-match WOULD collapse
+        #: the phase citation onto the round site, which is the failure the
+        #: floor prevents. It collapses when the stale phase line is nearer to
+        #: the round site than to its own, i.e. when the offset exceeds half
+        #: the gap between the 2 sites. Derived, so it cannot go stale.
+        _gap = true_phase - true_round
+        _offset = _gap // 2 + _gap
+        stale_round, stale_phase = true_round - _offset, true_phase - _offset
+        assert abs(stale_phase - true_round) < abs(stale_phase - true_phase), (
+            "the constructed input does not actually provoke the collapse, so "
+            f"it would pass without the floor: gap={_gap} offset={_offset}")
         synthetic = (
             'CITATIONS = {\n'
             f'    "A2.exit.round":   ("bench/reference_runner_v3.py", {stale_round},\n'

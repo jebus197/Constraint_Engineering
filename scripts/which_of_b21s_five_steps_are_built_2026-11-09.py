@@ -202,6 +202,52 @@ def definitions(name: str) -> list[str]:
     return out
 
 
+
+
+def _selectable_list_runs() -> str:
+    """Path of a module that ACTUALLY produces a selectable model list, or "".
+
+    Behavioural, not lexical. Imports each candidate module and calls any
+    zero-argument public callable, accepting the first whose result is a
+    non-empty sequence of mappings each carrying `id` and `source`. Returns
+    the module path so the caller can name its evidence.
+
+    IT NEVER RAISES AND IT NEVER REACHES THE NETWORK. Every import and call is
+    wrapped, and the only candidates considered are modules in this repository;
+    a callable that needs arguments is skipped rather than guessed at.
+    """
+    import importlib.util as _iu
+    import inspect as _ins
+    for mod_path in sorted(REPO.glob("bench/*catalogue*.py")) + \
+            sorted(REPO.glob("bench/*model*list*.py")):
+        try:
+            spec = _iu.spec_from_file_location(f"_s5_{mod_path.stem}", mod_path)
+            mod = _iu.module_from_spec(spec)
+            sys.modules[spec.name] = mod
+            spec.loader.exec_module(mod)
+        except Exception:                                      # noqa: BLE001
+            continue
+        for name in dir(mod):
+            if name.startswith("_"):
+                continue
+            fn = getattr(mod, name)
+            if not callable(fn):
+                continue
+            try:
+                sig = _ins.signature(fn)
+                if any(p.default is _ins.Parameter.empty
+                       and p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+                       for p in sig.parameters.values()):
+                    continue
+                rows = fn()
+            except Exception:                                  # noqa: BLE001
+                continue
+            if (isinstance(rows, (list, tuple)) and rows
+                    and all(isinstance(r, dict) and "id" in r and "source" in r
+                            for r in rows)):
+                return f"{mod_path.relative_to(REPO)}:{name}"
+    return ""
+
 def measure() -> dict:
     s1 = call_sites(V3, "load_effective_policy")
     s4 = call_sites(V3, "validate_all_policies")
@@ -226,8 +272,33 @@ def measure() -> dict:
                 args = [a.arg for a in n.args.args + n.args.kwonlyargs]
                 sig_takes_role = "role" in args
 
+    #: ★ STEP 5 IS NOW DECIDED BY EXECUTION, 2026-11-10, AND THE NAME SEARCH IS
+    #: KEPT BESIDE IT RATHER THAN REPLACED.
+    #:
+    #: WHY. `SELECTABLE_NAMES` is a guess at what the implementation would be
+    #: called, written BEFORE any implementation existed. `bench/model_catalogue.py`
+    #: was built on 2026-11-09 and names its functions `catalogue`,
+    #: `local_models`, `remote_models`, `registry_models` and `known_roles` --
+    #: 0 of the 7 guessed names -- so a WORKING step 5 measured as ABSENT. That
+    #: is this project's own `execute-do-not-grep` lesson: a name is a proxy for
+    #: a capability and the capability can be CALLED.
+    #:
+    #: WHAT IT ASKS NOW. Can something in the tree produce a selectable list?
+    #: The test is behavioural: a callable that returns a non-empty sequence of
+    #: mappings, each carrying an `id` and a `source`, with local entries
+    #: sortable ahead of remote ones -- which is the founder's stated
+    #: requirement, "available models on a user's local machine at the top of
+    #: this list". A module that satisfies that IS step 5 whatever it is called.
+    #:
+    #: THE NAME SEARCH IS NOT REMOVED. It still runs and is still reported, so
+    #: a future implementation using one of the expected names is still found,
+    #: and so the 2 answers can be compared. Removing it would trade one blind
+    #: proxy for another.
     s5 = {nm: definitions(nm) for nm in SELECTABLE_NAMES}
     s5_built = {k: v for k, v in s5.items() if v}
+    s5_executed = _selectable_list_runs()
+    if s5_executed and not s5_built:
+        s5_built = {"(by execution)": [s5_executed]}
 
     k = sum(1 for _, _, c in reads if c)
     n = len(reads)

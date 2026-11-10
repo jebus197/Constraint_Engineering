@@ -383,3 +383,230 @@ def get_immune_domain_context(domain: str) -> Dict[str, Any]:
         "false_positives": domain_false_positives(config),
         "tool_map": config.verification_tools,
     }
+
+
+# Reviving the orphan: this module was imported by nothing before 2026-11-10.
+
+
+def _resolve_domain_alias(domain: str) -> str:
+    """Map a run's domain name onto the one the TOMLs declare.
+
+    IMPORTED FROM THE LIVE PATH, NEVER COPIED.
+    `immune_agents._DOMAIN_ALIAS` is the 1 map the immune pipeline
+    uses; a second spelling here would be 2 tables that can drift,
+    which is the defect this exists to close. An import failure
+    leaves the domain unchanged, so the worst case is today's
+    behaviour rather than an exception on a telemetry path.
+    """
+    try:
+        import immune_agents as _ia
+        return str(_ia._DOMAIN_ALIAS.get(domain, domain) or domain)
+    except Exception:                                 # noqa: BLE001
+        return domain
+
+
+#: ★ TOOLS WHOSE CONFIRMED VERDICT CARRIES 0 BITS ABOUT THE CLAIM.
+#: A verdict that takes the SAME value on a claim and on a false variant of
+#: it is an admission by vocabulary, not by tool. Each member is measured,
+#: with a committed producer:
+#: `scripts/which_admissions_are_truth_blind_2026-11-10.py`.
+#:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;
+#:       it tests dimensional homogeneity and reports it as correctness (B136)
+#:   astronomical         -- NOT truth-blind, and the first version of this
+#:       comment said it was. It is a TOLERANT COMPARATOR: it CONFIRMS
+#:       `the speed of light is 299792458 m/s` and also
+#:       `the speed of light is 299792459 m/s`, which is FALSE by 1 m/s but
+#:       inside its own 1% tolerance, while REJECTING 3000000 m/s. So it
+#:       discriminates coarsely and can still SOLELY ADMIT a false
+#:       exact-value claim, which is why it may not admit alone. The earlier
+#:       "truth-blind" reading came from a probe pair whose BOTH members were
+#:       in km/s, where its separate unit defect (B136) rejects everything --
+#:       the probe pair shared the feature that caused the result.
+#: ★ `chemistry_structure` WAS IN THIS SET AND HAS BEEN MOVED TO THE BRANCH
+#: GATE BELOW, 2026-11-10, ON A FREE PANEL SEAT'S FINDING THAT REPRODUCED.
+#: Putting it here destroyed a LIVE, REACHABLE, DISCRIMINATING admission:
+#: `the molecule 'CCO' has formula C2H6O` routes to chemistry/mathematical,
+#: the tool is dispatched, its formula branch CONFIRMS with `matches claim`
+#: and REJECTS the C3H8O variant -- and the tool-level bar refused the
+#: admission anyway. That is `additive-standard`'s removal clause broken by
+#: the very repair that cited it, and the measurement said it dominated only
+#: because the probe set enumerated 1 of the tool's 3 favourable branches.
+#: IT IS THE SAME 1-BRANCH-OF-N ERROR THIS FILE ALREADY RECORDS AGAINST A
+#: PANEL SEAT'S READING OF `biological_sequence`, COMMITTED IMMEDIATELY
+#: AFTER REFUSING IT. The 2 verifiers are anatomically identical: comparing
+#: branches that print `matches claim`, plus 1 validity-only fallback that
+#: cannot. They are now treated identically.
+#: ★ MEMBERSHIP IS NOT PERMANENT AND MUST NOT OUTLIVE ITS EVIDENCE: the
+#: producer's probe for a member FAILS if that tool learns to discriminate,
+#: and the entry must then be removed.
+#: ★ 2 ROUTES WERE MEASURED AND THE WIDER ONE WAS REFUSED. A free panel seat
+#: proposed excluding `biological_sequence` at the TOOL level. Measured on 2
+#: named properties -- truth-blind paths barred, and discriminating paths
+#: retained -- the tool-level set scores 2 of 3 and 1 of 2, while gating that
+#: tool at the BRANCH scores 3 of 3 and 2 of 2. The tool-level exclusion
+#: removes a capability that demonstrably works, so under the additive
+#: standard's removal clause it is refused. There is NO composability claim:
+#: the branch gate alone beats the exclusion alone, and his definition
+#: explicitly excludes composing 2 fixes merely because they can be composed.
+CANNOT_ADMIT_ALONE = frozenset({
+    "dimensional_analysis",
+    "astronomical",
+})
+
+#: tool -> the substring its evidence must carry for a CONFIRMED verdict of
+#: its to admit alone. BOTH members have the same anatomy, established by
+#: bounding each verifier's body with the syntax tree rather than by a
+#: character window, because a window scan leaked across the function
+#: boundary and attributed one verifier's branches to its neighbour:
+#:   biological_sequence -- 5 favourable branches, 4 COMPARING
+#:       (translation, reverse complement, length, GC content), 1 validity-only
+#:   chemistry_structure -- 3 favourable branches, 2 COMPARING
+#:       (molecular formula, molecular weight), 1 validity-only
+#: A COMPARING branch is one that computes a value and checks it against what
+#: the claim states, so its verdict can come out either way; each prints
+#: `matches claim` on its favourable arm and a MISMATCH line otherwise.
+#: The marker is read off those verifiers' own sources and is TOOL-SCOPED --
+#: applying it globally barred `stoichiometric_balance`, which discriminates
+#: with no marker at all, having no truth-blind branch to be told apart from.
+#: ★ A TOOL NEEDS BRANCH GATING ONLY IF IT HAS BOTH KINDS OF FAVOURABLE
+#: BRANCH. `dimensional_analysis` has 0 comparing branches, so a tool-level
+#: bar there removes nothing; `stoichiometric_balance` has 0 truth-blind
+#: ones, so it needs no gate. That is the rule the 2 tables encode.
+BRANCH_GATED_ADMISSION = {
+    "biological_sequence": "matches claim",
+    "chemistry_structure": "matches claim",
+}
+
+
+def _may_admit_alone(name: str, evidence: str) -> bool:
+    """Whether a favourable verdict from `name` may admit a fix by itself."""
+    if name in CANNOT_ADMIT_ALONE:
+        return False
+    need = BRANCH_GATED_ADMISSION.get(name)
+    if need is not None:
+        return need in (evidence or "")
+    return True
+
+
+def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
+    """The verification set a STEM topic assigns to one finding, and its verdicts.
+
+    HIS RULING, 2026-11-10, verbatim: the suite "will come from which ever STEM
+    topic area under discussion and the tools/falsifiers/B-Cell machinery
+    attached to that STEM topic", because a researcher submitting a STEM paper
+    "will almost certainly have ... included both prose and calulations/formulas
+    they wish to be considered", so the models' job is to "use the
+    tools/falsifiers assigned to that subject area to calculate those elements
+    of any given paper that are computationally available/reducible to them."
+
+    THE OPERATIVE WORDS ARE "AVAILABLE/REDUCIBLE TO THEM". Most prose sentences
+    reduce to nothing a symbolic tool can evaluate, and the verifiers correctly
+    return UNCERTAIN on them -- measured 2026-11-10 on 3 sentences drawn from
+    this project's own notes, where 4 of 4 resolved tool calls returned
+    UNCERTAIN at confidence 0.2 to 0.3. So this function can only ever ADD a
+    route to admission for content the domain's tools genuinely reduce. It must
+    never loosen a refusal, and `admits` is False unless a tool returns a
+    definitive verdict in favour with none against.
+
+    Returns a dict rather than a dataclass so a caller can record the whole
+    decision in a ledger line without a second schema to keep in step:
+        domain, claim_type, tools, verdicts, admits, detail
+
+    `tools` is the ORDERED list the domain assigns, so the record shows what was
+    asked as well as what answered -- an empty list is a real answer (the domain
+    assigns nothing to this claim type) and is reported as such rather than as a
+    silent refusal.
+    """
+    #: THE SAME ALIAS THE LIVE IMMUNE PATH APPLIES, IMPORTED RATHER
+    #: THAN RESTATED. Without it this function is inert on the
+    #: canonical runner's DEFAULT domain, `software`, which is not 1
+    #: of the 10 declared immune domains and resolves only through
+    #: `immune_agents._DOMAIN_ALIAS`.
+    domain = _resolve_domain_alias(domain)
+    out: Dict[str, Any] = {
+        "domain": domain,
+        "claim_type": "unknown",
+        "tools": [],
+        "verdicts": [],
+        "admits": False,
+        "detail": "",
+    }
+    try:
+        config = load_domain_config(domain)
+    except Exception as exc:                                  # noqa: BLE001
+        out["detail"] = f"domain-config-failed:{type(exc).__name__}"
+        return out
+
+    try:
+        claim_type, _why = domain_classify_claim(finding, config)
+    except Exception as exc:                                  # noqa: BLE001
+        out["detail"] = f"classify-failed:{type(exc).__name__}"
+        return out
+    out["claim_type"] = claim_type
+
+    tools = domain_b_cell_tools(claim_type, config)
+    out["tools"] = list(tools)
+    if not tools:
+        out["detail"] = (f"{domain} assigns no verification tool to a "
+                         f"{claim_type} claim")
+        return out
+
+    # Resolve and CALL. The verifiers take a plain claim string and return a
+    # CellVerdict, established by execution 2026-11-10 -- so no TriagedFinding
+    # is needed and the impedance mismatch reported against this wiring does
+    # not hold for the primary walk.
+    claim = getattr(finding, "description", "") or ""
+    try:
+        import immune_agents as _ia
+        manifest = _ia._load_tool_manifest()
+    except Exception as exc:                                  # noqa: BLE001
+        out["detail"] = f"manifest-failed:{type(exc).__name__}"
+        return out
+
+    definitive_for: List[str] = []
+    definitive_against: List[str] = []
+    #: Tools whose CONFIRMED verdict may never admit a fix BY ITSELF, and
+    #: the 1 tool gated at the BRANCH rather than at the tool. Both are
+    #: measured, not chosen -- see `CANNOT_ADMIT_ALONE` at module level.
+    computing_for: List[str] = []
+    for name in tools:
+        entry = manifest.get(name)
+        if not entry:
+            out["verdicts"].append((name, "NOT_IN_MANIFEST", None))
+            continue
+        if entry.get("needs_file"):
+            # A file tool aimed at prose is bypassed, not run -- the A6 rule.
+            out["verdicts"].append((name, "NOT_APPLICABLE", None))
+            continue
+        fn = entry.get("verifier")
+        f = fn if callable(fn) else getattr(_ia, str(fn), None)
+        if not callable(f):
+            out["verdicts"].append((name, "UNRESOLVED", None))
+            continue
+        try:
+            v = f(claim)
+        except Exception as exc:                              # noqa: BLE001
+            out["verdicts"].append((name, f"RAISED_{type(exc).__name__}", None))
+            continue
+        verdict = getattr(v, "verdict", None)
+        conf = getattr(v, "confidence", None)
+        out["verdicts"].append((name, verdict, conf))
+        if verdict in ("CONFIRMED", "VERIFIED", "SUPPORTED"):
+            definitive_for.append(name)
+            if _may_admit_alone(name, getattr(v, "evidence", "")):
+                computing_for.append(name)
+        elif verdict in ("REFUTED", "REJECTED", "CONTRADICTED"):
+            definitive_against.append(name)
+
+    #: ★ AN ADMISSION NEEDS A VERDICT THAT COULD HAVE COME OUT THE OTHER WAY.
+    #: `definitive_for` still carries every favourable verdict, so nothing is
+    #: discarded and a corroborating voice is still recorded; only the
+    #: ADMISSION is narrowed to the verdicts measured to discriminate.
+    out["admits"] = bool(computing_for) and not definitive_against
+    _mute = [n for n in definitive_for if n not in computing_for]
+    out["detail"] = (
+        f"{domain}/{claim_type} tools={','.join(tools)} "
+        f"for={','.join(computing_for) or '-'} "
+        f"for_but_cannot_admit={','.join(_mute) or '-'} "
+        f"against={','.join(definitive_against) or '-'}")
+    return out

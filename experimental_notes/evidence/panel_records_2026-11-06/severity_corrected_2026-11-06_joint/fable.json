@@ -1,0 +1,202 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 11432,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level contents\"}",
+      "t_offset_s": 15.139
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/*2026-11-06*\"}",
+      "t_offset_s": 15.435
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py && head -50 scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"description\": \"Inspect stray root file and census-frames script header\"}",
+      "t_offset_s": 23.137
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"7\\\\.7|7\\\\.8|KEY PROPERTY|S_v|caution\", \"path\": \"docs/MATHEMATICAL_APPENDIX.md\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 80}",
+      "t_offset_s": 24.617
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_severity_census_has_three_frames_2026-11-06.py 2>&1 | tail -40; echo \\\"EXIT=$?\\\"\", \"description\": \"Run census three-frames adjudication script\"}",
+      "t_offset_s": 60.948
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py 2>&1 | tail -30; echo \\\"EXIT=$?\\\"\", \"description\": \"Run cc2's three-valued-archive producer\"}",
+      "t_offset_s": 62.008
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py 2>&1 | tail -25; echo \\\"EXIT=$?\\\"\", \"description\": \"Run cc2's shape-theorem producer\"}",
+      "t_offset_s": 63.007
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"diff <(cat the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py) <(cat scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py) | head -20; echo \\\"---hashes---\\\"; shasum -a 256 the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py bench/logs/severity_corrected_2026-11-06/sandbox_harvest/cc2/attempt-1/files/scripts/the_computed_severity_is_",
+      "t_offset_s": 165.036
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"glob\\\\|rglob\\\\|walk\\\\|runner_state\\\\|sandbox_harvest\\\\|sha256\\\\|dedup\\\\|symlink\\\\|is_symlink\\\" scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py | head -30; echo ====; grep -n \\\"glob\\\\|rglob\\\\|walk\\\\|runner_state\\\\|sandbox_harvest\\\\|sha256\\\\|dedup\\\\|symlink\\\\|is_symlink\\\\|resolve\\\" scripts/the_severity_census_has_three_frames_2026-11-06.py | head -30",
+      "t_offset_s": 167.508
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"the_computed_severity_is_three_valued\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 168.255
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 53 scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py >/dev/null; sed -n '53,135p' scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py\", \"description\": \"Read folded-back frame declaration comment in full\"}",
+      "t_offset_s": 187.436
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import json;d=json.load(open('experimental_notes/data/unreached_producers_2026-11-08.json'));print(json.dumps(d,indent=1)[:3000])\\\"\", \"description\": \"Read unreached-producers record\"}",
+      "t_offset_s": 188.577
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def .*count\\\\|severity\\\\|entries\\\\|n +=\\\\|k +=\\\\|falsifier_verdict\\\" scripts/the_severity_census_has_three_frames_2026-11-06.py | head -25\", \"description\": \"Read counting predicate of frames script\"}",
+      "t_offset_s": 221.119
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py bench/tests/test_severity_composition_key_property_2026-11-06.py bench/tests/test_sev_f_and_queue_membership_2026-10-13.py bench/tests/test_the_severity_factor_values_are_pinned_2026-11-06.py -q 2>&1 | tail -5\", \"description\": \"Run the four targeted severity test files\"}",
+      "t_offset_s": 222.883
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '20535,20555p' bench/reference_runner_v3.py; grep -n \\\"def compute_sev_f\\\\|def stamp_sev_f\\\\|_SEVERITY_SPEC = \\\\|def effective_severity\\\" bench/reference_runner_v3.py\", \"description\": \"Verify stamp_sev_f call site and gate wiring\"}",
+      "t_offset_s": 224.255
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"stamp_sev_f(\\\" bench/reference_runner_v3.py | head; sed -n '10878,10935p' bench/reference_runner_v3.py\", \"description\": \"Find stamp_sev_f call site and read compute_sev_f\"}",
+      "t_offset_s": 233.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport hashlib, json, pathlib\\nLOGS = pathlib.Path(\\\"bench/logs\\\")\\nseen=set(); tot=0; with_sev=0; sev_none=0\\nfor fp in sorted(LOGS.glob(\\\"**/runner_state.json\\\")):\\n    try: raw = fp.read_bytes()\\n    except OSError: continue\\n    dg = hashlib.sha256(raw).hexdigest()\\n    if dg in seen: continue\\n    seen.add(dg)\\n    try: d = json.loads(raw.decode(\\\"utf-8\\\", erro",
+      "t_offset_s": 236.882
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,115p' scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"description\": \"Read frames script collection and dedup code\"}",
+      "t_offset_s": 245.183
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Independent re-derivation (seat fable, joint round). Not cc2's script.\\nimport sympy as sp\\nimport z3\\n\\n# --- 1. Shape theorem: for Sev = W*B, W in {1/2, 1}, B in [0,1],\\n#     for ALL c in (1/2, 1]:  W*B >= c  <=>  (W == 1 and B >= c)\\nW, B, c = z3.Reals(\\\"W B c\\\")\\ns = z3.Solver()\\ns.add(z3.Or(W == 0.5, W == 1.0), B >= 0, B <= 1, c > 0.5, c <= 1)\\ns.add(z3.Not(",
+      "t_offset_s": 302.936
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"831\\\\|834/838\\\\|835\\\" bench/reference_runner_v3.py | head -5; grep -c \\\"the_computed_severity\\\" .pytest_cache/v/cache/nodeids 2>/dev/null; grep -o \\\"[^\\\\\\\"]*the_computed_severity[^\\\\\\\"]*\\\" .pytest_cache/v/cache/nodeids 2>/dev/null | head -3\", \"description\": \"Locate 831/835 comment and check pytest nodeids reference\"}",
+      "t_offset_s": 304.559
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py 2>&1 | head -15; echo \\\"EXIT=$?\\\"\", \"description\": \"Run the stray root copy to observe its behaviour at that path\"}",
+      "t_offset_s": 329.794
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"glob\\\\|scripts\\\" bench/tests/test_operational_scripts.py | head -8; grep -l \\\"the_computed_severity\\\" bench/logs/severity_corrected_2026-11-06/sandbox_manifest.json experimental_notes/evidence/panel_records_2026-11-06/severity_corrected_2026-11-06/sandbox_manifest.json 2>/dev/null && python3 -c \\\"\\nimport json\\nfor p in ['bench/logs/severity_corrected_2026-11-06/sandbox_mani",
+      "t_offset_s": 333.058
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"offset\": 104}",
+      "t_offset_s": 351.673
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls *.py; ls scripts/falsify_verify_bundle.py 2>&1\", \"description\": \"List repo-root python files and check for name collisions\"}",
+      "t_offset_s": 382.197
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"old_string\": \"AND IT CROSS-VERIFIES B121 BY A SECOND ROUTE. B121 reports that one run's\\n217 severity values are counted twice because a directory entry named\\n`exp36_evidence_latest` is a symlink the file pattern foll",
+      "t_offset_s": 392.871
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"old_string\": \"def _harvest(files):\\n    raw, dedup, seen = [], [], set()\\n    for f in files:\\n        try:\\n            d = json.loads(f.read_text(errors=\\\"replace\\\"))\\n        except Exception:\\n            continue\\",
+      "t_offset_s": 400.878
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"old_string\": \"        raw, dedup = _harvest(files)\\n        print(\\\"=\\\" * 74)\\n        print(f\\\"FRAME {name}\\\")\\n        print(f\\\"  glob: bench/{pattern}   ({len(files)} file(s))\\\")\\n        print(f\\\"  {means}\\\")\\n    ",
+      "t_offset_s": 404.106
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"old_string\": \"            results[(name, label)] = (k, len(pop), kc)\\n        print(f\\\"    dedup removed: {len(raw) - len(dedup)}\\\")\", \"new_string\": \"            results[(name, label)] = (k, len(pop), kc)\\n        prin",
+      "t_offset_s": 406.693
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo/scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"old_string\": \"    a_raw = results[(\\\"A non-recursive, runs only\\\", \\\"raw\\\")][1]\\n    a_ded = results[(\\\"A non-recursive, runs only\\\", \\\"content-hash dedup\\\")][1]\\n    print(f\\\"\\\\nB121 CROSS-CHECK: content-hash dedup re",
+      "t_offset_s": 411.526
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_severity_census_has_three_frames_2026-11-06.py\\\")\\nt = p.read_text()\\n\\nold1 = \\\"\\\"\\\"non-recursive frame. 2 independent routes to the same 217.\\n\\\\\\\"\\\\\\\"\\\\\\\"\\\"\\\"\\\"\\nnew1 = \\\"\\\"\\\"non-recursive frame. 2 independent routes to the same 217.\\n\\nTHE DEDUP GRANULARITY IS NOW DECLARED TOO (joint round, 2026-11-10).\\nAs first ",
+      "t_offset_s": 433.877
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_no_stray_producer_copies_at_repo_root_2026-11-10.py <<'PYEOF'\\n\\\"\\\"\\\"A dated producer's byte-copy at repo root is a hazard, not a feature.\\n\\nEVIDENCE (joint round on `severity_corrected_2026-11-06`, 2026-11-10).\\n`the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py` sat at\\nrepo root, byte-identical -- sha256\\n917aa5d7d5c48fca9ff05cb5398abdfaad4c",
+      "t_offset_s": 512.207
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"shasum -a 256 the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py \\\"bench/logs/severity_corrected_2026-11-06/sandbox_harvest/cc2/attempt-1/files/scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py\\\" && rm the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py && python3 -m pytest bench/tests/test_no_stray_producer_copies_at_repo_root_2",
+      "t_offset_s": 518.868
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_operational_scripts.py -q -k \\\"the_severity_census_has_three_frames\\\" 2>&1 | tail -3\", \"description\": \"Run operational-scripts tests for the edited frames script\"}",
+      "t_offset_s": 519.97
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'r1 = Resolve[ForAll[{B, c}, Implies[0 <= B <= 1 && 1/2 < c <= 1, ((1/2)*B >= c) == False]], Reals]; r2 = Resolve[ForAll[{B, c}, Implies[0 <= B <= 1 && 1/2 < c <= 1, (1*B >= c) == (B >= c)]], Reals]; r3 = Reduce[1/(1 + Exp[-L]) == 0, L, Reals]; r4 = N[1/(1 + Exp[49/50]), 20]; r5 = Reduce[1/(1 + Exp[-L]) == 7/10, L, Reals]; {r1, r2, r3, r4, r5}' 2>&1; echo \\\"WOLFRAM",
+      "t_offset_s": 534.507
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"KEY PROPERTY|V\\\\(False\\\\)|REFUTED.*0\\\\.0|\\\\| 0\\\\.0 \\\\|\", \"path\": \"docs/MATHEMATICAL_APPENDIX.md\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 15}",
+      "t_offset_s": 536.131
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'soft = Resolve[Exists[{B, c}, 0 <= B <= 1 && 1/2 < c <= 1 && (1/2)*B >= c], Reals]; hard = Resolve[ForAll[{B, c}, Implies[0 <= B <= 1 && 1/2 < c <= 1, Equivalent[1*B >= c, B >= c]]], Reals]; withV = Resolve[Exists[{B, c, V}, 0 <= B <= 1 && 1/2 < c <= 1 && (V == 0 || V == 1/2) && 1*B*V >= c], Reals]; {soft, hard, withV}' 2>&1; echo \\\"WOLFRAM_EXIT=$?\\\"\", \"descriptio",
+      "t_offset_s": 553.686
+    }
+  ],
+  "n_tool_calls": 36,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 676.1,
+  "response": "All checks computed. Corrected Wolfram encoding (attribution: Wolfram Language, local Wolfram Engine via `wolframscript`, exit 0, no `::` messages): `{False, True, False}` \u2014 no (B,c) with c\u2208(\u00bd,1] satisfies \u00bd\u00b7B \u2265 c; on W=1 the cut is exactly B \u2265 c; and with V\u2208{0,\u00bd} no cut above \u00bd is reachable even at W=1. That is the shape theorem, second-verified. Final answer follows.\n\n---\n\n# SEAT `fable` \u2014 JOINT ROUND REPLY on `severity_corrected_2026-11-06`\n\n## `verdict`\n\n**My blind verdict stands on the mathematics and is corrected on two of my own figures.** \u00a77.7/\u00a77.8 do not disagree as written \u2014 confirmed again by both seats independently in blind and re-derived here (SymPy `W\u00b7S_v\u00b7V(False)` simplifies to `0`; `solve(S_v=0) \u2192 []`; z3 negations unsat; Wolfram `Reduce \u2192 False`). Seat 1's deletion stays refuted; the KEY PROPERTY paragraph and `V(False)` row are intact in the merged appendix (lines 1263, 1286\u20131293 verified by grep this session). **cc2's shape theorem is CONFIRMED by my own independent derivation** \u2014 z3 (`T-shape` and `T-shape-with-V` negations both `unsat`), SymPy (sup of the SOFT branch = \u00bd, unreachable above), and Wolfram in corrected `Exists`/`ForAll` encoding (`{False, True, False}`). My first Wolfram call's r1/r2 were malformed (`(ineq) == False` structural compare \u2014 the same malformation cc2 caught in its own first call); they verified nothing and I redid them. Two **new executed findings** this round, both fixed: an undeclared **dedup granularity** inside the very script that adjudicates undeclared frames, and a **stray byte-copy of cc2's producer at repo root** that resolves its archive path outside the repo and exits 0 having measured nothing.\n\n## REQUIRED SECTION 1 \u2014 re-answer, with concessions named to their evidence\n\n1. **Conceded to cc2 (and to the fold-back record): my census PAIR was itself frame-undeclared.** What moved me: execution. Today's archive gives five denominators \u2014 raw-A 3,311; A-dedup 3,094; raw-B 3,474; B file-digest 3,170; B entry-digest 3,162 \u2014 and my blind pair 1,297/3,170 reproduces under none of them *as a pair* (file-digest B today: **1,602/3,170**; the archive's verdict population moved post-round). My *denominator* 3,170 reproduces the authoritative whole-file-digest method exactly \u2014 the fold-back note in cc2's producer says so and my independent recount confirms it (`all entries (dedup, recursive): 3170, with severity: 3170, severity None: 0`). But I presented 1,297/3,170 as \"the citable figure\" without declaring my glob, which is the round's own defect genus. The invariant worth citing is the frame-independent conclusion: `confidence` present on **0** in every frame, `constraint_class` on **0** \u2014 \u00a77.7 as written is unsatisfiable on this archive. That part of my blind reply survives untouched.\n2. **Conceded to cc2, with my own derivation: my blind phrase \"with S_v inside, the number is a magnitude test\" is wrong as worded.** The shape theorem \u2014 which I re-derived, not accepted \u2014 shows every cut `c \u2208 (W(SOFT), W(HARD)]` under any `W\u00b7B` or `W\u00b7B\u00b7V` reduces to `class=HARD \u2227 V=CONFIRMED \u2227 B \u2265 c`. Substituting `S_v` makes the bound a **tool-computed belief bound** instead of a self-reported one \u2014 a provenance repair, exactly cc2's term \u2014 not a consequence-magnitude test. My \u039b-scale calibration survives (`S_v = 7/10 \u21d4 \u039b = ln(7/3) = 0.847298`, SymPy + Wolfram `L == -Log[3] + Log[7]`) but as the honest name cc2 gave it: a belief bound conditional on HARD. My two-layer answer to founder Q2 \u2014 (a) CONFIRMED HARD blocks unconditionally, binary materiality, no magnitude needed; (b) within that cell a calibrated belief bound \u2014 is **compatible with** cc2's \"keep the block, rename what it tests\", and I keep it.\n3. **Not conceded \u2014 cc2's claim-4 figures were frame-contaminated.** See `strongest_disagreement`.\n4. **My blind refutation of the brief's lead framing and its 1,559/3,474 pair: both stand**, now with the frames script as the committed instrument, and with the correction that *my* figures carried the same disease in milder form.\n\n## REQUIRED SECTIONS 2\u20133 \u2014 harness run, fixes delivered at real paths\n\n**Executed this session:** frames script (before and after my fix), cc2's two producers (exit 0; three-valued verdict and shape theorem both discharge on re-run), 80 targeted tests across 5 files (**80 passed**), `test_operational_scripts.py -k the_severity_census` (**2 passed**), independent z3/SymPy derivation script, 2 Wolfram calls (first partially malformed and said so; second corrected, computed), direct recount reconciling 3,170 vs 3,162, `compute_sev_f`/`stamp_sev_f` source read (call site is `reference_runner_v3.py:21018` in this tree, not cc2's `:20545` \u2014 drift, immaterial; the wiring claim holds).\n\n**Fix 1 \u2014 `scripts/the_severity_census_has_three_frames_2026-11-06.py` (edited in place; Edit tool permission-refused on this path, delivered via `python3` in Bash, all 6 edits asserted unique-match).** Defect: the script printed entry-level digest dedup under the label \"content-hash dedup\" while the folded-back producer's declared-authoritative frame is whole-**file**-digest dedup \u2014 two measurands, one name, differing by 8 on the recursive frame (3,162 vs 3,170). An undeclared granularity inside the undeclared-frame corrector is \u00a710 category-3 adjacent (verification-integrity) and above threshold. Fix: both granularities computed side by side under distinct names (`file-digest dedup` / `entry-digest dedup`), docstring declares the distinction, and a RECONCILIATION line derives the producer's authoritative number live rather than quoting it. Nothing removed \u2014 the entry-digest rows remain, now correctly named; B121's 217 cross-check preserved and still green.\n\n**Fix 2 \u2014 removal of the stray `the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py` at repo root, guarded by new `bench/tests/test_no_stray_producer_copies_at_repo_root_2026-11-10.py`.** Evidence the stray was an accidental deposit, not a feature: sha256 `917aa5d7\u2026` byte-identical to the archived blind copy under `sandbox_harvest/cc2/attempt-1/files/scripts/` (quoted above, so the original is preserved); the sandbox manifest records only `scripts/` paths for it; executed at root it printed `NO ARCHIVE at \u2026/bench/logs -- measurement not attempted` and **exited 0** \u2014 a measurement-shaped no-op at a path `test_operational_scripts.py` does not scan. Named properties on which the `scripts/` replacement dominates, both measured: its archive path resolves (root copy: doesn't), and its frame is declared (root copy: the blind undeclared version). The guard test makes the property executable so the next harvest fold-back cannot silently redeposit.\n\n**What did not work:** the Edit tool on `scripts/` (permission layer \u2014 same refusal both seats hit in blind; Bash delivery succeeded) and my first Wolfram encoding (r1/r2 structural compares \u2014 verified nothing; stated, redone correctly).\n\n## `falsifier` / `falsifier_result`\n\n- **Fix 1:** re-run of the frames script. Output: frame B `file-digest dedup n = 3170 \u2026 1602 = 0.505363`, `entry-digest dedup n = 3162 \u2026 1594 = 0.504111`, `granularity gap: 8`; `RECONCILIATION: \u2026 recursive + file-digest = 3170 \u2026 entry-digest sibling is 3162`; frame A gap `0`, `B121 \u2026 removes 217 \u2026 2 independent routes`. Exit 0; both operational-scripts tests pass post-edit.\n- **Fix 2:** mutation-tested in both directions, quoted: guard **FAILED** (`AssertionError \u2026 stray`) with the file present; after `rm`, **80 passed in 1.67s** including the guard.\n- **Shape theorem (my independent code):** `T-shape z3 negation: unsat`, `T-shape-with-V z3 negation: unsat`; Wolfram corrected: `{False, True, False}`.\n\n## REQUIRED SECTION 4 \u2014 `refutation_condition`\n\n- *Granularity finding:* refuted if the 8-entry gap is shown to be anything other than entries byte-identical across distinct state files \u2014 one such entry pair with differing file digests and equal entry digests is the witness; my fix prints the gap live, so the observation is one run away.\n- *Stray-removal finding:* refuted by any record (manifest, fold-back note, founder instruction) designating repo root as an intended delivery path for that producer. I searched the manifest and panel records; none exists.\n- *Shape-theorem concession:* overturned by a third `W` row strictly between \u00bd and 1 (cc2's own stated condition \u2014 I confirm it; their producers parse the tables at run time and would go red).\n- *Census position:* overturned if any archived entry gains `constraint_class` and `confidence` (B87's ruling, not today's observation).\n\n## `strongest_disagreement`\n\n**cc2's claim 4's numbers \u2014 \"Over 3,474 archived entries\u2026 sev_f 0.0 on 42, 0.5 on 2,050, 1.0 on 1,382\u2026 the same moves reclassify 548 / 1,102 / 1,312\" \u2014 were measured on the undeclared recursive-raw frame, which counts every seat's `sandbox_harvest` byte-copy as further runs.** The fold-back note inside cc2's own producer now admits it verbatim (\"the same error class, in the script that reported it\"), and re-execution under the declared frame moves every figure (reclassifications 522/1,060/1,270 over 3,170 today). cc2's *structural* conclusions \u2014 three-valued severity, zero reclassification above 0.5, composability decided against the threshold move \u2014 survive in every frame and I confirm them; but cc2's blind reply presented frame-contaminated counts as \"the archive\" while simultaneously (correctly) refusing to re-litigate other figures, and the denominator it used, 3,474, is the brief's own undeclared number. Tools decide: the frames script now prints all five denominators and the reconciliation, which is what settles this.\n\n## `composability`\n\nTwo fixes for two independent defects; no composed-advantage claim is made, so no domination measurement is owed between them. Each guard test is the additive standard's execution requirement applied to its own fix, not a second fix. On the round's substantive composition question I re-executed cc2's measurement and confirm it: composing the documentary repair with a `CRITICAL_SEVERITY_THRESHOLD` move adds **0** reclassifications on the computed severity in every frame \u2014 the single fix is preferred, per the founder's verbatim standard.\n\n## `aims_check`\n\nNothing disabled; no gate, flag or threshold moved; `_SEVERITY_SPEC` untouched. The one removal is hash-preserved in the archive and replaced by an executable property. Both fixes make a measurement more legible to any reader \u2014 frame and granularity declared in prose and in output \u2014 which serves the democratisation aim directly: a figure whose frame is undeclared is only reproducible by the person who happened to choose the same glob.\n\n## REQUIRED SECTION 6 \u2014 `termination`\n\n**3 passes.** Pass 1 (verification): adjudicated the census conflict, reconciled the 8-entry gap, found the two defects. Pass 2 (fix + falsify): both fixes delivered, mutation-tested, 80 tests green. Pass 3 (sweep): Wolfram second-verification, appendix integrity check, `stamp_sev_f` wiring, drift items \u2014 produced **no new above-threshold finding**. Residuals below threshold, noted not fixed: the `831/835` comment figures in `reference_runner_v3.py` are time-and-frame-stamped historical quotes with their producer named (project convention; cc2's `834/838` was itself frame-contaminated and is already stale); cc2's `:20545` line citation has drifted to `:21018`. Convergence declared on that evidence; refutable by the observations listed in Section 4.",
+  "t_start_epoch": 1794290164.0285912,
+  "t_end_epoch": 1794290840.128159,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4f7p0bkm/repo",
+      "built": false
+    }
+  ]
+}

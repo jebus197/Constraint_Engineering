@@ -114,10 +114,18 @@ def test_promote_applies_green_rejects_regressing_idempotent(
     rr._apply_back_setup(_Cfg(True), tgt, tmp_path / "logs")
 
     # Gate stub: red iff the candidate source contains "BAD".
+    #: ★ THE DOUBLE TAKES **kwargs, 2026-11-10. `_apply_back_gate` gained an
+    #: optional `finding=` on that date so a non-Python target can be gated on
+    #: its OWN falsifier rather than refused out of hand, on his rulings for
+    #: B22 and B88. This lambda had a fixed 3-argument shape, so the caller's
+    #: new keyword raised TypeError and a CORRECT repair read as a broken one.
+    #: A stub that pins an exact signature goes stale the moment the real
+    #: function gains an optional argument; **kwargs is what keeps it honest
+    #: about what it is standing in for.
     monkeypatch.setattr(
         rr, "_apply_back_gate",
-        lambda src, rel, tc: (("BAD" not in src),
-                              "ok" if "BAD" not in src else "suite_fail:x"))
+        lambda src, rel, tc, **_kw: (("BAD" not in src),
+                                     "ok" if "BAD" not in src else "suite_fail:x"))
 
     reg = _Reg({
         "C1": {"status": "CLOSED",

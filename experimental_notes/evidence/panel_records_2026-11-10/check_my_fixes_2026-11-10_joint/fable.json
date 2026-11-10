@@ -1,0 +1,252 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 14638,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}",
+      "t_offset_s": 6.15
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep 2026-11-10; echo ---; ls bench/tests/ | grep 2026-11-10\", \"description\": \"List tonight's producers and tests\"}",
+      "t_offset_s": 8.381
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CANNOT_ADMIT_ALONE\\\\|BRANCH_GATED_ADMISSION\\\\|matches claim\\\" bench/domain_immune.py | head -40\", \"description\": \"Locate the branch gate in domain_immune.py\"}",
+      "t_offset_s": 10.61
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '390,560p' bench/domain_immune.py\", \"description\": \"Read the admission gate region of domain_immune.py\"}",
+      "t_offset_s": 12.574
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '560,640p' bench/domain_immune.py\", \"description\": \"Continue reading domain_verification_set\"}",
+      "t_offset_s": 14.588
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/which_admissions_are_truth_blind_2026-11-10.py bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py; sed -n '1,80p' scripts/which_admissions_are_truth_blind_2026-11-10.py\", \"description\": \"Read truth-blind admissions producer header\"}",
+      "t_offset_s": 19.076
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '80,326p' scripts/which_admissions_are_truth_blind_2026-11-10.py\", \"description\": \"Read the rest of the truth-blind producer\"}",
+      "t_offset_s": 21.708
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"time python3 scripts/which_admissions_are_truth_blind_2026-11-10.py 2>&1 | tail -70\", \"description\": \"Run the truth-blind admissions producer\"}",
+      "t_offset_s": 26.808
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _verify_biological_sequence\\\\|def _verify_chemistry_structure\\\" bench/immune_agents.py\", \"description\": \"Locate the two verifiers\"}",
+      "t_offset_s": 62.093
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2518,2648p' bench/immune_agents.py\", \"description\": \"Read chemistry_structure verifier\"}",
+      "t_offset_s": 64.858
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2649,2800p' bench/immune_agents.py\", \"description\": \"Read biological_sequence verifier\"}",
+      "t_offset_s": 76.451
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib\\nR = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(R)); sys.path.insert(0, str(R/\\\"bench\\\"))\\nimport immune_agents as ia\\nprobes = [\\n  # (tool, label, claim)\\n  (\\\"chemistry_structure\\\", \\\"validity TRUE \\\", \\\"the molecule 'CCO' is ethanol\\\"),\\n  (\\\"chemistry_structure\\\", \\\"validity FALSE\\\", \\\"the molecule 'CCO' is benzene\\\"),\\n  (\\\"chemi",
+      "t_offset_s": 153.316
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py\", \"description\": \"Read the discrimination guard test\"}",
+      "t_offset_s": 199.999
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"B22\\\\b\\\" docs/ experimental_notes/ *.md 2>/dev/null | head -8; echo ---; grep -rn \\\"B137\\\\|B136\\\" docs/ experimental_notes/ *.md 2>/dev/null | head -8\", \"description\": \"Find B22 and B137 records\"}",
+      "t_offset_s": 218.571
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib\\nR = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(R)); sys.path.insert(0, str(R/\\\"bench\\\"))\\nimport domain_immune as di\\nclass _F:\\n    def __init__(self, d): self.description = d\\nfor claim in [\\\"the molecule 'CCO' has formula C2H6O\\\",\\n              \\\"the molecule 'CCO' has formula C3H8O\\\"]:\\n    r = di.domain_verification_set(\\\"chemis",
+      "t_offset_s": 236.326
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"asserts_something\\\\|_only_availability\\\\|def.*vacu\\\" bench/proof_verify.py | head; echo ---; ls bench/*.py.discarded* bench/proof_verify* 2>/dev/null; git -C . log --oneline -3 2>&1 | head -3\", \"description\": \"Locate vacuity predicate and any discarded copy\"}",
+      "t_offset_s": 252.068
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '140,196p' bench/proof_verify.py\", \"description\": \"Read asserts_something predicate\"}",
+      "t_offset_s": 253.962
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, pathlib\\nR = pathlib.Path(\\\".\\\").resolve()\\nsys.path.insert(0, str(R)); sys.path.insert(0, str(R/\\\"bench\\\"))\\nfrom proof_verify import asserts_something as head\\nprobes = {\\n \\\"availability-only assert\\\": \\\"import sympy\\\\nassert sympy is not None\\\",\\n \\\"raise SystemExit(0)\\\":      \\\"import sys\\\\nraise SystemExit(0)\\\",\\n \\\"dead raise ValueError\\\":    \\\"de",
+      "t_offset_s": 282.083
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CANNOT_ADMIT_ALONE\\\\|BRANCH_GATED_ADMISSION\\\" --include=\\\"*.py\\\" . | grep -v domain_immune.py | grep -v which_admissions; echo ---; grep -n \\\"which_admissions\\\" bench/tests/test_tonights_producers_are_reached_2026-11-10.py\", \"description\": \"Find all pins on the admission tables\"}",
+      "t_offset_s": 307.131
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '40,110p' bench/tests/test_tonights_producers_are_reached_2026-11-10.py\", \"description\": \"Read the producer-reached guard for exit expectations\"}",
+      "t_offset_s": 313.142
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/domain_immune.py\", \"old_string\": \"#:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;\\n#:       it tests dimensional homogeneity and reports it as correctness (B136)\\n#:   chemistry_structure  -- CONFIRMS `the molecule CCO is ethanol` AND\\n#:       `the molecule CCO is benzene`; it validates the SMILES, not the claim\\n#:   astronomi",
+      "t_offset_s": 337.846
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/domain_immune.py\", \"offset\": 407, \"limit\": 42}",
+      "t_offset_s": 340.034
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/domain_immune.py\", \"old_string\": \"#:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;\\n#:       it tests dimensional homogeneity and reports it as correctness (B136)\\n#:   chemistry_structure  -- CONFIRMS `the molecule CCO is ethanol` AND\\n#:       `the molecule CCO is benzene`; it validates the SMILES, not the claim\\n#:   astronomi",
+      "t_offset_s": 344.495
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport io, re\\np = \\\"bench/domain_immune.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\nold1 = \\\"\\\"\\\"#:   dimensional_analysis -- CONFIRMS `1 km = 1000 m` AND `1 km = 2000 m`;\\n#:       it tests dimensional homogeneity and reports it as correctness (B136)\\n#:   chemistry_structure  -- CONFIRMS `the molecule CCO is ethanol` AND\\n#:       `the molecule CCO is ben",
+      "t_offset_s": 364.558
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"scripts/which_admissions_are_truth_blind_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- docstring: 2 options -> 3 options ---\\nold = \\\"\\\"\\\"THE 2 OPTIONS, and the 2 properties they are scored on.\\n  A  TOOL-LEVEL EXCLUSION, the seat's fix: add `biological_sequence` to\\n     `CANNOT_ADMIT_ALONE`, so no verdict of its may admit by itself.\\n ",
+      "t_offset_s": 399.577
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"scripts/which_admissions_are_truth_blind_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- options block: derive C; keep A and B typed as history proposed them ---\\nold = \\\"\\\"\\\"    #: \\u2605 OPTION A IS THE SEAT'S PROPOSAL, TYPED OUT AS IT PROPOSED IT.\\n    OPTION_A = {\\\"dimensional_analysis\\\", \\\"astronomical\\\", \\\"biological_sequence\\\"}\\n\\n ",
+      "t_offset_s": 426.182
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"scripts/which_admissions_are_truth_blind_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- verdict block: C must dominate BOTH A and B ---\\nold = \\\"\\\"\\\"    a1, an1, a2, an2 = results[\\\"A\\\"]\\n    b1, bn1, b2, bn2 = results[\\\"B\\\"]\\n    print(\\\"\\\\\\\\n\\\" + \\\"=\\\" * 78)\\n    print(\\\"VERDICT\\\")\\n    dominates = (b1 >= a1 and b2 > a2) or (b1 > a1 and",
+      "t_offset_s": 446.956
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/which_admissions_are_truth_blind_2026-11-10.py; echo \\\"EXIT=$?\\\"\", \"description\": \"Run the extended producer\", \"timeout\": 300000}",
+      "t_offset_s": 449.438
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"scripts/which_admissions_are_truth_blind_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nold = \\\"\\\"\\\"    print(f\\\"\\\\\\\\n      SO THE BRANCH GATE IS CORRECT AND CURRENTLY UNEXERCISED BY\\\")\\n    print(f\\\"      REAL TRAFFIC. That is the same defect B22 records for\\\")\\n    print(f\\\"      `graph_property`: a tool declared for a claim type whose\\\")\\n    ",
+      "t_offset_s": 481.925
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\nold = \\\"\\\"\\\"  CANNOT_ADMIT_ALONE      -- tools measured truth-blind at the TOOL level\\n  BRANCH_GATED_ADMISSION  -- 1 tool measured truth-blind on SOME branches only\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"  CANNOT_ADMIT_ALONE      -- tools measured truth-bl",
+      "t_offset_s": 517.938
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nold = \\\"\\\"\\\"        #: Every confirming tool must have been refused admission -- whether\\n        #: by the tool-level set or by a branch gate whose marker its\\n        #: validity-only evidence cannot carry. `for=-` in the detail is the\\n",
+      "t_offset_s": 538.774
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py -q 2>&1 | tail -5\", \"description\": \"Run the updated guard test file\", \"timeout\": 420000}",
+      "t_offset_s": 543.694
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/domain_immune.py /tmp/di_backup.py\\n# MUTATION 1: chemistry back at TOOL level (the committed state this fix replaces)\\npython3 - <<'PYEOF'\\nsrc = open(\\\"bench/domain_immune.py\\\").read()\\nsrc = src.replace('''CANNOT_ADMIT_ALONE = frozenset({\\n    \\\"dimensional_analysis\\\",\\n    \\\"astronomical\\\",\\n})''', '''CANNOT_ADMIT_ALONE = frozenset({\\n    \\\"dimensional_analysis\\\",\\n    \\\"",
+      "t_offset_s": 571.861
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"# MUTATION 2: remove the chem branch gate entirely (chem unrestricted)\\npython3 - <<'PYEOF'\\nsrc = open(\\\"bench/domain_immune.py\\\").read()\\nsrc = src.replace('''BRANCH_GATED_ADMISSION = {\\n    \\\"biological_sequence\\\": \\\"matches claim\\\",\\n    \\\"chemistry_structure\\\": \\\"matches claim\\\",\\n}''', '''BRANCH_GATED_ADMISSION = {\\n    \\\"biological_sequence\\\": \\\"matches claim\\\",\\n}''')\\nopen(\\\"",
+      "t_offset_s": 595.954
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py -q 2>&1 | tail -3; python3 -m pytest bench/tests/test_tonights_producers_are_reached_2026-11-10.py -q -k \\\"help or exemption or accounted\\\" 2>&1 | tail -3\", \"description\": \"Run adjacent guards touching the same surfaces\", \"time",
+      "t_offset_s": 665.368
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_tonights_producers_are_reached_2026-11-10.py -q -k \\\"accounted\\\" 2>&1 | grep -A6 \\\"Error\\\\|assert\\\" | head -20\", \"description\": \"See why accounting test fails\", \"timeout\": 120000}",
+      "t_offset_s": 691.423
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,40p' scripts/build_joint_brief_2026-11-10.py; echo ...; grep -n \\\"argparse\\\\|def main\\\\|write\\\\|open(\\\" scripts/build_joint_brief_2026-11-10.py | head -20\", \"description\": \"Inspect the joint brief builder\"}",
+      "t_offset_s": 698.932
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '188,215p' scripts/build_joint_brief_2026-11-10.py; python3 scripts/build_joint_brief_2026-11-10.py 2>&1 | head -5; echo \\\"EXIT=$?\\\"; time python3 scripts/build_joint_brief_2026-11-10.py --help >/dev/null 2>&1; echo \\\"HELP_EXIT=$?\\\"\", \"description\": \"Check builder argument behaviour with no args and --help\"}",
+      "t_offset_s": 701.871
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '110,175p' bench/tests/test_tonights_producers_are_reached_2026-11-10.py\", \"description\": \"Read guard tests over EXEMPT entries\"}",
+      "t_offset_s": 710.632
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"bench/tests/test_tonights_producers_are_reached_2026-11-10.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\nold = \\\"\\\"\\\"#: name -> the mechanical reason it is exempt from RUNNING. Empty today, and\\n#: the key exists so an exemption must carry a reason rather than a silence.\\nEXEMPT: dict[str, str] = {}\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"#: name -> the mechanical reason it ",
+      "t_offset_s": 729.446
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"skip\\\\|d6ea0538\\\\|cat-file\\\" bench/tests/test_an_interval_rests_on_two_routes_2026-11-03.py 2>/dev/null | head -8; which wolframscript || echo NO_WOLFRAMSCRIPT\", \"description\": \"Check skip mechanism in interval test and wolframscript presence\"}",
+      "t_offset_s": 746.168
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'z=Quantile[NormalDistribution[],0.975]; p=2/3; n=3; d=1+z^2/n; c=(p+z^2/(2 n))/d; h=z*Sqrt[p(1-p)/n+z^2/(4 n^2)]/d; N[{Max[0,c-h],Min[1,c+h]},6]'\", \"description\": \"Wolfram cross-check of Wilson interval for 2 of 3\", \"timeout\": 120000}",
+      "t_offset_s": 749.664
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'z=Quantile[NormalDistribution[],0.975]; p=1; n=4; d=1+z^2/n; c=(p+z^2/(2 n))/d; h=z*Sqrt[p(1-p)/n+z^2/(4 n^2)]/d; N[{Max[0,c-h],Min[1,c+h]},6]'\", \"description\": \"Wolfram cross-check of Wilson interval for 4 of 4\", \"timeout\": 120000}",
+      "t_offset_s": 760.175
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"chemistry_structure\\\" scripts/is_the_harness_domain_general_in_its_decisions_2026-11-10.py bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py 2>/dev/null | head; grep -n \\\"BUILT:.*CANNOT_ADMIT_ALONE\\\" experimental_notes/CDSFL_MASTER_TASK_LIST.md | head -3\", \"description\": \"Check remaining references to the old table state\"}",
+      "t_offset_s": 777.759
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"experimental_notes/CDSFL_MASTER_TASK_LIST.md\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\nanchor = \\\"and the guard now asserts that premise so it cannot rot into a probe that passes for the wrong reason.\\\"\\nassert src.count(anchor) == 1\\namendment = anchor + (\\\" \\u2605\\u2605\\u2605 **CORRECTED IN THE check_my_fixes_2026-11-10 JOINT ROUND: \\\"\\n\\\"`chemistry_str",
+      "t_offset_s": 792.626
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py bench/tests/test_tonights_producers_are_reached_2026-11-10.py -q 2>&1 | tail -2\", \"description\": \"Final joint run of all touched guard files\", \"timeout",
+      "t_offset_s": 796.353
+    }
+  ],
+  "n_tool_calls": 46,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1243.4,
+  "response": "All 68 tests green across every touched guard file. Fifth pass produced no new above-threshold finding \u2014 terminating. Final answer.\n\n---\n\n## `verdict`\n\n**QUESTION 1 \u2014 THE FALSE-ADMIT SET.**\n\n**(a) The 2-of-3 score is correctly COMPUTED and incorrectly DENOMINATED.** I re-ran the producer: against its probe set, A = 2/3 and 1/2 reproduce exactly. But the probe set hit only `chemistry_structure`'s SMILES-validity fallback \u2014 **the tool has 3 favourable branches**, and its formula and MW branches COMPARE a computed value against the claim, executed here: `the molecule 'CCO' has formula C2H6O` \u2192 CONFIRMED with `matches claim`; `C3H8O` variant \u2192 REJECTED; same shape for MW 46.07 vs 99.9 g/mol. That is the 1-branch-of-N error a **third** time \u2014 the exact error the producer's own docstring narrates about the earlier bio probe. Re-scored with those branches in P2's denominator: seat's tool-level option **2/3, 3/4**; the **as-committed** option (chem at tool level + bio branch) **3/3, 2/4**; branch-gating BOTH 2-branch tools **3/3, 4/4**. So the committed fix's advertised 2-of-2 on discriminating-retained was really 2-of-4, and it was refusing a TRUE, discriminating, **reachable** admission: `domain_verification_set(\"chemistry\", \"the molecule 'CCO' has formula C2H6O\")` returned `admits: False | for=- for_but_cannot_admit=chemistry_structure` under the committed tables \u2014 a live capability loss, not a latent one, since this claim routes end-to-end in the `chemistry` domain today. **Fixed in the tree** (Section 3 below).\n\n**(b) Neither of you is right, and the disagreement decomposes cleanly.** Fable's claim \"`chemistry_structure` never produced a CONFIRMED in my probes, so it is rightly not excluded\" is **refuted by execution**: it CONFIRMS both `the molecule CCO is ethanol` and `the molecule CCO is benzene` at 0.85 with identical evidence (`CHEM_VALID: SMILES=CCO parsed...`) \u2014 absence of a CONFIRMED in one probe set is not absence of a truth-blind CONFIRMED path. But your tool-level correction over-rotated: the same tool's formula/MW branches discriminate and are reached by live traffic. The truth is that `chemistry_structure` is anatomically identical to `biological_sequence` \u2014 comparing branches that print `matches claim`, one validity fallback that cannot \u2014 and the committed repair treated the two identical anatomies asymmetrically because the measurement sampled them asymmetrically.\n\n**(c) `matches claim` is a sound branch discriminator for BOTH verifiers, and I attacked it three ways.** (1) *Omission*: read off source, all 4 bio comparing branches and both chem comparing branches print the marker on the CONFIRM side (bio: translation, RC, length, GC; chem: formula, MW \u2014 the GC branch prints `matches claim {gc_claim}%`, which still contains the substring). No comparing CONFIRM omits it. (2) *Injection by claim*: impossible \u2014 bio's quoted-candidate class is `[A-Za-z0-9*]`, chem's is `[^'\"\\`\\s]`/token class, neither admits whitespace, and `matches claim` contains a space. Executed: `the sequence 'MATCHESCLAIM' proves guilt` \u2192 CONFIRMED but evidence carries **no** marker (gate correctly refuses); `'matches claim'` quoted literally \u2192 `BIO_NO_SEQUENCE`, UNCERTAIN. (3) *Injection by echo*: the fallback echoes only the parsed sequence/SMILES and computed values, never free claim text. The marker holds \u2014 **as the verifiers are written today**; it is a string pin on another file's prints, which is why the producer asserts the branch structure against the source on every run.\n\n**QUESTION 2 \u2014 REACHABILITY AND THE ADDITIVE STANDARD.** Yes, it is the same defect class B22 records for `graph_property` \u2014 B137's own words: \"a tool declared for a claim type whose patterns do not contain the vocabulary that would route a claim to it,\" generalised to 2 structural causes (`cross_domain`: 0 patterns against 3 tool-carrying claim types; `biology`: 3 patterns, 0 sequence words). But the branch gate is **not** an unwired addition under the standard's own words: the symmetric clause requires that \"every new flag, gate or entry point must be wired to a caller and executed by a test.\" `_may_admit_alone` is called on every favourable verdict in `domain_verification_set`'s live loop (wired), and is executed both at predicate level and end-to-end by the guard (executed). The standard's words demand a caller and a test, not traffic; a gate on a currently-dry path is a guard, not dead code \u2014 and the fail-closed direction means its absence, not its presence, would be the defect when B137 is repaired. What WOULD have made it effectively unwired is if **no** branch-gated tool were reachable; after this round that is no longer arguable, because `chemistry_structure`'s branch gate is exercised by live `chemistry` traffic, and the guard now executes a real end-to-end admission through a comparing branch. The producer's section 5 now states both reachability facts by measurement, not assertion.\n\n**QUESTION 3 \u2014 THE PREDICATE DIRECTION.** Executed against HEAD's `asserts_something`: True on availability-only assert, `raise SystemExit(0)`, dead `raise ValueError`, and `assert True`; False on `print('ok')`. So the availability probe indeed does **not** separate the predicates \u2014 HEAD is True there because `assert sympy is not None` parses to an `Assert` node, and per your measurement the discarded copy returned True too. **The direction claim survives on the 2 raise cases alone**: strict-superset needs \u22651 HEAD-only True and 0 discarded-only Trues, and your 6/7-vs-4/7, 2-HEAD-only, 0-mine-only measurement satisfies that with the availability case removed. Caveat stated plainly: the discarded copy is not in this tree (no `.git`, `git cat-file` impossible), so I verified HEAD's half by execution and the discarded half rests on both seats' concordant description. **`assert True` defeating both does NOT make the distinction immaterial.** It bounds it: neither predicate is sound against an adversarial proof, so the differential buys no adversarial security. But the 2 raise cases are shapes an honest proof can take \u2014 a falsifier whose only `Raise` is `raise SystemExit(0)` exits cleanly, HEAD counts it as having asserted, and the clean exit then grants admissibility: a vacuous-admit vector of exactly tonight's family. The discarded restriction (AssertionError-only) closes it. That is a material narrowing deserving its own evidenced round \u2014 fable's handling prescription was right even where its availability probe was wrong.\n\n**QUESTION 4 \u2014 WHAT THE OTHER SEATS GOT WRONG.** The claim I most doubted, refuted by execution: **fable's \"chemistry_structure never produced a CONFIRMED in my probes, so it is rightly not excluded.\"** Refutation: `_verify_chemistry_structure(\"the molecule CCO is benzene\")` \u2192 CONFIRMED, 0.85, evidence `CHEM_VALID: SMILES=CCO parsed (3 atoms, 0 rings, formula=C2H6O, MW=46.07)` \u2014 a false claim, confirmed, truth-blind (identical verdict on the ethanol variant). The inference pattern \u2014 \"my probes drew no CONFIRMED, therefore the tool is safe\" \u2014 is an absence-of-evidence generalisation, and it is the same pattern that produced the original 2-tool narrowing and then the tool-level chem entry. Three instances of one error shape in one night, from three different authors, including the brief's. For **cc2**: its addendum's one derivation \u2014 that the 1 skip in the interval guard is the `git cat-file d6ea0538` anti-vacuity check \u2014 I confirmed structurally (`pytest.skip` at line 104 fires exactly when `d6ea0538` is absent, and this tree has no `.git`); I cannot refute it and it is almost certainly correct. cc2's substantive verdicts concern guards I re-ran (all green here) and I find nothing above threshold to refute; its strongest contribution \u2014 trusting a red guard over the surrounding account, twice \u2014 is the behaviour this round vindicated again.\n\n## `composability`\n\nNo composability claim anywhere in my fix, and I checked the founder's verbatim definition against each piece. The branch gate for `chemistry_structure` is not a composition with the branch gate for `biological_sequence` \u2014 it is the **same single mechanism** applied where the measurement shows the same anatomy. The measured comparison is single-fix-vs-single-fix: branch-gating-both (3/3, 4/4) beats the seat's tool-level set (2/3, 3/4) and beats the as-committed hybrid (3/3, 2/4) \u2014 each dominance read off the committed producer, Wilson/CP intervals 2-route verified (statsmodels vs closed-form NumPy gap \u22642.2e-16; CP vs scipy gap 0), third route Wolfram Language agreeing to 6 figures on both quoted intervals. Where a single fix outperforms, it is preferred \u2014 that is what happened, twice in one table.\n\n## `reasoning`\n\nThe round's governing derivation is unchanged \u2014 a verdict constant across a claim and its false variant carries 0 bits \u2014 but the round's lesson is about **denominators**: a dominance score is only as good as the path enumeration under it, and tonight's probe set enumerated bio's branches (after a seat forced it) while leaving chem's unenumerated. The committed producer now derives the adopted option from its own rows (`_blind_tools & _disc_tools` \u2192 branch-gated; blind-only \u2192 tool-level), so the tables cannot again differ from the measurement that justifies them, and it exits 1 if the adopted option ever stops dominating.\n\n## `falsifier` and `falsifier_result`\n\nDelivered into the sandbox tree at real paths, all executed:\n\n- **`bench/domain_immune.py`** \u2014 `CANNOT_ADMIT_ALONE = {dimensional_analysis, astronomical}`; `BRANCH_GATED_ADMISSION = {biological_sequence: \"matches claim\", chemistry_structure: \"matches claim\"}`; provenance comments updated with the corrected scores.\n- **`scripts/which_admissions_are_truth_blind_2026-11-10.py`** \u2014 PAIRS extended with chem formula/MW; marker derived from BOTH verifiers' sources; 3 options scored (A seat's, B as-committed, C adopted-derived); section 5 now also measures chem's reachability and asserts it; exit 0 **iff** C dominates both. Run: `OPTION C DOMINATES BOTH ... A 2/3 B 3/3 C 3/3 ... A 3/4 B 2/4 C 4/4`, EXIT=0.\n- **`bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`** \u2014 pins updated; benzene end-to-end case now asserts `for=-` and `for_but_cannot_admit=chemistry_structure` (still refused, now by the branch gate); **new** `test_a_reachable_comparing_branch_admits_end_to_end` executes the admission the committed fix was destroying, with the false-variant REJECTED asserted so it cannot rot truth-blind. 14 passed. **3 mutations red**: chem back at tool level \u2192 3 failed; chem branch gate removed \u2192 3 failed (benzene case admits); admit line reverted to `bool(definitive_for)` \u2192 1 failed. Restored: 14 passed.\n- **`bench/tests/test_tonights_producers_are_reached_2026-11-10.py`** \u2014 the accounting ratchet was RED on arrival: `build_joint_brief_2026-11-10.py` (the script that built this brief) was unaccounted \u2014 the 13th instance of the added-and-unwired class, by the brief's author. Accounted as `EXEMPT` with a mechanical reason (bare invocation exits 2 by argparse design, outside the run test's 0-or-1 contract; writes dispatch artefacts), and the `--help` test extended over `EXEMPT` so an exemption still answers for itself (`--help` exits 0 in 0.03 s, verified). 12 targeted tests pass; the pre-fix red run is this fix's refusal evidence.\n- **`experimental_notes/CDSFL_MASTER_TASK_LIST.md`** \u2014 B136 entry amended; its `BUILT:` paragraph contradicted the tree after the fix.\n- Final joint run of all 4 touched guard files: **68 passed in 364 s**. One vacuous assertion I wrote myself (`assert all(...) or True`) was caught in my own P-pass and removed before it shipped \u2014 stated, not hidden.\n- Wolfram attribution: both quoted Wilson intervals computed with **Wolfram Language** (local Wolfram Engine via wolframscript) as the second falsifier; open-source routes primary.\n\n## `strongest_disagreement`\n\n**With fable:** \"chemistry_structure never produced a CONFIRMED in my probes, so it is rightly not excluded\" \u2014 refuted by execution above; the safe-by-absence inference is the round's recurring error shape. **With the brief itself (and this is the sharper one):** the claim that the branch gate \"scores 3 of 3 and 2 of 2\" and therefore dominates. The scores were computed correctly over an under-enumerated path set; the committed configuration actually scored 2-of-4 on the property it was adopted to protect, and was live-refusing a true, reachable, discriminating admission. What settled it was not judgement but the producer's own method extended one tool further. **Where I still disagree with cc2:** nothing above threshold \u2014 its guard-colour scepticism is the right default and this round produced a third red-on-arrival guard to prove it.\n\n## `aims_check` \u2014 what would refute me\n\n1. *Chem branch gate*: a claim whose text makes a chem **comparing** branch CONFIRM without `matches claim` in its evidence, or makes the fallback emit it \u2014 I constructed neither, and the whitespace-free candidate classes are why; a verifier rewording its prints breaks the pin, which the producer's source assertion and the guard's end-to-end false-variant check both catch. 2. *Dominance*: any probe pair showing a 4th favourable path the enumeration still misses and on which C scores worse \u2014 the producer is committed and re-runnable; add the pair and the exit code decides. 3. *Q2 position*: a reading of the additive standard under which \"executed by a test\" excludes predicate-level execution \u2014 the founder's words as dispatched do not say so; his ruling would. 4. *Q3 position*: production of the discarded copy showing it True on either raise case \u2014 that would collapse the strict-superset to equality and I would withdraw the materiality claim. 5. *EXEMPT choice*: a committed measurement showing a bare-run mode of the builder that is side-effect-free \u2014 then `MUST_RUN` dominates and the exemption should go.\n\nNo fix here disables or removes a feature: the chem move RESTORES an admission capability the committed state had removed, the accounting fix adds coverage, and every new assertion is executed. TOOLS DECIDE, NOT VOTES held throughout: every score quoted was recomputed by the committed producer this session, not carried from the brief.\n\n## Termination\n\n**5 passes**: (1) reproduce the producer and read the gate; (2) falsification probes on both verifiers plus end-to-end routing \u2014 found the chem comparing-branch defect; (3) fix, 3 mutations red, restore green; (4) the accounting-ratchet finding, its fix, and Wolfram cross-checks; (5) final joint guard run and ledger amendment \u2014 **no new above-threshold finding**. Stopped.",
+  "t_start_epoch": 1794288826.687474,
+  "t_end_epoch": 1794290070.1132538,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jpxiaa7p/repo",
+      "built": false
+    }
+  ]
+}

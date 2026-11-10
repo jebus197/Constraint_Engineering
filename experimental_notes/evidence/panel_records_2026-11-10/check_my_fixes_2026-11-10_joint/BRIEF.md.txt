@@ -1,0 +1,150 @@
+# PANEL BRIEF — JOINT ROUND on `check_my_fixes_2026-11-10`
+
+This is the JOINT half of the blind round `check_my_fixes_2026-11-10`. In the blind half each of the 2 seats answered WITHOUT seeing the others. Both replies are reproduced BELOW IN FULL, verbatim. Read the other seat's actual words before you answer.
+
+**Disagreement is INFORMATION and is preserved. There is no compelled convergence: do NOT move toward the other seat to be agreeable. Change your position only where its EVIDENCE moves you, and say which evidence did. Where you still disagree, say so and say what would settle it.**
+
+## THE PROJECT, ITS AIMS, AND ITS SPECIFICATIONS — read before answering
+
+CDSFL is a falsification harness. Its aim is the democratisation of science for every kind of intelligence, so a mechanism that only works on code, or only on this machine, is a mechanism that misses the point. The 3 formal standards below are exacting and are not loose English.
+
+1. **ADDITIVE** — work adds to reliability, functionality, accuracy, robustness and the project's stated aims. A feature is never disabled or removed; removal only where a COMMITTED MEASUREMENT shows the replacement dominates on a NAMED property. Symmetrically, an addition nothing reaches is not additive either: every new flag, gate or entry point must be wired to a caller and executed by a test.
+2. **SIMPLEST SUFFICIENT** — the smallest change addressing the ROOT CAUSE and the downstream consequences traced before the fix.
+3. **COMPOSABILITY** — the founder, verbatim, 2026-10-02: "Composability doesn't mean composing two solutions just because they can be composed. It means this principle should be applied where two composed solutions demonstrably provide a better, more robust and/or more efficient solution than either fix in isolation. Where a single fix out performs a composed one, that fix should continue to be preferred. In all cases any fix should also take the first two conditions fully into consideration also." So a composed fix needs a MEASUREMENT showing it dominates either part alone. "They do not conflict" is the weak sense his wording excludes.
+
+Work under `a` (analyse dispassionately), `f` (FFAFP: Find, Follow, Analyse with tools, Fix, P-pass) and `sy` (use the STEM tools; every computational claim cross-verified by 2 independent tools; every proportion carries a confidence interval). The tool output IS the evidence. **Findings are confirmed programmatically or by the founder — there is no model voting.**
+
+## REQUIRED SECTION 1 — The question
+
+You each audited 9 fixes blind. Read the other seat's reply in full above, then answer this.
+
+**THE TREE HAS CHANGED SINCE YOU BOTH ANSWERED, AND THAT IS STATED HERE SO A CORRECT READING OF YOURS IS NOT MADE TO LOOK WRONG.** A previous joint round asked 2 seats about a file that had moved under them (entry B125), and the cost was that their accurate answer read as an error. What changed, all of it after your replies landed:
+
+1. `scripts/the_topics_tools_on_the_projects_own_corpus_2026-11-10.py`, `the_dimensional_check_tests_homogeneity_not_correctness_2026-11-10.py` and `the_claim_patterns_key_on_symbols_not_words_2026-11-10.py` are now COMMITTED under `scripts/`. One seat's strongest disagreement was that the brief cited rates from producers absent from the dispatched tree, violating the committed-producer rule. That was correct and is fixed. All 3 now answer `--help` in 0.06 s where one of them previously ran 66.56 s of real measurement, and all 3 are in `MUST_RUN` in `bench/tests/test_tonights_producers_are_reached_2026-11-10.py`.
+2. The false-admit repair IS now in the tree, and it is NOT the fix either of us proposed. See below.
+3. `bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py` was red, exactly as one seat reported. It is repaired, but NOT by narrowing the text pin: it now reads the PARSED call out of the runner's syntax tree, so it survives reformatting and further arguments while still failing if `finding=` or `domain=` is dropped. 3 mutations red.
+4. `scripts/morning_report_build_2026-10-12.py` had a separate defect neither of you was asked about: the B105 asterisk marker was marking 17 structural decision headings, 12 `The options.` sub-headings and the note-standard FOOT-LINE. Headings are now RECORDED where they are emitted rather than inferred from an all-caps shape. Guard: `test_a_heading_is_recorded_not_guessed_2026-11-10.py`, 12 tests, 2 mutations red.
+
+**QUESTION 1 — THE FALSE-ADMIT SET. One seat proposed excluding `biological_sequence` at the TOOL level, with its truth-blind validity-only branch demonstrated. That refutation reproduced exactly and my earlier 2-tool narrowing was wrong. But the seat's own fix was then MEASURED AND REFUSED.** Producer: `scripts/which_admissions_are_truth_blind_2026-11-10.py`. On 2 named properties, truth-blind paths BARRED and discriminating paths RETAINED, the tool-level exclusion scores 2 of 3 and 1 of 2 while gating that tool at its BRANCH scores 3 of 3 and 2 of 2. What is in the tree is the branch gate: `CANNOT_ADMIT_ALONE = {dimensional_analysis, chemistry_structure, astronomical}` plus `BRANCH_GATED_ADMISSION = {biological_sequence: "matches claim"}`, the marker read off that verifier's own source and TOOL-SCOPED. Attack this. Specifically: (a) is the 2-of-3 score against the tool-level exclusion correct, or have I mis-scored it; (b) `chemistry_structure` CONFIRMS both `the molecule CCO is ethanol` and `the molecule CCO is benzene` — one seat judged that tool safe because its own probes never drew a CONFIRMED from it, so who is right; (c) is `matches claim` a sound branch discriminator, or can you construct a claim where a comparing branch omits it or the fallback emits it.
+
+**QUESTION 2 — THE GATE MAY BE UNREACHABLE, WHICH I FOUND BY ASKING THE ADDITIVE QUESTION OF MY OWN WORK.** 0 of 10 sequence claims reach `biological_sequence` at all: `cross_domain` has 0 claim patterns against 3 claim types carrying 11 tools, so every claim there classifies `uncategorised`; and `biology` has 3 patterns containing 0 of `sequence`, `dna`, `rna`, `protein`, `nucleotide`, `complement`, `codon`, `gc content`. Raised as B137. Is this the same defect B22 records for `graph_property`, and does it make the branch gate an unwired addition under the symmetric form of the additive standard, or is a gate that is wired to a caller and executed by a test sufficient even when real traffic never reaches it? Answer with the standard's own words.
+
+**QUESTION 3 — THE PREDICATE DIRECTION.** One seat refuted my claim that HEAD's `bench/proof_verify.py` carried a NARROWER vacuity predicate than the copy I discarded. I verified it: HEAD returns True on 6 of 7 probes, mine on 4 of 7, 2 cases HEAD-only and 0 mine-only, so HEAD is a strict superset and I had it backwards. But 1 of the 3 cases that seat named does not reproduce: an availability-only assert, written as `import sympy` then `assert sympy is not None`, returns True under BOTH. Does the direction claim survive on the 2 `raise` cases alone, and does `assert True` defeating both predicates make the whole distinction immaterial?
+
+**QUESTION 4 — WHAT DID THE OTHER SEAT GET WRONG.** Each of you found things the other did not. Name the single claim of the other seat you most doubt and refute it by execution, or state that you cannot and why. Do not converge to be agreeable.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Read and RUN the code. Do not reason from the brief alone. Do not invoke pytest across the whole tree: the heavy-process budget on this machine is 1, and a full board is already cached. Targeted test files are fine.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+Where you find a defect, deliver the fix and the executed evidence that it works, including what you tried that did NOT work. **WRITE YOUR FIX INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH.** A fix left in prose, or written to scratch space, is destroyed when the sandbox is torn down and has not been delivered. Supply a runnable falsifier, EXECUTE it, and quote its output.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, for each position you hold, the observation that would overturn it. A position with no falsifier is not a finding.
+
+## REQUIRED SECTION 5 — Output shape
+
+`verdict`, `composability`, `reasoning`, `falsifier`, `falsifier_result`, `strongest_disagreement`, `aims_check`. In `strongest_disagreement` name the specific claim of the OTHER SEAT you reject, and why, with evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a pass produces no new above-threshold finding. State how many passes you ran.
+
+---
+
+# THE BLIND HALF — all 2 replies, verbatim and in full
+
+## SEAT `cc2` — its blind reply, verbatim
+
+<!-- verbatim-begin -->
+
+## Addendum — the fix 8/9 guard finished, and it caught me
+
+**Two failures, both mine.**
+
+```
+FAILED test_tonights_producers_are_reached_2026-11-10.py::test_every_2026_11_10_producer_is_accounted_for
+FAILED test_tonights_producers_are_reached_2026-11-10.py::test_the_decision_can_actually_refuse
+Left contains one more item: 'which_tools_can_admit_a_false_claim_alone_2026-11-10.py'
+2 failed, 27 passed, 1 skipped in 214.75s
+```
+
+The guard discovers every `*_2026-11-10.py` producer on disk and requires each to be in `MUST_RUN` or `EXEMPT`. I added a producer and wired it to nothing. That is the twelfth instance of the defect class your own record counts eleven of — and I had just finished reporting fix 3 for the same shape. Reporting mine instead of fixing it would have been incoherent.
+
+**Fixed:** added to `MUST_RUN`, not `EXEMPT`. The tempting move was an exemption — my producer is the slowest here at ~140 s and `MUST_RUN` entries get fully executed — but an exemption written by the author of the file the rule is about is how the accounting stops meaning anything. 140 s sits inside the guard's existing 600 s timeout. The cost is real and now stated in the tuple itself rather than hidden.
+
+```
+$ python3 -m pytest ...test_tonights_producers_are_reached_2026-11-10.py -q \
+    -k 'accounted_for or can_actually_refuse or exemptions or help'
+8 passed, 5 deselected in 0.43s
+```
+
+Both previously-red tests are green, and the `--help` check on my producer passes — it exits 0 with a usage line, the fix-8 pattern it was written to follow.
+
+**Revised verdicts.**
+
+- **Fix 8 — ADDITIVE, SIMPLEST SUFFICIENT.** Measured, not assumed: the guard genuinely executes the producers and the accounting predicate genuinely refuses an unaccounted one. It refused me. An anti-vacuity check that fires on its first real test is the strongest evidence a ratchet can offer.
+- **Fix 9 — ADDITIVE, SIMPLEST SUFFICIENT, with one qualification.** `test_an_interval_rests_on_two_routes_2026-11-03.py` is inside the 27 passed, so the `_iv` contract holds across all loaders and my new producer's `_iv` conforms to 12 decimals. **But that file's own docstring says its anti-vacuity test is "the load-bearing one", and that test needs `git cat-file` against revision `d6ea0538`.** This tree has no `.git` — `git log` returns `fatal: not a git repository`. So the 1 skipped is almost certainly that check, and fix 9 is verified only on its non-vacuity half here. Verifying the other half needs a real checkout, not this sandbox. I state that as a derivation from two things I measured, not as a measurement of the skip itself.
+
+**What this does not change.** Fixes 4, 5, 6 remain INDETERMINATE and absent; the live `astronomical` false admit remains demonstrated and unrepaired in this tree; fix 3 remains NOT ADDITIVE as delivered, with its guard repaired; fix 7 remains unreached. Still five passes — this was the completion of pass 5's instrumentation, not a sixth.
+
+**And it sharpens my disagreement with the brief's framing.** The brief asked me to check nine fixes and treat their guards as green. Two guards were red when I arrived — one from fix 3, one from my own addition. In both cases the guard was right and the surrounding account was wrong. Spot-checking a guard's colour before trusting a claim about it is worth more than any verdict I returned above.
+
+<!-- verbatim-end -->
+
+## SEAT `fable` — its blind reply, verbatim
+
+<!-- verbatim-begin -->
+
+All verifications complete — 70 guard tests green across every touched file, 4 falsification passes run. Final answer.
+
+---
+
+## `verdict` — per fix
+
+**Fix 1 (restoration of `bench/proof_verify.py`)** — **ADDITIVE / SIMPLEST SUFFICIENT**, and the restoration is the **correct and complete remedy for the overwrite**. Restoring HEAD was right: the file is the committed, guarded, folded-back artefact (both guards re-run here: 39 tests pass across the two named files; S_k polarity verified by execution — correct proof → `SK_ADMISSIBLE`, mistaken → `SK_REJECTED`, assertionless → `SK_NO_SCORE`). **But one factual claim in your account is refuted by execution**: HEAD does *not* carry "a NARROWER predicate than mine." I loaded both predicates and drove 6 probes through each. HEAD's `asserts_something` returns True on a strict superset: `availability-only assert` (HEAD True / discarded False), `raise SystemExit(0)` (True/False), dead `raise ValueError` (True/False). So **your discarded copy does contain something HEAD lacks** — the `_only_availability` reuse and the AssertionError-only raise restriction, i.e. a strictly stronger vacuity filter. Materiality is bounded: `assert True` defeats **both** predicates (demonstrated), so neither is sound against an adversarial proof; the differential is a narrowing, not a soundness fix. The right handling is what you did — do not silently re-fold; route the stronger predicate through its own evidenced round.
+
+**Fix 2 (sentinel `FIX_CURES`)** — **ADDITIVE / SIMPLEST SUFFICIENT**. Present; committed producer runs PASS (exit 0): broken sentinel admitted 0 of 7, fixed admits exactly 1 of 7; the live gate names `FIX_CURES` and not the broken literal. The guard-built-with-the-same-broken-expression lesson is recorded in the code.
+
+**Fix 3 (alias imported)** — **ADDITIVE / SIMPLEST SUFFICIENT**. `_resolve_domain_alias` imports `immune_agents._DOMAIN_ALIAS` (one table, no drift); wired end-to-end: `_APPLY_BACK_CTX["domain"] ← cfg.domain`, guard asserts the default `software→code` path admits a reducible claim.
+
+**Fix 4 (false refusal reason)** — **INDETERMINATE: NOT IN THE DISPATCHED TREE.** The gate here still returns `domain:...against=<tool>`. Also its cited 2-of-5 rate rests on `the_topics_tools_on_the_projects_own_corpus_2026-11-10.py`, which **is not committed in this tree** — by the standing rule that rate may not be cited. The underlying concern is real and I re-derived it independently: `astronomical` REJECTS the **correct** "speed of light is 299792.458 km/s" at 0.9 (Wolfram Language, local kernel, confirms c = 299792.458 km/s exactly; relative error of the m/s reading 0.999).
+
+**Fix 5 (false admit)** — **NOT IN THE DISPATCHED TREE, and the defect was LIVE here**: `domain_verification_set("physics", "…299792458 km/s")` returned `ADMITS: True` (output above). Moreover the narrowing to `{dimensional_analysis, astronomical}` is **refuted as insufficient** (your falsification request 2): `biological_sequence`'s pure-validity fallback returns CONFIRMED 0.85 for *any* claim containing a valid sequence — "the sequence 'ATGC' proves the defendant was present" → CONFIRMED — a second truth-blind admit vector, while its RC branch genuinely discriminates (CONFIRMED/REJECTED on true/false RC pairs). I delivered the fix (below) with the three-member set, each member evidenced by an executed, committed probe. On request 1 (an evidence-backed admission removed): for `astronomical` and `dimensional_analysis`, none exists — I confirmed `dimensional_analysis` CONFIRMS `1 km = 1001 m` and `1 km = 2000 m` at 0.85 (homogeneity, not correctness). For `biological_sequence` there IS a cost: an RC/translation-branch-confirmed claim can no longer *solely* admit, because branch provenance is invisible in the verdict. Stated as a measured trade below.
+
+**Fix 6 (`secondary_only`)** — **NOT IN THE DISPATCHED TREE** (admit path checked only `needs_file`; manifest confirms `wolfram secondary_only=True`). Delivered: the manifest field now bars sole admission, exercised by a stubbed-verdict test so the licensed kernel is not consumed to test a flag.
+
+**Fix 7 (B105 marker)** — **ADDITIVE / SIMPLEST SUFFICIENT**. Present; runs before the offset conversion at the call site (line 1404, verified); exemptions driven by the same `_ex` record the lint uses; 24 related guard tests pass. On falsification request 4: I found no quoted paragraph the exempt-span record misses within the existing guards' corpus; I did not construct a new corpus — bounded, said plainly.
+
+**Fix 8 (producers' `--help`)** — **ADDITIVE / SIMPLEST SUFFICIENT**. Measured here: 4 of 4 exit 0 with a usage line in ≤0.04 s real. The guard executes them (not pins them), deliberately reusing the 2026-11-08 sibling's shape — one definition of "reached".
+
+**Fix 9 (`_iv` renames)** — **ADDITIVE / SIMPLEST SUFFICIENT**. `_iv_line`/`_iv_parts` present; the 50-script contract guard passes (18 passed, 1 skipped, 199 s). Rename, not contract change — correct root cause.
+
+**New finding (mine, fixed):** tonight's own guard `test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py::test_the_promote_loop_passes_the_entry` was **RED in the shipped tree** — it pinned the one-line call string, which the same night's `domain=` argument split across two lines. The property it protects (the finding is handed to the gate) held throughout; the red guard was itself a false reason, the B88 harm. Pin repaired to the argument line; passes.
+
+## `composability`
+
+For fixes 2–6 pairwise: **no composability claim, agreeing with the brief** — no measurement shows any composed pair dominating a part alone; they gate different artefacts. The one measured comparison I ran is **exclusion-set {dim, astro} vs {dim, astro, bio}**, named property: *demonstrated truth-blind CONFIRMED paths barred from admission* — 2 of 3 vs **3 of 3** (probes executed and committed in the guard file). The symmetric cost, also measured: the three-member set forgoes sole admission by `biological_sequence`'s discriminating RC branch (1 claim class), because verdict provenance is branch-invisible at the admit path. Fail-closed is the C0001 standard, so I shipped the three-member set; the trade is his to re-rule with both measurements committed. `secondary_only` + the set are **not** a composition claim: one discharges his 2026-09-28 ruling, the other a measurement — two requirements, one branch reading two sources.
+
+## `reasoning`
+
+A verdict that takes the same value on a claim and on its false variant carries zero bits about the claim; admission on it is admission by vocabulary, not by tool. That is the derivation behind `CANNOT_ADMIT_ALONE`, and each member's zero-bit property is demonstrated by a committed, re-run probe — so the set cannot outlive its evidence (if a tool learns to discriminate, its probe FAILS and the entry must go). The astronomical root cause is exact: its constant branch extracts the last numeral and never reads the unit — "within 1% tolerance (accounts for unit differences)" in its own comment is false; 1% tolerance cannot account for a factor of 1000.
+
+## `falsifier` and `falsifier_result`
+
+Delivered into the tree: **`bench/domain_immune.py`** (edited: `CANNOT_ADMIT_ALONE`, `secondary_only` honoured, truthful detail line `for=/for_but_cannot_admit=/against=`), **`bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py`** (new; 9 tests = the committed measurement), **`bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py`** (stale pin repaired). Executed, outputs seen: pre-fix `ADMITS: True` for the km/s claim; post-fix `_apply_back_gate(..., domain="physics")` → `ok=False, why=domain:... for=- for_but_cannot_admit=astronomical against=-`; final joint run of all five bearing guard files: **70 passed**; sentinel producer exit 0; sympy-backed admissions still admit (additive direction asserted in the guard). Intervals two-route verified per `sy`: 3/5 truth-blind tools Wilson [0.230724, 0.882379] (statsmodels vs scipy/numpy gap 2.2e-16; Wolfram Language third route agrees to 6 figures), CP [0.146633, 0.947255] (statsmodels vs mpmath gap 0); 0/7 sentinel CP upper 0.409616 (closed form, gap 0).
+
+## `strongest_disagreement`
+
+The brief audits "tonight's 9 fixes," but **three of them (4, 5, 6) are not in the dispatched tree, and two of the five required runnables do not exist in it** — while the brief cites their measurements (2-of-5 twice). Whether that is a staging gap or premature citation, a seat cannot tell from here, and the committed-producer rule is violated *as this sandbox shows it*. Second: fix 1's "HEAD carried a narrower predicate than mine" is backwards by execution. Third: one of tonight's own dated guards was red in the shipped tree, which contradicts the brief's implicit all-green framing.
+
+## `aims_check`
+
+No verified fix works against the stated aims; the admit-path repair is TOOLS DECIDE, NOT VOTES made operative — an admission now requires a confirmation that could have come out the other way. Residuals declared, not hidden: `assert True` defeats both vacuity predicates; `astronomical`'s false REJECT still vetoes and writes `against=astronomical` on correct non-SI claims (fail-closed, but a false reason — fix 4's proper repair remains open); `chemistry_structure` never produced a CONFIRMED in my probes, so it is rightly not excluded; the `severity_corrected_2026-11-06` joint-round debt stands as the brief records.
+
+**Passes run: 4** (verify-against-tree; falsification probes; P-pass on my own fixes; caller-sweep + joint guard run — the fourth produced no new above-threshold finding, so I stop).
+
+<!-- verbatim-end -->

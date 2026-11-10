@@ -129,12 +129,29 @@ class TestTheProducerDoesNotMeasureItself:
         # text measures nothing. Anything OTHER than the module that implements
         # the handling still fails here, so a future reader cannot quietly
         # reintroduce an unhandled reference.
-        ADDRESSES_IT = "bench/proof_verify.py"
+        #: ★ A SECOND MODULE NOW HANDLES IT, ADDED 2026-11-10 ON HIS B22
+        #: INSTRUCTION, and this is the extension the comment above
+        #: anticipates rather than a weakening of the check.
+        #: `_apply_back_gate` ROUTES on the field: an entry declaring proof
+        #: polarity goes to `verify_proof` instead of to the falsifier probe,
+        #: BEFORE that probe, because a proof lives in the same
+        #: `falsifier_code` field and under falsifier polarity a correct proof
+        #: exits cleanly, reads as REFUTED, and would score as a refutation
+        #: for being right. Reading the field in order to route away from the
+        #: inverting path is handling the hazard, not an instance of it.
+        #:
+        #: THE TEST'S FORCE IS UNCHANGED: any file OTHER than these 2 still
+        #: fails, so an unhandled reference cannot be reintroduced quietly.
+        #: Adding a module here is a deliberate act with a reason attached,
+        #: which is the point of keeping the set explicit rather than widening
+        #: it to a pattern.
+        ADDRESSES_IT = ("bench/proof_verify.py",
+                        "bench/reference_runner_v3.py")
         stray = [h for h in prod.live_hits("verification_polarity")
                  if not h.startswith(ADDRESSES_IT)]
         assert stray == [], (
             f"live references to verification_polarity must come only from "
-            f"{ADDRESSES_IT}, which exists to handle the polarity. These do "
+            f"{ADDRESSES_IT}, which exist to handle the polarity. These do "
             f"not: {stray}")
         assert any(h.startswith(ADDRESSES_IT)
                    for h in prod.live_hits("verification_polarity")), (

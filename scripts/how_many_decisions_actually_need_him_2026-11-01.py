@@ -162,6 +162,11 @@ def bodies() -> dict[str, str]:
     return out
 
 
+#: The same shape `morning_report_build._DATED` uses, so the 2 instruments
+#: read a "dated addition" identically rather than by 2 similar regexes.
+_DATED_IN_BODY = re.compile(r"\b(2026-\d{2}-\d{2})")
+
+
 def classify_text(state: str, ruled: str | None, txt: str) -> dict:
     """The whole decision, as a PURE function of one entry's own text.
 
@@ -189,10 +194,36 @@ def classify_text(state: str, ruled: str | None, txt: str) -> dict:
         asks.append({"sentence": one, "free": free, "retired": retired})
         if not free and not retired:
             live_asks.append(one)
+    #: ★ A RULING IS CONSULTED, 2026-11-10, AND THIS CLOSES A DIVERGENCE
+    #: BETWEEN 2 INSTRUMENTS THAT BOTH CLAIM TO SAY WHOSE MOVE IT IS.
+    #:
+    #: WHAT HAPPENED. On 2026-11-10 his rulings of 2026-11-08 were written onto
+    #: 10 markers that had carried them only in prose. The GENERATOR, which
+    #: routes through `morning_report_build.ruling_is_spent`, then rendered 4 of
+    #: the 10 -- the ones carrying a dated addition LATER than the ruling. This
+    #: function still derived all 10, because it read only the asking sentence
+    #: and never the `ruled` date it is handed. `test_the_generator_and_the_
+    #: producer_name_the_same_decisions` caught the disagreement, and its own
+    #: words are "One of them is wrong; a count would have hidden a swap."
+    #:
+    #: THE GENERATOR IS THE ONE THAT WAS RIGHT, and the reason is recorded
+    #: rather than assumed: its predicate carries the correction of 2026-11-01,
+    #: that a ruling date is a POINT EVENT and not permanent absolution, so a
+    #: question raised AFTER a ruling cannot have been answered by it. This
+    #: function had no such notion at all.
+    #:
+    #: THE SAME TEST IS APPLIED HERE, not a second one: an entry that asks, and
+    #: records a ruling, and carries NO dated addition later than that ruling,
+    #: has been answered -- which is GRANTED, the kind this function already
+    #: has for "asked and settled". Where a later date IS present the entry
+    #: stays OWED, so the suppression direction is untouched.
+    _later = bool(ruled) and any(d > ruled for d in _DATED_IN_BODY.findall(txt))
     if state == "DEFERRED" and ruled:
         kind = "HIS_DEFERRAL"
     elif dep:
         kind = "DEPENDENT"
+    elif live_asks and ruled and not _later:
+        kind = "GRANTED"
     elif live_asks:
         kind = "OWED"
     elif asks:

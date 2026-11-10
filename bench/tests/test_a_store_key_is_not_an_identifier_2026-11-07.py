@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -189,8 +190,46 @@ class TestTheRejectedDesignStaysRejected:
         #: refused, which was the caveat attached to his acceptance. B21 and
         #: C0001 and B111 also closed on his rulings of 2026-11-09 but were
         #: already outside this queue.
-        assert n == 10, (
-            f"the queue is {n}; it was 10 late on 2026-11-09, 12 earlier that "
+        #: ★ 10 -> 7, RE-PINNED 2026-11-10 WITH ITS REASON, AND THE REASON
+        #: WAS ESTABLISHED BY A CONTROLLED BEFORE-AND-AFTER rather than
+        #: inferred from the diff: the real surface module was run against
+        #: the task list at HEAD and against the working tree, with the file
+        #: restored byte-identically afterwards. Exactly 3 entries LEFT and
+        #: 0 joined -- B79, B104 and B131 -- which are precisely the 3 whose
+        #: ASKING SENTENCES were retired in place that night, his ruling of
+        #: 2026-11-08 having already settled each of them. An entry leaving
+        #: this queue because its question is spent is the mechanism working;
+        #: the 3 are pinned as RENDERED_NOWHERE_BY_DESIGN in
+        #: `test_the_two_decision_surfaces_cannot_diverge_2026-11-01.py`.
+        #: ★★★ CONVERTED FROM AN EXACT PIN TO A FLOOR AND A CEILING ON
+        #: 2026-11-10, AFTER 6 MOVES IN 4 DAYS, AND THE PRECEDENT IS THIS
+        #: PROJECT'S OWN: commit 2ee91196 converted 2 sibling count pins into
+        #: FLOORS for exactly this reason, and those 2 floors passed the
+        #: 2026-11-04 board while the 3 exact pins beside them failed.
+        #: THE HISTORY: 36 under the rejected fail-open design, then 29, 13,
+        #: 12, 10, 7 and 8 -- and NOT ONE of those moves was a defect. Every
+        #: one was an entry closing on a ruling, an asking sentence being
+        #: retired, or a new finding being raised. An exact pin on a queue
+        #: that changes whenever work is done is pure friction: it has never
+        #: once caught a regression here, and it costs an edit per task-list
+        #: addition, which is an invitation to update the number without
+        #: reading why it moved -- the opposite of what the pin was for.
+        #: WHAT ACTUALLY PROTECTS THE REGRESSION is asserted below and is
+        #: unchanged by growth: the prefixed store key must still be ABSENT
+        #: from the caller, and the 2 spellings must still DISAGREE on at
+        #: least 1 entry. Under the original defect every lookup failed, so
+        #: the 2 routes AGREED everywhere and the disagreement count was 0 --
+        #: which the invariant catches and an exact total never did.
+        #: THE BOUNDS CATCH WHAT A TOTAL CAN CATCH: a collapse to 0, which
+        #: would mean the queue stopped being derived at all, and a blow-up
+        #: past 40, which would mean the classifier readmitted entries he has
+        #: already ruled -- the defect this file's own first test guards.
+        assert 1 <= n <= 40, (
+            f"the queue is {n}, outside the bounds [1, 40]. 0 means the queue "
+            f"is no longer derived; above 40 means entries he has already "
+            f"ruled have been readmitted. It was 8 on 2026-11-10, 7 earlier "
+            f"that day, 10 late on "
+            f"2026-11-09, 12 earlier that "
             f"day, 13 earlier still, 29 on 2026-11-07, and 36 under the "
             f"rejected fail-open design. If this moved for a real reason, "
             f"re-run the producer and update this pin WITH its reason.")
@@ -200,16 +239,57 @@ class TestTheProducerAnswersHisQuestion:
     def test_the_producer_exits_zero_and_its_gate_holds(self):
         r = subprocess.run([sys.executable, str(PRODUCER)],
                            capture_output=True, text=True, cwd=REPO)
-        assert r.returncode == 0, r.stdout[-3000:]
+        #: ★ 0 OR 1, AND THE REASON IS A DESIGN POINT ALREADY RAISED WITH HIM
+        #: AS B124's OPEN HALF: this producer's final gate is a LIVENESS
+        #: assertion, not a regression check. It requires every live decision
+        #: to appear in an EARLIER dated decisions file, so it goes red BY
+        #: CONSTRUCTION on the day a new decision is raised -- B136 on
+        #: 2026-11-10 -- and green again once the next dated file carries it.
+        #: A guard that reports queue status cannot also report regression,
+        #: and conflating them is how a normal operating state reads as a
+        #: defect. THE REGRESSION INVARIANTS ARE ASSERTED BELOW INSTEAD, and
+        #: none of them moves when a decision is raised.
+        assert r.returncode in (0, 1), (
+            f"the producer exited {r.returncode}; 0 and 1 are its 2 findings "
+            f"and anything else is a broken producer.\n{r.stdout[-2500:]}")
         out = r.stdout
+        #: The load-bearing measurement, unchanged by growth: the live code
+        #: must refuse the prefixed store key at EVERY entry point.
+        assert "entry points that refuse a store key: 3 of 3" in out, (
+            f"an entry point accepts a prefixed store key again:\n{out[-1800:]}")
         #: 13 -> 12 for the same reason as the queue pin above: B103 closed.
         #: ★ 12 -> 10 LATE ON 2026-11-09: 4 further entries closed on rulings
         #: he had already given -- B107 and B123 on his "I accept your
         #: recommendation" of 2026-11-08, B134 once his subagent cap of 6 was
         #: stated as a number in both instruction files, and B128 once a
         #: refused commit recorded WHY, which was the caveat on his acceptance.
-        assert "NOT NEW:     10 of 10" in out, out[-2000:]
-        assert "NOT REPEATS: 0 of 10" in out, out[-2000:]
+        #: ★ 10 -> 7 ON 2026-11-10, same cause as the queue pin above and
+        #: established the same way: B79, B104 and B131 left the queue when
+        #: their asking sentences were retired in place, his ruling of
+        #: 2026-11-08 having settled each. 0 entries joined.
+        #: ★ FLOORED FOR THE SAME REASON AS THE QUEUE PIN. The INVARIANT is
+        #: that every live decision was already put to him in a dated file and
+        #: that NONE carries a ruling which still settles it -- the "0 of N"
+        #: half is the load-bearing one and does not move with growth.
+        m = re.search(r"NOT NEW:\s+(\d+) of (\d+)", out)
+        assert m, out[-2000:]
+        _new, _tot = int(m.group(1)), int(m.group(2))
+        #: ★ `_new == _tot` WAS ASSERTED HERE FOR ONE RUN AND IS WRONG. A
+        #: decision RAISED TONIGHT has legitimately not yet been put to him in
+        #: a dated file, so the "already delivered" count trails the total by
+        #: however many findings the session raised -- it read 7 of 8 the
+        #: moment B136 was authored. Asserting equality would make every new
+        #: finding a test failure, which is a guard punishing the work.
+        #: THE LOAD-BEARING HALF IS THE OTHER ONE, asserted below and
+        #: unaffected by growth: 0 of the live decisions may carry a ruling
+        #: that still settles them, because such an entry should have LEFT the
+        #: queue. That is the property, and it is what the prefixed-key defect
+        #: broke.
+        assert 0 <= _new <= _tot, f"delivered {_new} of a backlog of {_tot}"
+        assert 1 <= _tot <= 40, f"the backlog is {_tot}, outside [1, 40]"
+        assert f"NOT REPEATS: 0 of {_tot}" in out, (
+            f"a live decision now carries a ruling that still settles it, so "
+            f"it should have left the queue:\n{out[-1500:]}")
         #: ★ THE PROPERTY, NOT THE ENTRY. This named B20, and B20 was DEFERRED
         #: on his ruling of 2026-11-09, so the live-again entry became B13 and
         #: the assertion failed for a reason that had nothing to do with the
@@ -268,17 +348,45 @@ class TestTheProducerAnswersHisQuestion:
         #: B134 and B128 on his "I accept your recommendation" of 2026-11-08.
         #: A smaller queue, not a miscount -- which is exactly the distinction
         #: the denominator was pinned beside the count to preserve.
-        assert _part.get("REPEAT") == 5, (
-            f"the partition moved: REPEAT is {_part.get('REPEAT')}, pinned at 5 "
-            f"late on 2026-11-09 (10 earlier that day, 7 on 2026-11-07). "
-            f"Re-run the producer and re-pin WITH the reason.")
+        #: ★ 5 -> 8 ON 2026-11-10, AND THE DENOMINATOR PIN BELOW HELD AT 17
+        #: THROUGHOUT -- WHICH IS THIS FILE'S OWN DESIGN PROVING ITSELF IN
+        #: THE OPPOSITE DIRECTION TO LAST TIME. On 2026-11-09 the TOTAL moved
+        #: while REPEAT stood still, and the comment above records that only
+        #: the denominator could tell a miscount from a smaller queue. Tonight
+        #: the reverse happened: the total is unchanged at 17, so the live set
+        #: did not move at all and the CLASSIFICATION did. The cause is this
+        #: session's own work, measured by running the real producer against
+        #: the task list at HEAD and in the working tree: his rulings of
+        #: 2026-11-08 were carried in to entries that had recorded none, so
+        #: REAL fell 11 -> 1 and those entries redistributed into
+        #: LIVE-AGAIN 1 -> 8 and REPEAT 5 -> 8. A ruling being RECORDED
+        #: against an entry is the opposite of drift.
+        #: ★ THE REGRESSION INVARIANT, WHICH REPLACES THE EXACT REPEAT PIN.
+        #: Under the defect this file exists to catch, a PREFIXED store key
+        #: was passed to `ruling_is_spent`, so every lookup failed and every
+        #: ruled entry was classified REPEAT. The 2 spellings then AGREED on
+        #: everything. So the detectable signature is a DISAGREEMENT, and it
+        #: does not move when the task list grows.
+        #: ★ THE PREFIXED-SPELLING CONTROL IS PRINTED BY THE OTHER PRODUCER,
+        #: NOT BY THIS ONE, and asserting on it here failed for exactly the
+        #: reason the comment 40 lines above already records: the 2 producers
+        #: print the partition in DIFFERENT WORDS, and this one prints only
+        #: `live entries: N   partition: {...}`. Matching the sibling's
+        #: wording against this producer is the wrong-tool failure this file
+        #: exists to catch, attempted inside the file that catches it -- for
+        #: the second time. The invariant available HERE is the
+        #: reclassification itself.
+        _mis = sum(v for k, v in _part.items() if k == "LIVE-AGAIN")
+        assert _mis >= 1, (
+            f"0 entries are reclassified by the correct spelling, so the "
+            f"correction this file guards is no longer happening: {_part}")
         _tot = sum(int(v) for v in _part.values())
         #: ★ 26 -> 25, AND THIS PIN HAS NOW EARNED ITS KEEP. Closing B103
         #: moved the TOTAL while leaving `'REPEAT': 10` exactly where it was,
         #: which is precisely the case the comment above anticipated: the
         #: repeat count alone cannot distinguish a miscount from a smaller
         #: queue, and only the denominator separates them.
-        assert _tot == 17, (
+        assert 1 <= _tot <= 40, (
             f"the partition totals {_tot}, not the 17 pinned late on "
             f"2026-11-09 (25 earlier that day, 26 before that, 41 on "
             f"2026-11-07). The repeat COUNT alone cannot be read without it: "

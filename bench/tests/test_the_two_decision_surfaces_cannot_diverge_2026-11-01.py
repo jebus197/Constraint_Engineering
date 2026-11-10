@@ -255,8 +255,34 @@ class TestTheInverseDirectionAlsoHolds:
     #: all. Pinning says the same thing without breaking the builder, and
     #: `test_the_pin_is_not_stale` removes any of them automatically the moment
     #: it is rendered again.
+    #: ★ 3 ADDED 2026-11-10, EACH WITH ITS REASON, which is what this test's
+    #: own failure message asks for. All 3 carried a live `[NEEDS * RULING]`
+    #: sentence that HIS RULING OF 2026-11-08 SETTLED, so the question is
+    #: answered while the authored detail that posed it remains on record:
+    #:
+    #:   B79  — he asked for a way to "dynamically record what models do exist
+    #:          and which are in use, rather than going back and renaming them
+    #:          by hand", which is a decision NOT to rename. The dynamic record
+    #:          was built 2026-11-10 (`model_catalogue.in_use`).
+    #:   B104 — his accepted recommendation names the identifier per surface:
+    #:          the spoken file cites the short code, the markdown twin cites
+    #:          it beside the full 12-character identifier. What remains is
+    #:          BUILD work, not a decision.
+    #:   B131 — his accepted recommendation was option 3 ALONE, the fixed-width
+    #:          arXiv check, which explicitly does not spend his lookups; both
+    #:          named artefacts are committed.
+    #:
+    #: THE AUTHORED DETAIL IS KEPT RATHER THAN DELETED. The test offers removal
+    #: as a remedy and a pin is the better one here: the detail records what was
+    #: asked and what answered it, which a deletion would lose. `additive-
+    #: standard` prefers retiring a spent artefact in place over removing it.
+    #:
+    #: AND `test_the_pin_is_not_stale` BELOW IS THE GUARD ON THIS PIN: if any of
+    #: these starts rendering again, the pin must come off rather than silently
+    #: widening the exemption.
     RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = (
-        "C0001", "B122", "B107", "B123", "B128", "B20")
+        "C0001", "B122", "B107", "B123", "B128", "B20",
+        "B79", "B104", "B131")
 
     @staticmethod
     def _authored() -> set[str]:

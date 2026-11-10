@@ -284,3 +284,87 @@ class TestItRuns:
         assert r.returncode == 0, r.stderr[-800:]
         d = json.loads(r.stdout)
         assert {"step2_k", "step2_n", "step3_role_files"} <= set(d)
+
+
+class TestStepFiveIsDecidedByExecution:
+    """★ ADDED 2026-11-10, AFTER A WORKING STEP 5 MEASURED AS ABSENT.
+
+    `SELECTABLE_NAMES` is a guess at what the implementation would be called,
+    written before one existed. `bench/model_catalogue.py` was built on
+    2026-11-09 naming its functions `catalogue`, `local_models`,
+    `remote_models`, `registry_models` and `known_roles` -- 0 of the 7 guessed
+    names -- so the producer reported step 5 NOT DONE while it ran. A name is a
+    proxy for a capability; the capability can be CALLED.
+
+    These tests drive the behavioural detector, including the direction that
+    matters most: it must REFUSE a module that does not produce the shape.
+    """
+
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "b21steps_exec", REPO / "scripts"
+            / "which_of_b21s_five_steps_are_built_2026-11-09.py")
+        m = importlib.util.module_from_spec(spec)
+        sys.modules["b21steps_exec"] = m
+        spec.loader.exec_module(m)
+        return m
+
+    def test_the_behavioural_detector_finds_the_live_implementation(self):
+        got = self._mod()._selectable_list_runs()
+        assert got, (
+            "no module in the tree produces a selectable model list by "
+            "execution, so step 5 is measured only by a name guess again")
+        assert ":" in got and got.endswith(("catalogue", "models")), got
+
+    def test_it_names_the_module_and_the_callable(self):
+        got = self._mod()._selectable_list_runs()
+        path, _, fn = got.partition(":")
+        assert (REPO / path).is_file(), f"{path} is not in the tree"
+        assert fn and not fn.startswith("_"), fn
+
+    def test_step_five_now_reads_done(self):
+        r = self._mod().measure()
+        assert r["step5_definitions"], (
+            "step 5 reads NOT DONE although a module produces the list")
+
+    def test_the_name_search_is_kept_not_replaced(self):
+        """Removing it would trade one blind proxy for another."""
+        src = (REPO / "scripts"
+               / "which_of_b21s_five_steps_are_built_2026-11-09.py").read_text()
+        assert "SELECTABLE_NAMES" in src
+        assert "definitions(nm) for nm in SELECTABLE_NAMES" in src, (
+            "the lexical search was removed rather than kept beside the "
+            "behavioural one")
+
+    def test_it_refuses_a_module_that_does_not_produce_the_shape(self, tmp_path,
+                                                                 monkeypatch):
+        """THE DIRECTION THAT MATTERS. A detector that accepts anything is a
+        detector that decides nothing."""
+        m = self._mod()
+        fake = tmp_path / "bench"
+        fake.mkdir()
+        (fake / "not_a_catalogue.py").write_text(
+            "def catalogue():\n    return ['not a mapping']\n")
+        monkeypatch.setattr(m, "REPO", tmp_path)
+        assert m._selectable_list_runs() == "", (
+            "the detector accepted a callable returning the wrong shape")
+
+    def test_it_refuses_rows_missing_the_required_keys(self, tmp_path, monkeypatch):
+        m = self._mod()
+        fake = tmp_path / "bench"
+        fake.mkdir()
+        (fake / "half_catalogue.py").write_text(
+            "def catalogue():\n    return [{'id': 'x'}]\n")   # no `source`
+        monkeypatch.setattr(m, "REPO", tmp_path)
+        assert m._selectable_list_runs() == "", (
+            "the detector accepted rows with no `source`, so it cannot tell a "
+            "selectable list from any list of dicts")
+
+    def test_it_never_raises_on_a_broken_module(self, tmp_path, monkeypatch):
+        m = self._mod()
+        fake = tmp_path / "bench"
+        fake.mkdir()
+        (fake / "broken_catalogue.py").write_text("raise RuntimeError('boom')\n")
+        monkeypatch.setattr(m, "REPO", tmp_path)
+        assert m._selectable_list_runs() == "", "a broken module must not raise"
