@@ -181,3 +181,78 @@ class TestTheRecordIsLoadBearing:
         assert any(probe[i].startswith("*") for i in heads), (
             "with no record the same lines are still spared, so render_tts "
             "passing a populated record cannot be what fixed them")
+
+
+class TestEverySpokenGeneratorAppliesTheConvention:
+    """★ HIS RULING GOVERNS "THE GENERATED TTS FILES", PLURAL, AND THE BUILD
+    COVERED 1 OF 2 GENERATORS UNTIL 2026-11-10.
+
+    `_mark_my_paragraphs` was wired into `render_tts` in the morning-report
+    generator and into nothing else. `scripts/build_decisions_file_2026-11-07.py`
+    writes 3 further spoken artefacts -- the repository `.txt`, its markdown
+    twin and the Desktop copy -- and applied no marker at all, so 0 of that
+    file's paragraphs carried the convention.
+
+    I NEARLY CLOSED B105 ON THAT STATE. The entry's own words said the
+    remaining build was done, the guard was green, and the first verification
+    I ran reported 0 marked paragraphs in the generated decisions file -- a
+    build present in 1 place and absent in another, which is the shape this
+    project records against a widened pattern fixed in 1 reader and left
+    narrow in its sibling. The entry stayed OPEN and the second generator was
+    wired instead.
+
+    THE MARKER IS IMPORTED, NEVER COPIED. A second definition of his
+    convention would be a second thing to drift; this project has measured
+    what copies cost. The decisions generator calls the morning-report
+    module's function, and refuses LOUDLY if it is ever renamed away.
+    """
+
+    @staticmethod
+    def _generators():
+        return (REPO / "scripts" / "morning_report_build_2026-10-12.py",
+                REPO / "scripts" / "build_decisions_file_2026-11-07.py")
+
+    def test_both_generators_reach_the_one_marker(self):
+        hits = [p for p in self._generators()
+                if "_mark_my_paragraphs" in p.read_text(encoding="utf-8")]
+        assert len(hits) == 2, (
+            f"{len(hits)} of 2 spoken generators reference the marker: "
+            f"{[p.name for p in hits]}. His ruling governs the generated TTS "
+            f"files, plural.")
+
+    def test_the_decisions_generator_does_not_define_its_own_copy(self):
+        """One definition. A copy is a second thing to drift."""
+        src = (REPO / "scripts" / "build_decisions_file_2026-11-07.py").read_text(
+            encoding="utf-8")
+        assert "def _mark_my_paragraphs" not in src, (
+            "the decisions generator defines its own copy of the marker; it "
+            "must call the single implementation it already receives as `mrb`")
+
+    def test_the_spoken_decisions_file_carries_the_convention(self):
+        """END TO END on the artefact he actually listens to."""
+        files = sorted((REPO / "experimental_notes").glob(
+            "Decisions_Awaiting_You_*_GENERATED.txt"))
+        if not files:
+            pytest.skip("no generated spoken decisions file in this checkout")
+        lines = files[-1].read_text(encoding="utf-8").splitlines()
+        marked = [l for l in lines if l.startswith("*")]
+        assert marked, (
+            f"{files[-1].name} carries 0 marked paragraphs, so his asterisk "
+            f"convention reaches the morning report and not this file")
+        closes = [l for l in marked
+                  if l.rstrip().endswith("*") and len(l.strip()) > 1]
+        assert closes == [], (
+            f"{len(closes)} paragraph(s) also CLOSE with an asterisk. His "
+            f"amendment of 2026-11-08 is open-only: Read Aloud speaks every "
+            f"asterisk, so 2 per paragraph is twice the noise of 1.")
+        assert [l for l in lines if l.startswith("* ")] == [], (
+            "a line reads as a bullet, which Read Aloud speaks as 'asterisk'")
+        heads = [l for l in lines if re.match(r"^\*?DECISION \d+\.", l)]
+        assert [l for l in heads if l.startswith("*")] == [], (
+            "a decision heading carries the marker; his ruling governs "
+            "paragraphs, not headings")
+        foot = [l for l in lines if "Written under CDSFL note standard" in l]
+        assert foot, "the foot-line is missing"
+        assert not foot[0].startswith("*"), (
+            "the foot-line carries the marker; the note standard requires "
+            "that exact line as the final content")

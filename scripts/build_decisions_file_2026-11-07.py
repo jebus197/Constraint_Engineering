@@ -397,8 +397,25 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
         verdict=_rs["verdict"],
         verdict_caps=_rs["verdict"].rstrip(".").upper(),
         **{k: v for k, v in _rs.items() if k != "verdict"})
-    L = [head]
+    #: ★ THE HEADER IS SPLIT INTO LINES, AND `[head]` HID 4 OF MY PARAGRAPHS.
+    #: `L = [head]` put the whole multi-line header block in 1 list element,
+    #: so the marker's per-line paragraph walk saw it as a single line and the
+    #: first-non-blank-line exemption -- which exists to spare the TITLE --
+    #: swallowed the entire header. 4 of the 6 prose paragraphs in it went
+    #: unmarked, and the file still passed a "does it carry any marks at all"
+    #: check at 4 marks, which is why that check was not the one to trust.
+    #: Splitting here changes no output on the markdown path: the function
+    #: returns `"\n".join(L)`, so a list of lines and a list of 1 joined block
+    #: render identically. Asserted byte-identical on the unmarked path.
+    L = head.split("\n")
     A = L.append
+    #: ★ HEADING LINES, RECORDED WHERE THEY ARE EMITTED (B105, 2026-11-10).
+    #: His ruling of 2026-11-08 governs "the generated TTS files", plural, and
+    #: the marker had been built into `render_tts` in the morning-report
+    #: generator ONLY. This file writes 3 more spoken artefacts and applied
+    #: nothing, so 0 of this file's paragraphs carried the convention -- built
+    #: in 1 place and missing in another, which I nearly closed the entry on.
+    _hd: list = []
 
     # ---- THE INDEX. His words of 2026-11-06: no cap, but present things so a
     # quick coherent decision is possible. Length is permitted; an unordered
@@ -441,6 +458,7 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
     for i, r in enumerate(rows if detail else [], 1):
         hd = f"DECISION {i}. {r['heading']}"
         tag = f" `[{r['tid']}]`" if r.get("tid") else ""
+        _hd.append(len(L))
         A(hd if spoken else f"## {hd}{tag}")
         A("")
         if r["ruled"]:
@@ -494,9 +512,24 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
             f"copies of this file under experimental notes. Nothing is cut: this copy "
             f"is the index, so a ruling can be given without reading the rest.")))
         A("")
+    _hd.append(len(L))
     A("Written under CDSFL note standard v1.9 (1 November 2026)."
       if spoken else
       "Written under CDSFL note standard v1.9 (1 November 2026).")
+    #: ★ THE MARKER IS IMPORTED, NOT COPIED. `_mark_my_paragraphs` lives in
+    #: the morning-report generator, which this function already receives as
+    #: `mrb`. A second copy would be a 2nd definition of his convention and
+    #: this project has measured what copies cost: 16 of one helper, and a
+    #: crash no test reached. SPOKEN ONLY -- the markdown twin carries its own
+    #: emphasis and his amendment is about what Read Aloud says out loud.
+    if spoken:
+        _mark = getattr(mrb, "_mark_my_paragraphs", None)
+        if _mark is None:                      # LOUD, not silent
+            raise SystemExit(
+                "REFUSED: the morning-report generator no longer exposes "
+                "`_mark_my_paragraphs`, so his asterisk convention would be "
+                "silently absent from this spoken file. Repoint this call.")
+        _mark(L, [], _hd)
     return "\n".join(L) + "\n"
 
 
