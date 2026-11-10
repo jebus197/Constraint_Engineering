@@ -181,11 +181,19 @@ class TestTheRejectedDesignStaysRejected:
         #: the commit gate, so the queue shrank by exactly the 1 entry whose
         #: work landed. The cost bound B103 left to him did NOT leave the
         #: queue: it is B81 and is still counted.
-        assert n == 12, (
-            f"the queue is {n}; it was 12 later on 2026-11-09, 13 earlier the "
-            f"same day, 29 on 2026-11-07, and 36 under the rejected fail-open "
-            f"design. If this moved for a real reason, re-run the producer and "
-            f"update this pin WITH its reason.")
+        #: ★ 12 -> 10, RE-PINNED LATE ON 2026-11-09 WITH ITS REASON. 4 more
+        #: entries were closed that night on rulings he had already given:
+        #: B107 and B123 on his "I accept your recommendation" of 2026-11-08,
+        #: B134 once his subagent cap of 6 was stated as a number in both
+        #: instruction files, and B128 once a refused commit recorded WHY it
+        #: refused, which was the caveat attached to his acceptance. B21 and
+        #: C0001 and B111 also closed on his rulings of 2026-11-09 but were
+        #: already outside this queue.
+        assert n == 10, (
+            f"the queue is {n}; it was 10 late on 2026-11-09, 12 earlier that "
+            f"day, 13 earlier still, 29 on 2026-11-07, and 36 under the "
+            f"rejected fail-open design. If this moved for a real reason, "
+            f"re-run the producer and update this pin WITH its reason.")
 
 
 class TestTheProducerAnswersHisQuestion:
@@ -195,8 +203,13 @@ class TestTheProducerAnswersHisQuestion:
         assert r.returncode == 0, r.stdout[-3000:]
         out = r.stdout
         #: 13 -> 12 for the same reason as the queue pin above: B103 closed.
-        assert "NOT NEW:     12 of 12" in out, out[-2000:]
-        assert "NOT REPEATS: 0 of 12" in out, out[-2000:]
+        #: ★ 12 -> 10 LATE ON 2026-11-09: 4 further entries closed on rulings
+        #: he had already given -- B107 and B123 on his "I accept your
+        #: recommendation" of 2026-11-08, B134 once his subagent cap of 6 was
+        #: stated as a number in both instruction files, and B128 once a
+        #: refused commit recorded WHY, which was the caveat on his acceptance.
+        assert "NOT NEW:     10 of 10" in out, out[-2000:]
+        assert "NOT REPEATS: 0 of 10" in out, out[-2000:]
         #: ★ THE PROPERTY, NOT THE ENTRY. This named B20, and B20 was DEFERRED
         #: on his ruling of 2026-11-09, so the live-again entry became B13 and
         #: the assertion failed for a reason that had nothing to do with the
@@ -234,19 +247,40 @@ class TestTheProducerAnswersHisQuestion:
         #: reasonably think it had returned, so the TOTAL is pinned beside it
         #: and the real guard against the regression stays the assertion above
         #: that the prefixed key is absent from the source.
-        assert "'REPEAT': 10" in r.stdout, (
-            "the partition moved; it was 10 of 26 on 2026-11-09 and 7 of 41 on "
-            "2026-11-07. Re-run the producer and re-pin WITH the reason.")
-        _tot = sum(int(x) for x in __import__("re").findall(
-            r"'(?:LIVE-AGAIN|REPEAT|REAL)': (\d+)", r.stdout)[:3])
+        #: ★ RE-PINNED AND RE-AIMED LATE ON 2026-11-09, AND THE RE-AIMING IS
+        #: THE PART WORTH READING. The old form matched the FIRST 3 numbers in
+        #: the output, which straddled 2 different partitions: the queue's own
+        #: `{'REAL': 10}` and the WRONG-SPELLING control's `{'REPEAT': 6,
+        #: 'REAL': 11}`. Their sum was a figure describing nothing. It now reads
+        #: the CORRECT partition line by name, so the pin measures 1 quantity.
+        #: BOTH producers print the correct partition, in different words:
+        #: one as "with the bare ident (correct) : {...}", the other as
+        #: "partition: {...}". Matching 1 wording made this test fail on the
+        #: producer it is actually about, which is the wrong-tool failure this
+        #: file exists to catch, committed inside the file that catches it.
+        _line = next(l for l in r.stdout.splitlines()
+                     if "with the bare ident (correct)" in l or "partition:" in l)
+        _part = __import__("ast").literal_eval(
+            _line[_line.index("{"):_line.rindex("}") + 1])
+        #: ★ REPEAT 10 -> 5 AND THE TOTAL 25 -> 17, because 11 more entries
+        #: closed on 2026-11-09 on rulings he had already given: N1 to N5, then
+        #: C0001, B111 and B21 on his rulings of that evening, then B107, B123,
+        #: B134 and B128 on his "I accept your recommendation" of 2026-11-08.
+        #: A smaller queue, not a miscount -- which is exactly the distinction
+        #: the denominator was pinned beside the count to preserve.
+        assert _part.get("REPEAT") == 5, (
+            f"the partition moved: REPEAT is {_part.get('REPEAT')}, pinned at 5 "
+            f"late on 2026-11-09 (10 earlier that day, 7 on 2026-11-07). "
+            f"Re-run the producer and re-pin WITH the reason.")
+        _tot = sum(int(v) for v in _part.values())
         #: ★ 26 -> 25, AND THIS PIN HAS NOW EARNED ITS KEEP. Closing B103
         #: moved the TOTAL while leaving `'REPEAT': 10` exactly where it was,
         #: which is precisely the case the comment above anticipated: the
         #: repeat count alone cannot distinguish a miscount from a smaller
         #: queue, and only the denominator separates them.
-        assert _tot == 25, (
-            f"the partition totals {_tot}, not the 25 pinned later on "
-            f"2026-11-09 (26 earlier the same day, 41 on 2026-11-07). The "
-            f"repeat COUNT alone cannot be read without it: 10 of 41 was the "
-            f"miscount this test exists to catch, and 10 of 25 is a "
-            f"legitimately smaller queue.")
+        assert _tot == 17, (
+            f"the partition totals {_tot}, not the 17 pinned late on "
+            f"2026-11-09 (25 earlier that day, 26 before that, 41 on "
+            f"2026-11-07). The repeat COUNT alone cannot be read without it: "
+            f"10 of 41 was the miscount this test exists to catch, and 5 of 17 "
+            f"is a legitimately smaller queue.")

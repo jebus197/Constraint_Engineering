@@ -111,6 +111,11 @@ def task_items() -> list[dict]:
             # ★ CARRIED SO A RULING CANNOT BE RE-ASKED (2026-10-16). See the
             # routing at the assembly below.
             "ruled": r.ruled,
+            # ★ N1, 2026-11-09. THE DATE HE REPLIED, which is not the date
+            # he settled it. `ruled` routes an entry to `no_ruling_needed`;
+            # `responded` must never do that, so it is carried for RENDERING
+            # only and no predicate below reads it.
+            "responded": r.responded,
             "headline": _first_sentence(r.text),
         })
     return out

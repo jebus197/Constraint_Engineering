@@ -443,7 +443,14 @@ class TestTheRemedyForADriftedCitation:
         the input the test has to use.
         """
         m = self._mod()
-        true_round, true_phase = 21513, 21583
+        #: ★ 21513, 21583 -> 21613, 21683 ON 2026-11-09. B21 step 1 added a
+        #: 100-line policy block to bench/reference_runner_v3.py ABOVE these
+        #: 2 sites, so both shifted by exactly 100. The repointer reported
+        #: "distinct deltas: [100] -- a clean block shift, nothing moved
+        #: WITHIN the block", which is the condition under which a repoint
+        #: is a renumbering rather than a change of meaning. The substrings
+        #: are unchanged and the sibling test resolves them live.
+        true_round, true_phase = 21613, 21683
         stale_round, stale_phase = true_round - 159, true_phase - 159
         synthetic = (
             'CITATIONS = {\n'

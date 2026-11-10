@@ -66,12 +66,21 @@ def case_nested_vs_flat():
     """The authored detail is keyed FLAT as `task:C0001`, not nested under `task`."""
     d = json.loads((REPO / "experimental_notes" / "data"
                     / "morning_report_decisions.json").read_text(encoding="utf-8"))
-    wrong = (d.get("task") or {}).get("C0001")
-    right = d.get("task:C0001")
+    #: ★ THE SUBJECT IS CHOSEN LIVE, 2026-11-09, AND THE REASON IS ITSELF AN
+    #: INSTANCE OF THIS FILE'S OWN LESSON. The case hardcoded `C0001`. That
+    #: entry was CLOSED on his ruling of 2026-11-09 and its authored detail was
+    #: removed, so both lookups began returning nothing and the contrast the
+    #: case exists to demonstrate quietly vanished -- the probe outliving its
+    #: subject, which is exactly the shape catalogued here. It now takes the
+    #: first live `task:` key, so closing any single entry cannot blind it.
+    _ident = next((k.split(":", 1)[1] for k in sorted(d)
+                   if k.startswith("task:")), None)
+    wrong = (d.get("task") or {}).get(_ident) if _ident else None
+    right = d.get(f"task:{_ident}") if _ident else None
     return ("a nested lookup on a flat mapping",
-            "d['task']['C0001']  -> None (and 'task' is not even a key)",
-            f"d['task:C0001']     -> a dict of {len(right)} fields"
-            if right else "d['task:C0001'] -> MISSING",
+            f"d['task']['{_ident}']  -> None (and 'task' is not even a key)",
+            f"d['task:{_ident}']     -> a dict of {len(right)} fields"
+            if right else f"d['task:{_ident}'] -> MISSING",
             wrong is None and bool(right),
             "produced the claim that the entry has no authored detail at all, "
             "and from it a claim that his report mis-classifies it; both false")

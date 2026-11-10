@@ -18183,12 +18183,112 @@ def preflight_target_machinery(cfg, target_path, target_kind: str) -> list:
     return refusals
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# B21 STEPS 1 AND 4: THE 4-LAYER POLICY ENGINE, REACHED FROM THE CANONICAL
+# RUNNER. His ruling, 2026-11-09: "on B21, my ruling is build it and implement
+# it, on steps through 1 to 5 in full."
+#
+# WHAT WAS TRUE BEFORE. `bench/cdsfl_registry/registry.py` has been a 4-layer
+# merge engine with monotonicity enforcement since long before this, and the
+# canonical runner made 0 direct calls to it. It WAS reached indirectly --
+# `compose()` imports the registry and `load_effective_policy` is called once
+# per compose, measured 2026-11-02 by instrumenting the function itself -- but
+# the runner could not see the merged policy, so every per-model decision in
+# the runner read its own dictionary instead.
+#
+# WHAT THESE 2 FUNCTIONS ADD. `effective_policy()` gives the runner the merged
+# policy for a (domain, task, model, role) and caches it. `policy_preflight()`
+# validates EVERY layer and resolves EVERY seat's policy BEFORE the first
+# dispatch, reporting all failures at once rather than dying on the first.
+#
+# WHY IT SITS ABOVE THE SPEND GATE. The connectivity probe below is itself a
+# paid call on every paid route. A policy error is free to detect and must not
+# be discovered after money has been spent.
+#
+# MEASURED BEFORE WIRING THE REFUSAL, because a gate that refuses work that
+# currently succeeds is a regression dressed as a safeguard: `validate_all_policies()`
+# returns 20 layers with 0 not ok, and all 13 entries of COMPOSER_MODEL_MAP
+# resolve, 0 of 13 failing, Wilson [0.000000, 0.228095], Clopper-Pearson
+# [0.000000, 0.247053]. So this refuses nothing that works today.
+_EFFECTIVE_POLICY_CACHE: dict[tuple, dict] = {}
+
+
+def effective_policy(domain: str, model: str | None = None,
+                     role: str | None = None, task_id: str | None = None) -> dict:
+    """The merged 4-layer policy for this run, cached per distinct key."""
+    key = (domain, task_id, model, role)
+    if key not in _EFFECTIVE_POLICY_CACHE:
+        from bench.cdsfl_registry.registry import load_effective_policy
+        _EFFECTIVE_POLICY_CACHE[key] = load_effective_policy(
+            domain=domain, task_id=task_id, model=model, role=role)
+    return _EFFECTIVE_POLICY_CACHE[key]
+
+
+def policy_preflight(cfg, exp_config) -> bool:
+    """Refuse the run if any policy layer is invalid or any seat cannot resolve.
+
+    REPORTS EVERY FAILURE AT ONCE, which is the whole point CC2 made: dying on
+    the first missing registration means a researcher fixes 1, re-runs, and
+    meets the next. Returns True when the run may proceed.
+    """
+    from bench.cdsfl_registry import registry as _reg
+    problems: list[str] = []
+    try:
+        verdicts = _reg.validate_all_policies()
+    except Exception as exc:                                       # noqa: BLE001
+        _log(f"  POLICY PREFLIGHT: the validator itself failed "
+             f"({type(exc).__name__}: {exc}); refusing rather than dispatching "
+             f"on an unchecked registry.")
+        return False
+    for layer, verdict in sorted(verdicts.items()):
+        if verdict != "ok":
+            problems.append(f"layer {layer}: {verdict}")
+    _log(f"  policy layers validated: {len(verdicts)}, "
+         f"{len(verdicts) - len(problems)} ok")
+
+    domain = getattr(cfg, "domain", None) or "cross_domain"
+    seats = set(getattr(cfg, "models", []) or [])
+    resolved = 0
+    for mc in getattr(exp_config, "models", []):
+        label = getattr(mc, "label", "")
+        if label not in seats:
+            continue
+        # ★ NOT A BARE `.get()`. An identity absent from the table must be
+        # LOUD, which is C18 and is asserted by
+        # bench/tests/test_an_absent_identity_is_loud_2026-10-18.py. The first
+        # version of this preflight used `COMPOSER_MODEL_MAP.get(label, label)`
+        # and so resolved a misspelled seat silently to its own label -- in a
+        # function whose entire purpose is to make a missing registration loud.
+        target = _cap_identity.resolve_or_alarm(
+            COMPOSER_MODEL_MAP, label, "policy preflight model mapping",
+            default=label, log=_log)
+        try:
+            effective_policy(domain=domain, model=target)
+            resolved += 1
+        except Exception as exc:                                   # noqa: BLE001
+            problems.append(
+                f"seat {label!r} -> model config {target!r}: "
+                f"{type(exc).__name__}: {exc}")
+    _log(f"  seat policies resolved: {resolved} of {len(seats)}")
+
+    if problems:
+        _log("  POLICY PREFLIGHT REFUSED. Every problem, not just the first:")
+        for pr in problems:
+            _log(f"    - {pr}")
+        return False
+    return True
+
+
 def run_preflight(
     exp_config: ExperimentConfig, cdsfl_text: str, cfg: RunnerConfig,
 ) -> bool:
     _log("=" * 60)
     _log("PREFLIGHT: Testing model connectivity")
     _log("=" * 60)
+    # B21 step 4: the policy preflight runs FIRST, because it is free and the
+    # probe below is a paid call on every paid route.
+    if not policy_preflight(cfg, exp_config):
+        return False
     # SPEND GATE, BEFORE THE FIRST DISPATCH (founder, 2026-09-20, item 2 of 3).
     # The connectivity probe below is itself a paid call on every paid route, so
     # the suite check has to sit above it rather than beside it. Shared with the

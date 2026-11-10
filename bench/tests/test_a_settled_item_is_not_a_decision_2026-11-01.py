@@ -83,9 +83,29 @@ class TestInflationIsGone:
         """LIVE CASE: 4 entries declare they await the scope decision."""
         rows = prod.classify()
         dependants = [r["ident"] for r in rows if r["kind"] == "DEPENDENT"]
-        assert dependants, (
-            "no entry currently declares a dependency, so this test is "
-            "vacuous — do not let it pass on an absence")
+        if not dependants:
+            #: ★ THE LIVE SET EMPTIED ON 2026-11-09 AND THE BRANCH IS DRIVEN
+            #: INSTEAD. The 4 entries that declared they await the shared scope
+            #: decision were closed or settled that night, so the live scan has
+            #: nothing to classify. Its own message forbids passing on that
+            #: absence, so the DEPENDENT branch is exercised with a CONSTRUCTED
+            #: case -- which is exactly how `classify_text`'s docstring says
+            #: this branch must be driven, because on live data it has never
+            #: decided anything: all 4 dependants also carried no asking
+            #: sentence and so fell to MINE whether the branch existed or not.
+            d = prod.classify_text(
+                "OPEN", None,
+                "This repair AWAITS THE SHARED SCOPE DECISION AT B61 and "
+                "raises nothing of its own.")
+            assert d["kind"] == "DEPENDENT", (
+                f"the DEPENDENT branch no longer fires on a text that declares "
+                f"a dependency; it returned {d['kind']!r}, so the detector has "
+                f"stopped working rather than the live set merely emptying")
+            assert d["parent"] == "B61", d
+            #: and the other direction, so it is not answering DEPENDENT to all
+            plain = prod.classify_text("OPEN", None, "An ordinary repair.")
+            assert plain["kind"] != "DEPENDENT", plain
+            return
         leaked = [d for d in dependants if d in decided]
         assert not leaked, (
             f"{leaked} wait on another entry's decision by their own text and "
@@ -113,11 +133,32 @@ class TestInflationIsGone:
         # other work. If it ever does, repoint this at another entry with an
         # open ticket rather than deleting the assertion: without it the test
         # passes by refusing everything.
-        open_settled, why_open = gen.settled_in_the_register("C0001")
+        # ★ AND REPOINTED AGAIN 2026-11-09, THIS TIME BY SEARCH RATHER THAN BY
+        # NAME. C0001 was CLOSED that night on his ruling, so the control went
+        # stale for the 3rd time -- B61, then C0001. A control that names its
+        # subject will keep going stale every time that subject is settled,
+        # which is the "pin a set, not a count" rule applied to a fixture. It
+        # now takes whichever live entry currently has an open register ticket,
+        # and says so loudly if none does.
+        import sys as _s, pathlib as _p
+        _s.path.insert(0, str(_p.Path(__file__).resolve().parents[2] / "scripts"))
+        from task_list_markers import parse_entries as _pe2       # noqa: E402
+        _subject = None
+        for _e in _pe2():
+            if _e.state in ("DONE", "WITHDRAWN"):
+                continue
+            _st, _ = gen.settled_in_the_register(_e.ident)
+            if not _st:
+                _subject = _e.ident
+                break
+        assert _subject, (
+            "every live entry is now settled in the register, so this control "
+            "cannot control: the assertion would pass by refusing everything. "
+            "That state is worth seeing rather than skipping past.")
+        open_settled, why_open = gen.settled_in_the_register(_subject)
         assert not open_settled, (
-            f"C0001 is now settled in the register ({why_open}), so this "
-            f"control no longer controls; repoint it at an entry with an open "
-            f"ticket")
+            f"{_subject} reports settled ({why_open}) immediately after being "
+            f"selected as unsettled, so the predicate is not deterministic")
 
     def test_the_register_filter_IS_WIRED_not_merely_defined(self, gen, monkeypatch):
         """THE WIRING, WHICH NO LIVE MUTATION CAN REACH. `settled_in_the_register`
@@ -161,11 +202,89 @@ class TestInflationIsGone:
 
 class TestSuppressionIsGone:
     def test_a_ruling_older_than_its_questions_does_not_silence_them(self, gen, decided):
-        """LIVE CASE: the role-layer entry, ruled 2026-10-17, asking since."""
-        assert gen.asks_newer_than_the_ruling("B21", "2026-10-17")
-        assert "B21" in decided, (
-            "the role-layer entry carries 4 questions raised after its ruling "
-            "and has left the decision list again")
+        """An entry whose questions POSTDATE its ruling must stay in the list.
+
+        ★ THE SUBJECT IS FOUND, NOT NAMED, 2026-11-09. This test pinned B21 and
+        the literal date 2026-10-17. On 2026-11-09 he ruled on B21 again --
+        "build it and implement it, on steps through 1 to 5 in full" -- and that
+        ruling POSTDATES all 4 of the questions the entry had accumulated:
+        `asks_newer_than_the_ruling("B21", "2026-11-09")` is False where the
+        same call against 2026-10-17 and 2026-11-08 is True. So B21 left the
+        decision list for the RIGHT reason and this test failed for the wrong
+        one, accusing a correct closure of being a suppression.
+
+        IT IS NOT WEAKENED. The property is the same and it is now checked on
+        whichever entry currently exhibits it, so a real suppression anywhere
+        still fails here. IT CANNOT PASS ON AN ABSENCE: if no live entry has
+        questions newer than its ruling, the test says so and fails, exactly as
+        its sibling `test_a_dependant_is_not_presented_as_a_decision` does.
+        """
+        import sys as _sys, pathlib as _pl
+        _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / "scripts"))
+        from task_list_markers import parse_entries as _pe   # noqa: E402
+        #: DEFERRED is excluded with DONE and WITHDRAWN, and the reason is his
+        #: own act: a deferral is HIM parking the entry, so leaving the decision
+        #: list is the intended effect rather than a suppression. The sibling
+        #: test_an_entry_he_deferred_is_never_a_decision asserts that directly.
+        #: Without this the first run of the rewritten test accused B13, which
+        #: he deferred himself.
+        bearers = [e.ident for e in _pe()
+                   if e.state not in ("DONE", "WITHDRAWN", "DEFERRED") and e.ruled
+                   and gen.asks_newer_than_the_ruling(e.ident, e.ruled)]
+        if not bearers:
+            #: ★ THE LIVE SET IS EMPTY AS OF 2026-11-09, AND THAT IS RECORDED
+            #: RATHER THAN SILENTLY ACCEPTED. Every entry that carried a
+            #: question postdating its own ruling was either closed that night
+            #: or ruled on again: B21 on his "build it and implement it, on
+            #: steps through 1 to 5 in full", and B13 is DEFERRED by him and so
+            #: excluded above. An empty live set makes the scan above vacuous,
+            #: so the DETECTOR is driven instead and must still discriminate.
+            #: Without this branch the test would pass on an absence, which is
+            #: exactly what its own message forbade.
+            live = [e for e in _pe()
+                    if e.state not in ("DONE", "WITHDRAWN", "DEFERRED")]
+            assert live, "no live entry at all, so nothing can be checked"
+            #: THE PROBE MUST BE ABLE TO ANSWER. `live[0]` was B22, which
+            #: carries no DATED ask at all, so the detector correctly returned
+            #: False for 1970 and the probe accused it of being broken. An
+            #: entry is a usable probe only if something in it is dated.
+            probe = next((e.ident for e in live
+                          if gen.asks_newer_than_the_ruling(e.ident, "1970-01-01")),
+                         None)
+            assert probe, (
+                "no live entry carries a DATED ask, so the detector cannot be "
+                "driven at all. That is itself worth seeing: either every live "
+                "entry has stopped asking anything, or the date parser has.")
+            assert not gen.asks_newer_than_the_ruling(probe, "2099-01-01"), (
+                f"the detector reports an ask in {probe} newer than 2099, so it "
+                f"is answering True regardless of the date")
+            #: ★ AND THE ROUTING PREDICATE ITSELF, because the branch above only
+            #: proves the ASK DETECTOR works. Mutation-tested 2026-11-10: with
+            #: only the 2 assertions above, forcing `ruling_is_spent` to return
+            #: False for everything -- which routes every entry to
+            #: `no_ruling_needed` and suppresses the whole decision list -- left
+            #: this file GREEN. That is a guard weakened to go green, which is
+            #: exactly what the FFAFP gate asks to be distinguished from a
+            #: predicate defect. The empty live set removes the subject, not the
+            #: obligation, so the predicate is driven directly instead.
+            spent_when_old = gen.ruling_is_spent(probe, "1970-01-01", "OPEN")
+            spent_when_new = gen.ruling_is_spent(probe, "2099-01-01", "OPEN")
+            assert spent_when_old, (
+                f"{probe} has asks newer than 1970 and `ruling_is_spent` says "
+                f"the ruling still settles it, so every such entry would be "
+                f"routed out of the decision list -- the suppression this test "
+                f"exists to catch")
+            assert not spent_when_new, (
+                f"`ruling_is_spent` reports a 2099 ruling as spent for {probe}, "
+                f"so it is answering the same way regardless of the date and "
+                f"the inflation direction would return")
+            return
+        missing = [b for b in bearers if b not in decided]
+        assert not missing, (
+            f"these entries carry questions raised AFTER their own ruling and "
+            f"have left the decision list, which is the suppression direction "
+            f"the project names as the worse one: {missing}. This test was "
+            f"pinned to B21 until 2026-11-09; it now finds its own subject.")
 
     def test_a_ruling_with_nothing_newer_still_silences(self, gen):
         """THE OTHER DIRECTION, without which the fix above would reintroduce

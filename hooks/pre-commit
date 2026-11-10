@@ -13,6 +13,13 @@ CDSFL_HOOK_T0=$(date +%s)
 # mechanism nothing reached, which is the failure the additive standard names.
 # Later cleanup registers into CDSFL_EXIT_EXTRA instead of taking the trap.
 CDSFL_EXIT_EXTRA=""
+# ★ B128, 2026-11-09, on his ruling: "we must be able to know why a commit
+# was refused, so it can be repaired." The ledger recorded the duration and
+# the exit code but NOT the cause, so a refusal in the history was a fact
+# with no reason attached. Each refusal point now names itself here and the
+# exit handler writes it. Empty on a clean exit, and an unnamed refusal
+# records the empty string rather than failing -- this may never cost a commit.
+CDSFL_REFUSAL=""
 _cdsfl_on_exit() {
     _rc=$?
     if [ -n "$CDSFL_EXIT_EXTRA" ]; then
@@ -48,10 +55,11 @@ _cdsfl_on_exit() {
         # IT CAN NEVER FAIL A COMMIT. Every command here is redirected and the
         # block returns nothing; an unwritable spool costs a line of history
         # and not a commit.
-        printf '{"at":"%s","seconds":%s,"exit":%s,"head":"%s"}\n' \
+        printf '{"at":"%s","seconds":%s,"exit":%s,"head":"%s","why":"%s"}\n' \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
             "$_cdsfl_secs" "$_rc" \
             "$(git rev-parse --short HEAD 2>/dev/null)" \
+            "${CDSFL_REFUSAL:-}" \
             >> .cdsfl_tmp/precommit_durations.jsonl 2>/dev/null
     fi
     return $_rc
@@ -100,6 +108,7 @@ set -u
 
 REPO=$(git rev-parse --show-toplevel 2>/dev/null) || {
     echo "pre-commit: cannot find the repository root. Refusing." >&2
+    CDSFL_REFUSAL="repo-root-not-found"
     exit 1
 }
 cd "$REPO" || exit 1
@@ -604,6 +613,7 @@ if [ ! -f "$RESTAGE_LIB" ]; then
     echo "            is broken while this tree looks clean. That is the defect" >&2
     echo "            measured on 2026-09-11 (3 failures in a fresh clone, 0" >&2
     echo "            here). Refusing rather than reintroducing it silently." >&2
+    CDSFL_REFUSAL="stage0-restage-helper-missing"
     exit 1
 fi
 . "$RESTAGE_LIB"
@@ -698,83 +708,38 @@ done
 if [ -n "$MISSING" ]; then
     echo "pre-commit: guard file(s) missing:$MISSING" >&2
     echo "pre-commit: refusing rather than passing on an absent check." >&2
+    CDSFL_REFUSAL="guard-file-missing"
     exit 1
 fi
 
 command -v python3 >/dev/null 2>&1 || {
     echo "pre-commit: python3 not on PATH, so the guards cannot run. Refusing." >&2
     echo "pre-commit: bypass deliberately with: git commit --no-verify" >&2
+    CDSFL_REFUSAL="python3-not-on-path"
     exit 1
 }
 
-OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1)
-CODE=$?
-if [ "$CODE" -ne 0 ]; then
-    echo "" >&2
-    echo "pre-commit: REFUSED. The cheap guards are red." >&2
-    echo "" >&2
-    # THE FAILURE, NOT THE LAST 25 LINES. This printed `tail -25`, and on this
-    # machine pytest's last 25 lines are TMPDIR cleanup warnings from unrelated
-    # tests -- 25 lines of `rm_rf` noise and 0 lines naming what broke. Twice in
-    # one session the real cause had to be found by re-running the guards by
-    # hand, which is the hook costing time instead of saving it. The FAILED and
-    # ERROR lines and the assertion text come first; the tail is kept as a
-    # fallback for a failure that produces neither.
-    # ★ THE NAMES ARE PRINTED SEPARATELY FROM THE DETAIL, AND UNCAPPED, 2026-11-09.
-    # This was 1 grep for '^(FAILED|ERROR)|^E  ' piped through `head -20`, and
-    # that cap structurally dropped the thing a reader needs most. pytest emits
-    # `E  ` traceback lines FIRST and its `FAILED` short summary LAST, so on a
-    # board with more than about 2 failures the 20 lines were consumed entirely
-    # by tracebacks and NOT ONE failing test was named. Measured on 2026-11-09:
-    # a refusal reporting `9 failed` named 0 of the 9, and the other 7 had to be
-    # hunted by re-running guards by hand -- which is the same cost this block's
-    # own comment below was written to prevent, recurring because the fix capped
-    # a stream it did not order. 2 greps: every name, then bounded detail.
-    _NAMES=$(printf '%s\n' "$OUT" | grep -E '^(FAILED|ERROR)')
-    _DETAIL=$(printf '%s\n' "$OUT" | grep -E '^E  ' | head -20)
-    if [ -n "$_NAMES" ] || [ -n "$_DETAIL" ]; then
-        if [ -n "$_NAMES" ]; then printf '%s\n' "$_NAMES" >&2; echo "" >&2; fi
-        if [ -n "$_DETAIL" ]; then printf '%s\n' "$_DETAIL" >&2; fi
-        printf '%s\n' "$OUT" | grep -E '^[0-9]+ (passed|failed)|failed,' | tail -1 >&2
-    else
-        printf '%s\n' "$OUT" | tail -25 >&2
-    fi
-    echo "" >&2
-    echo "pre-commit: the usual cause is a memory file written without running sv," >&2
-    echo "            which DERIVES the file ledger. Try:" >&2
-    echo "              python3 -c \"import sys,pathlib; sys.path.insert(0,'scripts'); import cdsfl_sv as sv; sv._update_memory_exclusions_ledger(pathlib.Path('.').resolve())\"" >&2
-    echo "" >&2
-    echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
-    exit 1
-fi
-
-printf '%s\n' "$OUT" | tail -1
-
-# ── THE BOARD'S SCOPE TRAVELS WITH THE BOARD'S FIGURE ────────────────────────
+# ★ N4, 2026-11-09. HOISTED ABOVE THE BOARD. This block used to run AFTER
+# the 235-guard board, so a commit refused by a 1-second lint first paid for a
+# board whose mean cost is 1615.30 s over 10 recorded runs. All the cheap
+# checks together are bounded at 27.66 s, which is 0.0172 of a refused board,
+# a ratio of 217.0651; the ledger records 54.2 minutes already spent that way.
 #
-# Added 2026-11-04 because the line above was read as the suite and reported to
-# the founder as a fully green board, in answer to his explicit instruction not
-# to cut corners to make it green. It is the GUARDS list only. Measured the same
-# day by `scripts/the_gate_board_is_not_the_suite_2026-11-04.py`: 2,540 of 15,431
-# collected tests AS AT 2026-11-04 08:30 GMT, a share of 0.164604, so 12,891 tests
-# are never run here and a regression outside the list can sit unnoticed. One had
-# -- red for 26 commits. THE PAIR IS A SNAPSHOT AND MOVES WHENEVER A TEST IS ADDED:
-# it read 2,532 of 15,423 two hours earlier. Quote it only with its stamp, or run
-# the producer. The FILE share below is computed live and needs no stamp.
+# WHY HERE AND NOWHERE ELSE, and both constraints were checked by execution:
+#   (1) It must stay AFTER stage 0, which writes and stages files inside this
+#       block's own glob -- an in-run data dependency, not a style choice.
+#   (2) It may not go INSIDE the stage-0 window, because
+#       bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py slices
+#       `# STAGE 0 --` to `MISSING=""` and asserts that slice holds exactly 1
+#       `exit 1`; this block holds 3.
+#   (3) It must stay AFTER the python3-availability check above, which it now
+#       immediately follows.
+# That leaves exactly 1 legal position, and this is it. The block is MOVED,
+# not changed: 0 of its lines were edited.
 #
-# This is the `feedback_true_sentence_wrong_frame` shape for the 2nd time: an
-# earlier report of "2,333 passed" was 120 files of 759. A figure whose scope is
-# not attached to it WILL be requoted without the scope, so the scope is printed
-# here, beside the number, where a reader cannot separate them.
-#
-# IT COUNTS FILES, NOT TESTS, DELIBERATELY. A test-count share needs a full
-# collection, which measured 8.45 s -- a cost on every commit, to restate a
-# figure whose producer is named below. The file share is a glob and is free.
-_GUARD_FILES=$(printf '%s\n' "$GUARDS" | grep -c '[^[:space:]]')
-_SUITE_FILES=$(ls bench/tests/test_*.py 2>/dev/null | wc -l | tr -d ' ')
-echo "pre-commit: that board is the gate's ${_GUARD_FILES} guard files of ${_SUITE_FILES} in bench/tests/ -- NOT the suite."
-echo "            For the test-count share: python3 scripts/the_gate_board_is_not_the_suite_2026-11-04.py"
-
+# NO DEPENDENCY ON THE BOARD, verified rather than assumed: the only names it
+# reads and does not set are `_rc` (its own helper), `f` (its own loop) and
+# `LINT_CODE`, which occurs solely inside a comment.
 # ── 5th guard: LINT THE NOTES BEING COMMITTED ────────────────────────────────
 #
 # WHY, and it is the founder's own ruling rather than an idea. On 2026-09-04 he
@@ -828,6 +793,7 @@ if [ -n "$STAGED_NOTES" ]; then
     if [ ! -f scripts/note_vagueness_lint.py ]; then
         echo "pre-commit: the note linter is missing. Refusing rather than" >&2
         echo "            passing on an absent check." >&2
+        CDSFL_REFUSAL="note-linter-missing"
         exit 1
     fi
     # A RATCHET, NOT A BAR. Refuse only findings the commit INTRODUCES.
@@ -931,6 +897,7 @@ if [ -n "$STAGED_NOTES" ]; then
         echo "pre-commit: REFUSED. The note linter exited non-zero on:$LINT_BROKE" >&2
         echo "pre-commit: a count read off a failed run is not a count." >&2
         echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
+        CDSFL_REFUSAL="note-linter-errored"
         exit 1
     fi
 
@@ -942,9 +909,80 @@ if [ -n "$STAGED_NOTES" ]; then
         echo "            one note may not smuggle a new violation into another." >&2
         echo "pre-commit: founder ruling 2026-09-04 makes these blocking, not advisory." >&2
         echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
+        CDSFL_REFUSAL="note-lint-ratchet-worsened"
         exit 1
     fi
     echo "pre-commit: note lint ratchet held ($BEFORE_TOTAL at HEAD, $AFTER_TOTAL as staged)."
 fi
+
+
+OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1)
+CODE=$?
+if [ "$CODE" -ne 0 ]; then
+    echo "" >&2
+    echo "pre-commit: REFUSED. The cheap guards are red." >&2
+    echo "" >&2
+    # THE FAILURE, NOT THE LAST 25 LINES. This printed `tail -25`, and on this
+    # machine pytest's last 25 lines are TMPDIR cleanup warnings from unrelated
+    # tests -- 25 lines of `rm_rf` noise and 0 lines naming what broke. Twice in
+    # one session the real cause had to be found by re-running the guards by
+    # hand, which is the hook costing time instead of saving it. The FAILED and
+    # ERROR lines and the assertion text come first; the tail is kept as a
+    # fallback for a failure that produces neither.
+    # ★ THE NAMES ARE PRINTED SEPARATELY FROM THE DETAIL, AND UNCAPPED, 2026-11-09.
+    # This was 1 grep for '^(FAILED|ERROR)|^E  ' piped through `head -20`, and
+    # that cap structurally dropped the thing a reader needs most. pytest emits
+    # `E  ` traceback lines FIRST and its `FAILED` short summary LAST, so on a
+    # board with more than about 2 failures the 20 lines were consumed entirely
+    # by tracebacks and NOT ONE failing test was named. Measured on 2026-11-09:
+    # a refusal reporting `9 failed` named 0 of the 9, and the other 7 had to be
+    # hunted by re-running guards by hand -- which is the same cost this block's
+    # own comment below was written to prevent, recurring because the fix capped
+    # a stream it did not order. 2 greps: every name, then bounded detail.
+    _NAMES=$(printf '%s\n' "$OUT" | grep -E '^(FAILED|ERROR)')
+    _DETAIL=$(printf '%s\n' "$OUT" | grep -E '^E  ' | head -20)
+    if [ -n "$_NAMES" ] || [ -n "$_DETAIL" ]; then
+        if [ -n "$_NAMES" ]; then printf '%s\n' "$_NAMES" >&2; echo "" >&2; fi
+        if [ -n "$_DETAIL" ]; then printf '%s\n' "$_DETAIL" >&2; fi
+        printf '%s\n' "$OUT" | grep -E '^[0-9]+ (passed|failed)|failed,' | tail -1 >&2
+    else
+        printf '%s\n' "$OUT" | tail -25 >&2
+    fi
+    echo "" >&2
+    echo "pre-commit: the usual cause is a memory file written without running sv," >&2
+    echo "            which DERIVES the file ledger. Try:" >&2
+    echo "              python3 -c \"import sys,pathlib; sys.path.insert(0,'scripts'); import cdsfl_sv as sv; sv._update_memory_exclusions_ledger(pathlib.Path('.').resolve())\"" >&2
+    echo "" >&2
+    echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
+    CDSFL_REFUSAL="desktop-mirror-drifted"
+    exit 1
+fi
+
+printf '%s\n' "$OUT" | tail -1
+
+# ── THE BOARD'S SCOPE TRAVELS WITH THE BOARD'S FIGURE ────────────────────────
+#
+# Added 2026-11-04 because the line above was read as the suite and reported to
+# the founder as a fully green board, in answer to his explicit instruction not
+# to cut corners to make it green. It is the GUARDS list only. Measured the same
+# day by `scripts/the_gate_board_is_not_the_suite_2026-11-04.py`: 2,540 of 15,431
+# collected tests AS AT 2026-11-04 08:30 GMT, a share of 0.164604, so 12,891 tests
+# are never run here and a regression outside the list can sit unnoticed. One had
+# -- red for 26 commits. THE PAIR IS A SNAPSHOT AND MOVES WHENEVER A TEST IS ADDED:
+# it read 2,532 of 15,423 two hours earlier. Quote it only with its stamp, or run
+# the producer. The FILE share below is computed live and needs no stamp.
+#
+# This is the `feedback_true_sentence_wrong_frame` shape for the 2nd time: an
+# earlier report of "2,333 passed" was 120 files of 759. A figure whose scope is
+# not attached to it WILL be requoted without the scope, so the scope is printed
+# here, beside the number, where a reader cannot separate them.
+#
+# IT COUNTS FILES, NOT TESTS, DELIBERATELY. A test-count share needs a full
+# collection, which measured 8.45 s -- a cost on every commit, to restate a
+# figure whose producer is named below. The file share is a glob and is free.
+_GUARD_FILES=$(printf '%s\n' "$GUARDS" | grep -c '[^[:space:]]')
+_SUITE_FILES=$(ls bench/tests/test_*.py 2>/dev/null | wc -l | tr -d ' ')
+echo "pre-commit: that board is the gate's ${_GUARD_FILES} guard files of ${_SUITE_FILES} in bench/tests/ -- NOT the suite."
+echo "            For the test-count share: python3 scripts/the_gate_board_is_not_the_suite_2026-11-04.py"
 
 exit 0

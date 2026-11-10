@@ -109,10 +109,23 @@ ENTRY = re.compile(r"^\*\*((?:[A-Z]{1,2})?\d+(?:\.\d+)?[a-z]?)(?:\.\*\*|\*\*|\.|
 #: change rather than after -- 0 of 107 existing markers parse differently under
 #: the new pattern, and 0 evidence values contain a pipe, which is what makes
 #: bounding the evidence group at `|` safe.
+#: ★ `responded:` ADDED 2026-11-09, AND IT IS NOT A SECOND NAME FOR `ruled:`.
+#: `ruled:` SETTLES an entry -- `morning_report_build.decisions()` routes any
+#: entry carrying one to `no_ruling_needed` unless `ruling_is_spent` says the
+#: ruling has stopped settling it, so writing a date there to record "he
+#: replied" SILENCES the entry. Measured 2026-11-09: 8 of 14 live entries
+#: carried a ruling in their PROSE that the marker did not hold, and
+#: backfilling 5 into `ruled:` removed all 5 from the decision list while each
+#: still asked him something. `responded:` records THAT HE REPLIED and asserts
+#: nothing about settlement.
+#:
+#: OPTIONAL, exactly as `evidence` and `ruled` are. Verified BEFORE the change:
+#: 0 of 279 existing markers parse differently and 0 already used the keyword.
 MARKER = re.compile(
     r"^<!--\s*task:\s*(\S+)\s*\|\s*state:\s*(\w+)\s*\|\s*status:\s*(\w+)"
     r"(?:\s*\|\s*evidence:\s*([^>|]*?))?"
-    r"(?:\s*\|\s*ruled:\s*([^>|]*?))?\s*-->")
+    r"(?:\s*\|\s*ruled:\s*([^>|]*?))?"
+    r"(?:\s*\|\s*responded:\s*([^>|]*?))?\s*-->")
 
 #: Lines that LOOK like entries but are prose opening with a number in bold.
 #: Listed explicitly rather than filtered by a heuristic, so that adding a real
@@ -133,6 +146,9 @@ class Entry:
     #: constructs `Entry` positionally with 6 arguments, so a 7th field without
     #: a default would break ~20 importers at once.
     ruled: str | None = None
+    #: The date he REPLIED, which is NOT the date he settled it. See the
+    #: note on MARKER. Defaulted for the same reason `ruled` is.
+    responded: str | None = None
 
 
 def _is_entry(line: str) -> bool:
@@ -222,6 +238,7 @@ def parse_entries(path: Path = LIST) -> list[Entry]:
         state = status = None
         evidence: tuple = ()
         ruled: str | None = None
+        responded: str | None = None
         if i + 1 < len(lines):
             m = MARKER.match(lines[i + 1])
             if m:
@@ -229,7 +246,9 @@ def parse_entries(path: Path = LIST) -> list[Entry]:
                 raw = (m.group(4) or "").strip()
                 evidence = tuple(x.strip() for x in raw.split(",") if x.strip())
                 ruled = (m.group(5) or "").strip() or None
-        out.append(Entry(ident, i + 1, line, state, status, evidence, ruled))
+                responded = (m.group(6) or "").strip() or None
+        out.append(Entry(ident, i + 1, line, state, status, evidence,
+                         ruled, responded))
     return out
 
 
@@ -616,7 +635,8 @@ def evidence_objections(ident: str, evidence, root: Path = REPO) -> list[str]:
 
 def set_marker(ident: str, *, state: str | None = None,
                status: str | None = None, evidence=None,
-               ruled: str | None = None, path: Path = LIST) -> str:
+               ruled: str | None = None, responded: str | None = None,
+               path: Path = LIST) -> str:
     """Rewrite one entry's marker, REFUSING unsound DONE evidence.
 
     Fields not passed are carried over from the existing marker, so advancing
@@ -649,15 +669,18 @@ def set_marker(ident: str, *, state: str | None = None,
         cur_ev = tuple(x.strip() for x in (existing.group(4) or "").split(",")
                        if x.strip())
         cur_ruled = (existing.group(5) or "").strip() or None
+        cur_responded = (existing.group(6) or "").strip() or None
     else:
         cur_state = cur_status = None
-        cur_ev, cur_ruled = (), None
+        cur_ev, cur_ruled, cur_responded = (), None, None
 
     new_state = state or cur_state
     new_status = status or cur_status
     new_ev = cur_ev if evidence is None else (
         (evidence,) if isinstance(evidence, str) else tuple(evidence))
     new_ruled = cur_ruled if ruled is None else (ruled or None)
+    new_responded = (cur_responded if responded is None
+                     else (responded or None))
 
     if new_state not in STATES:
         raise ValueError(f"state {new_state!r} not in {STATES}")
@@ -674,6 +697,8 @@ def set_marker(ident: str, *, state: str | None = None,
         parts.append("evidence: " + ", ".join(new_ev))
     if new_ruled:
         parts.append(f"ruled: {new_ruled}")
+    if new_responded:
+        parts.append(f"responded: {new_responded}")
     line = "<!-- " + " | ".join(parts) + " -->"
 
     if existing:
@@ -705,6 +730,47 @@ def apply_markers(path: Path = LIST) -> int:
     return added
 
 
+#: ★ N3, 2026-11-09. LAZY AND FAIL-SAFE, DELIBERATELY, FOR 2 REASONS.
+#: (1) CIRCULARITY: `how_many_decisions_actually_need_him_2026-11-01` imports
+#: THIS module, so a module-level import back would be a cycle. Checked before
+#: writing rather than discovered by a traceback.
+#: (2) THE PULSE MUST NEVER FAIL. This line is printed on every turn by a
+#: `UserPromptSubmit` hook. A summary that raises takes the clock and the task
+#: count with it, so a missing or broken classifier degrades to NO LABEL rather
+#: than to no pulse. Returning None is the degraded path and the caller omits
+#: the label entirely.
+def _whose_move(entries) -> tuple[int, int, str] | None:
+    """(mine, his, the next OPEN entry's kind) or None if it cannot be decided."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "_hmdanh",
+            Path(__file__).resolve().parent
+            / "how_many_decisions_actually_need_him_2026-11-01.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules.setdefault("_hmdanh", mod)
+        spec.loader.exec_module(mod)
+        bodies = mod.bodies()
+        LABEL = {"OWED": "awaits you", "MINE": "mine",
+                 "GRANTED": "mine", "DEPENDENT": "blocked",
+                 "HIS_DEFERRAL": "deferred by you"}
+        mine = his = 0
+        nxt_kind = ""
+        for e in entries:
+            if (e.state or "").upper() != "OPEN":
+                continue
+            k = mod.classify_text(e.state, e.ruled, bodies.get(e.ident, ""))["kind"]
+            if k == "OWED":
+                his += 1
+            else:
+                mine += 1
+            if not nxt_kind:
+                nxt_kind = LABEL.get(k, k.lower())
+        return mine, his, nxt_kind
+    except Exception:
+        return None
+
+
 def summarise(path: Path = LIST) -> str:
     entries = parse_entries(path)
     counts = {s: sum(1 for e in entries if e.state == s) for s in STATES}
@@ -720,6 +786,17 @@ def summarise(path: Path = LIST) -> str:
     if nxt:
         title = re.sub(r"\*\*|`", "", nxt.text)[:72]
         head += f" — next: {title}"
+        # ★ N3, 2026-11-09. SAY WHOSE MOVE IT IS. The line named the next entry
+        # and never said it could not be advanced without him, so a turn was
+        # spent pushing at an entry nobody could move: `work_not_narrate`
+        # named B21 on every turn of 2026-11-09 and B21 awaited his ruling.
+        # The classifier already existed; nothing called it from here.
+        owned = _whose_move(entries)
+        if owned is not None:
+            mine, his, nxt_kind = owned
+            head += f" [{nxt_kind}]"
+            if his:
+                head += f" | {his} of {mine + his} open await YOU"
     code, problems = check(path)
     if problems:
         head += f" | {len(problems)} MARKER PROBLEM(S): {problems[0]}"

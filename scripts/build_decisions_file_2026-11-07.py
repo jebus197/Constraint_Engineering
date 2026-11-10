@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import math
 import importlib.util
 import pathlib
 import re
@@ -110,6 +111,156 @@ def _gist(option: str, limit: int = 150) -> str:
     return t if len(t) <= limit else t[:limit].rsplit(" ", 1)[0] + "..."
 
 
+def _iv(k: int, n: int):
+    """Wilson and Clopper-Pearson, each on 2 INDEPENDENT routes."""
+    from scipy import stats
+    from statsmodels.stats.proportion import proportion_confint
+    import mpmath
+    mpmath.mp.dps = 40
+    if n == 0:
+        return (0.0, 1.0), (0.0, 1.0), 0.0
+    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
+    z = stats.norm.ppf(0.975)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    hw = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    wdiff = max(abs(wl - (c - hw)), abs(wh - (c + hw)))
+    cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
+    ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
+
+    def bi(a, b, y):
+        """Invert the regularised incomplete beta by bisection.
+
+        HARDENED 2026-11-04. `mpmath.betainc` is fast, but its hyp2f1 path
+        FAILS TO CONVERGE for large parameters at mid-range x. Measured at
+        a=2437, b=17564 it succeeds for x <= 0.1264 and for x >= 0.9 and raises
+        ValueError in between -- which is exactly where a bisection over [0, 1]
+        takes its first step, so the whole inversion died rather than degrading.
+        It surfaced when a producer called this at k=2436, n=20000; every
+        existing caller used a small n, and the guard that executes every `_iv`
+        against the same k and n uses n <= 38, so no test could have seen it.
+
+        Where betainc raises, the same integral is computed by quadrature in
+        log space instead. At the measured failing point that agreed with
+        scipy's quantile to 1.11e-16. It costs about 6 s per bound against
+        milliseconds for betainc, so it is used only after a failure, never by
+        default.
+        """
+        logB = mpmath.log(mpmath.beta(a, b))
+
+        def by_quad(x):
+            if x <= 0:
+                return mpmath.mpf(0)
+            def dens(u):
+                return mpmath.e**((a - 1) * mpmath.log(u)
+                                  + (b - 1) * mpmath.log1p(-u) - logB)
+            return mpmath.quad(dens, [0, min(mpmath.mpf(x), mpmath.mpf(1))])
+
+        fell_back = False
+
+        def f(x):
+            nonlocal fell_back
+            if not fell_back:
+                try:
+                    return mpmath.betainc(a, b, 0, x, regularized=True) - y
+                except Exception:
+                    fell_back = True
+            return by_quad(x) - y
+
+        # STOP ON PRECISION, not on a fixed count. The bracket halves every
+        # step, so 2**-60 is already below this tolerance and a fixed 240 did
+        # 180 redundant evaluations. That is free for betainc and it is NOT
+        # free for the quadrature fallback, which costs about 28 ms per
+        # evaluation: 240 steps took 6.66 s and 60 take 1.69 s for a bound
+        # identical to 12 decimal places. The count is still capped so a
+        # pathological case cannot spin.
+        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
+        tol = mpmath.mpf("1e-18")
+        for _ in range(240):
+            if hi - lo < tol:
+                break
+            m = (lo + hi) / 2
+            lo, hi = (m, hi) if f(m) < 0 else (lo, m)
+        return float((lo + hi) / 2)
+
+    cdiff = max(abs(cl - (0.0 if k == 0 else bi(k, n - k + 1, 0.025))),
+                abs(ch - (1.0 if k == n else bi(k + 1, n - k, 0.975))))
+    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
+
+
+#: ★ N2, 2026-11-09. THE REPEATS BANNER IS COMPUTED, NOT TYPED.
+#: It used to be a literal template with only `n`, `date` and `sha`
+#: substituted, so it printed the word "Neither" whatever the data said and
+#: carried bounds measured at n = 29 on 2026-11-08. At n = 12 on 2026-11-09
+#: the printed Wilson upper bound of 0.116970 should have been 0.242494,
+#: understated by 2.073133 times, and the Clopper-Pearson 0.119445 should have
+#: been 0.264648, understated by 2.215654 times. It also named B20 and B71 as
+#: carrying rulings when neither was among that file's own 12 items.
+def repeats_summary(rows) -> dict:
+    """What this file's items actually are, computed from the live rows."""
+    n = len(rows)
+    ruled = [r["ident"] for r in rows if r.get("ruled")]
+    responded = [r["ident"] for r in rows if r.get("responded") and not r.get("ruled")]
+    # An item whose ruling STILL SETTLES it never reaches this list at all --
+    # `decisions()` routes it to `no_ruling_needed`. So this is 0 BY
+    # CONSTRUCTION, and the interval is reported at the LIVE n to say how
+    # tightly that 0 is bounded by this sample rather than by an older one.
+    settled = 0
+    w, cp, gap = _iv(settled, n)
+    neither = n - len(ruled) - len(responded)
+    if n == 0:
+        verdict = "There are none."
+    elif settled:
+        verdict = "Some are repeats."
+    elif ruled or responded:
+        verdict = "Neither."
+    else:
+        verdict = "All of them are new to you."
+    return {
+        "n": n, "settled": settled, "ruled": ruled, "responded": responded,
+        "neither": neither, "verdict": verdict,
+        "w_lo": w[0], "w_hi": w[1], "cp_lo": cp[0], "cp_hi": cp[1], "gap": gap,
+        "ruled_names": ", ".join(ruled) if ruled else "none",
+        "responded_names": ", ".join(responded) if responded else "none",
+        "n_ruled": len(ruled), "n_responded": len(responded),
+        # prose-precision: "1 carry" is wrong and he reads this aloud.
+        "ruled_verb": "carries" if len(ruled) == 1 else "carry",
+        "responded_verb": "carries" if len(responded) == 1 else "carry",
+        "ruled_label": (f"entry {ruled[0]}" if len(ruled) == 1
+                        else ("no entries" if not ruled
+                              else "entries " + ", ".join(ruled))),
+        "responded_label": (f"entry {responded[0]}" if len(responded) == 1
+                            else ("no entries" if not responded
+                                  else "entries " + ", ".join(responded))),
+    }
+
+
+def first_appearances(rows) -> str:
+    """When each item was first put to him, read off the dated files on disk."""
+    files = sorted((REPO / "experimental_notes").glob(
+        "Decisions_Awaiting_You_*_GENERATED.txt"))
+    today = dt.date.today().isoformat()
+    first: dict[str, str] = {}
+    for f in files:
+        d = re.search(r"(\d{4}-\d{2}-\d{2})", f.name)
+        if not d or d.group(1) >= today:
+            continue
+        txt = f.read_text(encoding="utf-8", errors="replace")
+        for r in rows:
+            i = r["ident"]
+            if i not in first and re.search(rf"\b{re.escape(i)}\b", txt):
+                first[i] = d.group(1)
+    if not first:
+        return "none of them has appeared in an earlier dated file"
+    by: dict[str, int] = {}
+    for v in first.values():
+        by[v] = by.get(v, 0) + 1
+    parts = [f"{c} on {d}" for d, c in sorted(by.items())]
+    return (f"{len(first)} of {len(rows)} have appeared in an earlier dated "
+            f"file: " + ", ".join(parts))
+
+
 def head_sha() -> str:
     return subprocess.run(["git", "rev-parse", "--short", "HEAD"],
                           capture_output=True, text=True, cwd=REPO).stdout.strip()
@@ -141,6 +292,7 @@ def collect():
             "evidence": d.get("evidence_line") or "",
             "owed": d.get("still_owed") or "",
             "ruled": d.get("ruled") or "",
+            "responded": d.get("responded") or "",
             "title": d.get("title") or "",
             #: ★ B132. The ticket identity travels with the row so the
             #: WRITTEN surface can cite it. `ticket_id` resolves 29 of 29
@@ -164,16 +316,22 @@ same functions, so it cannot disagree with the record.
 specified a cap."* Nothing here is cut to fit a length. Each item says what it is, why it matters,
 what you decide, and what is recommended with its standard named.
 
-## Are these new, or repeats you have already ruled on? Neither.
+## Are these new, or repeats you have already ruled on? {verdict}
 
-**NOT NEW.** All {n} of {n} have already been put to you in a dated decisions file — 18 first
-appeared on the 3rd of November, 8 on the 4th, 2 on the 1st and 1 on the 2nd. The file carrying them
-was 151,786 bytes, which is why they are re-rendered here rather than re-sent.
+**NOT NEW.** {first_appearances}. They are re-rendered here rather than re-sent.
 
-**NOT REPEATS EITHER.** 0 of {n} carry a ruling of yours that still settles them, Wilson 95%
-[0.000000, 0.116970], Clopper-Pearson 95% [0.000000, 0.119445]. 3 carry a ruling of yours on a
-*different* question — B20, B21 and B71 — and each entry records which question was answered and
-which was not. The remaining 26 carry no ruling at all.
+**NOT REPEATS EITHER.** {settled} of {n} carry a ruling of yours that still settles them, Wilson 95%
+[{w_lo:.6f}, {w_hi:.6f}], Clopper-Pearson 95% [{cp_lo:.6f}, {cp_hi:.6f}], the 2 routes of each
+agreeing to {gap:.3e}. {n_ruled} {ruled_verb} a ruling of yours on a *different* question ({ruled_names}),
+and each entry records which question was answered and which was not. {n_responded} {responded_verb}
+a REPLY of yours that left the entry open ({responded_names}). The remaining {neither} carry neither.
+
+**Every figure in this section is computed at the live count of {n}.** Until 2026-11-09 this block
+was a literal template that printed the word "Neither" whatever the data said, with bounds measured
+at 29 items on 2026-11-08. At 12 items its printed Wilson upper bound of 0.116970 should have read
+0.242494, understated by 2.073133 times, and its Clopper-Pearson 0.119445 should have read 0.264648,
+understated by 2.215654 times. It also named B20 and B71 as carrying rulings when neither was among
+its own items.
 
 **The answer I gave you yesterday was wrong.** The producer written to answer this very question
 called its lookup with a store key where an entry identifier belongs, found nothing, and read the
@@ -193,13 +351,13 @@ HEADER_TTS = """DECISIONS AWAITING YOU
 Written at the raised cap, on your ruling of the 6th of November that you never specified a cap. Nothing here is cut to fit a length. Each item says what it is, why it matters, what you decide, and what is recommended with its standard named.
 
 
-ARE THESE NEW, OR REPEATS YOU HAVE ALREADY RULED ON? NEITHER
+ARE THESE NEW, OR REPEATS YOU HAVE ALREADY RULED ON? {verdict_caps}
 
-Not new. All {n} of {n} have already been put to you in a dated decisions file. 18 first appeared on the 3rd of November, 8 on the 4th, 2 on the 1st and 1 on the 2nd. The file carrying them was 151,786 bytes, which is why they are re-rendered here rather than re-sent.
+Not new. {first_appearances}. They are re-rendered here rather than re-sent.
 
-Not repeats either. 0 of {n} carry a ruling of yours that still settles them, with a 95 per cent Wilson interval from 0.000000 to 0.116970 and a Clopper-Pearson interval from 0.000000 to 0.119445. 3 carry a ruling of yours on a different question, entries B20, B21 and B71, and each entry records which question was answered and which was not. The remaining 26 carry no ruling at all.
+Not repeats either. {settled} of {n} carry a ruling of yours that still settles them, with a 95 per cent Wilson interval from {w_lo:.6f} to {w_hi:.6f} and a Clopper-Pearson interval from {cp_lo:.6f} to {cp_hi:.6f}, the 2 routes of each agreeing to within {gap:.3e}. {n_ruled} {ruled_verb} a ruling of yours on a different question, {ruled_label}, and each entry records which question was answered and which was not. {n_responded} {responded_verb} a reply of yours that left the entry open, {responded_label}. The remaining {neither} carry neither.
 
-The answer given to you yesterday was wrong. The measurement script written to answer this very question called its lookup with a store key where an entry identifier belongs, found nothing, and read the miss as a finding. 3 of 41 live entries were labelled repeats on an empty string: B13, B20 and B21. B20 is the next task on the list and the first decision below.
+Every figure in this section is computed at the live count of {n}. Until the 9th of November this passage was a fixed piece of text that said the word Neither whatever the data showed, carrying bounds measured over 29 items on the 8th of November. At 12 items its stated Wilson upper bound of 0.116970 should have read 0.242494, understating it by a factor of 2.073133, and its Clopper-Pearson bound of 0.119445 should have read 0.264648, understating it by a factor of 2.215654. It also named entries B20 and B71 as carrying rulings when neither was among its own items.
 
 """
 
@@ -232,8 +390,13 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
     sp = mrb._spoken if spoken else (lambda t: t)
     date = (dt.datetime.now().strftime("%d %B %Y, %H:%M GMT") if spoken
             else dt.date.today().isoformat())
+    _rs = repeats_summary(rows)
     head = (HEADER_TTS if spoken else HEADER_MD).format(
-        date=date, n=len(rows), sha=head_sha())
+        date=date, sha=head_sha(),
+        first_appearances=first_appearances(rows),
+        verdict=_rs["verdict"],
+        verdict_caps=_rs["verdict"].rstrip(".").upper(),
+        **{k: v for k, v in _rs.items() if k != "verdict"})
     L = [head]
     A = L.append
 
@@ -282,6 +445,14 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
         A("")
         if r["ruled"]:
             note = (f"You ruled on this entry on {r['ruled']}, on a different question. "
+                    f"What is still owed is {r['owed'] or 'recorded in the entry'}.")
+        elif r.get("responded"):
+            # ★ N1, 2026-11-09. He replied and the entry is STILL OPEN. Saying so
+            # is the whole repair: before this, a reply recorded in an entry's
+            # prose reached no surface, so the original question was put to him
+            # again. 0 of 12 decisions in the file of 2026-11-09 mentioned that
+            # he had answered on 2026-11-08, in 53,898 bytes.
+            note = (f"You responded on this on {r['responded']}, and it is still open. "
                     f"What is still owed is {r['owed'] or 'recorded in the entry'}.")
             A(sp(_wrap_free(note)) if spoken else f"*{_wrap_free(note)}*")
             A("")

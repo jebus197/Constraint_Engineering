@@ -111,13 +111,28 @@ def test_the_printf_emits_parseable_json():
     m = re.search(r"printf '(\{[^']*\})\\n'", src)
     assert m, "could not find the ledger printf format string in the hook"
     fmt = m.group(1)
+    #: ★ THE LEDGER GAINED `why` ON 2026-11-09, on his ruling attached to
+    #: B128: "we must be able to know why a commit was refused, so it can be
+    #: repaired." Each of the 8 refusal points now names itself and the exit
+    #: handler writes that name here, so the row carries 5 fields rather than
+    #: 4. A clean exit records the empty string, which is the case driven
+    #: below, and a refusal records its cause -- asserted end to end by
+    #: bench/tests/test_a_refusal_records_why_2026-11-09.py, which RUNS the
+    #: real hook in a throwaway repository rather than reading it.
     r = subprocess.run(
-        ["sh", "-c", f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 123 0 abc1234"],
+        ["sh", "-c", f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 123 0 abc1234 ''"],
         capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, r.stderr
     row = json.loads(r.stdout.strip())
     assert row == {"at": "2026-01-01T00:00:00Z", "seconds": 123,
-                   "exit": 0, "head": "abc1234"}, row
+                   "exit": 0, "head": "abc1234", "why": ""}, row
+    #: AND A REFUSAL'S CAUSE SURVIVES THE SAME FORMAT STRING.
+    r2 = subprocess.run(
+        ["sh", "-c",
+         f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 9 1 abc1234 guard-file-missing"],
+        capture_output=True, text=True, timeout=30)
+    assert r2.returncode == 0, r2.stderr
+    assert json.loads(r2.stdout.strip())["why"] == "guard-file-missing"
 
 
 def test_the_producer_runs_with_no_ledger_and_says_so(prod):
