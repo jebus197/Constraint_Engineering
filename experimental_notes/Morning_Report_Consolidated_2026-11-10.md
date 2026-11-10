@@ -8,7 +8,7 @@ A free panel of 2 seats audited the night's work, first blind and then jointly w
 
 The one that matters: a fix made and committed during the night had **destroyed a working capability**, while the measurement justifying it reported a win. Corrected, and the corrected rule is now derived from the measurement rather than written out by hand.
 
-**1 decision is added to the queue**, B136 on the dimensional check, carrying a single recommendation. Nothing else from the night needs a ruling.
+**1 decision is added to the queue**, B136 [`9b448553810d`] on the dimensional check, carrying a single recommendation. Nothing else from the night needs a ruling.
 
 ## What was wrong, and what replaced it
 
@@ -45,7 +45,7 @@ A seat argued that my vacuity-predicate measurement could not have come from thi
 
 ## The 9 retired explanation requests
 
-Discharged. Measured against the 11 tickets concerned, 9 are closed or deprecated — 0.818182, Wilson 95% [0.523019, 0.948632]. The 2 that read as remaining are not explanations: 1 is a question deferred by the founder himself with an instruction to re-ask on completion, and 1 is the bounded-orchestrator feature request, carried at B20 as the orchestrator bound inside the harness. **Outstanding count 0, not 2**; the 11 was the wrong denominator.
+Discharged. Measured against the 11 tickets concerned, 9 are closed or deprecated — 0.818182, Wilson 95% [0.523019, 0.948632]. The 2 that read as remaining are not explanations: 1 is a question deferred by the founder himself with an instruction to re-ask on completion, and 1 is the bounded-orchestrator feature request, carried at B20 [`a7e64483f941`] as the orchestrator bound inside the harness. **Outstanding count 0, not 2**; the 11 was the wrong denominator.
 
 ## The runway
 

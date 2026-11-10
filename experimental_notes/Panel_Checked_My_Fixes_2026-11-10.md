@@ -24,7 +24,7 @@ Verified by loading both and driving 7 probes through each:
 | `raise AssertionError` | True | True |
 | no assert, no raise | False | False |
 
-HEAD returns True on 6 of 7, the discarded copy on 4 of 7; 2 cases HEAD-only, **0** cases discarded-only. HEAD accepts a strict superset, so the discarded copy rejected more empty proofs than HEAD does, and the recorded claim was backwards. Recorded on entry B69 under `failure-later-refutation-protocol`.
+HEAD returns True on 6 of 7, the discarded copy on 4 of 7; 2 cases HEAD-only, **0** cases discarded-only. HEAD accepts a strict superset, so the discarded copy rejected more empty proofs than HEAD does, and the recorded claim was backwards. Recorded on entry B69 [`386e72aea57f`] under `failure-later-refutation-protocol`.
 
 **1 of the 3 cases the seat named does not reproduce**: an availability-only assert, written as `import sympy` then `assert sympy is not None`, returns True under both. The direction rests on the 2 `raise` cases. The seat bounded materiality correctly: `assert True` defeats both, so neither is sound against an adversarial proof and the difference is a narrowing, not a soundness fix.
 
@@ -69,7 +69,7 @@ Built in `bench/domain_immune.py`:
 
 Both corrected; option B's tool set is now **derived** from the measurement rather than typed, so the producer cannot disagree with itself.
 
-## Half of what was adopted is not reached by real traffic — raised as B137
+## Half of what was adopted is not reached by real traffic — raised as B137 [`c90b0066dad0`]
 
 Asking `additive-standard`'s symmetric question of my own work: **0 of 10 sequence claims reach `biological_sequence`**, Wilson 95% [0.000000, 0.277533], Clopper-Pearson [0.000000, 0.308497].
 
@@ -77,7 +77,7 @@ Asking `additive-standard`'s symmetric question of my own work: **0 of 10 sequen
 - `cross_domain` declares 3 claim types carrying 11 distinct tools and has **0** compiled claim patterns, so every claim classifies `uncategorised` and no tool there can be dispatched. 1 of 10 loaded domains, Wilson [0.017876, 0.404150].
 - `biology` is **not** pattern-free (an early wrong inference): it has 3 patterns for 3 claim types, but 0 of them contain `sequence`, `dna`, `rna`, `protein`, `nucleotide`, `complement`, `codon` or `gc content`.
 
-This is B22's `graph_property` finding generalised: a tool declared for a claim type whose patterns lack the vocabulary that would route a claim to it. It costs nothing in correctness today — an unreached tool returns no verdict and the gate fails closed — but it bounds the claim that both gated tools are exercised, and it matters for Bench Run 2.
+This is B22 [`1ff32fa3455f`]'s `graph_property` finding generalised: a tool declared for a claim type whose patterns lack the vocabulary that would route a claim to it. It costs nothing in correctness today — an unreached tool returns no verdict and the gate fails closed — but it bounds the claim that both gated tools are exercised, and it matters for Bench Run 2.
 
 ## The guard passed for the wrong reason
 
@@ -87,7 +87,7 @@ The discriminating case is `the molecule CCO is benzene` in `chemistry`: false, 
 
 ## The spoken-report generator was marking its own headings
 
-`scripts/morning_report_build_2026-10-12.py`'s B105 asterisk marker decided "heading" by testing whether every letter was uppercase. `DECISION 1. B13, admitting a model is not trivial` has a prose headline, so all 17 were marked, along with 12 `The options.` sub-headings and the note-standard foot-line, which must appear exactly as the final content.
+`scripts/morning_report_build_2026-10-12.py`'s B105 [`8341a3b8b7af`] asterisk marker decided "heading" by testing whether every letter was uppercase. `DECISION 1. B13 [`ca9300af3535`], admitting a model is not trivial` has a prose headline, so all 17 were marked, along with 12 `The options.` sub-headings and the note-standard foot-line, which must appear exactly as the final content.
 
 B105's own finding was that a shape heuristic misreading headings was 1 of 3 measured causes of lost founder annotations, so inferring a heading here repeated the error that entry diagnosed. `render_tts` now **records** heading indices as it emits them (3 sites), the way `_ex` already records quoted spans. Marked lines fall 87 → 57; 17 + 12 + 1 = 30 accounts exactly. Guard: `bench/tests/test_a_heading_is_recorded_not_guessed_2026-11-10.py`, 12 tests, 2 of 2 mutations red, with a corrected probe — the first version put the heading at index 0 where the document-title exemption spared it, so the probe's position manufactured the result.
 
@@ -97,7 +97,7 @@ Established by running the real producer against the task list at HEAD and in th
 
 | pin | was | now | cause |
 |---|---|---|---|
-| decision queue size | 10 | 7 | B79, B104, B131 left; asks retired on his 2026-11-08 ruling |
+| decision queue size | 10 | 7 | B79 [`b66f04976372`], B104 [`0811e96298f9`], B131 [`97de1e6ae57a`] left; asks retired on his 2026-11-08 ruling |
 | producer backlog | 10 of 10 | 7 of 7 | same |
 | `REPEAT` partition | 5 | 8 | rulings carried in; `REAL` fell 11 → 1 |
 
@@ -106,7 +106,7 @@ The denominator held at 17 throughout, which is the pin earning its keep in the 
 ## Also repaired
 
 - `bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py` was red, as the seat reported. Converted from a source-text pin to a **parsed-call** check over the runner's AST, so it survives reformatting and further arguments but still fails if `finding=` or `domain=` is dropped. 3 mutations red.
-- 3 producers cited by B22 and B136 lived only in a scratchpad, so those entries cited evidence a clone could not reach. Moved into `scripts/`, `--help` gated (worst case 66.56 s → 0.06 s), and added to `MUST_RUN` (4 → 8).
+- 3 producers cited by B22 and B136 [`9b448553810d`] lived only in a scratchpad, so those entries cited evidence a clone could not reach. Moved into `scripts/`, `--help` gated (worst case 66.56 s → 0.06 s), and added to `MUST_RUN` (4 → 8).
 
 ## What is running
 
