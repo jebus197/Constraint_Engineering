@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 10 November 2026 19:27 GMT (2026-11-10T19:27:19+00:00)
+Generated: 10 November 2026 21:46 GMT (2026-11-10T21:46:13+00:00)
 
 ---
 
@@ -18,21 +18,28 @@ Generated: 10 November 2026 19:27 GMT (2026-11-10T19:27:19+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `371f55cc` A free panel attacked the one change that puts derived prose in front of him and found 4 defects, one of which had inverted B81's meaning in the file he decides from
-- **Committed:** 2026-11-10 18:52:44 +0000
+- **Last commit (the PARENT of the commit containing this file):** `64b22872` sv: state save 10 November 2026, after the free round's 4 defects were folded back
+- **Committed:** 2026-11-10 19:27:20 +0000
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/tickets/sv_completions.jsonl`
-- `M docs/CURRENT_STATE.md`
-- `M resources/MEMORY_EXCLUSIONS.md`
+- `M  bench/tickets/sv_completions.jsonl`
+- `MM bench/tickets/tickets.jsonl`
+- `MM bench/tickets/tickets_searches.jsonl`
+- `M  docs/CURRENT_STATE.md`
+- `MM experimental_notes/CDSFL_MASTER_TASK_LIST.md`
+- `A  experimental_notes/Where_The_Project_Stands_2026-11-10.md`
+- `MM experimental_notes/data/morning_report_decisions.json`
+- `M  resources/MEMORY_EXCLUSIONS.md`
+- `M  resources/ONBOARDING.md`
+- `M  resources/RECOVERY.md`
 
 ---
 
 ## Tests
 
-**17030 tests collected** at 10 November 2026 19:27 GMT, HEAD `371f55cc` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**17031 tests collected** at 10 November 2026 21:46 GMT, HEAD `64b22872` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -62,6 +69,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `64b22872 sv: state save 10 November 2026, after the free round's 4 defects were folded back`
 - `371f55cc A free panel attacked the one change that puts derived prose in front of him and found 4 defects, one of which had inverted B81's meaning in the file he decides from`
 - `b0c32e02 He gave 2 routing rulings on 2026-11-10 that nothing implements, they lived in 1 paragraph of another entry, and the figure cited for them had no producer`
 - `012323bc The P-pass the Stop gate demanded found that B105's header-split fix was unguarded: reverting it left all 15 tests green, because 4 marks was the number the defect itself produced`
@@ -71,4 +79,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `ff4433f2 B22's claim-pattern decision now has its evidence, measured in shadow with the live configuration proved untouched, and the decision is still his`
 - `8c9bdf08 The FFAFP Follow step found a second live copy of the invisible-row defect that neither panel seat named, and the guard now pins the property over every reader instead of the one instance`
 - `1aba1fcf B105's spent ask is retired, which takes his queue from 8 decisions to 7, and B81 gains the gate cost measured twice tonight plus an orphaned-board leak that needs no ruling to be a defect`
-- `cd8021b5 The panel refuted 2 of my claims and both reproduced; acting on the second found my own committed fix had destroyed a live admission, and the corrected rule is derived from the measurement rather than named by hand`
