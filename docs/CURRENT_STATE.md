@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 10 November 2026 18:52 GMT (2026-11-10T18:52:43+00:00)
+Generated: 10 November 2026 19:27 GMT (2026-11-10T19:27:19+00:00)
 
 ---
 
@@ -18,34 +18,21 @@ Generated: 10 November 2026 18:52 GMT (2026-11-10T18:52:43+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `b0c32e02` He gave 2 routing rulings on 2026-11-10 that nothing implements, they lived in 1 paragraph of another entry, and the figure cited for them had no producer
-- **Committed:** 2026-11-10 13:41:23 +0000
+- **Last commit (the PARENT of the commit containing this file):** `371f55cc` A free panel attacked the one change that puts derived prose in front of him and found 4 defects, one of which had inverted B81's meaning in the file he decides from
+- **Committed:** 2026-11-10 18:52:44 +0000
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  .claude/CLAUDE.md`
-- `A  bench/logs/tonights_build_review_b22_b88_b105_2026-11-10/sandbox_harvest/cc2/attempt-1/files/experimental_notes/data/morning_report_decisions.json`
-- `A  bench/logs/tonights_build_review_b22_b88_b105_2026-11-10/sandbox_harvest/fable/attempt-1/files/experimental_notes/data/morning_report_decisions.json`
-- `A  bench/tests/test_a_mid_turn_message_is_still_his_2026-11-10.py`
-- `M  bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py`
-- `A  bench/tests/test_a_timeout_reaps_the_board_it_abandons_2026-11-10.py`
-- `A  bench/tests/test_an_entry_code_never_travels_alone_in_chat_2026-11-10.py`
-- `A  bench/tests/test_prose_mentioning_raises_is_not_an_assertion_2026-11-10.py`
-- `AM bench/tests/test_what_is_owed_survives_interior_bold_2026-11-10.py`
-- `AM bench/tests/test_what_is_still_owed_is_quoted_whole_2026-11-10.py`
-- `A  bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py`
-- `M  bench/tests/test_work_not_narrate_hook_2026-09-10.py`
-- `M  bench/tickets/tickets.jsonl`
-- `M  bench/tickets/tickets_searches.jsonl`
-- `M bench/ux_backend_2026-10-20.py`
-- … and 49 more, not shown (list capped at 15 of 64 — run `git status --porcelain` for the full set)
+- `M bench/tickets/sv_completions.jsonl`
+- `M docs/CURRENT_STATE.md`
+- `M resources/MEMORY_EXCLUSIONS.md`
 
 ---
 
 ## Tests
 
-**17030 tests collected** at 10 November 2026 18:52 GMT, HEAD `b0c32e02` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**17030 tests collected** at 10 November 2026 19:27 GMT, HEAD `371f55cc` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +62,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `371f55cc A free panel attacked the one change that puts derived prose in front of him and found 4 defects, one of which had inverted B81's meaning in the file he decides from`
 - `b0c32e02 He gave 2 routing rulings on 2026-11-10 that nothing implements, they lived in 1 paragraph of another entry, and the figure cited for them had no producer`
 - `012323bc The P-pass the Stop gate demanded found that B105's header-split fix was unguarded: reverting it left all 15 tests green, because 4 marks was the number the defect itself produced`
 - `a443012c The only tool that closes an entry could not parse 7 of 248 markers, 4 of them decisions in his own queue, and a wider pattern alone would have deleted the field it could not see`
@@ -84,4 +72,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `8c9bdf08 The FFAFP Follow step found a second live copy of the invisible-row defect that neither panel seat named, and the guard now pins the property over every reader instead of the one instance`
 - `1aba1fcf B105's spent ask is retired, which takes his queue from 8 decisions to 7, and B81 gains the gate cost measured twice tonight plus an orphaned-board leak that needs no ruling to be a defect`
 - `cd8021b5 The panel refuted 2 of my claims and both reproduced; acting on the second found my own committed fix had destroyed a live admission, and the corrected rule is derived from the measurement rather than named by hand`
-- `637fcd87 A reply is not a ruling, and the 554 was a line count`
