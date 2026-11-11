@@ -150,6 +150,10 @@ CANONICAL_FIELDS = (
     "CORROBORATION",
     "VERDICT",
     "VERDICT_EVIDENCE",
+    # B84 field 1, 2026-11-11. The directive already requires the HARD/SOFT
+    # classification (cdsfl_operational.md section 11); this gives a seat a
+    # canonical place to put it instead of it being unrecordable.
+    "CONSTRAINT_CLASS",
 )
 
 _FIELD_ALIASES = {

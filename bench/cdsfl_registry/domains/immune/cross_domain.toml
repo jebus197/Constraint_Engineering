@@ -1,6 +1,21 @@
 # Immune pipeline parameterisation — Cross-Domain (Phase B4)
 # Extracted from domains/cross_domain.toml to avoid PolicyEngine schema validation.
 
+# B22, founder verdict 2026-11-11. ★ A claim_patterns TABLE WAS ADDED HERE AND
+# REVERTED THE SAME HOUR, and the reason is recorded so it is not re-attempted.
+# `cross_domain.toml` is the FALLBACK config for ANY unresolved domain
+# (`load_domain_config`, this directory, resolution order step 2). Giving it
+# patterns therefore does NOT merely make its own 11 declared tools reachable --
+# it makes EVERY UNKNOWN DOMAIN classify and admit. Measured by execution:
+# `_apply_back_gate` with domain="no_such_domain" went from REFUSING to
+# returning `domain:no_such_domain/mathematical ... for=sympy`, turning a
+# fail-closed gate fail-open, on the same gate that already carries the
+# unexamined-fix hole. 3 committed guards caught it, including one whose
+# docstring reads "The fail-closed direction, so the fix is not a loosening."
+# THE 11 UNREACHABLE TOOLS REMAIN A REAL DEFECT (B137). Closing it needs the
+# patterns to apply only when the domain is EXPLICITLY cross_domain, which is a
+# resolution change in code, not a config addition, and it does not belong
+# smuggled inside B22's widening.
 [immune.verification_tools]
 # WOLFRAM, added 2026-10-31. SECONDARY ONLY -- the manifest marks it
 # `secondary_only = true`, so it can never become the primary for any

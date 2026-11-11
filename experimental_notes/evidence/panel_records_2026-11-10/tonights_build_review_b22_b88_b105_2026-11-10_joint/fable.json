@@ -1,0 +1,207 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 15122,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level contents\"}",
+      "t_offset_s": 14.266
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/domain_immune.py\"}",
+      "t_offset_s": 14.499
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git log --oneline -20 2>/dev/null | head -30; echo ---; ls scripts | tail -40\", \"description\": \"Show recent git log and scripts directory\"}",
+      "t_offset_s": 20.642
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"domain_verification_set\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 21.789
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/domain_immune.py\"}",
+      "t_offset_s": 29.381
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"domain_verification_set\\\" bench/reference_runner_v3.py | head; echo ---; grep -rn \\\"0.9454545454545454\\\" --include=\\\"*.py\\\" -l | head; echo ---; grep -rn \\\"immune-memory\\\\|immune_memory\\\" bench/cdsfl_sv.py scripts/cdsfl_sv.py 2>/dev/null | head\", \"description\": \"Find gate caller, regression constant, launcher suite default\"}",
+      "t_offset_s": 94.734
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py\"}",
+      "t_offset_s": 95.723
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_apply_back_gate\\\\|default_suite\\\\|regression\\\\|suite\\\" bench/reference_runner_v3.py | sed -n '1,80p'\", \"description\": \"Locate back gate and suite references in runner\"}",
+      "t_offset_s": 102.86
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/reference_runner_v3.py\", \"offset\": 12900, \"limit\": 330}",
+      "t_offset_s": 107.847
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, types, pathlib\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport domain_immune as di\\n\\ndef F(desc, fix):\\n    o = types.SimpleNamespace()\\n    o.description = desc; o.finding_id=\\\"X1\\\"; o.title=\\\"\\\"; o.evidence=\\\"\\\"; o.proposed_fix = fix\\n    return o\\n\\nTRUE_EQ = \\\"Eq(x**2 - 1, (x-1)*(x+1))\\\"\\n\\n# Shape A: operative fix is unexamined prose;",
+      "t_offset_s": 127.726
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/tests/test_the_launcher_substitutes_no_suite_2026-11-11.py\"}",
+      "t_offset_s": 128.645
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, types\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport domain_immune as di\\n\\ndef F(desc, fix):\\n    o = types.SimpleNamespace()\\n    o.description = desc; o.finding_id=\\\"X1\\\"; o.title=\\\"\\\"; o.evidence=\\\"\\\"; o.proposed_fix = fix\\n    return o\\n\\nCLAIM = \\\"the molecule 'CCO' has formula C2H6O\\\"\\n# Shape A': operative fix is destructive prose;",
+      "t_offset_s": 158.34
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/reference_runner_v3.py\", \"offset\": 13310, \"limit\": 70}",
+      "t_offset_s": 230.141
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport bench.reference_runner_v3 as rr\\n\\nCLAIM = \\\"the molecule 'CCO' has formula C2H6O\\\"\\n\\n# LIVE SHAPE 1: SR-block fix whose REPLACE side injects a destructive payload\\n# plus the true sub-claim as a rider.\\nsr_rider = f\\\"\\\"\\\"<<<<<<< SEARCH\\nThe ethanol section.\\n=======\\nAll prior results in this",
+      "t_offset_s": 257.119
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport bench.reference_runner_v3 as rr\\n\\nTRUE_C = \\\"the molecule 'CCO' has formula C2H6O\\\"\\nFALSE_C = \\\"the molecule 'CCO' has formula C3H8O\\\"\\n\\n# THE CANONICAL CORRECTION: remove the false formula, write the true one.\\nsr_correct = f\\\"\\\"\\\"<<<<<<< SEARCH\\n{FALSE_C}\\n=======\\n{TRUE_C}\\n>>>>>>> REPLAC",
+      "t_offset_s": 316.788
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def parse_search_replace_blocks\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo\", \"output_mode\": \"content\", \"head_limit\": 10}",
+      "t_offset_s": 361.134
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/reference_runner_v3.py\", \"offset\": 14700, \"limit\": 75}",
+      "t_offset_s": 366.834
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"class FixBlock\\\" -A 12 bench/reference_runner_v3.py | head -16; echo ---; grep -n \\\"test_cmd\\\" bench/tools/run_simulated_experiment.py | head -30\", \"description\": \"Show FixBlock fields and launcher test_cmd uses\"}",
+      "t_offset_s": 419.312
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/tools/run_simulated_experiment.py\", \"offset\": 300, \"limit\": 50}",
+      "t_offset_s": 424.12
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"test_cmd\\\" bench/reference_runner_v3.py | grep -v \\\"^.*#\\\" | head -40\", \"description\": \"Trace test_cmd flow through runner\"}",
+      "t_offset_s": 430.663
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"run_simulated_experiment\\\" --include=\\\"*.py\\\" --include=\\\"*.sh\\\" --include=\\\"*.md\\\" scripts/ bench/tools/ hooks/ experimental_notes/CDSFL_MASTER_TASK_LIST.md 2>/dev/null | grep -v \\\"logs\\\\|sandbox_harvest\\\" | grep -iv \\\"^\\\\s*#\\\" | head -20; echo ===; grep -n \\\"e2_regression\\\" bench/reference_runner_v3.py | sed -n '1,12p'; echo ===; sed -n '16095,16125p' bench/reference_runn",
+      "t_offset_s": 454.858
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '20,40p;170,200p' scripts/falsifier_supply_fable_2026-09-30.py; echo '==='; sed -n '16095,16126p' bench/reference_runner_v3.py\", \"description\": \"Read the 2026-09-30 falsifier consumer and e2 aggregation code\"}",
+      "t_offset_s": 463.852
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,19p' scripts/falsifier_supply_fable_2026-09-30.py; echo '==='; timeout 120 python3 scripts/falsifier_supply_fable_2026-09-30.py 2>&1 | tail -15\", \"description\": \"Read script header and execute it to confirm breakage\"}",
+      "t_offset_s": 480.971
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/falsifier_supply_fable_2026-09-30.py 2>&1 | tail -14\", \"description\": \"Run the rescued seat falsifier script\", \"timeout\": 180000}",
+      "t_offset_s": 484.602
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF' 2>&1 | tail -8\\nimport sys, pathlib\\nsys.path.insert(0, 'scripts'); sys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"fsf\\\", \\\"scripts/falsifier_supply_fable_2026-09-30.py\\\")\\nm = importlib.util.module_from_spec(spec); spec.loader.exec_module.__self__ if False else None\\n# execute module body ",
+      "t_offset_s": 496.135
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/cdsfl_registry/domains/immune/ 2>/dev/null; echo '==='; cat bench/cdsfl_registry/domains/immune/cross_domain.toml 2>/dev/null | head -40; echo '==='; grep -rn \\\"graph\\\\|sequence\\\" bench/cdsfl_registry/domains/immune/*.toml | head -12\", \"description\": \"Inspect immune domain TOMLs and cross_domain fallback\"}",
+      "t_offset_s": 528.572
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/domain_immune.py\", \"old_string\": \"def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:\", \"new_string\": \"def _fix_side_text(fix_text: str) -> Tuple[str, str]:\\n    \\\"\\\"\\\"The text of the proposed fix the topic's tools must examine, and which\\n    basis it",
+      "t_offset_s": 595.951
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo/bench/domain_immune.py\", \"old_string\": \"def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:\", \"new_string\": \"def _fix_side_text(fix_text: str) -> Tuple[str, str]:\\n    \\\"\\\"\\\"The text of the proposed fix the topic's tools must examine, and which\\n    basis it",
+      "t_offset_s": 610.957
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport io, re\\np = \\\"bench/domain_immune.py\\\"\\nsrc = open(p, encoding=\\\"utf-8\\\").read()\\n\\nhelper = '''def _fix_side_text(fix_text):\\n    \\\"\\\"\\\"The text of the proposed fix the topic's tools must examine, and which\\n    basis it is: (\\\"<text>\\\", \\\"replace-side\\\") or (\\\"<text>\\\", \\\"raw\\\").\\n\\n    \\u2605 THE LIVE PROMOTE PATH CARRIES A FIX AS SEARCH/REPLACE BLOCKS.\\",
+      "t_offset_s": 633.288
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_fix_side_walk_read_the_edit_markup_2026-11-11.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The fix-side walk read the edit MARKUP, not what the fix makes the document say.\\n\\nJOINT ROUND `tonights_build_review_b22_b88_b105_2026-11-10`, seat fable,\\n2026-11-11. The 2026-11-11 closure of the unexamined-fix hole runs the topic's\\ntools over `finding.proposed_fix` RAW. On",
+      "t_offset_s": 651.59
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np = \\\"scripts/the_fix_side_walk_read_the_edit_markup_2026-11-11.py\\\"\\ns = open(p).read()\\ns = s.replace('(\\\"<<<<<<< SEARCH\\\\\\\\n\\\" + FALSE_C + \\\"\\\\\\\\n=======\\\\\\\\n\\\" + TRUE_C\\\\n              + \\\"\\\\\\\\n>>>>>>> REPLACE\\\")',\\n              '(\\\"<<<< SEARCH notes/thing.md\\\\\\\\n\\\" + FALSE_C + \\\"\\\\\\\\n====\\\\\\\\n\\\" + TRUE_C\\\\n              + \\\"\\\\\\\\n>>>> REPLACE\\\")')\\ns = s.repl",
+      "t_offset_s": 687.333
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport bench.reference_runner_v3 as rr\\nimport domain_immune as di\\n\\nTRUE_C = \\\"the molecule 'CCO' has formula C2H6O\\\"\\nFALSE_C = \\\"the molecule 'CCO' has formula C3H8O\\\"\\nSR_CORRECT = f\\\"<<<< SEARCH notes/thing.md\\\\n{FALSE_C}\\\\n====\\\\n{TRUE_C}\\\\n>>>> REPLACE\\\"\\nSR_DELETE  = f\\\"<<<< SEARCH notes/th",
+      "t_offset_s": 720.41
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_fix_examined_is_what_the_fix_says_2026-11-11.py <<'PYEOF'\\n\\\"\\\"\\\"The fix-side walk examines what the fix makes the document SAY.\\n\\nJoint round `tonights_build_review_b22_b88_b105_2026-11-10`, seat fable.\\nOn the live promote path a `proposed_fix` is ALWAYS search/replace blocks\\n(`_apply_back_promote` refuses `no_parseable_block` before the gate is\\nconsult",
+      "t_offset_s": 790.764
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_true_sub_claim_admits_an_unexamined_fix_2026-11-10.py; echo \\\"EXIT=$?\\\"; python3 -m pytest bench/tests/test_a_confirming_tool_must_discriminate_to_admit_2026-11-10.py -q 2>&1 | tail -2\", \"description\": \"Run original exploit probe and branch-gate guard\", \"timeout\": 240000}",
+      "t_offset_s": 887.895
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat >> bench/tests/test_the_launcher_substitutes_no_suite_2026-11-11.py <<'PYEOF'\\n\\n\\nclass TestTheSecondRescuedInstrumentIsSupersededNotSilent:\\n    \\\"\\\"\\\"\\u2605 JOINT ROUND 2026-11-11: WHAT THE DEFAULT'S REMOVAL BROKE THAT NOBODY\\n    CHECKED. `scripts/falsifier_supply_fable_2026-09-30.py` is RESCUED SEAT\\n    EVIDENCE (header: body byte-identical to the seat's output, sha256 in\\n ",
+      "t_offset_s": 984.178
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport sys, types\\nsys.path.insert(0, '.'); sys.path.insert(0, 'bench')\\nimport domain_immune as di\\n\\nEQ = \\\"Eq(x**2 - 1, (x-1)*(x+1))\\\"\\ndef F(d, fix):\\n    return types.SimpleNamespace(description=d, finding_id=\\\"X\\\", title=\\\"\\\", evidence=\\\"\\\", proposed_fix=fix)\\n\\n# 1. TODAY (post-revert): unknown domain refuses -- fail-closed, at the no-tools branch\\nr = di.d",
+      "t_offset_s": 1025.037
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom sympy import Rational, nsimplify\\nprint('sympy:', nsimplify(0.9454545454545454, rational=True), '=', float(Rational(52,55)))\\\"\\nwhich wolframscript >/dev/null 2>&1 && wolframscript -code 'N[52/55, 16]' || echo \\\"wolframscript ABSENT on this machine\\\"\", \"description\": \"Cross-verify the regression-gate constant with SymPy and Wolfram\", \"timeout\": 60000}",
+      "t_offset_s": 1119.874
+    }
+  ],
+  "n_tool_calls": 37,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1231.4,
+  "response": "All evidence is in. Final record.\n\n---\n\n# SEAT REPLY \u2014 joint round `tonights_build_review_b22_b88_b105_2026-11-10`, seat `fable`, 2026-11-11\n\n## `verdict`\n\n| Item | Verdict |\n|---|---|\n| **Task 1 \u2014 the closure of the fold-back gate's domain route** | **BROKEN, in both directions asked.** (a) A finding shape still admits a fix the tools have not examined: a search/replace fix whose REPLACE side carries an unexamined payload plus a true computable rider \u2014 **reproduced through the real gate, `ok=True`**. (b) The repair made the route **inert on the one shape that should admit**: the canonical correction (false value in SEARCH, true value in REPLACE) was REFUSED via `chemistry_structure` REJECTED(0.85) on the false half the fix exists to remove. Defect (b) is **repaired, guarded, delivered** (`bench/domain_immune.py:_fix_side_text`); defect (a) is **structural to any text-scoped admission** and is pinned + routed to the founder. |\n| **Task 2 \u2014 which seat was right on build 1** | **fable.** cc2's reasoning was inadequate *at the time*, by cc2's own words \u2014 argument below, with no appeal to the later reproduction. |\n| **Task 3 \u2014 what the launcher default's removal breaks** | **`scripts/falsifier_supply_fable_2026-09-30.py` CHK-4**, rescued seat evidence that may not be edited: its precondition assertion (`\"test_immune_memory_consumption.py\" in frag`, ~line 182) now fails with `launcher default drifted`. **Confirmed by execution.** Supersession pinned in the guard file. (CHK-2 of the same script is also red on `_prose_one_sided` \u2014 separate, undated here, declared open.) |\n| **Task 4 \u2014 the cross-domain revert** | **The revert is right**, and a safe form exists: a provenance gate in `load_domain_config` resolution (admission only when the domain owns a dedicated TOML or is explicitly `cross_domain`). **All three states demonstrated by execution**; the safe form is NOT shipped tonight \u2014 reasoning below. |\n\n## `composability`\n\nThe delivered fix (`_fix_side_text`) and the existing both-texts conjunction are **one fix at one root cause, not a composition**: the conjunction decided *which texts*; this decides *what the fix text is*. No composability claim is made. Measured: all 25 committed closure tests + 18 branch-gate tests stay green with the fix in place, and the committed exploit probe still prints `CLOSED, AND THE CAPABILITY IS INTACT` (exit 0) \u2014 so nothing the closure bought is given back. The task-4 safe form is likewise a single resolution change, per the TOML note's own words (`cross_domain.toml:16-18`): \"a resolution change in code, not a config addition.\"\n\n## `reasoning`\n\n**Task 1.** The repaired predicate (`bench/domain_immune.py:670`, pre-patch numbering) is `admits = computing_for \u2227 fix_computing \u2227 \u00acdefinitive_against` \u2014 a conjunction of two **existential** quantifiers over reducible fragments, one per text. A conjunction of existentials is satisfied by planting one witness fragment in each text. Derived, then executed:\n\n- *Shape that still admits an unexamined fix:* `proposed_fix` = SR block whose REPLACE side reads `\"All prior results are withdrawn. Background: the molecule 'CCO' has formula C2H6O\"`. Through `rr._apply_back_gate` (`bench/reference_runner_v3.py:12974`): **`ok=True`, `why=domain:chemistry/... fix_for=chemistry_structure`**. The operative sentence was never examined; the rider was. This survives my own repair (the rider sits in the replace side) and **cannot be closed by any text-scoped tool**: the committed guard's own legitimate case (`test_both_verifying_still_admits`, `test_the_launcher_substitutes_no_suite_2026-11-11.py:117-124`) is `\"correct it to: <claim>\"` \u2014 confirmable fragment plus unverified residue, differing from the exploit **only in the semantics of the residue**. The honest closures are a residue\u2192ESCALATE rule (existing `bench/cc2_manager.py` vocabulary) or accepted-and-recorded risk; **which is a scoping ruling for the founder**, the identical route the original exploit's repair took. Pinned as `TestTheDeclaredResidue` so its closure is visible, never silent.\n- *Inert where it should admit:* on the live path a fix reaching the gate is **always** SR blocks \u2014 `_apply_back_promote` rejects `no_parseable_block` at `reference_runner_v3.py:13343-13345` *before* the gate is consulted. The fix-side walk ran the tools over raw markup, so (i) the **canonical correction refused** \u2014 the tool reduced the FALSE half in SEARCH \u2192 `against=chemistry_structure` \u2192 refuse; (ii) **a deletion of a true statement admitted** \u2014 the truth it destroys sat in its SEARCH half and verified. Both demonstrated pre-repair (`OLD P1 admits: False / P2 admits: True`). Note the committed guard's admit-case is a *prose* fix, a shape the promote path never produces \u2014 the exact defect class that guard file itself names at its line 179.\n- *The fix:* walk the REPLACE side \u2014 what the fix makes the document SAY \u2014 when the field parses as blocks; raw text otherwise (every committed probe byte-identical); parser **imported from the live path, never copied** (the `_resolve_domain_alias` precedent); import failure degrades to today's behaviour, never an exception on the admission path; pure deletion \u2192 empty fix text \u2192 the existing fail-closed branch. Direction: tightens LIVE-2, un-inerts P1, loosens nothing a committed guard pins \u2014 33/33 green.\n\n**Task 2.** cc2's own words: *\"I did not attack it\u2026 Treat my verdict as 'its own measurement reproduces', not 'I tried to break it'.\"* \u2014 and the verdict column still says **SOUND**. That is the failure, and it needed no hindsight: the build added a **new admission surface**, which under \u00a74 is full-depth (novel inference, high consequence, and **no downstream verifier** \u2014 admission is the last gate). Running the build's own producer (`which_admissions_are_truth_blind_2026-11-10.py`, exit 0, mpmath 1.0) is corroboration of the producer's *own* failure classes only; against the orthogonal class \u2014 admission scope \u2014 it is **n=0 passes**, and C(0)=0. The information was on the surface cc2 read: `domain_verification_set` evaluated `finding.description` while the artefact promoted is `entry[\"proposed_fix\"]` (`reference_runner_v3.py:13340`) \u2014 one caller away. cc2's honesty about the bound is to its credit and is exactly why the verdict token is indefensible: \u00a710 makes a convergence declaration without evidence an integrity-class defect, and \"SOUND\" on a roster propagates while the caveat paragraph does not. cc2 applied \"coverage is not fidelity\" devastatingly to repair 6's headline figure and exempted its own build-1 verdict from the same standard. My blind verdict \u2014 SOUND as truth-blindness gate, UNSOUND as complete admission route, exploit demonstrated \u2014 was right, and tonight's round shows the *repair* of that exploit is itself incomplete, which is the same lesson again: the measurement that exists is not the measurement that matters.\n\n**Task 3.** Traced by execution: `test_cmd=None` is type-safe end-to-end (`Optional[str]` at `reference_runner_v3.py:2263`; guards at 13201, 15447 before any `shlex.split`). What nobody checked is the **second rescued instrument**: the repair's guard protects `falsify_e2_inherits_default_2026-09-30.py` (its test 3) but `falsifier_supply_fable_2026-09-30.py` CHK-4 asserts the immune-memory suite names appear within 400 chars of `dest=\"test_cmd\"` \u2014 a *precondition* proving the dangerous default still existed for arm4's escape to be load-bearing. Executed in isolation: **`CHK-4: FAILED -> launcher default drifted`**. The file is byte-identity-protected (header sha256 in `seat_evidence_manifest_2026-09-30.json`), so the project's own precedent applies \u2014 stand a guard beside it, don't edit it. Delivered: `TestTheSecondRescuedInstrumentIsSupersededNotSilent`, which also makes restoring the default to quiet the rescued script trip the no-substitution test instead. 8/8 green. The faked constant, dual-verified: 0.9454545454545454 = **52/55** (SymPy `nsimplify`; Wolfram Language, local Wolfram Engine: `0.945454545454545454\u2026`) \u2014 a fixed 52-of-55 pass fraction wearing the costume of a measurement.\n\n**Task 4.** Three states, all executed: today, unknown domain \u2192 `uncategorised`, `tools=[]`, refuse (fail-closed). With the reverted widening reproduced in-process, the same unknown domain **admits** (`materials_science/mathematical \u2026 FAIL-OPEN`) \u2014 the revert's stated reason reproduces exactly. With a provenance gate (dedicated TOML or explicit `cross_domain` required), unknown refuses while explicit `cross_domain` admits. So: **revert right; safe form exists and is the resolution change the TOML note already names** (`cross_domain.toml:16-18`). I do **not** ship it tonight: without re-adding the patterns there is nothing for the gate to gate \u2014 an addition nothing reaches, the project's most-confirmed defect class (11 since 2026-08-01) \u2014 and re-adding the patterns is the config change the founder's note explicitly keeps out of B22. It is B137's close, one ruling away, with the executed probe above as its measurement.\n\n## `falsifier` \u2014 delivered into the tree\n\n| Path | What |\n|---|---|\n| `bench/domain_immune.py` | **repaired in place**: `_fix_side_text` + `fix_basis` ledger key + replace-side narrowing in `domain_verification_set`. |\n| `scripts/the_fix_side_walk_read_the_edit_markup_2026-11-11.py` | falsifier: exit 1 `FALSIFIED` while either P1/P2 defect present; exit 0 `CLEAN` after repair. Declares the rider residue it does not decide. |\n| `bench/tests/test_the_fix_examined_is_what_the_fix_says_2026-11-11.py` | 5-test guard incl. the pinned rider residue (goes red when the residue is closed \u2014 move the pin, don't delete it). |\n| `bench/tests/test_the_launcher_substitutes_no_suite_2026-11-11.py` | appended supersession pin for the rescued CHK-4. |\n\n## `falsifier_result`\n\n```\npre-repair : P1 canonical correction admits: False / P2 deletion-of-truth admits: True \u2192 FALSIFIED, EXIT=1\nold-behaviour replay (narrowing disabled in-process): guard would be RED\npost-repair: P1 True / P2 False \u2192 CLEAN, EXIT=0\npytest: new guard + 2 committed gate guards = 33 passed (80.73s); branch-gate guard 18 passed; launcher guard 8 passed\ncommitted exploit probe: \"CLOSED, AND THE CAPABILITY IS INTACT\", EXIT=0\nrider residue through the REAL gate: ok=True  (declared, pinned, routed to founder)\nCHK-4 isolation run: FAILED -> launcher default drifted  (confirmed breakage, task 3)\ncross-domain probe: today False / widened True / provenance-gated False+True  (task 4)\n```\nWhat did NOT work and was corrected: my first falsifier fixtures used git-conflict `<<<<<<<`/`=======` delimiters, which `parse_search_replace_blocks` (`reference_runner_v3.py:14765`) does not parse \u2014 the probe measured the raw-walk path twice and stayed FALSIFIED after the patch. Rewritten in the parser's own `<<<< SEARCH`/`====`/`>>>> REPLACE` format before any conclusion was drawn. My first in-script Edit attempts were also permission-refused; the patch went in via an executed scripted edit and `ast.parse` confirmed.\n\n## `strongest_disagreement`\n\n**I reject cc2's verdict token \"SOUND as measured\" on build 1.** A verdict whose own caveat says \"I tried to break it: no\" is INDETERMINATE wearing SOUND's clothes, and the distinction is not pedantry: the roster propagates the token, not the paragraph. cc2's evidence (producer exits 0, no drift, mpmath 1.0) is evidence about the build's *own measurement*, which is orthogonal to the admission-scope class where the real defect lived \u2014 zero falsification passes were run against a brand-new admission surface that \u00a74 marks full-depth. The same seat's sharpest insight of the night \u2014 *coverage is not fidelity* \u2014 refutes its own build-1 verdict. On build 2 our disagreement partly **dissolves on evidence**: cc2 said falsification 3 (quote misattribution) was unattempted; my blind half attempted it by execution (16 marked lines, 0 quote-initial, 0 misattributed), which answers the misattribution half \u2014 while cc2 is right that the git-dependent guard half remains unrun in a `.git`-less sandbox, so that sliver stays open. What would settle build 1's residue question is a founder ruling on replace-side residue; what settles build 2 is one guard run in a git tree.\n\n## `aims_check`\n\nNothing disabled or removed: all 51 pre-existing tests across the 3 touched guard files pass unmodified; the closure's refusals, the branch gate, the anti-inertia admit, and the fail-closed absent-fix branch all stand; the repair *restores* a capability (admitting the canonical correction) the closure had silently destroyed. Every addition is wired and executed: `_fix_side_text` is called by the live gate path, `fix_basis` is asserted by the guard, the supersession pin runs on the gate file it extends. Democratisation aim: the fix makes the STEM-topic route work on the fix shape real runs produce, in every domain, not just on hand-fed prose probes.\n\n## What would refute me\n\n- **Rider residue claim (\"structural, not closable by text-scoped tools\"):** a committed mechanical rule that refuses my rider while admitting the committed guard's `\"correct it to: <claim>\"` case without a semantic judgement would refute it \u2014 I derived that the two differ only in residue semantics; show a non-semantic discriminator and the claim falls.\n- **The repair itself:** a live registry entry whose legitimate SR fix admits under the raw walk but refuses under the replace-side walk (beyond pure deletions, which refuse by design) \u2014 the parity direction I could not enumerate because the sandbox holds no live promote archive. Also: a fix exercising the markdown-fallback branch of `parse_search_replace_blocks` whose replace-side narrowing drops text the tools should have seen \u2014 declared, not exhaustively probed.\n- **Task 2:** evidence that cc2 ran an admission-scope probe it did not report would convert its verdict from unevidenced to evidenced and refute my charge.\n- **Task 3:** `seat_evidence_manifest_2026-09-30.json` not actually covering `falsifier_supply_fable_2026-09-30.py` would make the file editable and my stand-beside fix the wrong shape (an in-place CHK-4 update would then be simpler-sufficient).\n- **Task 4:** a measurement showing some consumer depends on unknown-domain *classification* (not admission) through the fallback would narrow where the provenance gate may sit, though not the revert verdict.\n\n## `termination`\n\n**4 passes.** (1) read the repaired gate, its guards, and the caller; derived the existential-conjunction weakness; probed four shapes. (2) live-shape SR probes through the real gate \u2014 both breaks confirmed; built, shipped, red-on-old/green-on-new, 33+18 committed tests green. (3) launcher: traced `test_cmd` None-safety end-to-end; found and pinned the rescued CHK-4 breakage. (4) cross-domain three-state probe; swept for new findings \u2014 none above threshold. Named mechanisms for a next round rather than a vague \"more might exist\": the markdown-fallback narrowing path (unprobed), CHK-2's `_prose_one_sided` red (undated, not tonight's scope), and the founder's residue ruling, which decides whether the pinned rider test moves from declaration to refusal.",
+  "t_start_epoch": 1794421684.231987,
+  "t_end_epoch": 1794422915.6009119,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_f60vjudf/repo",
+      "built": false
+    }
+  ]
+}

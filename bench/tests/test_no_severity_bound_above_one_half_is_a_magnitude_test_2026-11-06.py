@@ -55,13 +55,15 @@ class TestTheKeyPropertyCannotBeSilentlyDeleted:
     def test_1a_key_property_paragraph_is_present(self, appendix):
         assert "**Key property:** Disproved findings always receive zero" in appendix, (
             "§7.7's KEY PROPERTY paragraph is gone. S_v has no zero, so "
-            "`Sev = W . S_v` cannot represent V(False)=0; deleting this "
+            "`Sev = W . S_v` cannot represent Ver(False)=0; deleting this "
             "paragraph adopts the loss, it does not merely tidy the text."
         )
 
     def test_1b_v_false_row_is_present_and_zero(self, appendix):
-        m = re.search(r"\|\s*V\(False\)\s*\|\s*([0-9.]+)\s*\|", appendix)
-        assert m is not None, "§7.7's V(False) table row is gone."
+        # Renamed V -> Ver in the appendix 2026-11-11, to end the collision with
+        # `V(f)` for MATERIALITY. The old spelling is deliberately NOT accepted.
+        m = re.search(r"\|\s*Ver\(False\)\s*\|\s*([0-9.]+)\s*\|", appendix)
+        assert m is not None, "§7.7's Ver(False) table row is gone."
         assert float(m.group(1)) == 0.0
 
     def test_1c_caution_1_names_confidence_as_the_only_substitution_target(self, appendix):

@@ -36,8 +36,17 @@ MARKER = "matches claim"
 
 
 class _F:
-    def __init__(self, d):
+    #: ★ `fix` DEFAULTS TO EMPTY, AND THAT DEFAULT IS DELIBERATE. From the
+    #: founder's ruling of 2026-11-11 -- *"Keep both the claim prose, and the
+    #: proposed fix."* -- an admission needs BOTH texts to verify, so a probe
+    #: built with a description alone can no longer admit. The tempting
+    #: shortcut was to default `fix` to the description, which would have made
+    #: every probe admit and quietly turned each REFUSAL test in this file into
+    #: a test that passes for the wrong reason. Admission probes therefore pass
+    #: their fix EXPLICITLY, and anything that should be refused says nothing.
+    def __init__(self, d, fix=""):
         self.description = d
+        self.proposed_fix = fix
 
 
 class TestTheTablesAreNotEmpty:
@@ -173,7 +182,14 @@ class TestEndToEndThroughTheRealGate:
     def test_a_discriminating_tool_still_admits(self):
         """THE CAPABILITY THE ADOPTED OPTION EXISTS TO PRESERVE. If this fails,
         the repair has become the tool-level exclusion it was measured against."""
-        r = di.domain_verification_set("chemistry", _F("2 H2 + O2 -> 2 H2O"))
+        r = di.domain_verification_set(
+            #: ★ THE FIX TEXT IS THE BARE EQUATION, not "correct it to: ...".
+            #: The prefix made `stoichiometric_balance` REJECT the fix -- its
+            #: parser reads the whole string as the equation -- so the probe
+            #: would have failed on the wording of its own fixture rather than
+            #: on the property. A fix the tools must verify has to be a fix the
+            #: tools can PARSE.
+            "chemistry", _F("2 H2 + O2 -> 2 H2O", "2 H2 + O2 -> 2 H2O"))
         assert r["admits"] is True, r.get("detail")
 
     def test_a_reachable_comparing_branch_admits_end_to_end(self):
@@ -187,11 +203,13 @@ class TestEndToEndThroughTheRealGate:
         same test so this cannot rot into a probe that passes because the tool
         confirms everything."""
         r = di.domain_verification_set(
-            "chemistry", _F("the molecule 'CCO' has formula C2H6O"))
+            "chemistry", _F("the molecule 'CCO' has formula C2H6O",
+                            "correct it to: the molecule 'CCO' has formula C2H6O"))
         assert r["admits"] is True, (
             f"the live formula admission is refused again: {r.get('detail')}")
         bad = di.domain_verification_set(
-            "chemistry", _F("the molecule 'CCO' has formula C3H8O"))
+            "chemistry", _F("the molecule 'CCO' has formula C3H8O",
+                            "correct it to: the molecule 'CCO' has formula C3H8O"))
         assert bad["admits"] is False, (
             f"the FALSE formula variant admits, so the branch is not "
             f"discriminating and the marker is worthless: {bad.get('detail')}")
@@ -201,7 +219,8 @@ class TestEndToEndThroughTheRealGate:
         which is the error that produced the defect this file now guards."""
         r = di.domain_verification_set(
             "chemistry",
-            _F("the molecule 'CCO' has molecular weight 46.07 g/mol"))
+            _F("the molecule 'CCO' has molecular weight 46.07 g/mol",
+               "correct it to: the molecule 'CCO' has molecular weight 46.07 g/mol"))
         assert r["admits"] is True, r.get("detail")
 
     def test_the_detail_names_the_muted_voice(self):
@@ -230,12 +249,45 @@ class TestTheHonestLimit:
                 _F("the reverse complement of ATGC is GCAT"), cfg)
             if "biological_sequence" in (di.domain_b_cell_tools(kind, cfg) or []):
                 reached += 1
-        assert reached == 0, (
-            f"{reached} route(s) now reach biological_sequence. That is an "
-            f"IMPROVEMENT, not a regression: the classifier has been repaired. "
-            f"Re-run scripts/which_admissions_are_truth_blind_2026-11-10.py, "
-            f"update this pin with its reason, and add an end-to-end admission "
-            f"test for the comparing branch now that one is possible.")
+        #: ★ RE-PINNED 2026-11-11 FROM 0 TO AT LEAST 1, on the founder's B22
+        #: verdict to widen the claim patterns. The old pin recorded an HONEST
+        #: LIMIT -- `biology.toml` named none of sequence, DNA, RNA, protein,
+        #: nucleotide, complement, codon or GC content, so 0 of 10 archived
+        #: sequence claims could reach `biological_sequence` and the branch gate
+        #: guarded nothing. Adding that vocabulary makes the route live.
+        #: RE-PINNED RATHER THAN DELETED, because the guard's job is unchanged:
+        #: it still asserts that something assigns the tool and that the route
+        #: is in the state the record says it is. Its own failure message asked
+        #: for exactly this, and the end-to-end discrimination test below is the
+        #: second half of what it asked for.
+        assert reached >= 1, (
+            f"{reached} route(s) reach biological_sequence; at least 1 was "
+            f"pinned on 2026-11-11 after B22's widening. Going back to 0 means "
+            f"the sequence vocabulary has been removed from biology.toml, which "
+            f"re-breaks a capability the founder ruled in.")
+
+    def test_the_comparing_branch_discriminates_end_to_end(self):
+        """★ THE HALF THE OLD PIN COULD NOT TEST, now that a route exists.
+
+        Reaching a tool is not the same as the tool deciding anything. This
+        asserts the repaired route actually DISCRIMINATES: a true reverse
+        complement admits and a false one does not. Without this, the widening
+        could have routed claims to a tool that says yes to everything, which
+        is precisely the truth-blind failure this whole file exists to catch.
+        """
+        _CLAIM = "the reverse complement of ATGC is GCAT"
+        true_claim = di.domain_verification_set(
+            "biology", _F(_CLAIM, f"correct it to: {_CLAIM}"))
+        false_twin = di.domain_verification_set(
+            "biology", _F("the reverse complement of ATGC is AAAA",
+                          "correct it to: the reverse complement of ATGC is AAAA"))
+        assert true_claim["admits"] is True, (
+            "the repaired biology route no longer admits a TRUE sequence "
+            "claim, so the widening gained reach and lost the capability")
+        assert false_twin["admits"] is False, (
+            "the repaired biology route admits a FALSE sequence claim. That "
+            "is truth-blindness: the route was widened to a tool that cannot "
+            "tell the claim from its false twin.")
 
     def test_cross_domain_declares_tools_it_can_never_dispatch(self):
         cfgs = di.load_all_domain_configs()

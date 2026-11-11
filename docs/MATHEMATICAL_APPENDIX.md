@@ -1252,15 +1252,21 @@ The asymmetric rates are the primary construct. The derived scalar is a convenie
 
 ### 7.7 Per-Finding Severity
 
-> **Sev(f) = W(class) · confidence · V(verification)**
+> **Sev(f) = W(class) · confidence · Ver(verification)**
+>
+> **The verification factor was called `V` until 2026-11-11 and was renamed on the founder's
+> instruction to fix the naming collisions in this formula.** `cdsfl_core_formal.md:417` uses
+> `V(f)` for MATERIALITY -- the consequence if the defect ships -- so the same letter named a
+> consequence in one canonical document and an evidence weight in the other. The 2 meanings are
+> not merely different: they are the 2 halves the severity work of 2026-11-11 is separating.
 
 | Factor | Value | Meaning |
 |---|---|---|
 | W(HARD) | 1.0 | Hard constraint violation |
 | W(SOFT) | 0.5 | Soft preference |
-| V(True) | 1.0 | Computationally verified |
-| V(None) | 0.5 | Not assessed |
-| V(False) | 0.0 | Computationally disproved |
+| Ver(True) | 1.0 | Computationally verified |
+| Ver(None) | 0.5 | Not assessed |
+| Ver(False) | 0.0 | Computationally disproved |
 
 **Key property:** Disproved findings always receive zero severity, regardless of confidence. A model that is very confident about something wrong gets zero credit. This prevents hallucinated findings from inflating severity scores.
 
@@ -1282,14 +1288,14 @@ with SymPy and independently with z3; producer
    taken over a smaller population. Making it tool-decided requires replacing
    `confidence` with a harness-computed quantity; §7.8 Approach B
    (`S_v = 1/(1 + exp(−Λ_total))`) is that quantity and is already specified. **That substitution
-   replaces `confidence` ALONE.** `V` is retained as a separate factor, so the
+   replaces `confidence` ALONE.** `Ver` is retained as a separate factor, so the
    KEY PROPERTY below survives it: a disproved finding scores
-   `W · S_v · V(False) = 0` exactly (z3: unsat for a result above 0; SymPy
+   `W · S_v · Ver(False) = 0` exactly (z3: unsat for a result above 0; SymPy
    simplifies the product to 0). Do **not** read this sentence as licensing
-   `Sev = W · S_v` with the `V` column removed — `S_v = 1/(1+exp(−Λ_total))`
+   `Sev = W · S_v` with the `Ver` column removed — `S_v = 1/(1+exp(−Λ_total))`
    has no zero (SymPy returns no real solution; z3 unsat; Wolfram Language
    `Solve` returns `{}`; the Λ → −∞ limit is 0 and unattained), so that form
-   cannot represent `V(False) = 0` at all and the key property would become
+   cannot represent `Ver(False) = 0` at all and the key property would become
    unrepresentable rather than merely unstated. Note also that this is a
    **provenance** repair — it changes who computed the belief factor, from the
    model to the harness — and it does **not** discharge the magnitude
@@ -1331,10 +1337,29 @@ with SymPy and independently with z3; producer
    such a cut is **a bound on belief conditional on `class = HARD`**, and
    moving it — 0.7 to 0.8, say — tightens the belief requirement while leaving
    impact untouched. A cut that genuinely bounds magnitude needs a consequence
-   scale with more than two levels; `cdsfl_core.txt` §10 already enumerates
-   five material-defect categories, which is the existing vocabulary for one.
-   Specifying such a scale is not done here and is not implied by this
-   caution.
+   scale with more than two levels.
+
+   **THE CITATION THAT STOOD HERE WAS DEAD AND IS REPLACED, 2026-11-11.** It read
+   that "`cdsfl_core.txt` §10 already enumerates five material-defect categories,
+   which is the existing vocabulary for one". That file is **39 lines long, has no
+   §10, and enumerates no such categories** -- it is the 5-step P-pass loop. Nothing
+   in `bench/` or `docs/` enumerates them either. So the caution pointed at a
+   vocabulary that does not exist, and a reader following the pointer would have
+   found the 5 steps of a falsification loop and mistaken them for a consequence
+   scale.
+
+   **WHAT ACTUALLY SUPPLIES SUCH A SCALE IS THE DOMAIN, AND THAT IS NOW MEASURED
+   RATHER THAN PROMISED.** The free panel round `severity_is_ordinal_2026-11-11`
+   carried the cut into the 4 validated scales named in its own section 4 by the
+   linear map `x -> lo + 0.7 * (hi - lo)` and executed it: **CVSS lands on 7.0,
+   exactly the High boundary, and is therefore expressible as the rank "High or
+   above"; FMEA lands on 7.3, CTCAE on 3.8 and INES on 4.9, all BETWEEN levels.**
+   So 1 of the 4 can receive the frozen cut as a rank and 3 cannot, and each
+   domain's critical level must be a per-scale frozen LEVEL rather than a number
+   carried across from here.
+
+   Specifying such a scale is not done here and remains the open question of entry
+   B143, the appendix severity formula whose 2 inputs are read from nowhere.
 
    **Measured consequence of this, on the archive** (producer
    `scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py`,
@@ -1342,14 +1367,31 @@ with SymPy and independently with z3; producer
    `constraint_class` and `confidence` are present on **0** entries each
    (Wilson 95% [0.000000, 0.001210]), and `compute_sev_f` defaults both to
    their stricter readings, so the **computed** severity reduces to
-   `V(verification)` alone and is **three-valued** on the whole archive:
+   `Ver(verification)` alone and is **three-valued** on the whole archive:
    `0.0` on 32 entries, `0.5` on 1,980, `1.0` on 1,158. Every cut in
    `(0.5, 1.0]` therefore induces the *same* partition, and moving
    `CRITICAL_SEVERITY_THRESHOLD` from 0.7 to 0.8, 0.9 or 0.95 reclassifies
    **0** entries. On the model-asserted `severity` float the release door reads
    today the same moves reclassify 522, 1,060 and 1,270 entries respectively,
-   but whether any of that movement is impact-related is **unmeasurable**,
-   because the class is recorded nowhere. Collecting the two missing inputs is
+   but whether any of that movement is impact-related is **unmeasurable on
+   this archive**.
+
+   **CORRECTED 2026-11-11, and the distinction matters.** This passage read
+   that the movement is unmeasurable *because the class is recorded nowhere*.
+   The archive figure above is unchanged and still exact -- 0 of 3,170 archived
+   entries carry `constraint_class`, because every one of them predates any
+   writer. But **a writer now exists**: `constraint_class` is carried on the
+   `Finding` dataclass, accepted as a canonical envelope field, and written into
+   the registry entry by `FindingRegistry.register`, on the founder's B84
+   acceptance of 2026-11-11 and B87's ruling that the field is separable because
+   `cdsfl_operational.md` section 11 already instructs every seat to classify
+   every constraint as HARD or SOFT. So the honest statement is that the class
+   is **not yet POPULATED**, not that it is unrecordable -- the reader
+   `stamp_sev_f` had been reading the key with 0 writers since the severity
+   work, and that half is now closed. `confidence` remains genuinely sourceless
+   and is NOT built. The measurement becomes possible once a run lands entries
+   carrying the class; until then every figure above stands as written.
+   Collecting the two missing inputs is
    therefore prior to choosing a bound, and is the open question of entry B87.
 
 ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)

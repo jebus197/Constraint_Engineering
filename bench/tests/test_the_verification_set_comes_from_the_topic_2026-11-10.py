@@ -48,12 +48,22 @@ def di():
     return importlib.import_module("domain_immune")
 
 
-def _finding(text: str, fid: str = "F1"):
+def _finding(text: str, fid: str = "F1", fix: str = ""):
+    """★ `fix` DEFAULTS TO EMPTY and that is deliberate.
+
+    Founder ruling 2026-11-11: *"Keep both the claim prose, and the proposed
+    fix."* An admission now needs BOTH texts to verify, because admitting on
+    claim prose alone was the unexamined-fix hole a free panel seat exploited.
+    Defaulting `fix` to echo the description would have made every probe in
+    this file admit and turned each REFUSAL test into one that passes for the
+    wrong reason, so admission probes pass their fix EXPLICITLY.
+    """
     o = types.SimpleNamespace()
     o.description = text
     o.finding_id = fid
     o.title = ""
     o.evidence = ""
+    o.proposed_fix = fix
     return o
 
 
@@ -99,14 +109,16 @@ class TestItCanAdmit:
 
     def test_a_true_formalised_claim_admits(self, di):
         r = di.domain_verification_set("mathematics",
-                                       _finding("Eq(x**2 - 1, (x-1)*(x+1))"))
+                                       _finding("Eq(x**2 - 1, (x-1)*(x+1))",
+                                                fix="Eq(x**2 - 1, (x-1)*(x+1))"))
         assert r["admits"] is True, r
         assert r["claim_type"] == "mathematical"
         assert "sympy" in r["tools"]
 
     def test_a_second_independent_true_claim_admits(self, di):
         r = di.domain_verification_set(
-            "mathematics", _finding("Eq(sin(x)**2 + cos(x)**2, 1)"))
+            "mathematics", _finding("Eq(sin(x)**2 + cos(x)**2, 1)",
+                                    fix="Eq(sin(x)**2 + cos(x)**2, 1)"))
         assert r["admits"] is True, r
 
 
@@ -122,7 +134,11 @@ class TestTheAdmissionCountIsExact:
     ]
 
     def test_exactly_the_true_formalised_claims_admit(self, di):
-        got = [(d, t, di.domain_verification_set(d, _finding(t))["admits"])
+        #: Each row supplies the repaired identity as its own fix, which is
+        #: what a real repair of a formal claim looks like. The rows expected
+        #: to REFUSE still refuse -- a false identity fails on both texts.
+        got = [(d, t, di.domain_verification_set(
+                    d, _finding(t, fix=t))["admits"])
                for d, t, _ in self.CASES]
         want = [(d, t, w) for d, t, w in self.CASES]
         assert got == want, (
@@ -156,7 +172,12 @@ class TestTheRouteFiresThroughTheRealGate:
     def test_a_reducible_true_claim_is_admitted(self, rr):
         ok, why = rr._apply_back_gate(
             "repaired prose", self.PROSE, "",
-            finding={"description": "Eq(x**2 - 1, (x-1)*(x+1))"},
+            #: ★ BOTH TEXTS, per his ruling of 2026-11-11. A registry entry
+            #: always carries `proposed_fix` in the live system -- the gate
+            #: exists to promote one -- so a probe without it was testing a
+            #: shape the runner never produces.
+            finding={"description": "Eq(x**2 - 1, (x-1)*(x+1))",
+                     "proposed_fix": "Eq(x**2 - 1, (x-1)*(x+1))"},
             domain="mathematics")
         assert ok is True, why
         assert why.startswith("domain:"), why
@@ -272,7 +293,8 @@ class TestTheRunnersDefaultDomainIsNotInert:
     def test_the_default_domain_admits_a_reducible_claim(self, rr):
         ok, why = rr._apply_back_gate(
             "repaired prose", self.PROSE, "",
-            finding={"description": self.REDUCIBLE}, domain="software")
+            finding={"description": self.REDUCIBLE,
+                     "proposed_fix": self.REDUCIBLE}, domain="software")
         assert ok is True, (
             f"the route is inert on the runner's default domain: {why}")
         assert why.startswith("domain:"), why

@@ -433,6 +433,20 @@ class Finding:
     # unaffected and the frozen dataclass stays positional-compatible.
     falsifier_code: str = ""  # Runnable Python that RAISES/prints FALSIFIED iff defect is real
     falsifier_verdict: str = ""  # Runner's independent re-run verdict: CONFIRMED/REFUTED/ERROR/UNTOOLABLE
+    # ★ THE HARD/SOFT CONSTRAINT CLASS, field 1 of B84's 4. Added 2026-11-11.
+    # B87 settled that this one is SEPARABLE and is NOT a decision: section 11
+    # of `bench/directives/universal/cdsfl_operational.md` already instructs
+    # every seat to "classify every constraint as HARD or SOFT", so recording
+    # what the directive already demands carries out an instruction rather than
+    # changing one. The other 3 fields each need a second ruling and are NOT
+    # built here.
+    # IT IS WIRED END TO END RATHER THAN DECLARED: the reader has existed since
+    # the severity work -- `reference_runner_v3.stamp_sev_f` reads
+    # `e.get("constraint_class")` and had 0 writers, so `constraint_class_
+    # defaulted` was True on every entry it ever stamped. Appended LAST and
+    # defaulted so the frozen dataclass stays positional-compatible with every
+    # existing construction site.
+    constraint_class: str = ""  # "HARD" | "SOFT" | "" when the seat did not say
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

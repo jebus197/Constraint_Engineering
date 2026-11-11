@@ -54,10 +54,10 @@ def mutations(src: str):
                 src.replace(a, "| W(SOFT) | 1.0 | Soft preference |"), PINNED,
                 "two_classes_differ"))
 
-    a = _anchor(src, "| V(False) | 0.0 | Computationally disproved |", "V(False) row")
-    out.append(("M3 V(False) becomes 0.1, so a disproved finding stops scoring 0 "
+    a = _anchor(src, "| Ver(False) | 0.0 | Computationally disproved |", "Ver(False) row")
+    out.append(("M3 Ver(False) becomes 0.1, so a disproved finding stops scoring 0 "
                 "(seat guard: GREEN, missed it)",
-                src.replace(a, "| V(False) | 0.1 | Computationally disproved |"), PINNED,
+                src.replace(a, "| Ver(False) | 0.1 | Computationally disproved |"), PINNED,
                 "scores_exactly_zero or product_really_is_zero"))
 
     a = _anchor(src, "selected(f) ≡ (Sev(f) > τ_sev) ∧ (S_v(f) ≥ 0.5)",

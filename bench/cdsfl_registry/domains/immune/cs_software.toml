@@ -39,6 +39,16 @@ mathematical = [
     "(?:\\bformula\\b|\\bequation\\b|\\bcalculat)",
     "(?:\\bcomplexity\\b|\\bO\\(|\\bTheta\\(|\\bOmega\\()",
     "(?:\\bhash\\b.*\\bcollision|\\bprobabilistic\\b)",
+    # B22, founder verdict 2026-11-11: widen the claim patterns. GRAPH AND
+    # COMBINATORIAL VOCABULARY. `graph_property` was declared as a tool for
+    # this domain's mathematical claims while 0 of its 4 patterns named a
+    # graph, so the tool could never be dispatched -- `additive-standard`'s
+    # symmetric failure, a capability wired to nothing that reaches it.
+    # MEASURED by execution against the 29-claim STEM corpus: routing rises
+    # 22/29 -> 25/29, GAINING AL-09, AL-10 and AL-11 and MOVING 0, LOSING 0.
+    # `\\bcomplexity\\b` is deliberately NOT repeated here: the pattern above
+    # already carries it, and a duplicate alternation branch is dead vocabulary.
+    "(?:\\bgraph\\b|\\bpath\\b|\\bedge[s]?\\b|\\bnode[s]?\\b|\\bvertex\\b|\\bvertices\\b|\\btopological\\b|\\bacyclic\\b|\\btransitive\\b|\\bordering\\b)",
 ]
 
 [immune.verification_tools]

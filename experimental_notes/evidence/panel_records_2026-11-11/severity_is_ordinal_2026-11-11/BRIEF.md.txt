@@ -1,0 +1,470 @@
+# BRIEF — Is severity an ordinal quantity whose scale the domain supplies?
+
+**Round:** `severity_is_ordinal_2026-11-11`. Free seats only (`cc2`, `fable`), blind half
+then joint half. No compelled convergence: each seat returns its own verdict and its
+strongest falsification, and disagreement is preserved as information.
+
+**Tree state:** repository at commit `92ae4a1a`, 2026-11-11. Every file quoted below is
+quoted AT THAT COMMIT, with its line numbers, because a previous joint round
+(`joint_severity_spec_is_uncomputable_2026-11-04`, tracked as entry B125) asked 2 seats
+about a file that had changed since they answered, so their correct reading read as an
+error. Do not re-read a quoted file and assume a difference is your mistake; report the
+difference.
+
+---
+
+## 0. WHAT IS BEING ASKED, AND WHAT IS NOT
+
+**NOT being asked:** whether severity is meaningful, whether the position below is good,
+or whether you agree with it. A canonical rule of this project is that **there are no
+votes in CDSFL**. An answer of the form "I concur" carries no information and will be
+recorded as a non-answer.
+
+**BEING asked:** to break the position stated in §4, using the falsifiable questions in
+§7. Each question is phrased so that a specific finding would refute the position. If
+you cannot refute it, say which question you tried hardest on and what you would need in
+order to refute it.
+
+---
+
+## 1. THE FOUNDER'S FRAMING, VERBATIM
+
+He raised this on 2026-11-11. His words, quoted exactly:
+
+> "Getting a simple sum wrong is unlikely to have many, if any real world consequences,
+> although that depends on the domain. Getting a more serious calculation wrong could
+> determine whether a bridge stands or falls, whether a spacecraft returns safely from
+> space, or burns up in the atmosphere, or whether a calculated tolerance for a jet
+> engine fan blade is correct or not, or might result in a catastrophic failure."
+
+> "given that CDSLF was designed from the outset to be a general purpose STEM
+> calculator, and given that each domain already has its own consequence scales as you
+> state, is it not the case that no one severity scale could fit them all, and therefore
+> we should use these already existing measures and apply each as needed on a per domain
+> basis, rather than adopt any single one as difinitive?"
+
+> "its presence in the maths model becomes illustrative (and should be stated as such in
+> as an abstracted concept in our model/mathematics appendix, if it is not already clear
+> there?), rather than being definitive (not a single magic wand that can apply
+> throughout domains), while the way severity itself is measured in the real world can
+> vary in ways that almost all researchers in each respective STEM domain would be
+> likely to recognise instantly?"
+
+> "the different ways severity is measured across domains ... doesn't by definition break
+> our maths model, because the maths model simply predicts that this quantity exists,
+> irrespective of domain. (Or indeed perhaps even how one choses to measure it?) In this
+> sense the maths model sits at a higher level of abstraction than the individual
+> measures themselves?"
+
+And the standard he is holding the model to:
+
+> "If severity is to be considered a real quantity, then we must be able to map it
+> cleanly on to real world consequence. ... I don't want anyone to look at our maths
+> model and say it, or any part of it, or any part of what we do, is somehow just 'magic
+> fairy dust', with no real substance behind it."
+
+**He is not a mathematician and says so.** He asks specifically whether an abstracted
+quantity that varies across domains and across experiments is already adequately
+represented by conventional mathematical notation, or whether the model needs something
+it does not currently have. That is question Q6 in §7.
+
+---
+
+## 2. THE RECORD: THREE DIFFERENT OBJECTS ARE CALLED "SEVERITY"
+
+All citations are at `92ae4a1a`.
+
+**(a) THE DEFINITION — real-world consequence.**
+`bench/directives/universal/cdsfl_core_formal.md:402`:
+
+> "Severity is **materiality** — the consequence if the defect ships — and is
+> independent of how *interesting* the defect is."
+
+And its formal block at `:417-421`:
+
+```
+V(f) = materiality(f) = consequence if defect f ships (= severity).
+Guard 1:  critical(f) ⇔ V(f) ≥ θ_crit     (interest(f) does NOT enter).
+Guard 2:  may_continue(K) ⇔ ∃ mechanism m: plausible(m) ∧ high_value(m)
+                                          ∧ ¬adequately_examined(m, ≤K).
+Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND no
+material critical remains open (per §6 termination + the A4 fail-safe).
+```
+
+**(b) THE FORMULA — a credence product.** `docs/MATHEMATICAL_APPENDIX.md:1253-1267`,
+section 7.7:
+
+> **Sev(f) = W(class) · confidence · V(verification)**
+>
+> | W(HARD) | 1.0 |, | W(SOFT) | 0.5 |, | V(True) | 1.0 |, | V(None) | 0.5 |, | V(False) | 0.0 |
+>
+> **Key property:** Disproved findings always receive zero severity, regardless of
+> confidence.
+
+**(c) THE NUMBER THE CODE GATES ON** — `entry["severity"]`, a float each model asserts in
+its structured output. Required by `bench/cdsfl_finding_schema.json` since commit
+`8c1dacb3`, 2026-03-30, which is 7 months before the first severity panel of 2026-09-07.
+
+**3 naming collisions follow from this and are part of what you are asked to check:**
+
+1. Section 7.7 uses `V` for the **verification factor**. `cdsfl_core_formal` uses `V(f)`
+   for **materiality**. The same symbol, in 2 canonical documents, with opposite
+   meanings.
+2. "Severity" names all 3 objects above.
+3. Section 7.7's caution 3 at `docs/MATHEMATICAL_APPENDIX.md:1334-1335` cites
+   "`cdsfl_core.txt` §10 already enumerates five material-defect categories". That file
+   is **39 lines long and has no §10**; it is the 5-step P-pass loop. The citation is
+   dead.
+
+---
+
+## 3. THE MEASUREMENTS. Each is reproducible; re-run anything you doubt.
+
+**★ LINE NUMBERS IN THIS BRIEF ARE A HINT; THE SYMBOL IS THE LOCATOR.** Every citation below
+was RE-VERIFIED against the working tree immediately before dispatch, and 6 of them had
+already moved since the brief was first written — insertions earlier the same day shifted
+them by between 5 and 32 lines. This is exactly the defect entry B125 records: a brief that
+describes a file as it was sends a seat to a bolted door, and the citation checker verifies
+only that a cited line is IN RANGE, never that it still says what the citation claims.
+**So locate by the NAMED SYMBOL first and treat the number as an approximate hint. If a line
+does not say what this brief claims, report the mismatch as a finding rather than working
+around it** — it means the tree moved again between this dispatch and your read.
+
+
+<!-- figure: key-property-violation | scripts/severity_was_never_computed_from_the_model_2026-10-12.py | 84.3750% -->
+<!-- figure: proof-vs-gated-correlation | scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py | Pearson  r = -0.5538 -->
+<!-- figure: proven-entry-count | scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py | archived entries with a PASS/WARN R_k proof: 652 -->
+
+**★ WHICH FIGURES HERE HAVE A COMMITTED PRODUCER AND WHICH DO NOT. READ THIS BEFORE
+TRUSTING ANY NUMBER BELOW.** The project's rule is that a measured figure may be cited
+only if the script producing it is committed alongside it. 3 figures here satisfy that
+and are DECLARED above, so the validator re-executes them: the 84.3750% key-property
+violation, the −0.5538 proof-versus-gated correlation, and the 652 proven entries.
+
+**The rest were computed in session on 2026-11-11 and have NO committed producer yet.**
+That is a known gap and it is stated rather than hidden. It applies to: the AST census
+of readers and writers in §3.1, the 25-versus-21-versus-4 aggregation census in §3.8,
+the z3 and SymPy results in §3.5, the commutation table in §3.7, and the 0.999500
+relabelling sweep. **Do not take any of those on trust. Q2 and Q3 ask you to re-derive
+them, and a disagreement with any of them is a finding, not a misunderstanding on your
+part.** If you reproduce one and get a different answer, report yours and the command.
+
+
+**3.1 — Section 7.7 cannot be computed as specified.** By AST over
+`bench/reference_runner_v3.py`: `constraint_class` has **1 reader (line 10922) and 0
+writers**; `confidence` has **1 reader (line 10923) and 2 writers (lines 14665 and
+20762), and neither writer writes the object the reader reads** — 14665 writes
+`stats["verdicts"][finding_id]`, a per-verdict telemetry dict, and 20762 writes
+`_sv_rows`, a telemetry list. The reader reads a registry entry. Both fields are absent
+from `bench/cdsfl_finding_schema.json`. `_SEVERITY_SPEC` stands at `{"on": False}`
+(line 10708).
+
+**3.2 — The one confidence value that IS collected is inadmissible.** Line 14665 is
+`float(m.group(4)) if m.group(4) else 0.5`, parsed from a model's own verdict text. The
+operational directive, amended on the founder's B87 ruling of 2026-11-08
+(`bench/directives/universal/cdsfl_operational.md:625-642`), rules a model's estimate of
+its own certainty INADMISSIBLE. So pointing §7.7 at the value that exists would
+reinstate a model vote.
+
+**3.3 — The key property is violated on live data.** `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`:
+27 of 32 disproved findings carry non-zero severity, **84.3750%**, Wilson 95%
+[68.2459%, 93.1356%], Clopper-Pearson [67.2121%, 94.7249%].
+
+**3.4 — The proof mechanism proves a different quantity.**
+`scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py`: `severity_is_proven`
+accepts a reproduction of `R_k` as evidence for a severity claim. Over **652** archived
+entries with a PASS or WARN proof, Pearson **r = −0.5538**, p = 1.152e-53, 95% CI
+[−0.6048, −0.4982], scipy and numpy agreeing to 1.11e-16; Spearman ρ = −0.4716. At the
+proof's own 0.05 tolerance, **555 of 652 (85.12%)** would stop being released.
+
+**3.5 — A 2-level consequence weight cannot rank more than 2 consequences.** z3: asked
+for 4 distinct severities from `W ∈ {0.5, 1.0}` with confidence and verification free →
+**unsat**; with 2 → **sat**. SymPy: `d(Sev)/dw = c·v > 0`, so distinct severities ⟺
+distinct weights. **The formula expresses exactly as many severities as `W` has values.**
+
+**3.6 — The 4 worked examples, scored by the project's own function.** Each is a HARD
+violation a tool can confirm. `compute_sev_f(class, confidence, verdict)` from
+`bench/reference_runner_v3.py`, called directly:
+
+| Domain | Defect | Real consequence | §7.7 |
+|---|---|---|---|
+| Physics | `Isp` used without `g₀`; Δv is 9.80665× too small | Vehicle cannot complete the transfer. Irreversible | **0.9** |
+| Chemistry | Limiting reagent misread from an unbalanced equation | Scale-up under-delivers ~25%. Recoverable, no hazard | **0.9** |
+| Biology | Off-by-one ORF start; 312 residues becomes 104 | Downstream wet-lab targets a protein that does not exist | **0.9** |
+| Mathematics | Reversed inequality; a divergent series called convergent | The theorem is void, and so is everything citing it | **0.9** |
+
+**1 distinct value across 4 consequences.** At confidence 0.90 the formula's entire range
+is 6 cells: `W(HARD)` gives 0.9 / 0.45 / 0.0 and `W(SOFT)` gives 0.45 / 0.225 / 0.0.
+
+The physics arithmetic was checked 3 ways: SymPy and NumPy agree the error is exactly
+9.80665, and `pint` confirms that omitting `g₀` leaves the result in **seconds**, which
+is not a velocity — which is why a dimensional checker catches that one and its
+verification factor is 1.0.
+
+**3.7 — Which statistics of an ordinal severity are admissible.** Commutation test over
+6 strictly increasing relabellings (`t²`, `√t`, `eᵗ`, `log(1+t)`, `2t`, `t`), exact
+symbolic arithmetic:
+
+| statistic | commutes with every relabelling? |
+|---|---|
+| max, min, median, count ≥ cut | **yes — admissible** |
+| SUM, MEAN | **no — inadmissible** (they commute under `2t` and `t` ONLY, i.e. under linear maps) |
+
+Exact counterexample under `φ(t) = t²` on levels {1/4, 1/2, 3/4}: `Σφ(x) = 7/8` against
+`φ(Σx) = 9/4`. SymPy, NumPy and mpmath agree to 0.00e+00.
+
+Independently, a sweep over the whole threshold range with 20,000 free monotone
+relabellings of 6 findings with ranks {5,4,2,2,1,1}: **2,000 of 2,001 thresholds give a
+ΔV convergence verdict that depends on the relabelling** — 0.999500, Wilson 95%
+[0.997175, 0.999912] on 2 independent routes agreeing to 2.22e-16. The Guard 1 rank
+threshold gave a critical count of 2 in all 20,000.
+
+**A CAVEAT ON 3.7 THAT YOU SHOULD HOLD AGAINST ME.** The first version of that sweep was
+VACUOUS: it fixed a single cut at 1.0, which lay below the sum's own minimum of 1.0661,
+so 0 of 20,000 relabellings flipped and the prose claimed a disagreement the output
+contradicted. It also normalised every map's top value to 1.0, which made `max` appear
+invariant by construction. The figures above are from the rebuilt instrument, which
+sweeps all cuts and leaves the maps free. If you find a third defect in it, that is a
+finding.
+
+**3.8 — How much live code the ordinal reading would break.** By AST over `bench/`,
+excluding tests: **25** severity aggregations; **21 are rank-safe**, counting findings
+above a cut rather than summing magnitudes — 0.840000, Wilson 95% [0.653464, 0.935965].
+The **4** doing true magnitude arithmetic are `bench/dm/_convergence.py:267` and `:303`,
+`bench/dm/_manager.py:722`, and `bench/run_exp19_fff.py:339`. The canonical
+`bench/reference_runner_v3.py` is **not** among them.
+
+---
+
+## 4. THE POSITION UNDER TEST
+
+**P1.** Severity is what `cdsfl_core_formal.md:417` already says it is: the consequence
+if the defect ships. That is a real-world quantity and the definition needs no change.
+
+**P2.** Severity is an **ORDINAL** quantity. The model fixes the ORDER of consequences;
+a domain supplies a particular numbering. No single numbering can serve all STEM
+domains, and attempting a single one is what would make it fairy dust.
+
+**P3.** The scale is therefore **domain-supplied, from scales that already exist and are
+independently validated** — FMEA severity 1–10 in engineering, CTCAE grades 1–5 in
+clinical work, CVSS 0–10 in software, INES 0–7 in nuclear, and each field's own
+equivalents. Adopting them is more defensible to a referee than inventing a new one, because
+the referee can check them against a standard that is not ours.
+
+**P4.** This does **not** break the mathematical model, because the model asserts that
+the severity quantity EXISTS and is ORDERED in every domain — it does not assert a numbering. The
+model therefore sits at a higher level of abstraction than any particular measure. This
+is the founder's own formulation and it is P4 verbatim in substance.
+
+**P5.** The consequence of a mathematical error is a property of the APPLICATION, not of
+the error's form. The same reversed inequality is epistemic in a pure convergence proof
+and lethal in a fan-blade tolerance. A mathematical finding therefore inherits the
+consequence scale of the domain the mathematics is being used in — which is a further
+argument for P3 rather than an exception to it.
+
+**P6.** Section 7.7's product is a good **CREDENCE** formula wearing the name of a
+consequence measure. Its key property — a disproved finding scores 0 — is exactly right
+for credence. The repair is additive: rename it, and let
+`severity(f) = consequence(f) × credence(f)`, where consequence is domain-supplied and
+credence is today's §7.7 product.
+
+**P7.** Exactly 1 thing must change in the model's own rules: `ΔV(K) = Σ V(f)` at
+`cdsfl_core_formal.md:421` is inadmissible on an ordinal scale and must become an order
+statistic. Note that `:421` already pairs that sum with "AND no material critical
+remains open", and that second conjunct IS rank-safe — so the repair may be to drop the
+non-invariant half rather than to add anything.
+
+**P8. A DOMAIN MAY CARRY SEVERAL ADMISSIBLE SCALES, NOT ONE.** P3 names 4 existing scales as
+examples and should not be read as assigning one scale per domain. Engineering alone carries FMEA
+severity beside mission-consequence scales beside regulatory classifications, and a researcher picks
+by what the work is for. The model constrains the ORDER and is silent on how many numberings realise
+it, so several coexisting scales is the expected case rather than an awkwardness. **This is the
+founder's own extension, 2026-11-11, verbatim:** *"So there may be not just one, or 4 ways to measure
+severity, but several?"*
+
+**P9. SCALE SELECTION IS A ROUTING QUESTION, NOT ONLY A DEFINITIONAL ONE, AND THIS IS THE
+OPERATIONAL CONSEQUENCE THE BRIEF PREVIOUSLY LACKED.** If the scale is domain-supplied, something must
+choose it, and the only thing in this harness that knows a target's domain is its own classification
+of it. His words: *"it would depend on the target under study and which domain the harness classifies
+it as being in? Because then the appropriate severity measure and methodology for measuring it in
+that specific domain could be applied?"* **That follows, and it hands the question to a mechanism
+whose accuracy is measurable rather than to a definition.** It also inherits that mechanism's known
+limits: the classifier routes 25 of 29 claims on this project's own STEM corpus after the 2026-11-11
+widening, up from 22, so 4 of 29 would reach no scale at all. **A seat is asked to say what the
+harness should do with a finding whose domain it cannot classify** -- refuse to score severity, fall
+back to an ordering with no numbering, or escalate -- because that case is now reachable and the
+brief names no answer for it.
+
+**P10. `v_bar` IS THE LIVE IN-CODE INSTANCE, SO THIS IS NOT ONLY A PRINCIPLE.** The harness computes
+`v_bar`, the MEAN severity of genuine findings, and a mean is exactly the operation P2 says is
+inadmissible on an ordinal scale: averaging assumes the gaps between levels carry magnitude. **It is
+computed in 4 places by 4 DIFFERENT formulas** -- a plain mean over all findings, a 50/50 blend of 2
+earlier values, a mean over recent rounds only, and an exponentially weighted moving average. So 4
+programs produce 4 numbers under 1 name, and that disagreement is a defect whichever way the ordinal
+question is settled. **A seat is asked whether the correct repair is an order statistic in each of
+the 4 sites, a single shared rank-safe definition, or the removal of the quantity from any gating
+role** -- and, under `additive-standard`, what measurement would have to accompany a removal.
+
+---
+
+---
+
+## 5. THE FOUR WORKED EXAMPLES, RESCORED ON DOMAIN SCALES
+
+This is what §7.7's worked examples would become. **It is a draft and part of what you
+are asked to attack** — in particular whether each scale is the one a researcher in that
+field would actually reach for.
+
+| Domain | Scale invoked | Position | Why that position | What the measurement tells us |
+|---|---|---|---|---|
+| Physics / spaceflight | mission-consequence 1–5 (loss of vehicle or crew = 5) | **5 of 5** | Irreversible; the stated result is wrong by an order of magnitude | The central quantitative claim fails and nothing downstream of it can be trusted |
+| Chemistry / process | process-consequence 1–5 (recoverable economic loss = 2) | **2 of 5** | Fully recoverable; the qualitative claim survives | Directionally right, quantitatively wrong: the route works, the numbers need redoing |
+| Biology / annotation | research-validity 1–5 (invalidates dependent work = 4) | **4 of 5** | Expensive, recoverable, no hazard | The annotation is wrong and every experiment built on it must be re-planned; the method is sound |
+| Mathematics, pure | result-validity 1–5 (theorem void = 3) | **3 of 5** | Total epistemic loss, no physical pathway | The theorem and its dependents are void |
+| **The same mathematics, in a fan-blade tolerance** | **FMEA severity 1–10** | **9 or 10** | FMEA 9 is "hazardous with warning", 10 is "hazardous without warning" | Potential catastrophic failure; this is P5 made concrete — one error, two scales, two answers |
+
+---
+
+## 6. HARD CONSTRAINTS ON ANY ANSWER
+
+- **GAMMA IS LOAD-BEARING AND MAY NOT BE DEMOTED.** A severity condition ADDED to the
+  convergence gate is in scope. A severity condition SUBSTITUTED for part of it is not.
+- **No model votes.** Severity may not be set by a model's assertion, and an answer that
+  proposes one is refused by the project's own canonical rule.
+- **Do not propose promoting §7.7 to the blocking gate as written.** `V(None) = 0.5`
+  makes every unresolved finding sub-critical, so a model would clear the gate by
+  omitting a falsifier. This was measured on 2026-11-04: 831 of 835 downward crossers
+  were `V(None)` halvings of UNVERIFIED claims.
+- **A composed fix requires a measurement.** The founder's composability standard: a
+  composed fix may be recommended only with a committed measurement showing it dominates
+  either part alone on a named property. Where a single fix does as well, prefer it.
+- **Cite file and line.** A claim about this repository without a citation at `92ae4a1a`
+  will be treated as unverified.
+
+---
+
+## 7. THE FALSIFIABLE QUESTIONS
+
+**Q1.** Name a STEM domain with **no** recognised consequence scale. P3 depends on their
+existing; a domain without one is a gap in the architecture, and the answer should say
+what CDSFL should do there.
+
+**Q2.** Is §3.7 wrong? Specifically: is there an admissible statistic of an ordinal
+severity that I have classed as inadmissible, or vice versa? Note that this is Stevens'
+1946 result on permissible statistics; if the project is mis-applying a standard result,
+say so and give the correct statement.
+
+**Q3.** Is §3.8 incomplete? I used AST over `bench/` excluding tests and found 25
+aggregations, 4 of them magnitude arithmetic. Name what that census misses — other
+directories, other aggregation forms, arithmetic that is not a `sum`/`mean` call, or
+severity arithmetic inside a comparison.
+
+**Q4.** Can the project's frozen critical cut of 0.7 be expressed as a RANK on each
+scale named in P3? If some scale has too few levels to place it, or places it absurdly,
+that is a concrete defect in P3.
+
+**Q5.** Does per-domain scaling break cross-domain aggregation anywhere in the design of
+Bench Run 2 — which compares results ACROSS domains? If run-level or arc-level
+statistics add or average severity across domains, P2 forbids it and the brief has not
+said where.
+
+**Q6. THE FOUNDER'S OWN QUESTION, and it is the one he most wants answered.** He asks:
+if severity cannot be a single number, how should an abstracted quantity that varies
+across domains and across experiments be represented in the mathematical model — and is
+it **already** adequately represented by conventional notation, or does the model need
+something it does not have? Answer concretely, in notation, and state what the model
+LOSES under your representation as well as what it gains. He is not a mathematician, so
+also give the answer in one plain-English paragraph.
+
+**Q7.** Is P6 wrong? Is §7.7's product actually a good credence measure, or does it fail
+as credence too? If it fails, say on what.
+
+**Q8.** What is the strongest argument that this whole position is wrong and the project
+should keep a single universal severity scale? Make that argument as well as you can,
+then say why you do or do not believe it.
+
+---
+
+## 8. USE THE HARNESS — do not describe it, run it
+
+Form your answer **using** the machinery, not by writing about it. The instruments that
+bear on this question, and what each is expected to say:
+
+- **The severity model itself.** Call `compute_sev_f(constraint_class, confidence,
+  falsifier_verdict)` from `bench/reference_runner_v3.py` on the 4 cases in §3.6 and
+  report what you get. It is expected to return 0.9 for all 4. If it does not, §3.6 is
+  wrong and that is a finding.
+- **`severity_is_proven`**, same module, line 10680. It is expected to accept an `R_k`
+  reproduction as proof of a severity claim. Run
+  `scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py` and report the
+  correlation it prints; it is expected to be about −0.5538 over 652 entries.
+- **`_SEVERITY_SPEC`** at line 10708. It is expected to read `{"on": False}`. If the
+  switch is on in your sandbox, say so — the whole analysis assumes it is off.
+- **The two-sided convergence gate and gamma.** Gamma is LOAD-BEARING and may not be
+  demoted. Read `bench/dm/_convergence.py:267` and `:303` and report whether those sums
+  can be replaced by an order statistic without changing what the gate decides on any
+  archived registry. An answer that asserts it can without running it has not answered.
+- **`scripts/severity_was_never_computed_from_the_model_2026-10-12.py`.** Expected:
+  27 of 32, 84.3750%.
+
+A seat that returns prose about severity without having executed anything has not
+answered this brief.
+
+## 9. PRODUCE A FIX, AND TEST IT
+
+A finding without a fix is incomplete. **A fix without a runnable falsifier that you have
+EXECUTED is a hypothesis, not a fix.** Report the exact command you ran and the output
+you saw, pasted, not summarised.
+
+**WHERE THE FIX MUST BE DELIVERED.** Write it **INTO the sandbox repository tree at its
+real path, as a file** — for example an edited
+`bench/directives/universal/cdsfl_core_formal.md`, an edited
+`docs/MATHEMATICAL_APPENDIX.md`, or a new script under `scripts/`. **A fix described in
+prose is not delivered, and a fix written to scratch space is destroyed when the sandbox
+is torn down.** Rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that
+reason while both seats reported writing and running working code.
+
+**ON COMPOSABILITY, as the founder defines it.** Several repairs are in play here: the
+ordinal reformulation of `ΔV`, the rename of §7.7 to a credence term, the per-domain
+scale table, and the repointing of `severity_is_proven`. **Compose 2 of them ONLY on a
+DEMONSTRATED advantage over each alone, where the demonstration is a MEASUREMENT and not
+a judgement, and prefer the single fix wherever it performs as well.** Reporting merely
+that the repairs do not conflict is the weak non-interference form his definition
+explicitly excludes, and will be recorded as not having answered.
+
+## 10. WHAT WOULD REFUTE YOU
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with
+no stated refutation condition is an opinion, not a finding. Be concrete: name the file,
+the measurement or the archived run that would change your mind.
+
+## 11. OUTPUT SHAPE — field by field
+
+Return these fields, named, so replies can be compared without a parser guessing:
+
+- `verdict` — your position on §4's P1 to P7, each marked AGREE, REFUTE or CANNOT-DECIDE.
+- `q1` … `q8` — one answer per falsifiable question in §7. "Cannot refute" is legitimate
+  and must say what you tried.
+- `q6_notation` — your proposed notation for the founder's own question, in full, plus
+  one plain-English paragraph for a non-mathematician, plus what the model LOSES under it.
+- `reasoning` — how you got there.
+- `falsifier` — the runnable check, and `falsifier_result` — its EXECUTED output, pasted.
+- `fix_paths` — the real repository paths you wrote files to in the sandbox.
+- `commands_run` — every command, verbatim.
+- **`disagreement` — your strongest DISAGREEMENT with this brief's own framing, as a
+  field, not as prose elsewhere.** State it even if you agree with the conclusion: a
+  round that reconciles is the one most likely to converge by deference, and deference is
+  not evidence. If you genuinely have none, write "none" and say why that is not
+  deference.
+- `aims_check` — whether anything you propose disables, weakens or removes an existing
+  mechanism, threshold or flag. The additive standard forbids it without a committed
+  measurement showing the replacement dominates on a named property.
+- `passes_run` — how many passes you made.
+
+## 12. TERMINATION
+
+Stop when a further pass produces no new above-threshold findings — the project's own
+diminishing-returns criterion. A finding is above threshold if missing it could cause a
+real-world failure, an invalid result or an unsafe condition. Do not generate findings to
+fill a quota, and do not pad with style observations: this brief is about whether a
+quantity in the mathematical model corresponds to anything real. Report `passes_run`.

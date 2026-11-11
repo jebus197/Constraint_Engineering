@@ -81,7 +81,12 @@ APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
 #: True} -- with 0 extra and 0 lost, so the completeness checks become
 #: reachable without changing what they read today.
 W_ROW = re.compile(r"\|\s*W\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
-V_ROW = re.compile(r"\|\s*V\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
+#: The verification factor was renamed `V` -> `Ver` in the appendix on
+#: 2026-11-11, to end the collision with `V(f)` for MATERIALITY in
+#: `cdsfl_core_formal.md:417`. This pattern follows the document; it does
+#: NOT accept the old spelling, because accepting both would let a revert
+#: to the colliding name pass unnoticed.
+V_ROW = re.compile(r"\|\s*Ver\(([A-Za-z_]+)\)\s*\|\s*([0-9.]+)\s*\|")
 LLR_ROW = re.compile(
     r"\|\s*(SymPy|Dimensional|Numerical)\s*\|\s*[0-9.]+\s*\|\s*[0-9.]+\s*\|"
     r"\s*([-−]?[0-9.]+)\s*\|\s*([-−]?[0-9.]+)\s*\|"
@@ -216,9 +221,9 @@ def main(argv):
     print("      S_v  SymPy  = %s" % sv_sympy)
     print("      S_v  mpmath = %s" % sv_mpmath)
     print("      agree to 1e-15: %s" % agree)
-    print("      Sev = W_HARD . S_v . V(False) = %s . %.17f . %s = %s"
+    print("      Sev = W_HARD . S_v . Ver(False) = %s . %.17f . %s = %s"
           % (w_hard, float(sv_val), V["False"], sp.simplify(sev_disproved)))
-    print("      z3: Sev > 0 while V(False) = %s:  %s" % (V["False"], z3_zero))
+    print("      z3: Sev > 0 while Ver(False) = %s:  %s" % (V["False"], z3_zero))
     print("      => 0.273 is the BELIEF factor; 0 is the SEVERITY. The brief's")
     print("         '0 under 7.7 vs 0.273 under 7.8' compares a severity with a")
     print("         credence. No contradiction exists in the text as written.")
@@ -233,7 +238,7 @@ def main(argv):
     zt2, zsv2 = z3.Real("t"), z3.Real("Sv")
     s5.add(zt2 > 0, zsv2 == 1 / (1 + zt2), zsv2 == 0)
     z3_no_zero = s5.check()
-    print("\nT5  can F4 (W . S_v, V deleted) represent V(False) = 0?")
+    print("\nT5  can F4 (W . S_v, Ver deleted) represent Ver(False) = 0?")
     print("      SymPy solve(S_v = 0, Lambda) = %s  (no real solution)" % sols)
     print("      z3: S_v == 0 with exp(-Lambda) > 0:  %s" % z3_no_zero)
     print("      SymPy: limit S_v as Lambda -> -oo = %s, never attained" % sv_inf)

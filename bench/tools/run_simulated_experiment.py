@@ -290,10 +290,46 @@ def build_parser() -> argparse.ArgumentParser:
     # retry-on-timeout, not a bigger number: `ModelConfig.max_retries` exists and
     # `reference_runner_v3.py` reads it nowhere.
     ap.add_argument("--timeout", type=int, default=3600)
-    ap.add_argument("--test-cmd", dest="test_cmd",
-                    default=("python3 -m pytest bench/tests/test_immune_memory_consumption.py "
-                             "bench/tests/test_immune_memory_evaluation.py -q"),
-                    help="command S_k runs for its e2_regression gate")
+    #: ★ THE DEFAULT IS NOW None, ON HIS B88 RULING OF 2026-11-11: *"Make the
+    #: launcher refuse to substitute a default suite for a target whose run
+    #: named no suite at all."* He accepted option 1 of 4, over running a
+    #: discrimination control inside the gate (option 2, a 3rd suite run per
+    #: candidate, measured at 209 s added per run on his machine) and over
+    #: doing both (option 3, refused for want of the measurement his
+    #: composability standard requires).
+    #:
+    #: WHAT THE OLD DEFAULT DID, measured and already recorded at
+    #: `reference_runner_v3.py:15908`: a run that omitted this flag silently
+    #: inherited the IMMUNE-MEMORY suite, which is tied to `bench/dm/_memory.py`
+    #: and unrelated to any other target. On a prose target the gate then RAN
+    #: AND COULD NOT SEE ITS SUBJECT -- the document with real bytes and with
+    #: its bytes destroyed both returned 0.9454545454545454 -- so `e2_regression`
+    #: reported a constant while appearing to measure something.
+    #:
+    #: THE arm4 HALF WAS ALREADY REPAIRED AND THAT IS WHY THIS IS NARROW.
+    #: `scripts/falsify_e2_inherits_default_2026-09-30.py` runs GREEN today:
+    #: `Arm.argv()` now emits `--test-cmd ''` explicitly, so `None` propagates
+    #: as a disable for the commissioning arms. It never touched the argparse
+    #: default, so every OTHER launch that omits the flag still inherited the
+    #: suite. That is the residue this closes.
+    #:
+    #: NOTHING IS REMOVED: the suite is still available to any run that NAMES
+    #: it, which is the additive form -- an absent suite now EXCLUDES the gate
+    #: rather than FAKING it, and `_apply_back_gate` already refuses with
+    #: "no test_cmd configured (cannot gate)" when none is set.
+    #: ★ THE help STRING CARRIES NO PARENTHESES AND IS NOT WRAPPED IN ONE, AND
+    #: THAT IS LOAD-BEARING RATHER THAN STYLE. `scripts/falsify_e2_inherits_
+    #: default_2026-09-30.py` is RESCUED SEAT EVIDENCE whose header asserts its
+    #: body is byte-identical to what the seat wrote, so it may not be edited.
+    #: It reads this default by SLICING THIS SOURCE TEXT -- from the
+    #: `add_argument` call to the first `)` after the help string -- and a
+    #: parenthesised help made that slice end early, raising SyntaxError inside
+    #: a committed instrument. Keep this on one logical string with no `)` in it.
+    ap.add_argument("--test-cmd", dest="test_cmd", default=None,
+                    help="command S_k runs for its e2_regression gate. "
+                         "NO DEFAULT: a run naming no suite has the gate "
+                         "EXCLUDED, never a substituted one. Name a suite "
+                         "explicitly to enable it.")
     ap.add_argument("--name", default="sim45_memory")
     # THE STAND-IN MODEL IS NOW SELECTABLE. `--models` is a COUNT, not a name, and
     # there was no way to choose the model at all: it was a Python default in two

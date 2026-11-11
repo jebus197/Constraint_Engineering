@@ -162,9 +162,35 @@ def check(ident: str) -> list[tuple[str, bool, str]]:
         #: explicit code is the recorded lesson that a marker and a fixed shape
         #: beat an inferred one.
         _H = _re.compile(r"^\s*(\d+)\.\s+((?:B|C|R)\d+\b.*?)\s*$", _re.M)
-        _ra = {h.strip().upper() for _n, h in
+
+        #: ★ COMPARE THE CODE AND THE HEADING, NOT THE RECOMMENDATION PROSE --
+        #: 2026-11-11. The whole index line was compared until today, and that
+        #: worked only while BOTH renders truncated the recommendation at the
+        #: same 150 characters. On 2026-11-11 he reported that his copy was cut
+        #: mid-sentence 3 times in one file -- "I cannot give verdicts if I
+        #: don't know what you are asking" -- so his copy is now rendered UNCUT
+        #: while the repo index stays capped. The 2 renders then differ in the
+        #: recommendation text by design, and this check reported a divergence
+        #: that his own instruction created: a guard accusing correct work, the
+        #: same fault the comment above this one already records once.
+        #:
+        #: THE PROPERTY IS UNCHANGED AND IS WHAT THE CHECK IS NAMED FOR: the 2
+        #: copies must NAME THE SAME DECISIONS. A decision is named by its entry
+        #: code and its heading, both of which are rendered identically in both
+        #: files; what follows "RECOMMENDED OPTION" is the detail the check's
+        #: own comment says "may differ". Cutting at that LITERAL MARKER rather
+        #: than at an inferred sentence boundary is the recorded lesson that an
+        #: explicit marker beats a shape.
+        #:
+        #: THIS DOES NOT WEAKEN THE CHECK. A decision present in one file and
+        #: absent from the other still diverges, because the code is part of the
+        #: key; so does a heading that differs by a single word.
+        def _key(h: str) -> str:
+            return h.upper().split("RECOMMENDED OPTION")[0].strip().rstrip(".").strip()
+
+        _ra = {_key(h) for _n, h in
                _H.findall(repo_txt.read_text(encoding="utf-8", errors="replace"))}
-        _db = {h.strip().upper() for _n, h in
+        _db = {_key(h) for _n, h in
                _H.findall(desk_txt.read_text(encoding="utf-8", errors="replace"))}
         _only_repo = sorted(_ra - _db)
         _only_desk = sorted(_db - _ra)

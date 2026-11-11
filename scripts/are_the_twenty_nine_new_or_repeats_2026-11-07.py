@@ -303,7 +303,32 @@ def main(argv: list[str]) -> int:
     _show("entry points that refuse a store key", refused, 3)
 
     # ---- 4. THE GATED VERDICT ---------------------------------------------
-    ok = (n_asked == len(live) and counts["REPEAT"] == 0
+    #: ★ `n_asked == len(live)` WAS A CONJUNCT HERE AND IS WRONG, 2026-11-11.
+    #: `asked` joins each live decision to an EARLIER dated decisions file, so a
+    #: decision raised TODAY cannot satisfy it by construction, and the gate went
+    #: red on the day of every new finding. Measured: red at commit 92ae4a1a in a
+    #: clean worktree with 5 of 10, and red again at 4 of 8 after tonight's work,
+    #: so it was failing BEFORE the work it appeared to accuse.
+    #:
+    #: THIS EXACT EQUALITY WAS ALREADY JUDGED WRONG BY THIS PRODUCER'S OWN GUARD
+    #: and the correction never reached the producer. The comment at
+    #: `bench/tests/test_a_store_key_is_not_an_identifier_2026-11-07.py` reads:
+    #: "`_new == _tot` WAS ASSERTED HERE FOR ONE RUN AND IS WRONG ... Asserting
+    #: equality would make every new finding a test failure, which is a guard
+    #: punishing the work. THE LOAD-BEARING HALF IS THE OTHER ONE ... 0 of the
+    #: live decisions may carry a ruling that still settles them." The guard
+    #: relaxed to `0 <= _new <= _tot` and kept the repeat property; the gate did
+    #: not, so a producer and its own guard disagreed about their shared
+    #: predicate -- each individually correct, which is the `execute-do-not-grep`
+    #: shape, and the reason the guard asserts BOTH the producer's exit code and
+    #: its own weaker bound.
+    #:
+    #: THIS IS A LOOSENING OF 1 CONJUNCT AND IS LABELLED AS ONE. The 3 that
+    #: carry the verdict are UNTOUCHED: 0 repeats, the key-spelling correction
+    #: still moves entries, and all 3 entry points still refuse a prefixed store
+    #: key. Reverting any of those 3 still turns this red, which is what makes
+    #: the relaxation a scope correction rather than a weakening.
+    ok = (0 <= n_asked <= len(live) and counts["REPEAT"] == 0
           and len(moved) > 0 and refused == 3)
     print("\n" + "=" * 78)
     print(f"""

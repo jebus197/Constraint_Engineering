@@ -1701,6 +1701,18 @@ def _envelope_field_changes(
         changes["description"] = _bounded_description(fields["DESCRIPTION"])
     if "PROPOSED_FIX" in fields:
         changes["proposed_fix"] = fields["PROPOSED_FIX"].strip()
+    if "CONSTRAINT_CLASS" in fields:
+        #: ★ REJECTED, NEVER COERCED, which is this function's own stated
+        #: discipline applied to a 2-valued field. The directive admits exactly
+        #: HARD and SOFT (`cdsfl_operational.md` section 11); anything else is a
+        #: seat saying something the vocabulary has no room for, and writing
+        #: "" or guessing HARD would be worse than recording nothing. A rejected
+        #: value is NAMED so the reply can be inspected.
+        _cc = _envelope_scalar(fields["CONSTRAINT_CLASS"]).strip().upper()
+        if _cc in ("HARD", "SOFT"):
+            changes["constraint_class"] = _cc
+        else:
+            rejected.append("CONSTRAINT_CLASS")
     if "VERIFIED" in fields:
         word = _envelope_scalar(fields["VERIFIED"]).upper()
         if word in ("TRUE", "FALSE"):

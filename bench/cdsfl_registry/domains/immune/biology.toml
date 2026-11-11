@@ -9,6 +9,12 @@ mathematical = [
     "(?:\\bMichaelis|\\bHill\\s*coefficient|\\bHenderson.Hasselbalch)",
     "(?:\\bgrowth\\s*rate|\\bdoubling\\s*time|\\bhalf.life)",
     "(?:\\bconcentration\\b|\\bmolarity\\b|\\bmolar\\b)\\s*[=<>]",
+    # B22, founder verdict 2026-11-11. SEQUENCE VOCABULARY. None of the 3
+    # patterns here named sequence, DNA, RNA, protein, nucleotide, complement,
+    # codon or GC content, so 0 of 10 archived sequence claims could ever reach
+    # `biological_sequence` -- Wilson [0.000000, 0.277533]. Same shape as the
+    # graph gap in cs_software: a declared tool its own patterns cannot feed.
+    "(?:\\bsequence\\b|\\bDNA\\b|\\bRNA\\b|\\bprotein\\b|\\bnucleotide[s]?\\b|\\bcomplement\\b|\\bcodon[s]?\\b|\\bGC\\s+content\\b)",
 ]
 
 logical = [

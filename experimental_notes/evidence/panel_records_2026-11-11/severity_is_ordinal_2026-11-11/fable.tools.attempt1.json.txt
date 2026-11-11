@@ -1,0 +1,287 @@
+{
+  "model": "fable",
+  "elapsed_s": 1026.2,
+  "tool_calls": 54,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && git -C . rev-parse HEAD 2>/dev/null; ls\", \"description\": \"Show working directory, git HEAD, and files\"}",
+      "t_offset_s": 6.792
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git rev-parse HEAD; git log --oneline -2 2>/dev/null | head -5\", \"description\": \"Check git commit of sandbox tree\"}",
+      "t_offset_s": 9.568
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i -E \\\"severity|proven|gated\\\" ; wc -l bench/directives/universal/cdsfl_core.txt\", \"description\": \"List severity scripts and core.txt length\"}",
+      "t_offset_s": 10.829
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py 2>&1 | tail -20\", \"description\": \"Run key-property violation script\"}",
+      "t_offset_s": 15.17
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py 2>&1 | tail -25\", \"description\": \"Run proof-vs-gated correlation script\"}",
+      "t_offset_s": 16.337
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_SEVERITY_SPEC\\\\|def compute_sev_f\\\\|def severity_is_proven\\\" bench/reference_runner_v3.py | head\", \"description\": \"Locate severity symbols in reference runner\"}",
+      "t_offset_s": 21.728
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"constraint_class\\\\|\\\\\\\"confidence\\\\\\\"\\\\|'confidence'\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Find readers/writers of constraint_class and confidence\"}",
+      "t_offset_s": 22.653
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"rr\\\", \\\"bench/reference_runner_v3.py\\\")\\nrr = importlib.util.module_from_spec(spec)\\n# avoid executing main; module-level code may be heavy \\u2014 try to exec anyway\\ntry:\\n    spec.loader.exec_module(rr)\\nexcept SystemExit:\\n    pass\\nprint(\\\"_SEVERITY_SPEC =\\\", rr._SEVERITY_SPEC)\\nfor dom,",
+      "t_offset_s": 28.362
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 10680,10710p bench/reference_runner_v3.py; echo ---; sed -n 10883,10935p bench/reference_runner_v3.py\", \"description\": \"Read severity_is_proven and compute_sev_f source\"}",
+      "t_offset_s": 29.357
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"rr\\\", \\\"bench/reference_runner_v3.py\\\")\\nrr = importlib.util.module_from_spec(spec)\\nsys.modules[\\\"rr\\\"] = rr\\nspec.loader.exec_module(rr)\\nprint(\\\"_SEVERITY_SPEC =\\\", rr._SEVERITY_SPEC)\\nprint(\\\"4 worked examples (HARD, 0.9, CONFIRMED):\\\")\\nfor dom in (\\\"physics\\\",\\\"chemistry\\\",\\\"biology\\\",",
+      "t_offset_s": 34.751
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 240,320p bench/dm/_convergence.py\", \"description\": \"Read severity sums in convergence gate\"}",
+      "t_offset_s": 39.73
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 700,740p bench/dm/_manager.py; echo ====; sed -n 330,345p bench/run_exp19_fff.py\", \"description\": \"Read other magnitude-arithmetic sites\"}",
+      "t_offset_s": 40.73
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"v_bar\\\" bench/ --include=\\\"*.py\\\" | grep -v test | head -30\", \"description\": \"Find all v_bar sites\"}",
+      "t_offset_s": 46.189
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 330,345p bench/run_exp19_fff.py\", \"description\": \"Read exp19 severity arithmetic\"}",
+      "t_offset_s": 46.885
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"v_bar\\\" bench/dm/_types.py | head; sed -n 2490,2565p bench/run_round_robin.py\", \"description\": \"Check v_bar in live _types.py and round robin\"}",
+      "t_offset_s": 55.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"aggregated_severity\\\" bench/dm/*.py | grep -v test | head; echo ---; grep -rn \\\"severity\\\" bench/dm/_types.py | head -20\", \"description\": \"Find aggregated_severity definition\"}",
+      "t_offset_s": 71.637
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnE \\\"severity[^=<>!]*(\\\\+|\\\\*|/|sum\\\\(|mean\\\\(|np\\\\.average|statistics\\\\.)\\\" --include=\\\"*.py\\\" bench/ explorer/ falsify_verify_bundle.py 2>/dev/null | grep -v test | grep -v logs/ | grep -viE \\\"^\\\\s*#\\\" | head -40\", \"description\": \"Sweep for severity arithmetic beyond the census\"}",
+      "t_offset_s": 73.584
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 120,170p bench/dm/_convergence.py; echo SEP; grep -n \\\"eta_veto\\\\|CRITICAL_SEVERITY_THRESHOLD\\\" bench/dm/_convergence.py bench/reference_runner_v3.py | head\", \"description\": \"Read aggregated_severity computation and veto\"}",
+      "t_offset_s": 79.523
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def \\\\|gamma\\\\|kappa_min\\\\|two_sided\\\\|converged\\\" bench/dm/_convergence.py | head -40; wc -l bench/dm/_convergence.py\", \"description\": \"Map convergence gate structure\"}",
+      "t_offset_s": 86.641
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 348,400p bench/dm/_convergence.py\", \"description\": \"Read kappa, converged, veto\"}",
+      "t_offset_s": 88.709
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -60 scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py\", \"description\": \"See how scripts locate the archive\"}",
+      "t_offset_s": 100.801
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"dm\\\\._convergence\\\\|ConvergenceDetector\\\\|from bench.dm\\\\|from .dm\\\\|import dm\\\" bench/reference_runner_v3.py | head; echo SEP; grep -rln \\\"ConvergenceDetector\\\" bench/ --include=\\\"*.py\\\" | grep -v logs/ | grep -v test\", \"description\": \"Who uses ConvergenceDetector\"}",
+      "t_offset_s": 110.682
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -30; ls bench/logs | wc -l\", \"description\": \"List archived run logs\"}",
+      "t_offset_s": 111.389
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -80 bench/replay_exp42_convergence.py; grep -n \\\"def \\\\|json\\\\|glob\\\" bench/replay_exp42_convergence.py | head -20\", \"description\": \"Inspect convergence replay harness\"}",
+      "t_offset_s": 117.35
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs/exp42_composer_takeupslack_20260607T154745Z/ 2>/dev/null | head; python3 - <<'EOF'\\nimport json, glob, os\\n# find archived reports with per-round findings usable for replay\\ncands = []\\nfor fp in glob.glob(\\\"bench/logs/*/*.json\\\"):\\n    try:\\n        if os.path.getsize(fp) > 50_000_000: continue\\n        j = json.load(open(fp))\\n    except Exception: continue\\n    if isi",
+      "t_offset_s": 126.15
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rnE \\\"severity\\\" bench/dm/_diminishing_returns.py bench/dm/_immune.py bench/dm/_memory.py 2>/dev/null | head -20; echo SEP; grep -rnE \\\"sev\\\" scripts/falsify_verify_bundle.py explorer/*.py 2>/dev/null | head; echo SEP2; python3 - <<'EOF'\\n# AST census: severity magnitude arithmetic across bench/ excluding tests and logs\\nimport ast, pathlib\\nhits=[]\\nfor p in pathlib.Path(\\\"benc",
+      "t_offset_s": 213.967
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for L in 10334 10345 10583 11339 15724 15728 15742 15850 15854 15860 16278 19606 21412; do echo \\\"== $L ==\\\"; sed -n \\\"$((L-2)),$((L+1))p\\\" bench/reference_runner_v3.py; done\", \"description\": \"Inspect candidate severity-arithmetic lines in reference runner\"}",
+      "t_offset_s": 220.703
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 183,190p bench/dm/_feedback.py; echo ==; sed -n 4144,4151p bench/immune_agents.py; echo ==; sed -n 1514,1518p bench/runner_core.py; echo ==; sed -n 530,534p bench/run_exp17_immune.py; echo ==; sed -n 492,496p bench/what_should_the_quiet_run_be_2026-10-25.py; echo ==; sed -n 107,111p bench/exp40_gamma_findings_audit.py\", \"description\": \"Inspect remaining candidate magnitude-arit",
+      "t_offset_s": 225.159
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 4144,4151p bench/immune_agents.py; echo \\\"---\\\"; sed -n 1514,1518p bench/runner_core.py; echo \\\"---\\\"; sed -n 530,534p bench/run_exp17_immune.py; echo \\\"---\\\"; sed -n 492,496p bench/what_should_the_quiet_run_be_2026-10-25.py; echo \\\"---\\\"; sed -n 105,112p bench/exp40_gamma_findings_audit.py\", \"description\": \"Inspect remaining candidate sites\"}",
+      "t_offset_s": 231.151
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 160,190p bench/dm/_feedback.py; grep -n \\\"def \\\\|_priority\\\\|sort\\\" bench/dm/_feedback.py | sed -n 1,25p\", \"description\": \"Context of the severity tie-breaker in feedback scoring\"}",
+      "t_offset_s": 238.982
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 395,435p bench/dm/_types.py; grep -n \\\"tau_kappa\\\\|eta_veto\\\\|min_rounds_for_convergence\\\\|epsilon_conv\\\\|suppression_k\\\\|lambda_s\\\\|w_floor\\\\|similarity_fn\\\" bench/dm/_types.py bench/dm/_convergence.py | head -20\", \"description\": \"Check Finding fields and config defaults\"}",
+      "t_offset_s": 288.446
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Can kappa_set's severity SUMS become an order statistic without changing the gate?\\n\\nTHE QUESTION (severity_is_ordinal round, 2026-11-11, brief section 8). The brief's\\nP2 holds severity ORDINAL, on w",
+      "t_offset_s": 326.738
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Can kappa_set's severity SUMS become an order statistic without changing the gate?\\n\\nTHE QUESTION (severity_is_ordinal round, 2026-11-11, brief section 8). The brief's\\nP2 holds severity ORDINAL, on w",
+      "t_offset_s": 354.505
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Can kappa_set's severity SUMS become an order statistic without changing the gate?\\n\\nTHE QUESTION (severity_is_ordinal round, 2026-11-11, brief section 8). The brief's\\nP2 holds severity ORDINAL, on which a sum or mean of magnitudes is inadmissible\\n(Stevens 1946). The two magnitud",
+      "t_offset_s": 383.576
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, glob, os, json\\nsys.path.insert(0, \\\".\\\")\\nsys.path.insert(0, \\\"scripts\\\")\\nimport importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"m\\\", \\\"scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py\\\")\\nm = importlib.util.module_from_spec(spec); sys.modules[\\\"m\\\"]=m; spec.loader.exec_module.__self__ if False else spec.loader.exec_module(m)\\nf",
+      "t_offset_s": 469.935
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Append a non-vacuity diagnostic to the measurement script (the brief's own\\n# section 3.7 caveat: a sweep that cannot flip is not a measurement).\\np = \\\"scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py\\\"\\ns = open(p).read()\\nold = \\\"\\\"\\\"    clean = [m for m in (\\\"count\\\", \\\"rank\\\", \\\"material\\\")\\\"\\\"\\\"\\nnew = \\\"\\\"\\\"    # NON-VACUITY DIAGNOSTIC (the section ",
+      "t_offset_s": 536.702
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp\\n\\nprint(\\\"=== Q2: is the interpolated even-n MEDIAN admissible on an ordinal scale? ===\\\")\\n# statistics.median on even n averages the two middle order statistics.\\n# Counterexample, exact: sample [1/4, 3/4], phi(t)=t^2 (strictly increasing on [0,1]).\\nx = [sp.Rational(1,4), sp.Rational(3,4)]\\nmed = (x[0]+x[1])/2\\nphi = lambda t: t**2\\nmed_of_phi",
+      "t_offset_s": 631.252
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'phi[t_]:=t^2; {Mean[{phi[1/4],phi[3/4]}], phi[Mean[{1/4,3/4}]], Total[phi/@{1/4,1/2,3/4}], phi[Total[{1/4,1/2,3/4}]], Length[Union[{1/2 c,1 c}/.c->9/10]]}' 2>&1 | head -3\", \"description\": \"Wolfram second-falsifier check of exact results\"}",
+      "t_offset_s": 639.2
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"Bench Run 2\\\\|bench run 2\\\\|BENCH_RUN_2\\\\|Run 2\\\" docs/ experimental_notes/ PAPER.md README.md configs/ 2>/dev/null | head; grep -rn \\\"across domains\\\\|cross-domain\\\" docs/*.md | head -10\", \"description\": \"Locate Bench Run 2 design and cross-domain aggregation\"}",
+      "t_offset_s": 649.236
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"Bench Run 2\\\\|BENCH_RUN_2\\\\|bench_run2\\\\|run_2\\\" docs/*.md configs/ scripts/*.py bench/*.py 2>/dev/null | head; grep -rn \\\"Bench Run 2\\\" docs/ -r | head -5\", \"description\": \"Find Bench Run 2 design documents\"}",
+      "t_offset_s": 656.381
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"Bench Run 2\\\" docs/GLOSSARY.md docs/REPRODUCING.md | head -5; grep -rln \\\"arc-level\\\\|run-level\\\\|arc summary\\\\|per-arc\\\" bench/reference_runner_v3.py docs/*.md | head; grep -n \\\"mean severity\\\\|severity.*mean\\\\|avg_sev\\\\|severity_mean\\\" bench/reference_runner_v3.py | head\", \"description\": \"Find run/arc-level severity statistics in Bench Run 2 design\"}",
+      "t_offset_s": 660.453
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -i \\\"bench run\\\" docs/GLOSSARY.md | head; grep -n \\\"run-level\\\\|arc-level\\\" bench/reference_runner_v3.py | head; grep -n -iE \\\"mean|average\\\" bench/reference_runner_v3.py | grep -i sev | head\", \"description\": \"Search run-level severity averaging in runner and glossary\"}",
+      "t_offset_s": 664.954
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn -i \\\"bench run 2\\\" docs/GLOSSARY.md docs/REPRODUCING.md START_HERE.md README.md 2>/dev/null | head -8; grep -rn \\\"severity\\\" docs/REPRODUCING.md | head -5\", \"description\": \"Locate Bench Run 2 definition\"}",
+      "t_offset_s": 667.248
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"Bench Run 2\\\" docs/GLOSSARY.md docs/REPRODUCING.md scripts/apply_v3.py | head; grep -rn \\\"domain\\\" bench/reference_runner_v3.py | grep -in \\\"classif\\\" | head -8\", \"description\": \"Bench Run 2 references and domain classifier\"}",
+      "t_offset_s": 669.425
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"7.7\\\\|Sev(f)\\\" docs/MATHEMATICAL_APPENDIX.md | head -15; sed -n 1240,1275p docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Locate section 7.7 in appendix\"}",
+      "t_offset_s": 686.408
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1275,1345p docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Read rest of section 7.7 including caution 3\"}",
+      "t_offset_s": 688.179
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/directives/universal/cdsfl_core.txt; echo \\\"---\\\"; grep -n \\\"## 10\\\\|\\u00a710\\\\|Wrong result\\\\|material-defect\\\" bench/directives/universal/cdsfl_core_formal.md | head; grep -c \\\"cdsfl_core.txt \\u00a710\\\" docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Verify dead \\u00a710 citation and the real \\u00a710 location\"}",
+      "t_offset_s": 692.563
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"cdsfl_core.txt\\\" docs/MATHEMATICAL_APPENDIX.md | head\", \"description\": \"Find all cdsfl_core.txt citations in appendix\"}",
+      "t_offset_s": 698.543
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1345,1412p docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Find end of section 7.7\"}",
+      "t_offset_s": 708.098
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np = \\\"docs/MATHEMATICAL_APPENDIX.md\\\"\\ns = open(p, encoding=\\\"utf-8\\\").read()\\n\\n# Edit 1: repair the dead \\u00a710 citation (caution 3)\\nold1 = \\\"scale with more than two levels; `cdsfl_core.txt` \\u00a710 already enumerates\\\\n   five material-defect categories, which is the existing vocabulary for one.\\\"\\nnew1 = (\\\"scale with more than two levels; `bench/directives",
+      "t_offset_s": 766.712
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np = \\\"bench/directives/universal/cdsfl_core_formal.md\\\"\\ns = open(p, encoding=\\\"utf-8\\\").read()\\n\\nanchor = \\\"---\\\\n\\\\n## Runnable Falsifiers for Critical Findings\\\"\\namendment = \\\"\\\"\\\"**Ordinal severity (amendment, 2026-11-11, `severity_is_ordinal` round):**\\n\\nThe DEFINITION above is unchanged: `V(f) = materiality(f)` = consequence if the\\ndefect ships. This amend",
+      "t_offset_s": 783.563
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 3605,3625p bench/reference_runner_v3.py; grep -n \\\"constraint_class\\\" bench/dm/_types.py bench/cdsfl_finding_schema.json 2>/dev/null | head\", \"description\": \"Check whether constraint_class writer exists in tree\"}",
+      "t_offset_s": 793.172
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"constraint_class\\\\|confidence\\\" bench/cdsfl_finding_schema.json; echo \\\"exit=$?\\\"\", \"description\": \"Check schema for the two fields\"}",
+      "t_offset_s": 799.024
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, glob, os, json, importlib.util\\nsys.path.insert(0, \\\".\\\")\\nspec = importlib.util.spec_from_file_location(\\\"m\\\", \\\"scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py\\\")\\nm = importlib.util.module_from_spec(spec); sys.modules[\\\"m\\\"]=m; spec.loader.exec_module(m)\\nfrom bench.dm._types import DynamicManagementConfig\\nfrom bench.dm._convergence import C",
+      "t_offset_s": 824.925
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 1026.2,
+      "tool_calls": 54,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

@@ -3613,6 +3613,11 @@ class FindingRegistry:
             }],
             "source_aliases": [finding.finding_id],
             "severity": finding.severity,
+            #: ★ B84 FIELD 1, 2026-11-11. `stamp_sev_f` has read this key since
+            #: the severity work and NOTHING wrote it, so `constraint_class_
+            #: defaulted` was True on every entry ever stamped. The reader was
+            #: the orphan; this is its writer.
+            "constraint_class": getattr(finding, "constraint_class", "") or "",
             # RAISED 500 -> 2000 on 2026-08-17. The 500 had been in place since
             # commit 54d956e (2026-04-17) and clipped 661 of 2247 archived
             # descriptions, 29% of the corpus.
@@ -12936,12 +12941,25 @@ class _FindingView:
     the registry schema is consumed in dozens of places -- the simplest
     sufficient fix is the view, not a migration.
 
-    The text it exposes is the entry's own description, title and proposed-fix
-    prose in that order of preference, so a finding whose computable content
-    sits in any of them is still reducible by the topic's tools.
+    ★ THIS DOCSTRING WAS FALSE UNTIL 2026-11-11 AND THE FALSEHOOD WAS THE
+    EXPLOIT. It read that the exposed text is "the entry's own description,
+    title and proposed-fix prose in that order of preference" -- and the code
+    below read `description`, `claim` and `title` and NEVER `proposed_fix`. So
+    the adapter claimed to consider the fix and did not, while the artefact the
+    fold-back gate went on to admit WAS the fix. A free panel seat built a
+    working exploit against exactly that gap: 1 true computable sub-claim in
+    the prose admitted a fix no tool had examined.
+
+    NOW THE 2 TEXTS ARE EXPOSED SEPARATELY AND DELIBERATELY NOT MERGED. Merging
+    them would let a true description carry a bad fix through a single
+    favourable verdict, which is the hole wearing a different shape.
+    `domain_verification_set` runs the topic's tools over each and requires
+    both, on the founder's ruling of 2026-11-11: *"Keep both the claim prose,
+    and the proposed fix."*
     """
 
-    __slots__ = ("description", "finding_id", "title", "evidence")
+    __slots__ = ("description", "finding_id", "title", "evidence",
+                 "proposed_fix")
 
     def __init__(self, entry: Optional[Dict[str, Any]]) -> None:
         e = entry or {}
@@ -12950,6 +12968,12 @@ class _FindingView:
         self.finding_id = str(e.get("canonical_id") or e.get("id") or "")
         self.title = str(e.get("title") or "")
         self.evidence = str(e.get("evidence") or "")
+        #: The artefact the gate actually promotes. Read from the registry
+        #: entry's own field (`proposed_fix`, written at FindingRegistry
+        #: .register), falling back to the candidate fix prose some callers
+        #: carry under a different key.
+        self.proposed_fix = str(
+            e.get("proposed_fix") or e.get("fix") or e.get("fix_text") or "")
 
 
 def _apply_back_gate(candidate_source: str, rel_target: str,

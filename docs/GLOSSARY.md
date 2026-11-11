@@ -1005,3 +1005,7 @@ to the header makes the file fail to open. Used by `bench/credential_store.py`,
 where a guard pins it by editing the `cipher` label specifically, because that
 field does NOT feed the key derivation and so is the only edit the binding alone
 can catch.
+
+**Fold-back gate** — the check in the reference runner (`_apply_back_gate`) that decides whether a model's proposed fix may be overlaid onto the target artefact. A fix it refuses stays CLOSED in the registry and is never applied. Added to this glossary 2026-11-11, when B22's runway note needed to name it.
+
+**Ver(verification)** — the verification factor of the per-finding severity formula in `docs/MATHEMATICAL_APPENDIX.md` section 7.7: `Ver(True) = 1.0`, `Ver(None) = 0.5`, `Ver(False) = 0.0`, so a computationally disproved finding scores 0 whatever its confidence. **It was written `V` until 2026-11-11 and was renamed on the founder's instruction**, because `bench/directives/universal/cdsfl_core_formal.md:417` uses `V(f)` for MATERIALITY — the consequence if the defect ships — so one letter named a consequence in one canonical document and an evidence weight in the other. The 2 meanings are the 2 halves the severity work of 2026-11-11 is separating, which is why the collision mattered rather than merely read badly. The guards and the mutation harness that parse the section 7.7 table follow the new spelling and deliberately do NOT accept the old one, so a revert to the colliding name goes red.

@@ -327,9 +327,36 @@ class TestTheInverseDirectionAlsoHolds:
     #: zero-plant control. It carries authored detail so the 2 clauses are
     #: VISIBLE and trackable, which is the defect it was raised for -- they
     #: had been sitting in 1 paragraph of B56, reaching no ticket.
+    #: ★ B22 (what "a fix" means outside code) JOINED THIS PIN ON 2026-11-11,
+    #: WITH ITS REASON, which is what the assertion below demands. He ruled it
+    #: that day -- widen the claim patterns, and mark the full-generality test
+    #: on the runway for the B-cell builds -- and both halves were built the
+    #: same day, so the decision LEFT the queue and is correctly rendered
+    #: nowhere. Its authored detail is RETAINED rather than deleted, because
+    #: that record now holds his verbatim words and what the ruling meant, and
+    #: deleting it to satisfy a guard would destroy the only place either is
+    #: written down. `test_the_pin_is_not_stale` below is the other direction:
+    #: if B22 is ever rendered again, this pin must go.
+    #:
+    #: ★ B136 (the dimensional check reporting homogeneity as correctness) and
+    #: B88 (the fold-back gate demanding exit 0 from a sandbox suite) JOINED ON
+    #: THE SAME DAY AND FOR THE SAME REASON. He ruled both on 2026-11-11 -- the
+    #: dimensional check to feed a repair route back to the harness and escalate
+    #: to the human only on repeated failure, and the fold-back gate's exploit to
+    #: be closed on the live path -- and both were built the same day, so both
+    #: decisions left the queue. Their authored detail is retained for the same
+    #: reason as B22's: it holds what the ruling meant, and nothing else does.
+    #:
+    #: ★ B144 (the critical cut of 0.7 not being a severity measurement) JOINED ON
+    #: 2026-11-11 TOO. He ruled its recommendation in the words *"That is fine,
+    #: please implement"* -- declare the scale and the critical level in each
+    #: domain config -- so the decision left the queue the moment the ruling was
+    #: recorded on its marker. The entry itself stays OPEN because the BUILD is
+    #: still owed; what is settled is the question, not the work. That distinction
+    #: is the whole reason this pin exists separately from the entry state.
     RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = (
         "C0001", "B122", "B107", "B123", "B128", "B20",
-        "B79", "B104", "B131", "B105", "B140")
+        "B79", "B104", "B131", "B105", "B140", "B22", "B136", "B88", "B144")
 
     @staticmethod
     def _authored() -> set[str]:

@@ -488,6 +488,52 @@ def _may_admit_alone(name: str, evidence: str) -> bool:
     return True
 
 
+
+def _fix_side_text(proposed_fix: str) -> str:
+    """What the fix makes the document SAY, not the markup that says it.
+
+    ★ FOUND BY A FREE PANEL SEAT IN THE JOINT ROUND OF 2026-11-11, AND
+    REPRODUCED BY EXECUTION BEFORE BEING ACTED ON. The both-texts rule shipped
+    hours earlier ran the topic's tools over the RAW `proposed_fix`. On the live
+    path a fix reaching the gate is ALWAYS SEARCH/REPLACE blocks -- the promote
+    path rejects `no_parseable_block` before the gate is consulted -- so the
+    tools were reducing the markup, which contains BOTH halves of the edit.
+
+    THE RESULT WAS EXACTLY INVERTED, measured on the live function:
+      * the CANONICAL CORRECTION (a false value in SEARCH, the true one in
+        REPLACE) was REFUSED, because the tool reduced the FALSE half the fix
+        exists to remove and returned an adverse verdict;
+      * a DELETION OF A TRUE STATEMENT was ADMITTED, because the truth it
+        destroys sat in the SEARCH half and verified.
+    So the repair refused correct repairs and admitted destructive ones. That is
+    worse than the hole it closed, and it is the `additive-standard` removal
+    clause broken by a fix rather than by a deletion.
+
+    THE PARSER IS IMPORTED FROM THE LIVE PATH, NEVER COPIED, following the
+    `_resolve_domain_alias` precedent in this file: a second copy of a grammar
+    is 2 definitions of what a fix block is. The import is LAZY because
+    `reference_runner_v3` imports this module, so a module-level import would be
+    circular. An import failure degrades to today's behaviour -- the raw text --
+    rather than raising on the admission path, because a gate that crashes is
+    worse than a gate that is conservative.
+
+    A pure deletion yields an EMPTY replace side, which fails closed: nothing
+    verifies, so nothing admits. That is the correct answer for a fix whose
+    whole content is the removal of something.
+    """
+    raw = (proposed_fix or "").strip()
+    if not raw:
+        return ""
+    try:
+        import reference_runner_v3 as _rr                      # noqa: PLC0415
+        blocks = _rr.parse_search_replace_blocks(raw)
+    except Exception:                                          # noqa: BLE001
+        return raw
+    if not blocks:
+        return raw
+    return "\n".join((getattr(b, "replace", "") or "") for b in blocks).strip()
+
+
 def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
     """The verification set a STEM topic assigns to one finding, and its verdicts.
 
@@ -529,6 +575,16 @@ def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
         "tools": [],
         "verdicts": [],
         "admits": False,
+        #: ★ INITIALISED HERE, not only on the success path. This function has
+        #: 5 early returns (config failure, classify failure, no tools, manifest
+        #: failure, and the walk itself), and a consumer reading these keys
+        #: would have hit KeyError on every one of them. Found by execution
+        #: 2026-11-11 -- the "fix only" probe returned None for both because
+        #: the claim was unreducible and the function returned at the no-tools
+        #: branch before either key existed.
+        "claim_admits": False,
+        "fix_admits": False,
+        "fix_verdicts": [],
         "detail": "",
     }
     try:
@@ -563,50 +619,241 @@ def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
         out["detail"] = f"manifest-failed:{type(exc).__name__}"
         return out
 
-    definitive_for: List[str] = []
-    definitive_against: List[str] = []
-    #: Tools whose CONFIRMED verdict may never admit a fix BY ITSELF, and
-    #: the 1 tool gated at the BRANCH rather than at the tool. Both are
-    #: measured, not chosen -- see `CANNOT_ADMIT_ALONE` at module level.
-    computing_for: List[str] = []
-    for name in tools:
-        entry = manifest.get(name)
-        if not entry:
-            out["verdicts"].append((name, "NOT_IN_MANIFEST", None))
-            continue
-        if entry.get("needs_file"):
-            # A file tool aimed at prose is bypassed, not run -- the A6 rule.
-            out["verdicts"].append((name, "NOT_APPLICABLE", None))
-            continue
-        fn = entry.get("verifier")
-        f = fn if callable(fn) else getattr(_ia, str(fn), None)
-        if not callable(f):
-            out["verdicts"].append((name, "UNRESOLVED", None))
-            continue
-        try:
-            v = f(claim)
-        except Exception as exc:                              # noqa: BLE001
-            out["verdicts"].append((name, f"RAISED_{type(exc).__name__}", None))
-            continue
-        verdict = getattr(v, "verdict", None)
-        conf = getattr(v, "confidence", None)
-        out["verdicts"].append((name, verdict, conf))
-        if verdict in ("CONFIRMED", "VERIFIED", "SUPPORTED"):
-            definitive_for.append(name)
-            if _may_admit_alone(name, getattr(v, "evidence", "")):
-                computing_for.append(name)
-        elif verdict in ("REFUTED", "REJECTED", "CONTRADICTED"):
-            definitive_against.append(name)
+    #: ★ HIS RULING, 2026-11-11, VERBATIM: *"Keep both the claim prose, and the
+    #: proposed fix."* He was answering the question of WHICH TEXT counts as
+    #: the admissible basis -- the claim prose, the proposed fix, or both --
+    #: raised after a free panel seat built a working exploit against this
+    #: function.
+    #:
+    #: THE EXPLOIT, demonstrated by execution and committed as
+    #: `scripts/a_true_sub_claim_admits_an_unexamined_fix_2026-11-10.py`
+    #: (exit 0 while the hole is open): the gate evaluated `finding.description`
+    #: ONLY, while the artefact it admitted was the PROPOSED FIX. So a finding
+    #: carrying 1 true computable formula in its prose admitted a fix the tools
+    #: never looked at -- "delete the retry loop" sailed through on the
+    #: strength of an unrelated chemistry sub-claim being correct.
+    #:
+    #: SO THE WALK RUNS TWICE AND BOTH SIDES MUST CARRY THE ADMISSION. A
+    #: favourable verdict on the claim prose alone is exactly the exploit, and
+    #: a favourable verdict on the fix alone would admit a well-formed repair to
+    #: a defect nobody established. An adverse verdict on EITHER side refuses.
+    #:
+    #: IT CANNOT LOOSEN ANYTHING, which this function's own contract requires:
+    #: every admission that survives was already admitted under the old rule,
+    #: because the claim-side condition is unchanged and the fix-side condition
+    #: is added as a conjunct. The direction of travel is strictly tighter.
+    def _walk(text: str, sink: List[Any]):
+        """Run the domain's assigned tools over ONE text.
+
+        ★ `sink` KEEPS THE TOOL NAMES BARE. A first version of this prefixed
+        each recorded name with `claim:` or `fix:` to say which side it came
+        from, and that broke the tool-name contract every consumer matches on:
+        `_may_admit_alone("claim:chemistry_structure", ...)` does not match
+        `CANNOT_ADMIT_ALONE`, so a committed guard correctly reported that a
+        truth-blind tool "may admit alone". The admission logic was never
+        affected -- it calls `_may_admit_alone` with the bare name inside this
+        function -- but the RECORD was, and a record a consumer cannot read is
+        the defect regardless of whether the decision was right.
+        So `verdicts` keeps its exact prior meaning (the CLAIM-side walk) and
+        the fix side goes to `fix_verdicts`, which is additive.
+        """
+        d_for: List[str] = []
+        d_against: List[str] = []
+        c_for: List[str] = []
+        for name in tools:
+            entry = manifest.get(name)
+            if not entry:
+                sink.append((name, "NOT_IN_MANIFEST", None))
+                continue
+            if entry.get("needs_file"):
+                # A file tool aimed at prose is bypassed, not run -- the A6 rule.
+                sink.append((name, "NOT_APPLICABLE", None))
+                continue
+            fn = entry.get("verifier")
+            f = fn if callable(fn) else getattr(_ia, str(fn), None)
+            if not callable(f):
+                sink.append((name, "UNRESOLVED", None))
+                continue
+            try:
+                v = f(text)
+            except Exception as exc:                          # noqa: BLE001
+                sink.append((name, f"RAISED_{type(exc).__name__}", None))
+                continue
+            verdict = getattr(v, "verdict", None)
+            conf = getattr(v, "confidence", None)
+            sink.append((name, verdict, conf))
+            if verdict in ("CONFIRMED", "VERIFIED", "SUPPORTED"):
+                d_for.append(name)
+                if _may_admit_alone(name, getattr(v, "evidence", "")):
+                    c_for.append(name)
+            elif verdict in ("REFUTED", "REJECTED", "CONTRADICTED"):
+                d_against.append(name)
+        return d_for, d_against, c_for
+
+    fix_text = _fix_side_text(str(getattr(finding, "proposed_fix", "") or ""))
+    out["fix_verdicts"] = []
+    definitive_for, definitive_against, computing_for = _walk(
+        claim, out["verdicts"])
+    if fix_text:
+        fix_for, fix_against, fix_computing = _walk(
+            fix_text, out["fix_verdicts"])
+    else:
+        #: ★ NO FIX TEXT MEANS NO ADMISSION, and that is the fail-closed
+        #: direction. An absent proposed fix is precisely the unexamined
+        #: artefact the exploit promoted; admitting on claim prose alone is
+        #: the hole, not a fallback from it.
+        fix_for, fix_against, fix_computing = [], [], []
+    definitive_for = definitive_for + [n for n in fix_for if n not in definitive_for]
+    definitive_against = definitive_against + [
+        n for n in fix_against if n not in definitive_against]
 
     #: ★ AN ADMISSION NEEDS A VERDICT THAT COULD HAVE COME OUT THE OTHER WAY.
     #: `definitive_for` still carries every favourable verdict, so nothing is
     #: discarded and a corroborating voice is still recorded; only the
     #: ADMISSION is narrowed to the verdicts measured to discriminate.
-    out["admits"] = bool(computing_for) and not definitive_against
-    _mute = [n for n in definitive_for if n not in computing_for]
+    #: BOTH SIDES, per his 2026-11-11 ruling. The claim side is the condition
+    #: that already stood; the fix side is the conjunct that closes the hole.
+    out["admits"] = (bool(computing_for) and bool(fix_computing)
+                     and not definitive_against)
+    out["claim_admits"] = bool(computing_for) and not definitive_against
+    out["fix_admits"] = bool(fix_computing) and not definitive_against
+    _mute = [n for n in definitive_for
+             if n not in computing_for and n not in fix_computing]
+    _why = ""
+    if computing_for and not fix_computing:
+        _why = (" refused=the claim prose verifies but the PROPOSED FIX does "
+                "not, which is the unexamined-fix hole")
+    elif fix_computing and not computing_for:
+        _why = (" refused=the fix verifies but the CLAIM does not, so no "
+                "defect was established for it to repair")
     out["detail"] = (
         f"{domain}/{claim_type} tools={','.join(tools)} "
         f"for={','.join(computing_for) or '-'} "
+        f"fix_for={','.join(fix_computing) or '-'} "
         f"for_but_cannot_admit={','.join(_mute) or '-'} "
-        f"against={','.join(definitive_against) or '-'}")
+        f"against={','.join(definitive_against) or '-'}{_why}")
     return out
+
+
+# ===========================================================================
+# THE DIMENSIONAL REPAIR ROUTE — founder ruling 2026-11-11
+# ===========================================================================
+#: HIS WORDS: *"I accept the dimensional check fix to feed back to the harness
+#: and HIL escalation only on repeated failure."*
+#:
+#: ★ WHY A ROUTE AT ALL, AND WHY NOT AUTOMATIC CORRECTION. He asked the right
+#: question first: *"If its intended job is useful and it can do it reliably,
+#: shouldn't it be able to correct things too? I guess the problem then might
+#: be what the intent in the original calculation was?"* It is, and the limit
+#: is measurable. Across ALL 60 inhomogeneous 3-term equations over 4 units,
+#: 24 admit MORE THAN ONE equally minimal repair -- 0.400000, Wilson 95%
+#: [0.285695, 0.526339], statsmodels and a SymPy symbolic solve agreeing to
+#: 0.000e+00. Where all 3 terms carry different units there are 3 equally good
+#: repairs and nothing in the tool can choose between them. Producer:
+#: `scripts/the_dimensional_repair_is_underdetermined_2026-11-11.py`.
+#:
+#: AND A LIMIT NO MEASUREMENT REMOVES: even a UNIQUE minimal repair does not
+#: recover intent. `3 m + 2 m = 5 m` is the unique minimal repair of
+#: `3 m + 2 s = 5 m` and the author may have meant a rate calculation. So
+#: minimality is not intent, and the route never silently rewrites a claim.
+#:
+#: ★ THE CHECK IS ONE-SIDED, WHICH IS WHY THE ROUTE HANGS OFF REJECT AND NOT
+#: CONFIRM. Measured 2026-11-11 on 3 tools: pint shows all 4 probe claims
+#: dimensionally homogeneous while only 2 are numerically true, so CONFIRMED
+#: carries 0 information about correctness; z3 returns `unsat` for the
+#: dimension constraints of `3 m + 2 s`, so no assignment of magnitudes makes
+#: an inhomogeneous sum well-formed and a REFUSAL is a proof.
+#: THIS REVERSES CC1'S OWN EARLIER B136 RECOMMENDATION, which proposed moving
+#: the tool to `secondary_only` so it could *corroborate but never refuse*.
+#: That would have kept the uninformative half and discarded the sound one.
+#: The admission side needs nothing new: `CANNOT_ADMIT_ALONE` above already
+#: bars this tool from admitting alone, and the comment there already records
+#: that it has 0 comparing branches.
+#:
+#: ★ IT IS NOT A MODEL VOTE. The harness model supplies a CANDIDATE repair;
+#: the TOOL decides whether that candidate is dimensionally sound. The
+#: project's canonical rule forbids a model VOTE as evidence, not a model
+#: PROPOSAL re-checked programmatically.
+#:
+#: ★ ESCALATE IS THE EXISTING VOCABULARY, not a new one. `bench/cc2_manager.py`
+#: already carries CONFIRM / REJECT / DUPLICATE / ESCALATE, where ESCALATE
+#: means *needs HIL review*. This route emits the same token.
+
+#: His ruling says HIL on REPEATED failure, so a single failure retries.
+MAX_REPAIR_ATTEMPTS = 2
+
+_DIM_QTY = re.compile(
+    r"([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s*([a-zA-Z][a-zA-Z0-9_/^*]*)")
+
+
+def dimensional_units(claim: str) -> list:
+    """The unit token of every quantity in the claim, in order."""
+    return [u for _v, u in _DIM_QTY.findall(claim or "")]
+
+
+def repair_is_unique(claim: str) -> bool:
+    """★ Can the tool choose a repair at all?
+
+    Homogeneity means every term shares one unit, so the minimal repair
+    rewrites all terms to the MODAL unit. When 2 or more units tie for modal
+    there are that many equally minimal repairs and the tool has no basis to
+    pick, which is the 0.400000 of cases measured above. Fewer than 2 units
+    means there is nothing to reconcile.
+    """
+    units = dimensional_units(claim)
+    if len(units) < 2:
+        return True
+    from collections import Counter          # noqa: PLC0415
+    counts = Counter(units)
+    top = max(counts.values())
+    return sum(1 for n in counts.values() if n == top) == 1
+
+
+def dimensional_repair_route(claim, propose_repair, verify=None,
+                             max_attempts: int = MAX_REPAIR_ATTEMPTS) -> dict:
+    """Feed a dimensional refusal back to the harness; ESCALATE on repeat failure.
+
+    `propose_repair(claim, reason)` is the harness model, injected so this is
+    testable with 0 dispatch and 0 spend. `verify(text)` defaults to the live
+    dimensional tool and is the ONLY thing that decides.
+
+    Returns a dict carrying `action` (REPAIRED or ESCALATE), `attempts`, the
+    `claim` it ended on, and a `reason`.
+    """
+    if verify is None:
+        def verify(text):
+            import immune_agents as _ia                    # noqa: PLC0415
+            v = _ia._verify_dimensional_analysis(text)
+            return getattr(v, "verdict", "") != "REJECTED"
+
+    if verify(claim):
+        return {"action": "REPAIRED", "attempts": 0, "claim": claim,
+                "reason": "already dimensionally sound; nothing to repair"}
+
+    #: ★ NON-UNIQUE GOES STRAIGHT TO HIL AND DOES NOT BURN AN ATTEMPT.
+    #: Asking a model to choose among 3 equally minimal repairs invites it to
+    #: assert an intent the evidence does not contain, which is the vote this
+    #: project forbids wearing a different hat.
+    if not repair_is_unique(claim):
+        return {"action": "ESCALATE", "attempts": 0, "claim": claim,
+                "reason": ("the minimal repair is not unique, so no tool can "
+                           "choose it and only the author knows the intent")}
+
+    reason = "dimensionally inhomogeneous: the units cannot be reconciled"
+    attempts = 0
+    current = claim
+    while attempts < max_attempts:
+        attempts += 1
+        candidate = propose_repair(current, reason)
+        if not candidate or not str(candidate).strip():
+            reason = "the harness returned no candidate repair"
+            continue
+        candidate = str(candidate).strip()
+        if verify(candidate):
+            return {"action": "REPAIRED", "attempts": attempts,
+                    "claim": candidate,
+                    "reason": f"tool-verified after {attempts} attempt(s)"}
+        reason = (f"candidate {candidate!r} is still dimensionally "
+                  f"inhomogeneous")
+    return {"action": "ESCALATE", "attempts": attempts, "claim": current,
+            "reason": f"{attempts} candidate repair(s) failed the tool: {reason}"}

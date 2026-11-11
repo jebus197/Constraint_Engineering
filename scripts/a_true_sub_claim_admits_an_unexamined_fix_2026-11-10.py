@@ -27,9 +27,20 @@ text is the admissible basis (description, fix prose, or both), and that
 scoping is governed by his B88 ruling of 2026-11-10 on what the topic's tools
 are for. Choosing it is his; demonstrating the hole is ours.
 
-Exit 0 iff the exploit is demonstrated (true-irrelevant admits, false twin
-refused). Exit 1 means the hole has since been closed -- then DELETE this
-producer or convert it to the guard for the closure.
+★ CONVERTED TO THE GUARD FOR ITS OWN CLOSURE, 2026-11-11, which is what this
+docstring's last line asked for. The founder ruled on the admissible basis:
+*"Keep both the claim prose, and the proposed fix."* `domain_verification_set`
+now runs the topic's tools over BOTH and requires both, and `_FindingView`
+exposes `proposed_fix` -- whose absence was the actual bug, since the view's
+own docstring had claimed to carry the fix while reading only the description.
+
+THE PRODUCER IS KEPT RATHER THAN DELETED because it is the only executable
+record of what the hole WAS, and `additive-standard` permits removal only
+where a committed measurement shows a replacement dominates. Its polarity is
+inverted instead: it now exits 0 when the hole is CLOSED and 1 if it REOPENS.
+
+Exit 0 iff the exploit is REFUSED (the true-irrelevant pair no longer admits,
+and the false twin still does not). Exit 1 means the hole has REOPENED.
 """
 import pathlib
 import sys
@@ -42,11 +53,17 @@ import domain_immune as di  # noqa: E402
 
 
 class _FV:
-    def __init__(self, d: str) -> None:
+    #: ★ THE PROBE NOW SEPARATES THE 2 TEXTS, because the repair does. The
+    #: seat's original concatenated the bad-fix prose onto the DESCRIPTION,
+    #: which was the only shape available when `_FindingView` exposed no
+    #: `proposed_fix` at all. Keeping the concatenated form would test a shape
+    #: the live adapter no longer produces, and would pass for the wrong reason.
+    def __init__(self, d: str, fix: str = "") -> None:
         self.description = d
+        self.proposed_fix = fix
 
 
-BAD_FIX_TAIL = ", therefore the retry loop should be deleted"
+BAD_FIX = "delete the retry loop"
 
 
 def main(argv=None) -> int:
@@ -63,19 +80,37 @@ def main(argv=None) -> int:
         description=(__doc__ or "").strip().splitlines()[0]).parse_args(argv)
 
     true_irrelevant = di.domain_verification_set(
-        "chemistry", _FV("the molecule 'CCO' has formula C2H6O" + BAD_FIX_TAIL))
+        "chemistry", _FV("the molecule 'CCO' has formula C2H6O", BAD_FIX))
     false_twin = di.domain_verification_set(
-        "chemistry", _FV("the molecule 'CCO' has formula C3H8O" + BAD_FIX_TAIL))
+        "chemistry", _FV("the molecule 'CCO' has formula C3H8O", BAD_FIX))
+    #: ★ THE CAPABILITY PROBE, added with the closure. A guard that only shows
+    #: the hole shut cannot tell a repair from a mechanism switched off, and
+    #: `additive-standard` forbids buying a refusal with a lost capability.
+    both_verify = di.domain_verification_set(
+        "chemistry", _FV("the molecule 'CCO' has formula C2H6O",
+                         "correct it to: the molecule 'CCO' has formula C2H6O"))
     print("true formula, unexamined fix :",
           true_irrelevant["admits"], "|", true_irrelevant["detail"])
     print("false formula, same fix      :",
           false_twin["admits"], "|", false_twin["detail"])
-    exploit_live = bool(true_irrelevant["admits"]) and not false_twin["admits"]
-    print("\nEXPLOIT", "DEMONSTRATED: a true sub-claim admits a fix the tools "
-          "never examined." if exploit_live else
-          "NOT demonstrated -- the hole appears closed; retire or convert "
-          "this producer.")
-    return 0 if exploit_live else 1
+    print("true formula, VERIFIABLE fix :",
+          both_verify["admits"], "|", both_verify["detail"])
+    exploit_live = bool(true_irrelevant["admits"])
+    capability_kept = bool(both_verify["admits"])
+    print()
+    if exploit_live:
+        print("EXPLOIT REOPENED: a true sub-claim again admits a fix the "
+              "tools never examined.")
+        return 1
+    if not capability_kept:
+        print("HOLE CLOSED BUT THE CAPABILITY WENT WITH IT: a fix the tools "
+              "DO verify is now refused too, so the route is inert. That is "
+              "additive-standard's removal clause broken by the repair.")
+        return 1
+    print("CLOSED, AND THE CAPABILITY IS INTACT: the unexamined fix is "
+          "refused, the false twin is refused, and a fix the tools verify "
+          "still admits.")
+    return 0
 
 
 if __name__ == "__main__":

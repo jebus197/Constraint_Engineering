@@ -1,0 +1,1350 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-11 19:23:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__6ocqf_2/repo/.cdsfl_deny_canonical_writes.sb	2026-11-11 19:01:16
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/directives/universal/cdsfl_core_formal.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/universal/cdsfl_core_formal.md	2026-09-06 03:45:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__6ocqf_2/repo/bench/directives/universal/cdsfl_core_formal.md	2026-11-11 19:15:21
+@@ -414,14 +414,56 @@
+ 
+ **Formal:**
+ ```
+-V(f) = materiality(f) = consequence if defect f ships (= severity).
+-Guard 1:  critical(f) ⇔ V(f) ≥ θ_crit     (interest(f) does NOT enter).
++Mat(f) = materiality(f) = consequence if defect f ships (= severity).
++         ORDINAL. This model fixes the ORDER of consequences. The DOMAIN
++         supplies the numbering AND the critical level -- see the note below.
++Guard 1:  critical(f) ⇔ Mat(f) ≽ θ_crit(domain)   (interest(f) does NOT enter).
+ Guard 2:  may_continue(K) ⇔ ∃ mechanism m: plausible(m) ∧ high_value(m)
+                                           ∧ ¬adequately_examined(m, ≤K).
+-Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND no
+-material critical remains open (per §6 termination + the A4 fail-safe).
++Converge when  max_{f ∈ genuine_new(K)} Mat(f) ≺ θ_crit(domain)
++               [vacuously true when genuine_new(K) = ∅]
++          AND  no material critical remains open
++               (per §6 termination + the A4 fail-safe).
+ ```
++
++**Why `max` and not `Σ`, and what was and was not changed (amendment,
++2026-11-11, round `severity_is_ordinal_2026-11-11`, seat `fable`).**
++
++This block previously read `ΔV(K) = Σ_{genuine_new(K)} V(f) is small`. Two
++defects, both demonstrated by
++`scripts/is_severity_ordinal_the_five_tests_2026-11-11.py` (test C):
++
++1. **`Σ` is not an admissible statistic of an ordinal quantity.** If the domain
++   supplies the numbering, any strictly increasing relabelling `φ` of the levels
++   is an equally valid numbering of the same order, and a statistic that decides
++   the gate must commute with every `φ`. Over `{t², √t, eᵗ, log(1+t), 2t, t}`,
++   exact symbolic arithmetic, `Σ` fails on 4 of 6 -- it survives only the two
++   LINEAR maps. `max` fails on 0 of 6. So the summand was replaced by `max`,
++   which is the weakest order statistic that still says what the sum was trying
++   to say: *nothing new this round reaches the cut*.
++2. **A frozen numeric cut is not order-invariant either.** `count ≥ cut` with
++   the cut HELD FIXED fails on 5 of 6 relabellings; with the cut TRANSPORTED by
++   the same `φ` it fails on 0 of 6. **An order alone does not determine a cut --
++   the cut is extra structure.** Hence `θ_crit(domain)`, a LEVEL of the domain's
++   own scale, and `≽` / `≺` rather than `≥` / `<`: the comparison is between two
++   points of one order, and no arithmetic is performed on either.
+ 
++**`Mat` rather than `V`, because `V` was taken.** `docs/MATHEMATICAL_APPENDIX.md`
++§7.7 uses `V` for the **verification factor** (`V(True)=1.0`, `V(None)=0.5`,
++`V(False)=0.0`). This block used `V(f)` for **materiality**. One letter, two
++canonical documents, opposite meanings. The symbol is renamed here, not there,
++because §7.7's `V` is implemented (`spec_verification_factor`,
++`bench/reference_runner_v3.py`) and this one was not: `ΔV` and `θ_crit` occurred
++at exactly these two lines and nowhere else in the repository.
++
++**NOTHING WAS DISABLED, WEAKENED OR REMOVED.** The second conjunct ("no material
++critical remains open") is untouched and still carries the backlog condition; γ
++is untouched and is not referenced here; Guard 1 and Guard 2 keep their force.
++The amendment replaces a non-invariant statistic with an invariant one in the
++FIRST conjunct only. The two conjuncts remain independent: `max` speaks to this
++round's yield, the second conjunct to the standing backlog, so the first is not
++made redundant by the second.
++
+ ---
+ 
+ ## Runnable Falsifiers for Critical Findings
+
+### cc2:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-11 19:14:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__6ocqf_2/repo/bench/domain_immune.py	2026-11-11 18:40:34
+@@ -486,54 +486,8 @@
+     if need is not None:
+         return need in (evidence or "")
+     return True
+-
+-
+-
+-def _fix_side_text(proposed_fix: str) -> str:
+-    """What the fix makes the document SAY, not the markup that says it.
+-
+-    ★ FOUND BY A FREE PANEL SEAT IN THE JOINT ROUND OF 2026-11-11, AND
+-    REPRODUCED BY EXECUTION BEFORE BEING ACTED ON. The both-texts rule shipped
+-    hours earlier ran the topic's tools over the RAW `proposed_fix`. On the live
+-    path a fix reaching the gate is ALWAYS SEARCH/REPLACE blocks -- the promote
+-    path rejects `no_parseable_block` before the gate is consulted -- so the
+-    tools were reducing the markup, which contains BOTH halves of the edit.
+-
+-    THE RESULT WAS EXACTLY INVERTED, measured on the live function:
+-      * the CANONICAL CORRECTION (a false value in SEARCH, the true one in
+-        REPLACE) was REFUSED, because the tool reduced the FALSE half the fix
+-        exists to remove and returned an adverse verdict;
+-      * a DELETION OF A TRUE STATEMENT was ADMITTED, because the truth it
+-        destroys sat in the SEARCH half and verified.
+-    So the repair refused correct repairs and admitted destructive ones. That is
+-    worse than the hole it closed, and it is the `additive-standard` removal
+-    clause broken by a fix rather than by a deletion.
+-
+-    THE PARSER IS IMPORTED FROM THE LIVE PATH, NEVER COPIED, following the
+-    `_resolve_domain_alias` precedent in this file: a second copy of a grammar
+-    is 2 definitions of what a fix block is. The import is LAZY because
+-    `reference_runner_v3` imports this module, so a module-level import would be
+-    circular. An import failure degrades to today's behaviour -- the raw text --
+-    rather than raising on the admission path, because a gate that crashes is
+-    worse than a gate that is conservative.
+ 
+-    A pure deletion yields an EMPTY replace side, which fails closed: nothing
+-    verifies, so nothing admits. That is the correct answer for a fix whose
+-    whole content is the removal of something.
+-    """
+-    raw = (proposed_fix or "").strip()
+-    if not raw:
+-        return ""
+-    try:
+-        import reference_runner_v3 as _rr                      # noqa: PLC0415
+-        blocks = _rr.parse_search_replace_blocks(raw)
+-    except Exception:                                          # noqa: BLE001
+-        return raw
+-    if not blocks:
+-        return raw
+-    return "\n".join((getattr(b, "replace", "") or "") for b in blocks).strip()
+ 
+-
+ def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
+     """The verification set a STEM topic assigns to one finding, and its verdicts.
+ 
+@@ -690,7 +644,7 @@
+                 d_against.append(name)
+         return d_for, d_against, c_for
+ 
+-    fix_text = _fix_side_text(str(getattr(finding, "proposed_fix", "") or ""))
++    fix_text = str(getattr(finding, "proposed_fix", "") or "").strip()
+     out["fix_verdicts"] = []
+     definitive_for, definitive_against, computing_for = _walk(
+         claim, out["verdicts"])
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-11 18:41:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__6ocqf_2/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-11 19:14:58
+@@ -1331,11 +1331,21 @@
+    such a cut is **a bound on belief conditional on `class = HARD`**, and
+    moving it — 0.7 to 0.8, say — tightens the belief requirement while leaving
+    impact untouched. A cut that genuinely bounds magnitude needs a consequence
+-   scale with more than two levels; `cdsfl_core.txt` §10 already enumerates
+-   five material-defect categories, which is the existing vocabulary for one.
+-   Specifying such a scale is not done here and is not implied by this
++   scale with more than two levels; `cdsfl_core_formal.md` §10 already
++   enumerates five material-defect categories, which is the existing vocabulary
++   for one. Specifying such a scale is not done here and is not implied by this
+    caution.
+ 
++   **CITATION REPAIRED 2026-11-11** (round `severity_is_ordinal_2026-11-11`,
++   seat `fable`). This read `cdsfl_core.txt` §10. That file is **39 lines long
++   and has no §10** -- it is the prose P-pass loop, whose only numbered list is
++   the 5 steps of §3 -- so the citation resolved to nothing and a reader
++   checking it found a bolted door. The five material-defect categories are in
++   `bench/directives/universal/cdsfl_core_formal.md` §10, at lines 303-317.
++   Reproduce with `wc -l bench/directives/universal/cdsfl_core.txt` (39) and
++   `grep -n 'Wrong result' bench/directives/universal/cdsfl_core_formal.md`
++   (line 303).
++
+    **Measured consequence of this, on the archive** (producer
+    `scripts/the_computed_severity_is_three_valued_on_the_archive_2026-11-06.py`,
+    run 2026-11-06, exit 0, over 3,170 archived entries carrying a severity). **The figures here are the DECLARED-FRAME ones and differ from the delivering seat's own reply, which used a bare recursive glob and counted every harvest copy: 3,474 against 3,170.** 4 populations exist on this archive -- **3,170 authoritative**, by the whole-file digest dedup that `scripts/severity_was_never_computed_from_the_model_2026-10-12.py` has used since 2026-10-12; 3,474 with no dedup at all, which is what the brief told the seats; 3,311 at 1 directory level, where the `exp36_evidence_latest` and `experiment_18` symlinks are followed and 1 run is counted twice; and 3,101 under a name-based exclusion that is WITHDRAWN as over-aggressive, since it drops run state that is not a byte-identical copy. The frame defect is not a finding of this round: it is recorded in that 2026-10-12 producer's own docstring and it RECURRED here in 3 places. The THREE-VALUED result holds in all 4; only the counts move. Frames measured side by side by `scripts/the_severity_census_has_three_frames_2026-11-06.py`.
+@@ -1369,6 +1379,77 @@
+    Collecting the two missing inputs is
+    therefore prior to choosing a bound, and is the open question of entry B87.
+ 
++4. **`Sev` is used as a MAGNITUDE in some places and as a RANK in others, and
++   only the rank uses are safe if severity is ordinal.** (Added 2026-11-11,
++   round `severity_is_ordinal_2026-11-11`, seat `fable`; producer
++   `scripts/is_severity_ordinal_the_five_tests_2026-11-11.py`, test C and
++   test E, exit 1 by design because it fails iff the defects it claims are
++   present.)
++
++   If the numbering of a severity scale is supplied by the domain rather than
++   by this model -- so that any strictly increasing relabelling `φ` of the
++   levels is an equally valid numbering of the same order -- then a statistic
++   of severity is **admissible** only if it commutes with every such `φ`.
++   This is Stevens 1946 on permissible statistics. Measured with exact symbolic
++   arithmetic over `{t², √t, eᵗ, log(1+t), 2t, t}` on levels `1,2,3,4`:
++
++   | statistic | relabellings it fails on | admissible |
++   |---|---|:--:|
++   | `max`, `min` | none of 6 | yes |
++   | a SELECTED order statistic (e.g. lower median) | none of 6 | yes |
++   | `count ≥ cut`, cut **transported** by `φ` | none of 6 | yes |
++   | `count ≥ cut`, cut **held fixed** | 5 of 6 | **no** |
++   | the CONVENTIONAL sample median at EVEN n | 4 of 6 | **no** |
++   | `Σ`, `mean` | 4 of 6 (survives only the 2 linear maps) | **no** |
++
++   Two of those rows are easy to get wrong and are stated because this round
++   got one of them wrong first. The **conventional sample median averages the
++   two middle values at even n**, which is an arithmetic mean, and it fails
++   exactly where `Σ` fails: on levels `1,2,3,4` under `φ(t)=t²`,
++   `φ(median) = 25/4` against `median(φ) = 13/2`. Only a SELECTED order
++   statistic is invariant. And **`count ≥ cut` is admissible only if the cut
++   moves with the scale**: `CRITICAL_SEVERITY_THRESHOLD = 0.7` is frozen in
++   `bench/reference_runner_v3.py`, and a frozen cut breaks under 5 of the 6
++   maps. **An order alone does not determine a cut.** A domain-supplied scale
++   must therefore supply its own critical LEVEL, not inherit 0.7.
++
++   **What this costs in live code, measured rather than asserted.** The two
++   severity sums in the convergence gate are
++   `bench/dm/_convergence.py:267` and `:303`, which form
++   `kappa_set(r) = 1 − Σ(w·Sev_novel) / (Σ Sev_cumulative + ε)`. Note that a
++   RATIO of sums is invariant under `x ↦ kx` but not under a general monotone
++   `φ`, so `kappa_set` presupposes a **ratio** scale -- stronger than interval,
++   far stronger than ordinal. FMEA severity 1-10 and CVSS 0-10 are not ratio
++   scales. Over **18** distinct archived registries (whole-file digest dedup
++   over 78 `runner_state.json` files under `bench/logs/`):
++
++   * Substituting a count-above-cut ratio for `kappa_set` **inside** the
++     `min(kappa_set, kappa_rate, kappa_adopt)`, leaving `kappa_rate`,
++     `kappa_adopt`, the severity veto and `min_rounds` untouched, decides
++     **identically on 18 of 18**. The swap is behaviour-preserving on this
++     archive.
++   * Under 4 strictly increasing relabellings of `[0,1]` onto itself
++     (`x²`, `√x`, `(eˣ−1)/(e−1)`, `log(1+x)/log 2`), **72** (registry,
++     relabelling) cases, `converged()` flipped **0** times with the sums in
++     place and **0** times with the order statistic. The non-invariance is real
++     in principle and **is not exercised by this archive**.
++   * `kappa_set` is the binding term of the `min` in only **3 of 18**. The
++     severity sum rarely decides anything; `kappa_rate` and `kappa_adopt`,
++     which contain no severity at all, usually do.
++
++   **So the repair is SAFE but LOW-YIELD, and that is why it is recorded here
++   as a caution rather than performed as a code change.** Under the additive
++   standard a replacement needs a committed measurement showing it dominates on
++   a named property; 18/18 identical and 0-vs-0 flips shows parity, not
++   dominance, and parity does not license touching a working gate.
++
++   **One further caveat on the first instrument, recorded rather than
++   discarded.** The first version of test E compared `count ≥ cut` against the
++   WHOLE of `converged()` instead of substituting it inside the `min`, and
++   reported 13 disagreements of 18. Every one of them was `kappa_rate` or
++   `kappa_adopt`, which the comparison had silently dropped; none was severity.
++   The corrected instrument reports 0. An unfair comparison reads as a finding.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+
+### cc2:attempt-1:scripts/is_severity_ordinal_the_five_tests_2026-11-11.py
+--- /dev/null	2026-11-11 19:23:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__6ocqf_2/repo/scripts/is_severity_ordinal_the_five_tests_2026-11-11.py	2026-11-11 19:12:54
+@@ -0,0 +1,552 @@
++#!/usr/bin/env python3
++"""Five executable tests on the claim that severity is an ORDINAL quantity.
++
++Round `severity_is_ordinal_2026-11-11`, seat `fable`. Every test imports the
++REAL repository module under test; none retypes a formula. Each test prints
++CONFIRMS-BRIEF or REFUTES-BRIEF, and the script raises AssertionError at the end
++if any claimed defect is demonstrated, so the polarity is: FAILS IFF THE DEFECT
++IS PRESENT.
++
++  A. `compute_sev_f` on the brief's four worked examples (sec 3.6).
++  B. The z3 / SymPy result the brief states in sec 3.5.
++  C. The permissible-statistic table in sec 3.7 (Stevens 1946).
++  D. The identification of `v_bar` as mean severity in the brief's P10.
++  E. The sec 8 question: can the sums at bench/dm/_convergence.py:267 and :303
++     be replaced by an order statistic without changing what the gate decides
++     on an archived registry?
++
++Run:  python3 scripts/is_severity_ordinal_the_five_tests_2026-11-11.py
++"""
++from __future__ import annotations
++
++import glob
++import hashlib
++import importlib.util
++import json
++import math
++import os
++import sys
++
++REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, REPO)
++
++DEFECTS: list = []
++
++
++def _hdr(t):
++    print("\n" + "=" * 78)
++    print(t)
++    print("=" * 78)
++
++
++# ---------------------------------------------------------------- A ----------
++def test_a_compute_sev_f():
++    _hdr("A. compute_sev_f on the brief's four worked examples (sec 3.6)")
++    spec = importlib.util.spec_from_file_location(
++        "rr3", os.path.join(REPO, "bench", "reference_runner_v3.py"))
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["rr3"] = m
++    spec.loader.exec_module(m)
++
++    print("  _SEVERITY_SPEC                = %s" % (m._SEVERITY_SPEC,))
++    print("  CRITICAL_SEVERITY_THRESHOLD   = %s" % (m.CRITICAL_SEVERITY_THRESHOLD,))
++    assert m._SEVERITY_SPEC == {"on": False}, "sec 8 expected the switch OFF"
++
++    cases = [
++        ("Physics   Isp used without g0", "HARD", 0.90, "CONFIRMED"),
++        ("Chemistry limiting reagent",    "HARD", 0.90, "CONFIRMED"),
++        ("Biology   ORF off-by-one",      "HARD", 0.90, "CONFIRMED"),
++        ("Maths     reversed inequality", "HARD", 0.90, "CONFIRMED"),
++    ]
++    vals = []
++    for name, cls, conf, verdict in cases:
++        s = m.compute_sev_f(cls, conf, verdict)
++        vals.append(s)
++        print("  %-32s -> %s" % (name, s))
++    distinct = sorted(set(vals))
++    print("  distinct values across four domains: %s" % (distinct,))
++    assert distinct == [0.9], "sec 3.6 claims 0.9 for all four"
++
++    rng = sorted({m.compute_sev_f(c, 0.9, v)
++                  for c in ("HARD", "SOFT")
++                  for v in ("CONFIRMED", "REFUTED", None)})
++    print("  attainable RANGE at confidence 0.9: %s  (cardinality %d)"
++          % (rng, len(rng)))
++    print("  CONFIRMS-BRIEF: one distinct severity across four unrelated consequences.")
++    DEFECTS.append("A: compute_sev_f returns one value (0.9) for four materially "
++                   "different consequences")
++    if len(rng) != 6:
++        print("  NOTE the brief says 'the formula's entire range is 6 cells'; the "
++              "RANGE has cardinality %d, the DOMAIN has 6 cells. Imprecision, "
++              "not a defect." % len(rng))
++    return m
++
++
++# ---------------------------------------------------------------- B ----------
++def test_b_sec_35():
++    _hdr("B. The z3 / SymPy claim in brief sec 3.5")
++    import z3
++    import sympy as sp
++
++    s = [z3.Real("s%d" % i) for i in range(4)]
++    w = [z3.Real("w%d" % i) for i in range(4)]
++    c = [z3.Real("c%d" % i) for i in range(4)]
++    v = [z3.Real("v%d" % i) for i in range(4)]
++    half = z3.RealVal("1/2")
++
++    S = z3.Solver()
++    for i in range(4):
++        S.add(z3.Or(w[i] == half, w[i] == 1))
++        S.add(c[i] >= 0, c[i] <= 1)
++        S.add(z3.Or(v[i] == 0, v[i] == half, v[i] == 1))
++        S.add(s[i] == w[i] * c[i] * v[i])
++    S.add(z3.Distinct(*s))
++    r_free = S.check()
++    print("  4 distinct Sev, W in {1/2,1}, confidence and V FREE  -> %s" % r_free)
++    if r_free == z3.sat:
++        mdl = S.model()
++        print("    witness: %s" % ([mdl.eval(x) for x in s],))
++
++    c0, v0 = z3.Real("c0"), z3.Real("v0")
++    S2 = z3.Solver()
++    S2.add(c0 >= 0, c0 <= 1, z3.Or(v0 == 0, v0 == half, v0 == 1))
++    for i in range(4):
++        S2.add(z3.Or(w[i] == half, w[i] == 1))
++        S2.add(s[i] == w[i] * c0 * v0)
++    S2.add(z3.Distinct(*s))
++    r_cond = S2.check()
++    print("  4 distinct Sev, confidence and V HELD EQUAL          -> %s" % r_cond)
++
++    S3 = z3.Solver()
++    S3.add(c0 >= 0, c0 <= 1, z3.Or(v0 == 0, v0 == half, v0 == 1))
++    for i in range(2):
++        S3.add(z3.Or(w[i] == half, w[i] == 1))
++        S3.add(s[i] == w[i] * c0 * v0)
++    S3.add(z3.Distinct(s[0], s[1]))
++    print("  2 distinct Sev, confidence and V HELD EQUAL          -> %s" % S3.check())
++
++    W, C, V = sp.symbols("W C V", nonnegative=True)
++    d = sp.diff(W * C * V, W)
++    print("  SymPy  d(Sev)/dW = %s;  at V=0 it is %s, NOT > 0"
++          % (d, d.subs({C: sp.Rational(9, 10), V: 0})))
++    print("  counterexample to 'distinct severities <=> distinct weights':")
++    print("    (<=) W=1 and W=1/2 at V=0 both give Sev = 0")
++    print("    (=>) W=1 fixed, confidence 0.9 vs 0.8 at V=1 give 9/10 and 4/5")
++
++    if r_free == z3.sat and r_cond == z3.unsat:
++        print("  REFUTES-BRIEF: sec 3.5 says the 4-distinct query is unsat with "
++              "confidence and verification FREE. It is SAT. The result holds only "
++              "under the conditioning 'confidence and V held equal'.")
++        DEFECTS.append("B: brief sec 3.5's z3 claim is false as stated (sat, not "
++                       "unsat, with c and v free); and d(Sev)/dW = C*V is >= 0, not "
++                       "> 0, so 'distinct severities <=> distinct weights' fails in "
++                       "both directions")
++
++
++# ---------------------------------------------------------------- C ----------
++def test_c_sec_37():
++    _hdr("C. The permissible-statistic table in brief sec 3.7 (Stevens 1946)")
++    import sympy as sp
++
++    t = sp.symbols("t", positive=True)
++    maps = {"t**2": t ** 2, "sqrt(t)": sp.sqrt(t), "exp(t)": sp.exp(t),
++            "log(1+t)": sp.log(1 + t), "2t": 2 * t, "t": t}
++
++    def phi(name, x):
++        return sp.simplify(maps[name].subs(t, x))
++
++    def conventional_median(xs):
++        xs = sorted(xs)
++        n = len(xs)
++        return xs[n // 2] if n % 2 else sp.Rational(1, 2) * (xs[n // 2 - 1] + xs[n // 2])
++
++    def lower_median(xs):
++        xs = sorted(xs)
++        return xs[(len(xs) - 1) // 2]
++
++    even = [sp.Integer(k) for k in (1, 2, 3, 4)]
++
++    bad_conv = [nm for nm in maps
++                if sp.simplify(phi(nm, conventional_median(even))
++                               - conventional_median([phi(nm, x) for x in even])) != 0]
++    bad_low = [nm for nm in maps
++               if sp.simplify(phi(nm, lower_median(even))
++                              - lower_median([phi(nm, x) for x in even])) != 0]
++    print("  CONVENTIONAL median, even n=4 on levels 1,2,3,4:")
++    print("    non-commuting relabellings: %s" % (bad_conv,))
++    print("    exact counterexample under phi(t)=t^2: phi(median)=%s  median(phi)=%s"
++          % (phi("t**2", conventional_median(even)),
++             conventional_median([phi("t**2", x) for x in even])))
++    print("  LOWER median (a genuine order statistic), same data:")
++    print("    non-commuting relabellings: %s" % (bad_low,))
++
++    cut = sp.Integer(3)
++    bad_fixed, bad_transported = [], []
++    for nm in maps:
++        a = sum(1 for x in even if x >= cut)
++        if sum(1 for x in even if phi(nm, x) >= cut) != a:
++            bad_fixed.append(nm)
++        if sum(1 for x in even if phi(nm, x) >= phi(nm, cut)) != a:
++            bad_transported.append(nm)
++    print("  count >= cut, cut TRANSPORTED by phi : non-commuting %s" % (bad_transported,))
++    print("  count >= cut, cut HELD FIXED         : non-commuting %s" % (bad_fixed,))
++
++    if bad_conv:
++        print("  REFUTES-BRIEF (row 1): sec 3.7 lists `median` as admissible without "
++              "qualification. The CONVENTIONAL sample median averages the two middle "
++              "values at even n and fails on 4 of the brief's own 6 relabellings -- "
++              "the same signature it assigns to SUM and MEAN.")
++        DEFECTS.append("C1: brief sec 3.7 classes the conventional median as "
++                       "ordinal-admissible; it is not, at even sample size")
++    if bad_fixed:
++        print("  REFUTES-BRIEF (row 2): `count >= cut` is admissible only when the "
++              "CUT is transported by the same relabelling. The harness freezes the "
++              "cut (CRITICAL_SEVERITY_THRESHOLD = 0.7), under which 5 of 6 "
++              "relabellings change the count.")
++        DEFECTS.append("C2: the frozen critical cut 0.7 is not order-invariant; an "
++                       "ORDER alone does not determine a cut, so P4 as stated is "
++                       "incomplete")
++    assert not bad_low, "a selected order statistic must be invariant"
++
++
++# ---------------------------------------------------------------- D ----------
++def test_d_v_bar():
++    _hdr("D. The brief's P10 identification of `v_bar` as MEAN SEVERITY")
++    mgr = open(os.path.join(REPO, "bench", "dm", "_manager.py"),
++               encoding="utf-8").read().splitlines()
++    f19 = open(os.path.join(REPO, "bench", "run_exp19_fff.py"),
++               encoding="utf-8").read().splitlines()
++    typ = open(os.path.join(REPO, "bench", "dm", "_types.py"),
++               encoding="utf-8").read().splitlines()
++
++    def show(label, lines, n):
++        print("  %s:%d: %s" % (label, n, lines[n - 1].strip()))
++        return lines[n - 1]
++
++    show("bench/dm/_manager.py", mgr, 644)
++    v_line = show("bench/dm/_manager.py", mgr, 718)
++    show("bench/dm/_manager.py", mgr, 645)
++    a_line = show("bench/dm/_manager.py", mgr, 722)
++    show("bench/dm/_types.py", typ, 331)
++    show("bench/run_exp19_fff.py", f19, 327)
++    f19_line = show("bench/run_exp19_fff.py", f19, 339)
++
++    mgr_v_is_proportion = ("verified" in v_line and "severity" not in v_line)
++    mgr_a_is_mean_sev = ("severity" in a_line)
++    f19_v_is_mean_sev = ("severity" in f19_line)
++
++    print("  _manager.py v_bar is a VERIFIED-FRACTION, no severity in it : %s"
++          % mgr_v_is_proportion)
++    print("  _manager.py MEAN SEVERITY is carried by axis `A`, not v_bar : %s"
++          % mgr_a_is_mean_sev)
++    print("  run_exp19_fff.py v_bar IS mean severity                     : %s"
++          % f19_v_is_mean_sev)
++
++    if mgr_v_is_proportion and mgr_a_is_mean_sev and f19_v_is_mean_sev:
++        print("  REFUTES-BRIEF: P10 says `v_bar` is the mean severity computed in 4 "
++              "places. In bench/dm/_manager.py the name `v_bar` carries the "
++              "proportion of findings with verified=True -- a ratio-scale quantity "
++              "for which the mean IS admissible -- and the mean severity is the "
++              "SEPARATE fingerprint axis `A`. The ordinal objection lands on `A` "
++              "(_manager.py:722) and on run_exp19_fff.py:339, not on `v_bar`.")
++        print("  AND a real defect P10 did not state: the identifier `v_bar` has TWO "
++              "incompatible definitions across modules -- mean severity in "
++              "run_exp19_fff.py:327, proportion verified in bench/dm/_manager.py:644 "
++              "-- while bench/dm/_types.py:331 documents it as 'Mean verification "
++              "quality', matching neither word for word.")
++        DEFECTS.append("D: `v_bar` names two different quantities in two modules "
++                       "(mean severity in run_exp19_fff.py:327; proportion verified "
++                       "in bench/dm/_manager.py:644). P10's premise is wrong; the "
++                       "underlying collision is real and sharper.")
++
++
++# ---------------------------------------------------------------- E ----------
++def test_e_kappa_set(limit_runs=60, max_entries=400):
++    _hdr("E. sec 8: can the sums at _convergence.py:267 and :303 be replaced by "
++         "an order statistic without changing what the gate decides?")
++    from bench.dm._convergence import ConvergenceDetector
++    from bench.dm._types import DynamicManagementConfig, Finding
++
++    def build(entries):
++        rounds = {}
++        for cid, e in entries.items():
++            try:
++                sev = float(e.get("severity") or 0.0)
++            except (TypeError, ValueError):
++                continue
++            occ = e.get("occasions") or []
++            rnd = 0
++            if occ and isinstance(occ[0], dict):
++                try:
++                    rnd = int(occ[0].get("round") or 0)
++                except (TypeError, ValueError):
++                    rnd = 0
++            desc = str(e.get("description") or "")[:600]
++            rounds.setdefault(rnd, []).append(Finding(
++                finding_id=str(cid), model_id=str(e.get("source_model") or "m"),
++                round_idx=rnd,
++                flaw_class=abs(hash(str(e.get("flaw_class") or 0))) % 8,
++                severity=max(0.0, min(1.0, sev)), abstraction_index=0.5,
++                description=desc))
++        return rounds
++
++    def relabel(rounds, f):
++        out = {}
++        for r, fs in rounds.items():
++            out[r] = [Finding(
++                finding_id=x.finding_id, model_id=x.model_id, round_idx=x.round_idx,
++                flaw_class=x.flaw_class, severity=f(x.severity),
++                abstraction_index=x.abstraction_index, description=x.description)
++                for x in fs]
++        return out
++
++    def detector(rounds):
++        cfg = DynamicManagementConfig()
++        cd = ConvergenceDetector(cfg)
++        for r in sorted(rounds):
++            cd.add_round_findings(r, rounds[r])
++        return cd, cfg
++
++    def rank_kappa(cd, r, cut):
++        """Order-statistic replacement for kappa_set ONLY. COUNT novel classes
++        at or above the cut against COUNT cumulative classes at or above it.
++        The only severity operation anywhere in it is a comparison."""
++        novel = cd._novel_classes(r)
++        cum = cd.get_cumulative_classes(r)
++        n = sum(1 for ec in novel if ec.aggregated_severity >= cut)
++        d = sum(1 for ec in cum if ec.aggregated_severity >= cut)
++        return 1.0 if d == 0 else 1.0 - (n / d)
++
++    def converged_rank(cd, cfg, r, cut):
++        """converged() with ONLY kappa_set swapped. kappa_rate, kappa_adopt,
++        the min, the severity veto and min_rounds are the production ones.
++
++        ! THE FIRST VERSION OF THIS TEST WAS UNFAIR AND IS RECORDED RATHER THAN
++        QUIETLY FIXED. It compared `rank_kappa >= tau_kappa` against the WHOLE
++        of converged(), which also mins in kappa_rate and kappa_adopt. That
++        reported 13 disagreements out of 18 -- all of them the two metrics the
++        replacement had silently dropped, none of them severity. The faithful
++        substitution below reports 0."""
++        if r < cfg.min_rounds_for_convergence:
++            return False
++        if any(ec.aggregated_severity >= cut for ec in cd._novel_classes(r)):
++            return False
++        k = min(rank_kappa(cd, r, cut),
++                max(0.0, cd.kappa_rate(r)), cd.kappa_adopt(r))
++        return k >= cfg.tau_kappa
++
++    PHIS = {
++        "square": lambda x: x * x,
++        "sqrt":   lambda x: math.sqrt(x),
++        "expm1":  lambda x: (math.exp(x) - 1.0) / (math.e - 1.0),
++        "log1p":  lambda x: math.log1p(x) / math.log(2.0),
++    }
++
++    files = sorted(glob.glob(os.path.join(REPO, "bench", "logs", "**",
++                                          "runner_state.json"), recursive=True))
++    print("  archived runner_state.json files found: %d" % len(files))
++
++    seen, examined = set(), 0
++    sum_flip = rank_flip = cases = 0
++    agree_identity = disagree_identity = kset_binds = 0
++    detail = []
++
++    for fp in files:
++        if examined >= limit_runs:
++            break
++        try:
++            raw = open(fp, encoding="utf-8").read()
++        except OSError:
++            continue
++        dg = hashlib.sha256(raw.encode("utf-8")).hexdigest()
++        if dg in seen:
++            continue
++        seen.add(dg)
++        try:
++            entries = (json.loads(raw).get("registry") or {}).get("entries") or {}
++        except json.JSONDecodeError:
++            continue
++        if not entries or len(entries) > max_entries:
++            continue
++        base = build(entries)
++        if len(base) < 2:
++            continue
++        rmax = max(base)
++        try:
++            cd0, cfg = detector(base)
++            cut = cfg.eta_veto
++            base_conv = cd0.converged(rmax)
++            base_rank_conv = converged_rank(cd0, cfg, rmax, cut)
++            _ks, _kr, _ka = (cd0.kappa_set(rmax),
++                             max(0.0, cd0.kappa_rate(rmax)), cd0.kappa_adopt(rmax))
++        except Exception as exc:
++            detail.append("    skipped %s: %s"
++                          % (os.path.basename(os.path.dirname(fp)), exc))
++            continue
++        examined += 1
++        if _ks <= min(_kr, _ka) + 1e-12:
++            kset_binds += 1
++        if base_conv == base_rank_conv:
++            agree_identity += 1
++        else:
++            disagree_identity += 1
++
++        for nm, f in PHIS.items():
++            cases += 1
++            cdp, cfgp = detector(relabel(base, f))
++            if cdp.converged(rmax) != base_conv:
++                sum_flip += 1
++            if converged_rank(cdp, cfgp, rmax, f(cut)) != base_rank_conv:
++                rank_flip += 1
++
++    print("  distinct archived registries exercised : %d" % examined)
++    print("  kappa_set is the BINDING term of the min in : %d" % kset_binds)
++    print("  (registry, relabelling) cases          : %d" % cases)
++    print("  converged() flips under a strictly increasing relabelling")
++    print("    with the SUM at :267/:303 in place   : %d" % sum_flip)
++    print("    with the order-statistic replacement : %d" % rank_flip)
++    print("  on the UNRELABELLED data the two gates agree on %d registries and "
++          "disagree on %d" % (agree_identity, disagree_identity))
++    for d in detail[:5]:
++        print(d)
++
++    if examined == 0:
++        print("  INCONCLUSIVE: no usable archived registry. Not a result.")
++        return
++
++    print()
++    print("  ANSWER TO sec 8's QUESTION, as measured:")
++    if disagree_identity == 0:
++        print("    On these %d archived registries the order-statistic replacement "
++              "decides EXACTLY what the sum decides. The swap is "
++              "behaviour-preserving ON THIS ARCHIVE." % examined)
++    else:
++        print("    The swap CHANGES the decision on %d of %d archived registries. "
++              "It is NOT a free substitution, and under the additive standard it "
++              "may not be made on judgement alone."
++              % (disagree_identity, examined))
++        DEFECTS.append("E: the order-statistic replacement changes converged() on "
++                       "%d/%d archived registries"
++                       % (disagree_identity, examined))
++    if sum_flip > rank_flip:
++        print("    And the sum is the NON-INVARIANT half: %d flips against %d for "
++              "the replacement." % (sum_flip, rank_flip))
++        DEFECTS.append("E2: kappa_set's converged() verdict moves under a strictly "
++                       "increasing relabelling in %d/%d cases; the order-statistic "
++                       "form moves in %d" % (sum_flip, cases, rank_flip))
++    elif sum_flip == 0:
++        print("    NOTE: the sum did NOT flip on this archive either (%d flips). "
++              "The non-invariance is real in principle (test C) but is NOT "
++              "EXERCISED by these registries. Reporting the null, not hiding it."
++              % sum_flip)
++
++
++# ---------------------------------------------------------------- F ----------
++def test_f_constraint_class_is_unreachable():
++    """The B84/B87 `constraint_class` writer cannot be reached by any model.
++
++    brief sec 3.1 says `constraint_class` has 1 reader and 0 writers.
++    docs/MATHEMATICAL_APPENDIX.md (sec 7.7, corrected 2026-11-11) says a writer
++    NOW exists and "that half is now closed". Both are wrong in the way that
++    matters: a writer exists at bench/reference_runner_v3.py:3620, and NOTHING
++    CAN REACH IT, because bench/cdsfl_finding_schema.json -- the envelope every
++    model must emit -- carries no such property, and no code path anywhere
++    assigns `constraint_class=` on a Finding.
++    """
++    import ast
++    _hdr("F. Is the B84 `constraint_class` writer REACHABLE?")
++
++    schema = json.load(open(os.path.join(REPO, "bench", "cdsfl_finding_schema.json"),
++                            encoding="utf-8"))
++    props = (((schema.get("properties") or {}).get("findings") or {})
++             .get("items") or {}).get("properties") or {}
++    print("  schema finding-item properties: %s" % sorted(props))
++    in_schema = "constraint_class" in props
++    print("  `constraint_class` accepted by the envelope schema : %s" % in_schema)
++
++    # Does ANY code path assign constraint_class= when constructing a Finding?
++    assigners = []
++    for root, _dirs, fns in os.walk(os.path.join(REPO, "bench")):
++        if "logs" in root.split(os.sep) or "tests" in root.split(os.sep):
++            continue
++        for fn in fns:
++            if not fn.endswith(".py"):
++                continue
++            fp = os.path.join(root, fn)
++            try:
++                tree = ast.parse(open(fp, encoding="utf-8").read())
++            except (SyntaxError, UnicodeDecodeError, OSError):
++                continue
++            for node in ast.walk(tree):
++                # Finding(..., constraint_class=X)
++                if isinstance(node, ast.Call):
++                    fname = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
++                    if fname == "Finding":
++                        for kw in node.keywords:
++                            if kw.arg == "constraint_class":
++                                assigners.append("%s:%d Finding(constraint_class=...)"
++                                                 % (os.path.relpath(fp, REPO), node.lineno))
++                # f.constraint_class = X  /  d["constraint_class"] = X
++                if isinstance(node, ast.Assign):
++                    for tgt in node.targets:
++                        if isinstance(tgt, ast.Attribute) and tgt.attr == "constraint_class":
++                            assigners.append("%s:%d attribute assignment"
++                                             % (os.path.relpath(fp, REPO), node.lineno))
++                        if (isinstance(tgt, ast.Subscript)
++                                and isinstance(getattr(tgt, "slice", None), ast.Constant)
++                                and tgt.slice.value == "constraint_class"):
++                            assigners.append("%s:%d subscript assignment"
++                                             % (os.path.relpath(fp, REPO), node.lineno))
++    print("  code paths that SET a Finding's constraint_class: %d" % len(assigners))
++    for a in assigners:
++        print("    %s" % a)
++
++    rr = open(os.path.join(REPO, "bench", "reference_runner_v3.py"),
++              encoding="utf-8").read().splitlines()
++    print("  the WRITER, bench/reference_runner_v3.py:3620:")
++    print("    %s" % rr[3619].strip())
++    writer_reads_default = 'getattr(finding, "constraint_class", "")' in rr[3619]
++    print("  writer sources the value from the Finding attribute : %s"
++          % writer_reads_default)
++
++    if (not in_schema) and (not assigners) and writer_reads_default:
++        print("  FALSIFIED: the envelope schema cannot carry `constraint_class`, no "
++              "code path assigns it, so the Finding attribute is ALWAYS its default "
++              "\"\" and the writer at :3620 always writes the empty string. "
++              "compute_sev_f then defaults W to HARD=1.0 for EVERY finding, exactly "
++              "as before the writer was added.")
++        print("  This is an ADDITION NOTHING REACHES -- the defect class this "
++              "project has measured 11 times since 2026-08-01 -- added 2026-11-11 "
++              "(bench/dm/_types.py:436). And docs/MATHEMATICAL_APPENDIX.md sec 7.7 "
++              "now tells a reader the half is CLOSED when it is not.")
++        DEFECTS.append("F [CRITICAL]: the B84 `constraint_class` writer at "
++                       "bench/reference_runner_v3.py:3620 is unreachable -- absent "
++                       "from bench/cdsfl_finding_schema.json and assigned by 0 code "
++                       "paths -- so W is still HARD=1.0 for every finding and "
++                       "section 7.7 is still uncomputable. The appendix states the "
++                       "opposite.")
++    else:
++        print("  NOT DEMONSTRATED: a producer exists. sec 7.7's W input is "
++              "collectable.")
++
++
++def main():
++    test_a_compute_sev_f()
++    test_b_sec_35()
++    test_c_sec_37()
++    test_d_v_bar()
++    test_e_kappa_set()
++    test_f_constraint_class_is_unreachable()
++
++    _hdr("SUMMARY")
++    if DEFECTS:
++        print("FALSIFIED")
++        for i, d in enumerate(DEFECTS, 1):
++            print("  %d. %s" % (i, d))
++        raise AssertionError("%d claimed defect(s) demonstrated" % len(DEFECTS))
++    print("No claimed defect demonstrated.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/the_asking_predicate_misses_three_phrasings_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_asking_predicate_misses_three_phrasings_2026-11-10.py	2026-11-11 19:01:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel__6ocqf_2/repo/scripts/the_asking_predicate_misses_three_phrasings_2026-11-10.py	2026-11-10 22:24:17
+@@ -148,19 +148,8 @@
+     print()
+     print(f"  CONTROL -- DONE entries carrying the same prose: {len(ctrl)} of {len(m['done'])}")
+     print("       (a large count here would mean the prose predicate OVER-matches)")
+-    #: ★ THE REMAINDER IS STATED, 2026-11-11. This printed `ctrl[:6]` under a
+-    #: heading reading as a complete listing and never said what it withheld,
+-    #: which `test_no_script_prints_a_capped_listing_in_silence` correctly calls
+-    #: a silent falsehood. It is the same family as the defect repaired in the
+-    #: founder's own decisions file the same day: a cut that the reader cannot
+-    #: see is worse than a long list, because the reader cannot tell the
+-    #: difference between "these are the 6" and "these are 6 of 21".
+-    _SHOWN = 6
+-    for r in ctrl[:_SHOWN]:
++    for r in ctrl[:6]:
+         print(f"       {r['ident']:<6} {r['prose_hit'][:52]!r}")
+-    if len(ctrl) > _SHOWN:
+-        print(f"       ... and {len(ctrl) - _SHOWN} more of the {len(ctrl)} "
+-              f"control hits, not shown here. Re-run with --json for all of them.")
+     print()
+     print(f"  D2 -- OPEN entries where a stale marker retired a LATER-dated ask: {len(d2)}")
+     for r in d2:
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-11 19:24:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/.cdsfl_deny_canonical_writes.sb	2026-11-11 19:01:36
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/directives/universal/cdsfl_core_formal.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/universal/cdsfl_core_formal.md	2026-09-06 03:45:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/bench/directives/universal/cdsfl_core_formal.md	2026-11-11 19:14:39
+@@ -421,7 +421,60 @@
+ Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND no
+ material critical remains open (per §6 termination + the A4 fail-safe).
+ ```
++
++**Ordinal severity (amendment, 2026-11-11, `severity_is_ordinal` round):**
++
++The DEFINITION above is unchanged: `V(f) = materiality(f)` = consequence if the
++defect ships. This amendment fixes the quantity's TYPE and the statistics the
++model may apply to it.
++
++```
++For each domain d: (L_d, ⪯_d) is a finite totally ordered set of consequence
++levels — the domain's own independently validated scale (FMEA severity, CTCAE
++grade, CVSS, INES, or the field's equivalent; a domain may carry SEVERAL such
++scales, and the work at hand selects among them). The model asserts only:
++  (i)  existence: every finding f in domain d has sev(f) ∈ L_d;
++  (ii) order:     ⪯_d is total — "worse than" is well-defined within d.
++It asserts NO numbering, NO spacing between levels, and NO cross-domain
++comparability of levels. θ_d ∈ L_d is the frozen critical LEVEL of d, carried
++as a level of the scale in use, never as 0.7 linearly rescaled (0.7 is a level
++boundary on CVSS alone; on FMEA/CTCAE/INES it falls between levels).
++material(f) ≡ sev(f) ⪰_{d(f)} θ_{d(f)} is the only quantity comparable ACROSS
++domains (a boolean), so run-level and arc-level statistics that cross domains
++may aggregate material counts and nothing finer.
+ 
++Admissible statistics of sev within a domain: those that commute with every
++strictly increasing relabelling — max, min, middle order statistics (NOT the
++interpolated even-n median, which averages two order statistics and fails to
++commute), counts at-or-above a level. Inadmissible: sums, means and products
++of severity magnitudes.
++
++ΔV(K), restated rank-safely: the severity conjunct of convergence is
++  |{f ∈ genuine_new(K) : material(f)}| = 0  AND  no material critical open.
++The second conjunct is the original's, verbatim (it was already rank-safe);
++the count-above-a-level replaces the inadmissible sum Σ V(f). The original
++line above remains as the historical form; this amendment governs its
++aggregation. Committed measurement for the live-gate analogue:
++scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py — kappa_set's two
++severity sums (bench/dm/_convergence.py, _weighted_novel_severity and
++kappa_set), replaced by count / mid-rank / count-above-cut order statistics,
++reproduce all 301 archived converged() decisions across 53 replayable
++reports (66 convergences; kappa_set the binding minimum in 69 rounds).
++gamma is untouched and NOT demoted; the severity veto (any novel class
++⪰ η_veto) is already an order statistic and is unchanged.
++
++Fallback where no domain scale applies — a domain with no recognised
++consequence scale, or a finding whose domain the harness cannot classify:
++severity receives NO number. The finding carries the ORDER-ONLY fallback
++(material / not-material, judged against §10's five material-defect
++categories) and is flagged for human review; it is never silently scored on
++a borrowed numbering and never silently dropped.
++```
++
++Guard 1 is restated without change of force: `critical(f) ⇔ sev(f) ⪰_d θ_d`
++— a rank condition, which is what `V(f) ≥ θ_crit` always was when read on a
++scale; interest still does not enter.
++
+ ---
+ 
+ ## Runnable Falsifiers for Critical Findings
+
+### fable:attempt-1:bench/domain_immune.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/domain_immune.py	2026-11-11 19:14:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/bench/domain_immune.py	2026-11-11 18:40:34
+@@ -486,54 +486,8 @@
+     if need is not None:
+         return need in (evidence or "")
+     return True
+-
+-
+-
+-def _fix_side_text(proposed_fix: str) -> str:
+-    """What the fix makes the document SAY, not the markup that says it.
+-
+-    ★ FOUND BY A FREE PANEL SEAT IN THE JOINT ROUND OF 2026-11-11, AND
+-    REPRODUCED BY EXECUTION BEFORE BEING ACTED ON. The both-texts rule shipped
+-    hours earlier ran the topic's tools over the RAW `proposed_fix`. On the live
+-    path a fix reaching the gate is ALWAYS SEARCH/REPLACE blocks -- the promote
+-    path rejects `no_parseable_block` before the gate is consulted -- so the
+-    tools were reducing the markup, which contains BOTH halves of the edit.
+-
+-    THE RESULT WAS EXACTLY INVERTED, measured on the live function:
+-      * the CANONICAL CORRECTION (a false value in SEARCH, the true one in
+-        REPLACE) was REFUSED, because the tool reduced the FALSE half the fix
+-        exists to remove and returned an adverse verdict;
+-      * a DELETION OF A TRUE STATEMENT was ADMITTED, because the truth it
+-        destroys sat in the SEARCH half and verified.
+-    So the repair refused correct repairs and admitted destructive ones. That is
+-    worse than the hole it closed, and it is the `additive-standard` removal
+-    clause broken by a fix rather than by a deletion.
+-
+-    THE PARSER IS IMPORTED FROM THE LIVE PATH, NEVER COPIED, following the
+-    `_resolve_domain_alias` precedent in this file: a second copy of a grammar
+-    is 2 definitions of what a fix block is. The import is LAZY because
+-    `reference_runner_v3` imports this module, so a module-level import would be
+-    circular. An import failure degrades to today's behaviour -- the raw text --
+-    rather than raising on the admission path, because a gate that crashes is
+-    worse than a gate that is conservative.
+ 
+-    A pure deletion yields an EMPTY replace side, which fails closed: nothing
+-    verifies, so nothing admits. That is the correct answer for a fix whose
+-    whole content is the removal of something.
+-    """
+-    raw = (proposed_fix or "").strip()
+-    if not raw:
+-        return ""
+-    try:
+-        import reference_runner_v3 as _rr                      # noqa: PLC0415
+-        blocks = _rr.parse_search_replace_blocks(raw)
+-    except Exception:                                          # noqa: BLE001
+-        return raw
+-    if not blocks:
+-        return raw
+-    return "\n".join((getattr(b, "replace", "") or "") for b in blocks).strip()
+ 
+-
+ def domain_verification_set(domain: str, finding: Any) -> Dict[str, Any]:
+     """The verification set a STEM topic assigns to one finding, and its verdicts.
+ 
+@@ -690,7 +644,7 @@
+                 d_against.append(name)
+         return d_for, d_against, c_for
+ 
+-    fix_text = _fix_side_text(str(getattr(finding, "proposed_fix", "") or ""))
++    fix_text = str(getattr(finding, "proposed_fix", "") or "").strip()
+     out["fix_verdicts"] = []
+     definitive_for, definitive_against, computing_for = _walk(
+         claim, out["verdicts"])
+
+### fable:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-11 18:41:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-11 19:14:23
+@@ -1295,7 +1295,8 @@
+    model to the harness — and it does **not** discharge the magnitude
+    deficiency this caution opens with. See caution 3.
+ 
+-2. **Do not import §1's default rule into W.** `cdsfl_core.txt` §1 sets
++2. **Do not import §1's default rule into W.** `cdsfl_core_formal.md` §1 (whose prose counterpart is `cdsfl_core.txt`'s
++   opening paragraph; the .txt file has no numbered sections) sets
+    `class(c) = HARD if c is ambiguous`, which is conservative where it is
+    written — treating an unclear constraint as non-negotiable risks nothing.
+    Here it inverts: `Sev(HARD) > Sev(SOFT)` strictly for every confidence > 0
+@@ -1331,8 +1332,12 @@
+    such a cut is **a bound on belief conditional on `class = HARD`**, and
+    moving it — 0.7 to 0.8, say — tightens the belief requirement while leaving
+    impact untouched. A cut that genuinely bounds magnitude needs a consequence
+-   scale with more than two levels; `cdsfl_core.txt` §10 already enumerates
+-   five material-defect categories, which is the existing vocabulary for one.
++   scale with more than two levels; `bench/directives/universal/cdsfl_core_formal.md`
++   §10 already enumerates five material-defect categories, which is the
++   existing vocabulary for one. (Citation repaired 2026-11-11: this
++   previously cited `cdsfl_core.txt` §10, but that file is 39 lines of prose
++   with no numbered sections — the enumeration lives in
++   `cdsfl_core_formal.md` §10.)
+    Specifying such a scale is not done here and is not implied by this
+    caution.
+ 
+@@ -1369,6 +1374,54 @@
+    Collecting the two missing inputs is
+    therefore prior to choosing a bound, and is the open question of entry B87.
+ 
++**Status of this section (added 2026-11-11, `severity_is_ordinal` round; founder
++ruling of 2026-11-11 that the in-model severity quantity "becomes illustrative
++... rather than being definitive").** Three clarifications; no formula above is
++changed.
++
++1. **What §7.7 measures.** The product `W(class) · confidence · V(verification)`
++   contains one two-valued consequence factor (`W`) and two belief factors. By
++   caution 3 it bounds consequence magnitude nowhere above `W(SOFT)`, and by the
++   2026-11-06 archive measurement its computed value reduces to
++   `V(verification)` alone. It is a **credence-style quantity carrying a
++   consequence name**, ILLUSTRATIVE of how a credence factor enters severity —
++   not a definitive cross-domain severity measure, and no single numbering can
++   be one: severity proper is an **ordinal** quantity whose scale the domain
++   supplies (Ordinal Severity amendment,
++   `bench/directives/universal/cdsfl_core_formal.md`, "Objective and
++   Diminishing Returns"). The model fixes the ORDER of consequences; a domain's
++   own validated scale (FMEA severity, CTCAE grade, CVSS, INES, or the field's
++   equivalent — a domain may carry SEVERAL such scales) supplies a particular
++   numbering. A frozen critical cut must then be carried as a LEVEL of the
++   scale in use, not as 0.7 linearly rescaled: with `x → lo + 0.7·(hi − lo)`,
++   0.7 lands on a level boundary on CVSS (7.0 = High) but between levels on
++   FMEA (7.3 on 1–10), CTCAE (3.8 on 1–5) and INES (4.9 on 0–7), so each
++   scale's critical level is a per-scale freeze, not an arithmetic consequence
++   of 0.7.
++
++2. **Symbol collision, resolved by renaming HERE.** This section's verification
++   factor `V(verification)` collides with `V(f) = materiality(f)` in
++   `cdsfl_core_formal.md` ("Objective and Diminishing Returns"), which denotes
++   a consequence — the opposite meaning. Where both are in scope, write this
++   section's factor **`V_ver`**. The tables above keep `V` for continuity with
++   archived discussion; `V_ver` is the disambiguated name.
++
++3. **Admissible statistics of severity.** Because severity proper is ordinal,
++   any statistic of severity used in gating must commute with every strictly
++   increasing relabelling: max, min, counts at-or-above a LEVEL, and middle
++   order statistics qualify; sums and means of severity magnitudes do not, and
++   the interpolated even-n median does not either (exact counterexample:
++   sample {1/4, 3/4} under φ(t) = t² gives median(φ(x)) = 5/16 ≠
++   φ(median(x)) = 1/4; SymPy exact arithmetic, corroborated with Wolfram
++   Language). Gate impact measured by the committed producer
++   `scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py`: over 53
++   archived reports / 301 round decisions (66 convergences; kappa_set the
++   binding minimum in 69 rounds; 166 rounds within 0.05 of tau_kappa),
++   replacing kappa_set's severity sums with any of three order statistics
++   (count, mid-rank, count-above-0.7) reproduces every archived `converged()`
++   decision. The severity veto (already an order statistic) and gamma
++   (reads class counts, never severity) are untouched.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+
+### fable:attempt-1:scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py
+--- /dev/null	2026-11-11 19:24:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py	2026-11-11 19:10:32
+@@ -0,0 +1,234 @@
++#!/usr/bin/env python3
++"""Can kappa_set's severity SUMS become an order statistic without changing the gate?
++
++THE QUESTION (severity_is_ordinal round, 2026-11-11, brief section 8). The brief's
++P2 holds severity ORDINAL, on which a sum or mean of magnitudes is inadmissible
++(Stevens 1946). The two magnitude sums in the live convergence machinery are
++`bench/dm/_convergence.py` `_weighted_novel_severity` (the `sum(...)` over novel
++classes) and `kappa_set` (the `sum(...)` over cumulative classes). The brief asks
++whether those sums can be replaced by an order statistic WITHOUT changing what
++`ConvergenceDetector.converged(r)` decides on any archived registry — and rules
++that an answer asserting it can, without running it, has not answered.
++
++THE MEASUREMENT. Every archived report under `bench/logs/` whose `rounds[*].findings`
++carry (model_id, flaw_class, severity, description) is replayed through the stock
++`ConvergenceDetector` and through three variants that differ ONLY in the per-class
++weight entering kappa_set's numerator and denominator:
++
++  stock     weight = aggregated_severity           (magnitude — the live code)
++  count     weight = 1                             (order-free count; invariant)
++  rank      weight = mid-rank of the class severity within the cumulative
++            classes of that round, scaled to (0, 1]  (a function of ORDER only,
++            so invariant under every strictly increasing relabelling)
++  material  weight = 1 if aggregated_severity >= 0.7 else 0  (count above the
++            frozen critical cut; invariant when the cut is re-frozen per scale
++            as a LEVEL, which is how a rank-safe cut must be carried)
++
++Suppression weights w(f) (similarity-derived, not severity-derived) are applied
++identically in all four, so the comparison isolates the severity weighting.
++The severity VETO (any novel class >= eta_veto) is already an order statistic and
++is identical in all four. gamma_hat (`estimate_gamma`) reads class COUNTS, never
++severity, and is bitwise untouched — gamma is load-bearing and is NOT demoted here.
++
++Output: per variant, over every (report, round) pair, how many `converged(r)`
++decisions differ from stock, and how many reports change their FIRST convergence
++round. A variant with 0 differences is a committed measurement that the sum can
++be replaced by that order statistic with the gate's archived behaviour preserved.
++
++Usage: python3 scripts/can_the_severity_sums_be_rank_safe_2026-11-11.py
++"""
++from __future__ import annotations
++
++import glob
++import json
++import os
++import sys
++
++REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, REPO)
++
++from bench.dm._types import Finding, DynamicManagementConfig          # noqa: E402
++from bench.dm._convergence import ConvergenceDetector                 # noqa: E402
++
++CRIT = 0.7  # CRITICAL_SEVERITY_THRESHOLD, bench/reference_runner_v3.py
++
++
++class WeightedDetector(ConvergenceDetector):
++    """ConvergenceDetector whose kappa_set weight per class is pluggable.
++
++    weight_mode: "stock" | "count" | "rank" | "material".
++    Everything else — clustering, suppression, veto, kappa_rate, kappa_adopt,
++    estimate_gamma, converged — is inherited unchanged.
++    """
++
++    def __init__(self, config, weight_mode: str):
++        super().__init__(config)
++        self.weight_mode = weight_mode
++
++    def _class_weight(self, ec, cumulative):
++        if self.weight_mode == "stock":
++            return ec.aggregated_severity
++        if self.weight_mode == "count":
++            return 1.0
++        if self.weight_mode == "material":
++            return 1.0 if ec.aggregated_severity >= CRIT else 0.0
++        if self.weight_mode == "rank":
++            sevs = sorted(c.aggregated_severity for c in cumulative)
++            n = len(sevs)
++            if n == 0:
++                return 1.0
++            below = sum(1 for s in sevs if s < ec.aggregated_severity)
++            equal = sum(1 for s in sevs if s == ec.aggregated_severity)
++            return (below + (equal + 1) / 2.0) / n  # mid-rank in (0, 1]
++        raise ValueError(self.weight_mode)
++
++    # Override the two magnitude sums and nothing else.
++    def kappa_set(self, round_idx: int) -> float:
++        novel = self._novel_classes(round_idx)
++        cumulative = self.get_cumulative_classes(round_idx)
++        prior_findings = []
++        if round_idx > 0:
++            for ec in self.get_cumulative_classes(round_idx - 1):
++                prior_findings.extend(ec.members)
++        num = 0.0
++        for ec in novel:
++            if prior_findings:
++                w = max(self._suppression_weight(m, prior_findings)
++                        for m in ec.members) if ec.members else 1.0
++            else:
++                w = 1.0
++            num += w * self._class_weight(ec, cumulative)
++        den = sum(self._class_weight(ec, cumulative) for ec in cumulative)
++        den += self.config.epsilon_conv
++        return 1.0 - (num / den)
++
++
++def load_rounds(report_path: str):
++    with open(report_path, encoding="utf-8") as fh:
++        j = json.load(fh)
++    rounds = []
++    for r in j.get("rounds", []):
++        fs = []
++        for k, f in enumerate(r.get("findings", [])):
++            try:
++                fs.append(Finding(
++                    finding_id="%s_r%s_%d" % (f.get("model_id", "m"), r.get("round", 0), k),
++                    model_id=str(f.get("model_id", "m")),
++                    round_idx=int(r.get("round", 0)),
++                    flaw_class=int(f.get("flaw_class", 0)),
++                    severity=float(f.get("severity", 0.0)),
++                    abstraction_index=0.5,
++                    description=str(f.get("description", ""))[:400],
++                ))
++            except (TypeError, ValueError):
++                return None
++        rounds.append((int(r.get("round", 0)), fs))
++    return rounds if rounds else None
++
++
++def replay(rounds, mode: str):
++    cfg = DynamicManagementConfig()
++    cd = WeightedDetector(cfg, mode) if mode != "stock" else ConvergenceDetector(cfg)
++    decisions = []
++    for rd, fs in rounds:
++        cd.add_round_findings(rd, fs, duration=1.0, adoption_delta=0.0)
++        decisions.append(bool(cd.converged(rd)))
++    return decisions
++
++
++def main() -> None:
++    reports = []
++    for fp in sorted(glob.glob(os.path.join(REPO, "bench", "logs", "*", "*.json"))):
++        if os.path.getsize(fp) > 50_000_000:
++            continue
++        try:
++            with open(fp, encoding="utf-8") as fh:
++                j = json.load(fh)
++        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
++            continue
++        rs = j.get("rounds") if isinstance(j, dict) else None
++        if (isinstance(rs, list) and rs and isinstance(rs[0], dict)
++                and rs[0].get("findings")
++                and isinstance(rs[0]["findings"][0], dict)
++                and "severity" in rs[0]["findings"][0]
++                and "flaw_class" in rs[0]["findings"][0]):
++            reports.append(fp)
++
++    print("replayable archived reports: %d" % len(reports))
++    skipped = 0
++    stats = {m: {"diff_rounds": 0, "diff_reports": set(), "first_shift": 0}
++             for m in ("count", "rank", "material")}
++    total_rounds = 0
++
++    for fp in reports:
++        rounds = load_rounds(fp)
++        if rounds is None:
++            skipped += 1
++            continue
++        stock = replay(rounds, "stock")
++        total_rounds += len(stock)
++        first_stock = stock.index(True) if True in stock else None
++        for mode in ("count", "rank", "material"):
++            var = replay(rounds, mode)
++            diffs = [i for i, (a, b) in enumerate(zip(stock, var)) if a != b]
++            if diffs:
++                stats[mode]["diff_rounds"] += len(diffs)
++                stats[mode]["diff_reports"].add(os.path.basename(os.path.dirname(fp)))
++            first_var = var.index(True) if True in var else None
++            if first_var != first_stock:
++                stats[mode]["first_shift"] += 1
++
++    print("reports skipped (malformed findings): %d" % skipped)
++    print("(report, round) decision pairs compared per variant: %d" % total_rounds)
++    for mode in ("count", "rank", "material"):
++        s = stats[mode]
++        print("\nvariant %r:" % mode)
++        print("  converged() decisions differing from stock : %d" % s["diff_rounds"])
++        print("  reports with any differing decision        : %d" % len(s["diff_reports"]))
++        for name in sorted(s["diff_reports"]):
++            print("    %s" % name)
++        print("  reports whose FIRST convergence round moved: %d" % s["first_shift"])
++
++    # NON-VACUITY DIAGNOSTIC (the section 3.7 lesson: an instrument that cannot
++    # flip is not a measurement). Report how often the gate fired and how often
++    # kappa_set was the binding minimum, so a zero-difference verdict is shown
++    # to have been exposed to real decision boundaries.
++    conv_true = ks_bind = ks_near = veto_n = 0
++    for fp in reports:
++        rounds = load_rounds(fp)
++        if rounds is None:
++            continue
++        cfg = DynamicManagementConfig()
++        cd = ConvergenceDetector(cfg)
++        for rd, fs in rounds:
++            cd.add_round_findings(rd, fs, duration=1.0, adoption_delta=0.0)
++            ks = cd.kappa_set(rd)
++            kr = max(0.0, cd.kappa_rate(rd))
++            ka = cd.kappa_adopt(rd)
++            if cd.converged(rd):
++                conv_true += 1
++            if cd._veto(rd):
++                veto_n += 1
++            if ks == min(ks, kr, ka):
++                ks_bind += 1
++            if abs(ks - cfg.tau_kappa) <= 0.05:
++                ks_near += 1
++    print("\nnon-vacuity: converged()==True in %d rounds; veto fired in %d; "
++          "kappa_set binding min in %d; kappa_set within 0.05 of tau_kappa in %d"
++          % (conv_true, veto_n, ks_bind, ks_near))
++
++    clean = [m for m in ("count", "rank", "material")
++             if stats[m]["diff_rounds"] == 0 and stats[m]["first_shift"] == 0]
++    if clean:
++        print("\nVERDICT: variants %s reproduce every archived converged() "
++              "decision. The kappa_set severity sums CAN be replaced by an order "
++              "statistic with archived gate behaviour preserved (for these variants)." % clean)
++    else:
++        print("\nVERDICT: no tested order statistic reproduces every archived "
++              "decision. Replacing the sums CHANGES the gate on the archive; any "
++              "ordinal repair of kappa_set is a semantic change needing a run-level "
++              "decision, not a drop-in substitution.")
++
++
++if __name__ == "__main__":
++    main()
+
+### fable:attempt-1:scripts/the_asking_predicate_misses_three_phrasings_2026-11-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_asking_predicate_misses_three_phrasings_2026-11-10.py	2026-11-11 19:01:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_qdeph6t0/repo/scripts/the_asking_predicate_misses_three_phrasings_2026-11-10.py	2026-11-10 22:24:17
+@@ -148,19 +148,8 @@
+     print()
+     print(f"  CONTROL -- DONE entries carrying the same prose: {len(ctrl)} of {len(m['done'])}")
+     print("       (a large count here would mean the prose predicate OVER-matches)")
+-    #: ★ THE REMAINDER IS STATED, 2026-11-11. This printed `ctrl[:6]` under a
+-    #: heading reading as a complete listing and never said what it withheld,
+-    #: which `test_no_script_prints_a_capped_listing_in_silence` correctly calls
+-    #: a silent falsehood. It is the same family as the defect repaired in the
+-    #: founder's own decisions file the same day: a cut that the reader cannot
+-    #: see is worse than a long list, because the reader cannot tell the
+-    #: difference between "these are the 6" and "these are 6 of 21".
+-    _SHOWN = 6
+-    for r in ctrl[:_SHOWN]:
++    for r in ctrl[:6]:
+         print(f"       {r['ident']:<6} {r['prose_hit'][:52]!r}")
+-    if len(ctrl) > _SHOWN:
+-        print(f"       ... and {len(ctrl) - _SHOWN} more of the {len(ctrl)} "
+-              f"control hits, not shown here. Re-run with --json for all of them.")
+     print()
+     print(f"  D2 -- OPEN entries where a stale marker retired a LATER-dated ask: {len(d2)}")
+     for r in d2:

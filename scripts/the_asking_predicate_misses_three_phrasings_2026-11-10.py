@@ -148,8 +148,19 @@ def main() -> int:
     print()
     print(f"  CONTROL -- DONE entries carrying the same prose: {len(ctrl)} of {len(m['done'])}")
     print("       (a large count here would mean the prose predicate OVER-matches)")
-    for r in ctrl[:6]:
+    #: ★ THE REMAINDER IS STATED, 2026-11-11. This printed `ctrl[:6]` under a
+    #: heading reading as a complete listing and never said what it withheld,
+    #: which `test_no_script_prints_a_capped_listing_in_silence` correctly calls
+    #: a silent falsehood. It is the same family as the defect repaired in the
+    #: founder's own decisions file the same day: a cut that the reader cannot
+    #: see is worse than a long list, because the reader cannot tell the
+    #: difference between "these are the 6" and "these are 6 of 21".
+    _SHOWN = 6
+    for r in ctrl[:_SHOWN]:
         print(f"       {r['ident']:<6} {r['prose_hit'][:52]!r}")
+    if len(ctrl) > _SHOWN:
+        print(f"       ... and {len(ctrl) - _SHOWN} more of the {len(ctrl)} "
+              f"control hits, not shown here. Re-run with --json for all of them.")
     print()
     print(f"  D2 -- OPEN entries where a stale marker retired a LATER-dated ask: {len(d2)}")
     for r in d2:

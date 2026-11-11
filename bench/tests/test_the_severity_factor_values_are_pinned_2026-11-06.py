@@ -63,16 +63,16 @@ class TestTheFactorValuesThemselves:
     def test_a_disproved_finding_scores_exactly_zero(self, text):
         """THE KEY PROPERTY. Anything but 0.0 here and a refuted finding can
         carry severity, which is the veto the whole section exists for."""
-        v_false = _factor(text, "V(False)")
+        v_false = _factor(text, "Ver(False)")
         assert v_false == 0.0, (
-            f"V(False) = {v_false}, not 0.0. A computationally disproved "
+            f"Ver(False) = {v_false}, not 0.0. A computationally disproved "
             f"finding would then score W.confidence.{v_false} > 0 and the "
             f"veto is gone.")
 
     def test_the_product_really_is_zero_by_two_tools(self, text):
         """EXECUTED, not read: the table's own values put through the formula."""
         hard = _factor(text, "W(HARD)")
-        v_false = _factor(text, "V(False)")
+        v_false = _factor(text, "Ver(False)")
         conf = Real("confidence")
         s = Solver()
         s.add(conf >= 0, conf <= 1, hard * conf * v_false > 0)
@@ -110,7 +110,7 @@ class TestTheseAssertionsAreNotVacuous:
         """If the regex matched nothing every test above would error rather
         than pass, but a reader cannot tell. State the parse explicitly."""
         got = {n: _factor(text, n) for n in
-               ("W(HARD)", "W(SOFT)", "V(True)", "V(None)", "V(False)")}
+               ("W(HARD)", "W(SOFT)", "Ver(True)", "Ver(None)", "Ver(False)")}
         assert len(set(got.values())) >= 3, (
             f"only {len(set(got.values()))} distinct factor values parsed: "
             f"{got}. The table is probably not being read.")

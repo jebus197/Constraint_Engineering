@@ -238,12 +238,45 @@ class TestTheListTerminates:
     """
 
     def test_the_process_is_subcritical(self, mod):
+        """★ RE-SCOPED 2026-11-11 FROM THE INTERVAL'S UPPER BOUND TO THE POINT
+        ESTIMATE, ON HIS RULING, AND THE RE-SCOPE IS THE WHOLE POINT.
+
+        THE TEST DID ITS JOB AND THEN KEPT DOING IT. Its own docstring says the
+        upper bound reaching 1 *"is a conversation to have rather than a number
+        to quietly restate"*. That conversation HAPPENED: it was raised as
+        entry B107, and on 2026-11-08 he ruled, verbatim, *"I accept your
+        recommendation."* -- the recommendation being to ACCEPT THE RATIO AS IT
+        STANDS AND KEEP CLOSING. B107 is DONE, COMMITTED, ruled 2026-11-08.
+
+        AND IT WAS RE-RAISED TO HIM ANYWAY, on 2026-11-11, as though new. His
+        words that day: *"That message 'The task list may no longer terminate',
+        is something I have now addressed multiple times. Please strike it so it
+        doesn't keep repeating like this."* So the defect is not the ratio; it is
+        an alarm that cannot tell a settled question from a live one. This is the
+        shape the record already names -- a settled item re-presented as awaiting
+        him, 5 of 7 on the last count.
+
+        WHY RE-SCOPED RATHER THAN DELETED. `additive-standard` permits removal
+        only where a committed measurement shows a replacement dominates on a
+        named property, and no such measurement exists. The measurement is still
+        taken, still reported, and the alarm still fires -- on a condition he has
+        NOT ruled on. He accepted an INTERVAL that crosses 1. He did not accept a
+        list that is growing ON BALANCE, which is the point estimate crossing 1,
+        a strictly stronger and materially different fact.
+
+        THE ANTI-VACUITY SIBLING BELOW IS UNTOUCHED, so the p-to-R mapping is
+        still checked at the critical point and this cannot pass by calling
+        everything subcritical.
+        """
         b = mod.branching(mod.snapshots())
-        assert b["subcritical"], (
-            f"R = {b['R']:.4f} with 95% interval "
-            f"[{b['R_interval'][0]:.4f}, {b['R_interval'][1]:.4f}]. The upper "
-            f"bound has reached 1: the list can no longer be said to terminate, "
-            f"and the founder asked to be told if that happened.")
+        R = b["R"]
+        lo, hi = b["R_interval"]
+        assert R < 1.0, (
+            f"R = {R:.6f} with 95% interval [{lo:.6f}, {hi:.6f}]. The POINT "
+            f"ESTIMATE has reached 1: the list is now growing on balance, not "
+            f"merely failing to exclude growth. His ruling of 2026-11-08 "
+            f"accepted an interval that crosses 1 and did NOT accept this. "
+            f"That is a new fact and it is his to rule on.")
 
     def test_the_threshold_is_where_it_should_be(self, mod):
         """ANTI-VACUITY. A test that called everything subcritical would pass on

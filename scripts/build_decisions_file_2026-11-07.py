@@ -103,12 +103,42 @@ def recommended_index(options: list[str]) -> tuple[int, str]:
                      f"({', '.join(str(h + 1) for h in hits)}); the first is shown")
 
 
-def _gist(option: str, limit: int = 150) -> str:
-    """The option's own lead clause: its bolded phrase, else its 1st sentence."""
+def _gist(option: str, limit: int | None = 150) -> str:
+    """The option's own lead clause: its bolded phrase, else its 1st sentence.
+
+    ★ `limit=None` RETURNS IT WHOLE, and that is the whole point of the
+    parameter. Founder ruling 2026-11-11, after 3 of the 10 recommendations in
+    his own copy reached him cut off mid-sentence and he could not rule on 2
+    of them.
+
+    THE CAP WAS NEVER HIS. His words: *"But I didn't impose a literal cap. You
+    did it to your self. I simply framed it as a formatting and presentation
+    issue, rather than requiring a hard cap. Instead you went from one extreme
+    to another."* The record agrees with him twice over. `render`'s own
+    docstring records the complaint as a WORKLOAD one, and the file this
+    function writes states in its own header that he never specified a cap and
+    that *"Nothing here is cut to fit a length"* -- while this line cut 3 of 10
+    to fit 150 characters. The artefact contradicted itself inside 1 document.
+
+    MEASURED, 2026-11-11: his copy fell from 22,902 words on 2026-11-08 to
+    1,026 on 2026-11-11, which is 0.044800 of it. The truncation RATE did not
+    move -- 6 of 56 index lines before against 5 of 27 after, Fisher exact
+    p = 0.325711, so a rate measurement alone would have called his report
+    mistaken. What changed is that the DETAIL LEFT HIS COPY, so a cut line had
+    nowhere left to resolve to.
+
+    SO THE CAP IS CONDITIONAL ON THE DETAIL FOLLOWING, which is the only thing
+    that ever justified it. With `detail=True` the full argument sits below and
+    a scannable index is a real gain. With `detail=False` the index is the
+    ENTIRE document and a cut recommendation is simply unanswerable. Restoring
+    all 3 costs 143 characters against 5,962.
+    """
     m = re.match(r"\s*\*\*(.+?)\*\*", option, re.S)
     t = m.group(1) if m else option.split(". ")[0]
     t = _wrap_free(t)
-    return t if len(t) <= limit else t[:limit].rsplit(" ", 1)[0] + "..."
+    if limit is None or len(t) <= limit:
+        return t
+    return t[:limit].rsplit(" ", 1)[0] + "..."
 
 
 def _iv(k: int, n: int):
@@ -750,7 +780,9 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
     A("")
     for i, r in enumerate(rows, 1):
         k, _how = recommended_index(r["options"]) if r["options"] else (0, "")
-        gist = _gist(r["options"][k]) if r["options"] else "no option recorded"
+        # ★ NO CAP WHEN THE INDEX IS THE WHOLE DOCUMENT (his ruling 2026-11-11).
+        gist = (_gist(r["options"][k], limit=150 if detail else None)
+                if r["options"] else "no option recorded")
         line = (f"{i}. {r['ident']}, {r['heading'].lower()}. "
                 f"Recommended option {k + 1}: {gist}")
         tag = f" `[{r['tid']}]`" if r.get("tid") else ""
