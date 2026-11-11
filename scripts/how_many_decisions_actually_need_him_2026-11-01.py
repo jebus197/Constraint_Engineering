@@ -131,6 +131,21 @@ STALE = re.compile(r"SENTENCE ABOVE IS STALE|ALREADY CONTAINS ITS OWN REFUTATION
 _SENT = re.compile(r"(?<=[.!?])\s+")
 
 
+def _sentences(txt: str):
+    """Yield (start_offset, sentence) for each sentence, preserving positions.
+
+    `_SENT` is a SPLIT pattern, so `_SENT.split(txt)` discards where each piece
+    came from and no positional rule can be written against it. This walks the
+    same boundaries and carries the offset, so the pieces are IDENTICAL to the
+    split's -- an invariant the guard asserts rather than assumes.
+    """
+    pos = 0
+    for m in _SENT.finditer(txt):
+        yield pos, txt[pos:m.start()]
+        pos = m.end()
+    yield pos, txt[pos:]
+
+
 def interval(k: int, n: int) -> str:
     """Wilson, in 2 independent implementations."""
     import mpmath as mp
@@ -184,13 +199,41 @@ def classify_text(state: str, ruled: str | None, txt: str) -> dict:
     state = (state or "").upper()
     dep = DEPENDS.search(txt)
     parent = (dep.group(1) or dep.group(2)) if dep else None
-    retired = bool(STALE.search(txt))
+    #: ★ A STALE MARKER RETIRES THE SENTENCES ABOVE IT, NOT THE WHOLE ENTRY.
+    #: Corrected 2026-11-10. `retired` was computed ONCE over the entry body and
+    #: then stamped on EVERY asking sentence in it, so one retirement notice
+    #: silenced asks added LATER -- and the notice's own wording is "SENTENCE
+    #: ABOVE IS STALE", which cannot reach a sentence below it.
+    #:
+    #: MEASURED, on B22 (what "a fix" means outside code): its stale marker sits
+    #: at offset 13731 and an asking sentence -- "so it is his to authorise
+    #: rather than mine to take from a measurement" -- sits at 29169, 15,438
+    #: characters BELOW it. Document-level retirement marked that live ask
+    #: retired, emptying `live_asks`, which dropped B22 from OWED to GRANTED and
+    #: took it off the count of entries awaiting him that the `[tasks]` hook
+    #: prints on every turn. This is the SENTENCE-level form of the defect
+    #: already recorded on 2026-11-09 as "THE RETIREMENT OF 2026-11-08 IS
+    #: WITHDRAWN", where retiring asking sentences after his rulings removed
+    #: live questions from his decision list.
+    #:
+    #: WHY POSITIONAL AND NOT "THE NEAREST PRECEDING ASK", which the wording
+    #: would otherwise support: a retirement notice QUOTES the phrase it
+    #: retires, so the notice's own sentence matches ASKS too. On B22 the
+    #: nearest preceding ask to the marker is the marker's own quotation at
+    #: 13705, not the real ask at 13604 -- a scar reading as a wound. The
+    #: notice sentence is therefore skipped outright, and retirement is scoped
+    #: to "some marker appears after this sentence". That direction is
+    #: monotone-safe: no ask that is live today can become retired by it.
+    stale_at = [m.start() for m in STALE.finditer(txt)]
     asks, live_asks = [], []
-    for sent in _SENT.split(txt):
+    for start, sent in _sentences(txt):
+        if STALE.search(sent):
+            continue
         if not ASKS.search(sent):
             continue
         one = re.sub(r"\s+", " ", sent).strip()
         free = bool(FREE.search(sent))
+        retired = any(s > start for s in stale_at)
         asks.append({"sentence": one, "free": free, "retired": retired})
         if not free and not retired:
             live_asks.append(one)

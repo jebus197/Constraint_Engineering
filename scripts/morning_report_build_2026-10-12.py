@@ -780,7 +780,44 @@ def decisions(items: list[dict]) -> tuple[list[dict], list[str], list[str]]:
         # by it, so the ruling only settles the entry when the entry has stopped
         # asking. `still_asks` is the same predicate the 2 filters below use.
         if ruling_is_spent(it.get("ident") or "", ruled, it.get("state")):
-            attached.append({**it, **d, "ruled": ruled})
+            #: ★ A STORED VERDICT MUST NOT OUTVOTE THE LIVE PREDICATE.
+            #: Corrected 2026-11-10, and it is the 3rd of the 3 suppression
+            #: sites this file's own comment at the foot of `main` already
+            #: names -- "1 of them was DATA: ... a hardcoded
+            #: `no_ruling_needed: true` in the authored detail written when the
+            #: ruling was recorded and never revisited". The other 2 were
+            #: repaired on 2026-11-01; this one was not, because nothing
+            #: stripped the stored field once the live predicate disagreed.
+            #:
+            #: MEASURED, on B22 (what "a fix" means outside code): once a
+            #: sentence-level retirement fix let its post-ruling ask be seen,
+            #: `ruling_is_spent` returned True and this branch was taken --
+            #: and the merge carried `no_ruling_needed` straight out of the
+            #: authored detail, so the filter in `main` pushed the entry back
+            #: into "you already ruled this" anyway. The producer then derived
+            #: 9 owed entries while the generator rendered 8, which
+            #: `test_the_generator_and_the_producer_name_the_same_decisions`
+            #: caught with "One of them is wrong; a count would have hidden a
+            #: swap."
+            #:
+            #: THE DIRECTION IS DELIBERATE: a RECORDED claim that a ruling
+            #: settled an entry loses to a COMPUTED finding that it did not,
+            #: because repetition is visible and suppression is not.
+            #: ★ BUT NOT FOR AN ENTRY HE DEFERRED HIMSELF. Narrowed 2026-11-11
+            #: after the first version of this fix turned B13 (admitting a model
+            #: is not trivial) into a live decision offering 0 options, which
+            #: `test_the_severity_gate_provenance_question_is_struck_permanently`
+            #: caught. B13 is DEFERRED and its stored flag records HIS OWN ACT
+            #: of parking the entry, not a claim that a ruling settled it. A
+            #: spent ruling does not un-park what he deliberately set aside, and
+            #: he has rejected the underlying change at least 4 times. So the
+            #: 2 facts the 1 field was carrying are now distinguished: a flag
+            #: meaning "a ruling answered this" loses to the live predicate; a
+            #: flag meaning "he took this off the queue" does not.
+            merged = {**it, **d, "ruled": ruled}
+            if (it.get("state") or "").upper() != "DEFERRED":
+                merged.pop("no_ruling_needed", None)
+            attached.append(merged)
             continue
         if d.get("struck_permanently") or ruled:
             attached.append({**it, **d, "ruled": ruled,

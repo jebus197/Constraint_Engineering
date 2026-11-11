@@ -969,3 +969,39 @@ a crash escalates rather than deciding, since a failed measurement is not a
 result. Written 2026-11-01 on the founder's ruling that the definition follows
 from the code, is the assistant's to write and his to ratify, and needs no
 panel.
+
+### Save gate
+
+The set of completeness checks `scripts/cdsfl_sv.py` runs BEFORE it writes or
+commits anything, and which refuse the whole save rather than warning. There are
+5: that the persistent-memory folder was written this session, that Open Brain is
+reachable, that the 2 copies of the tracker agree byte for byte, that the memory
+index is inside the loader's own limits, and that the recovery document is not
+further behind than the save will leave it. Its postconditions are re-measured
+AFTER the save and include `no credential tracked`, which scans every tracked
+file for credential shapes — the reason a credential store belongs outside the
+repository rather than inside it.
+
+### Blocking gate
+
+The rule that prevents a run from CLOSING while a critical finding is still open,
+as distinct from the convergence gate, which decides whether the evidence has
+settled. A finding reaches it by carrying a severity at or above the frozen
+critical cut of 0.7. Promoting the appendix's own severity formula to this gate
+is refused today for a measured reason rather than a cautious one: the
+verification factor scores an unassessed claim at one half, so under the product
+form every finding nobody attached a falsifier to would fall BELOW the cut, and a
+model could clear the gate by omission.
+
+### Authenticated envelope
+
+The plain, non-secret header of an encrypted file — its format version, cipher
+name, key-derivation parameters, salt and nonce — whose bytes are signed by the
+same authenticated cipher that protects the contents, by being passed as
+additional authenticated data. Without it those parameters are unprotected, and
+anyone holding a stolen file can rewrite a memory-hard key-derivation function to
+a cheap one and then attack the passphrase at the lower cost. With it, any edit
+to the header makes the file fail to open. Used by `bench/credential_store.py`,
+where a guard pins it by editing the `cipher` label specifically, because that
+field does NOT feed the key derivation and so is the only edit the binding alone
+can catch.

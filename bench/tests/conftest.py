@@ -301,8 +301,21 @@ def _free_allowed(host) -> bool:
 #: free_network test and restored afterwards.
 _CREDENTIAL_SUFFIXES = ("_API_KEY", "_TOKEN", "_SECRET", "_ACCESS_KEY",
                         "_SECRET_KEY")
+#: ★ CDSFL_CREDENTIAL_PASSPHRASE ADDED 2026-11-11, found by tracing what
+#: depends on the new credential store rather than after something went wrong.
+#: The suffix list above catches a name ending in _API_KEY, _TOKEN, _SECRET,
+#: _ACCESS_KEY or _SECRET_KEY, and this one ends in _PASSPHRASE, so it matched
+#: NOTHING. On its own a passphrase bills nobody -- but it UNLOCKS
+#: `bench/credential_store.py`, whose whole purpose is to hold vendor API keys,
+#: so leaving it in the environment during a free-network window reinstates
+#: exactly the route this hold-list exists to close, one indirection further
+#: out. The same argument applies to a confined panel seat: the store file is
+#: encrypted and useless to a seat that reads it by absolute path, which is why
+#: encryption at rest beats the plain `.env` it replaces, but a passphrase
+#: sitting in the environment would hand over the key as well as the lock.
 _CREDENTIAL_NAMES = ("CDSFL_KEY_DIR", "AWS_ACCESS_KEY_ID",
-                     "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
+                     "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN",
+                     "CDSFL_CREDENTIAL_PASSPHRASE")
 _held_credentials: dict = {}
 
 

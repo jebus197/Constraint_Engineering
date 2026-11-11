@@ -149,9 +149,45 @@ class TestARulingIsSpentWhenTheEntryStillAsks:
     def test_the_state_is_what_discriminates(self, mrb):
         """A bare still-asks test took the list from 4 to 12 earlier the same
         night, because a ruled entry keeps the sentence that was answered. Only
-        BLOCKED entries are rescued by this branch."""
-        assert mrb.ruling_is_spent("B71", "2026-11-01", "OPEN") is False
-        assert mrb.ruling_is_spent("B71", "2026-11-01", "DONE") is False
+        BLOCKED entries are rescued by this branch.
+
+        ★ THE SUBJECT IS DERIVED, NOT NAMED, 2026-11-10. This asserted on B71
+        (the automatic local save) with the literal date 2026-11-01. B71 was
+        closed DONE on 2026-11-08 and the assertion survived only because a
+        document-level retirement flag was masking a SECOND asking sentence
+        inside it: "His confirmation of that reading is owed, and if he meant a
+        local commit the design changes", sitting 2,315 characters BELOW the
+        stale marker that retired the entry's FIRST question. Once retirement
+        was scoped to the sentences a marker can actually reach -- its own
+        wording is "THE ASKING SENTENCE ABOVE IS STALE" -- B71 stopped being an
+        example of "ruled and settled" and became an example of the opposite,
+        so this test failed for the RIGHT reason and accused a correct repair.
+
+        IT IS NOT WEAKENED. The property is identical and is now checked on
+        whichever live entry currently exhibits it: a ruled entry that has
+        STOPPED asking must not be spent merely for carrying a ruling, in any
+        non-BLOCKED state. IT CANNOT PASS ON AN ABSENCE -- with no such entry
+        the test says so and fails, exactly as its siblings do. The BLOCKED
+        branch itself is proven synthetically above, so nothing here depends on
+        the tree holding a blocked entry.
+        """
+        import sys as _sys
+        import pathlib as _pl
+        _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / "scripts"))
+        from task_list_markers import parse_entries as _pe    # noqa: E402
+        settled = [e for e in _pe()
+                   if e.ruled and not mrb.still_asks(e.ident)]
+        assert settled, (
+            "no live entry is both ruled and no longer asking, so the "
+            "discriminator cannot be driven on real state at all. Either every "
+            "ruled entry has accumulated a new question -- which is itself "
+            "worth seeing -- or `still_asks` has stopped returning False.")
+        for e in settled[:12]:
+            for state in ("OPEN", "DONE", "PROPOSED", "COMMITTED"):
+                assert mrb.ruling_is_spent(e.ident, e.ruled, state) is False, (
+                    f"{e.ident} is ruled ({e.ruled}) and has stopped asking, "
+                    f"yet its ruling reads as spent in state {state}. Only the "
+                    f"BLOCKED branch may rescue an entry here.")
 
     def test_a_blocked_asking_entry_reaches_the_decision_list(self, mrb):
         """THE PROPERTY, not one entry's name.

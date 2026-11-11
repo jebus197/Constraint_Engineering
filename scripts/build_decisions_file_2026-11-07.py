@@ -197,6 +197,35 @@ def _iv(k: int, n: int):
 #: understated by 2.073133 times, and the Clopper-Pearson 0.119445 should have
 #: been 0.264648, understated by 2.215654 times. It also named B20 and B71 as
 #: carrying rulings when neither was among that file's own 12 items.
+def _short_question(row: dict) -> str:
+    """The first clause of a row's own spoken heading, for naming it in prose."""
+    text = (row.get("spoken_heading") or "").strip()
+    if not text:
+        text = re.sub(r"^\s*[A-Z]+\d+\s*[-\u2014:]\s*", "",
+                      (row.get("title") or "")).strip()
+    return text.split(",")[0].strip().rstrip(".").lower() or "see below"
+
+
+def _decision_numbers(idents, pos: dict) -> str:
+    """"decisions 1 to 6 below" / "decisions 8 and 9" / "decision 4" / "none".
+
+    Contiguity is TESTED, never assumed: a run of consecutive numbers renders
+    as a range and anything else is listed, so the sentence stays true if the
+    ordering changes.
+    """
+    nums = sorted(pos[i] for i in idents if i in pos)
+    if not nums:
+        return "none"
+    if len(nums) == 1:
+        return f"decision {nums[0]} below"
+    #: A range needs 3 or more to be worth the word "to": 2 consecutive
+    #: numbers read better aloud as "8 and 9" than as "8 to 9".
+    if len(nums) > 2 and nums == list(range(nums[0], nums[-1] + 1)):
+        return f"decisions {nums[0]} to {nums[-1]} below"
+    head = ", ".join(str(x) for x in nums[:-1])
+    return f"decisions {head} and {nums[-1]} below"
+
+
 def repeats_summary(rows) -> dict:
     """What this file's items actually are, computed from the live rows."""
     n = len(rows)
@@ -207,6 +236,27 @@ def repeats_summary(rows) -> dict:
     # CONSTRUCTION, and the interval is reported at the LIVE n to say how
     # tightly that 0 is bounded by this sample rather than by an older one.
     settled = 0
+    #: ★ DECISION NUMBERS, NOT BARE CODES, 2026-11-10, AND IT IS THE SECOND
+    #: TIME HE HAS ASKED FOR THIS. His words: *"I can't always tell when you
+    #: print identifiers like B102 or C0003 (for example), if these are the
+    #: same issues you may have been discussing a few lines ago. I don't have
+    #: access to your ticket store, or any of the other resources you have to
+    #: store these issues."* Rule 32 of the note standard already required a
+    #: descriptor beside every code, and `scripts/note_vagueness_lint.py`
+    #: already detected the breach -- it found 3 bare codes in THIS file, the
+    #: one generated to answer that very request: B77 and B141 in this very
+    #: sentence and B20 in the correction note below it.
+    #:
+    #: WHY NOT A DESCRIPTOR PER CODE, WHICH WAS TRIED FIRST AND DISCARDED. A
+    #: descriptor derived from each entry's own heading truncates mid-phrase
+    #: once 6 of them share one sentence -- "B88, on the fold-back gate now
+    #: accepts" and "B125, on a joint panel round asked 2 seats about a" -- and
+    #: this file is READ ALOUD. The decision NUMBER is the handle the glance
+    #: list below already tells him to use ("naming the decision number and the
+    #: option number"), and that list pairs every number with its code AND its
+    #: full question 2 paragraphs later. So nothing is lost and no code is
+    #: printed without its subject within easy reach.
+    _pos = {r["ident"]: i + 1 for i, r in enumerate(rows) if r.get("ident")}
     w, cp, gap = _iv(settled, n)
     neither = n - len(ruled) - len(responded)
     if n == 0:
@@ -220,19 +270,26 @@ def repeats_summary(rows) -> dict:
     return {
         "n": n, "settled": settled, "ruled": ruled, "responded": responded,
         "neither": neither, "verdict": verdict,
+        "neither_verb": "carries" if neither == 1 else "carry",
+        #: ★ DERIVED, 2026-11-10. This sentence was the literal text "B20 is
+        #: the next task on the list and the first decision below" and it was
+        #: wrong on both counts: B20 (the bound orchestrator) is DEFERRED, so
+        #: it is not the next task, and the first decision below is whatever
+        #: `rows[0]` holds today. It also printed a bare code, which the lint
+        #: flagged in the file written to answer his request about bare codes.
+        "first_decision_sentence": (
+            (f"The first decision below is {rows[0].get('ident','')}, "
+             f"{_short_question(rows[0])}.") if rows else
+            "There is no decision below."),
         "w_lo": w[0], "w_hi": w[1], "cp_lo": cp[0], "cp_hi": cp[1], "gap": gap,
-        "ruled_names": ", ".join(ruled) if ruled else "none",
-        "responded_names": ", ".join(responded) if responded else "none",
+        "ruled_names": _decision_numbers(ruled, _pos),
+        "responded_names": _decision_numbers(responded, _pos),
         "n_ruled": len(ruled), "n_responded": len(responded),
         # prose-precision: "1 carry" is wrong and he reads this aloud.
         "ruled_verb": "carries" if len(ruled) == 1 else "carry",
         "responded_verb": "carries" if len(responded) == 1 else "carry",
-        "ruled_label": (f"entry {ruled[0]}" if len(ruled) == 1
-                        else ("no entries" if not ruled
-                              else "entries " + ", ".join(ruled))),
-        "responded_label": (f"entry {responded[0]}" if len(responded) == 1
-                            else ("no entries" if not responded
-                                  else "entries " + ", ".join(responded))),
+        "ruled_label": _decision_numbers(ruled, _pos),
+        "responded_label": _decision_numbers(responded, _pos),
     }
 
 
@@ -573,19 +630,20 @@ what you decide, and what is recommended with its standard named.
 [{w_lo:.6f}, {w_hi:.6f}], Clopper-Pearson 95% [{cp_lo:.6f}, {cp_hi:.6f}], the 2 routes of each
 agreeing to {gap:.3e}. {n_ruled} {ruled_verb} a ruling of yours on a *different* question ({ruled_names}),
 and each entry records which question was answered and which was not. {n_responded} {responded_verb}
-a REPLY of yours that left the entry open ({responded_names}). The remaining {neither} carry neither.
+a REPLY of yours that left the entry open ({responded_names}). The remaining {neither} {neither_verb} neither.
 
 **Every figure in this section is computed at the live count of {n}.** Until 2026-11-09 this block
 was a literal template that printed the word "Neither" whatever the data said, with bounds measured
 at 29 items on 2026-11-08. At 12 items its printed Wilson upper bound of 0.116970 should have read
 0.242494, understated by 2.073133 times, and its Clopper-Pearson 0.119445 should have read 0.264648,
-understated by 2.215654 times. It also named B20 and B71 as carrying rulings when neither was among
-its own items.
+understated by 2.215654 times. It also named B20, the bound orchestrator, and B71, the automatic local save,
+as carrying rulings when neither was among its own items.
 
 **The answer I gave you yesterday was wrong.** The producer written to answer this very question
 called its lookup with a store key where an entry identifier belongs, found nothing, and read the
-miss as a finding. 3 of 41 live entries were labelled repeats on an empty string: B13, B20 and B21.
-B20 is the next task on the list and the first decision below.
+miss as a finding. 3 of 41 live entries were labelled repeats on an empty string: B13, on
+admitting a model; B20, the bound orchestrator; and B21, model and role selection.
+{first_decision_sentence}
 Producer: `scripts/are_the_twenty_nine_new_or_repeats_2026-11-07.py`.
 
 ---
@@ -604,9 +662,9 @@ ARE THESE NEW, OR REPEATS YOU HAVE ALREADY RULED ON? {verdict_caps}
 
 Not new. {first_appearances}. They are re-rendered here rather than re-sent.
 
-Not repeats either. {settled} of {n} carry a ruling of yours that still settles them, with a 95 per cent Wilson interval from {w_lo:.6f} to {w_hi:.6f} and a Clopper-Pearson interval from {cp_lo:.6f} to {cp_hi:.6f}, the 2 routes of each agreeing to within {gap:.3e}. {n_ruled} {ruled_verb} a ruling of yours on a different question, {ruled_label}, and each entry records which question was answered and which was not. {n_responded} {responded_verb} a reply of yours that left the entry open, {responded_label}. The remaining {neither} carry neither.
+Not repeats either. {settled} of {n} carry a ruling of yours that still settles them, with a 95 per cent Wilson interval from {w_lo:.6f} to {w_hi:.6f} and a Clopper-Pearson interval from {cp_lo:.6f} to {cp_hi:.6f}, the 2 routes of each agreeing to within {gap:.3e}. {n_ruled} {ruled_verb} a ruling of yours on a different question, {ruled_label}, and each entry records which question was answered and which was not. {n_responded} {responded_verb} a reply of yours that left the entry open, {responded_label}. The remaining {neither} {neither_verb} neither.
 
-Every figure in this section is computed at the live count of {n}. Until the 9th of November this passage was a fixed piece of text that said the word Neither whatever the data showed, carrying bounds measured over 29 items on the 8th of November. At 12 items its stated Wilson upper bound of 0.116970 should have read 0.242494, understating it by a factor of 2.073133, and its Clopper-Pearson bound of 0.119445 should have read 0.264648, understating it by a factor of 2.215654. It also named entries B20 and B71 as carrying rulings when neither was among its own items.
+Every figure in this section is computed at the live count of {n}. Until the 9th of November this passage was a fixed piece of text that said the word Neither whatever the data showed, carrying bounds measured over 29 items on the 8th of November. At 12 items its stated Wilson upper bound of 0.116970 should have read 0.242494, understating it by a factor of 2.073133, and its Clopper-Pearson bound of 0.119445 should have read 0.264648, understating it by a factor of 2.215654. It also named entries B20, the bound orchestrator, and B71, the automatic local save, as carrying rulings when neither was among its own items.
 
 """
 

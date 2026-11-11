@@ -390,3 +390,79 @@ def shell() -> dict:
     """What the interface chrome is, so a front end need not hard-code it."""
     return {"tabs": list(TABS), "default_theme": "light",
             "themes": ["light", "dark"], "modes": ["simple", "advanced"]}
+
+
+def credentials(passphrase: str | None = None) -> dict:
+    """What the advanced settings surface needs to render the credential store.
+
+    ★ HIS REQUIREMENT, 2026-11-10: the advanced section needs *"a password
+    protected option to add and delete vendor API keys and AI vendor logins"*,
+    with the values *"encrypted (not stored as plain text ...) and can only be
+    read, added to, or edited by the user/researcher entering the correct
+    password"*. Entry B142, the settings surface; `fr:e8951f2ed269`, the
+    credential store.
+
+    READ-ONLY, LIKE EVERY OTHER VIEW HERE, and in this case that is a security
+    property rather than a style choice. This reports the store's SHAPE and the
+    POLICY a front end must honour; it never writes a credential and never
+    returns a value. Writes go through `bench/credential_store.py`, on an
+    explicit action by the researcher, with the passphrase read from a hidden
+    prompt rather than from a form field this process could log.
+
+    WITHOUT a passphrase it reports existence and policy only, which is what a
+    settings screen can show before the researcher unlocks anything. WITH one it
+    adds per-entry METADATA -- name, kind, vendor, a non-reversing fingerprint
+    and timestamps. The fingerprint exists so the screen can show that an entry
+    CHANGED without ever showing what it is.
+
+    THE POLICY TRAVELS WITH THE DATA so the front end cannot drift from it: the
+    accepted kinds and the refused one are read out of the store module itself,
+    not restated here.
+    """
+    try:
+        import importlib.util as _ilu
+        _spec = _ilu.spec_from_file_location(
+            "_cdsfl_credential_store", ROOT / "bench" / "credential_store.py")
+        cs = _ilu.module_from_spec(_spec)
+        _spec.loader.exec_module(cs)
+    except Exception as exc:                                 # noqa: BLE001
+        return {"available": False,
+                "why": f"the credential store module did not load: {exc}",
+                "entries": [], "accepts": [], "refuses": []}
+
+    path = cs.store_path()
+    out: dict = {
+        "available": True,
+        "path": str(path),
+        "exists": path.is_file(),
+        "locked": True,
+        "accepts": list(cs.ALLOWED_KINDS),
+        "refuses": list(cs.KIND_REFUSED),
+        "refusal_reason": (
+            "Vendor account passwords are not held. A stored password cannot "
+            "pass a second factor, so it would not achieve the automatic "
+            "sign-in it would be stored for; vendor command-line tools sign in "
+            "by device flow and hold a short-lived session token; and "
+            "automating a sign-in with a stored password is fragile and "
+            "probably outside vendor terms. Store the OAuth refresh token "
+            "instead -- it exists for this and is revocable."),
+        "cipher": "AES-256-GCM",
+        "min_passphrase_chars": cs.MIN_PASSPHRASE_CHARS,
+        "entries": [],
+        "rule": ("metadata is reported; a value is returned only by an explicit "
+                 "get against the store module, never by this projection"),
+    }
+    if not path.is_file():
+        out["why"] = ("no store yet. Create one with: "
+                      "python3 bench/credential_store.py init")
+        return out
+    if passphrase is None:
+        out["why"] = "locked: supply the passphrase to list what is held"
+        return out
+    try:
+        out["entries"] = cs.list_credentials(passphrase, path)
+        out["locked"] = False
+        out["entry_count"] = len(out["entries"])
+    except cs.CredentialStoreError as exc:
+        out["why"] = str(exc)
+    return out

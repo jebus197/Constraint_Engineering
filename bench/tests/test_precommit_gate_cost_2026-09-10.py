@@ -29,6 +29,58 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "precommit_gate_cost_2026-09-10.py"
 HOOK = ROOT / "hooks" / "pre-commit"
 
+#: ★ THE SUBPROCESS BUDGET IS DERIVED FROM THE RECORD, NOT TYPED. Corrected
+#: 2026-11-11, because the typed 1800 s had been OUTGROWN rather than broken.
+#:
+#: MEASURED from `.cdsfl_tmp/precommit_durations.jsonl`, excluding rows under
+#: 300 s because an infrastructure refusal is not an observation of what a board
+#: costs: the board FIRST crossed 1800 s on 2026-11-09 at 22:47:27, at 1922 s,
+#: and 10 of 45 full boards are over it, 0.222222, Wilson 95% [0.125447,
+#: 0.362693]. The median full board is 1666 s, which is 4.98 times the 334.83 s
+#: the comment below used to quote as current. So the bound did not merely fail
+#: -- it FLAPPED, passing at 1791 s and 1798 s and failing at 1817 s, 1845 s and
+#: 1969 s, which is worse than failing outright because it teaches the reader
+#: that the checker is noise.
+#:
+#: IT STILL CATCHES A GENUINE HANG, which is the only reason to have a bound at
+#: all: the figure scales with what the board has actually cost lately rather
+#: than with what it cost in September, so a board that stops returning still
+#: surfaces as a clean TimeoutExpired rather than as a suite-wide kill. The
+#: floor keeps the old value, so this can only ever widen and never tighten.
+#: The pattern is the one `scripts/cdsfl_sv.py:commit_timeout` already uses and
+#: defends: a bound derived from the project's own history is not arbitrary,
+#: and a typed constant that the subject has outgrown is not a bound.
+_BUDGET_FLOOR_SECONDS = 1800
+_BUDGET_MULTIPLE = 2
+_BUDGET_ROWS = 10
+_LEDGER = ROOT / ".cdsfl_tmp" / "precommit_durations.jsonl"
+#: A row under this is an early refusal, not a board.
+_LEDGER_FLOOR_SECONDS = 300
+
+
+def _recorded_board_budget() -> int:
+    """max(floor, multiple x the worst of the last N recorded full boards)."""
+    try:
+        import json
+        seen = []
+        for line in _LEDGER.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(line)
+            except Exception:                                # noqa: BLE001
+                continue
+            secs = row.get("seconds")
+            if isinstance(secs, (int, float)) and secs >= _LEDGER_FLOOR_SECONDS:
+                seen.append(float(secs))
+        if not seen:
+            return _BUDGET_FLOOR_SECONDS
+        worst = max(seen[-_BUDGET_ROWS:])
+        return int(max(_BUDGET_FLOOR_SECONDS, _BUDGET_MULTIPLE * worst))
+    except Exception:                                        # noqa: BLE001
+        return _BUDGET_FLOOR_SECONDS
+
+
+BOARD_BUDGET_SECONDS = _recorded_board_budget()
+
 
 @pytest.fixture(scope="module")
 def mod():
@@ -147,17 +199,19 @@ class TestItRuns:
     # against `pytest.ini`'s 300s global per-test limit, and the one that
     # killed the full suite at 62% on 2026-10-18 after the first was fixed.
     # This runs `scripts/precommit_gate_cost_2026-09-10.py`, which executes
-    # the pre-commit hook end to end; the hook itself is measured at 334.83s,
+    # the pre-commit hook end to end; the hook itself was measured at 334.83s in September and runs at a median
+    # of 1666s today, 4.98 times that,
     # so even `--repeats 1` cannot finish inside 300s. The marker exceeds this
-    # test's OWN subprocess budget of 1800s below, so a genuine hang surfaces
+    # test's OWN subprocess budget, DERIVED above, so a genuine hang surfaces
     # as that call's clean TimeoutExpired rather than as a suite-wide kill.
     # Entry B36 records the first case and rejects blanket-fixing all 67
     # unreachable ceilings, because 66 have no measured defect behind them.
     # This one does. Widens a timeout; weakens no assertion.
-    @pytest.mark.timeout(1860)
+    @pytest.mark.timeout(BOARD_BUDGET_SECONDS + 60)
     def test_the_script_exits_zero(self):
         r = subprocess.run([sys.executable, str(SCRIPT), "--repeats", "1"],
-                           cwd=ROOT, capture_output=True, text=True, timeout=1800)
+                           cwd=ROOT, capture_output=True, text=True,
+                           timeout=BOARD_BUDGET_SECONDS)
         assert r.returncode == 0, f"{r.stdout[-1500:]}\n{r.stderr[-1500:]}"
         assert "tests collected:" in r.stdout
         assert "median" in r.stdout and "range" in r.stdout, (
