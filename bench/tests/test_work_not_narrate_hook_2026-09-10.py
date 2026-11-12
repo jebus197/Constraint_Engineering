@@ -17,7 +17,9 @@ that cannot fail is not a guard". These tests exist to prove this one CAN fail.
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
+import pathlib
 import subprocess
 import sys
 from pathlib import Path
@@ -300,10 +302,21 @@ class TestTheRefusalBudget:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class _E:
-    """A minimal stand-in for a task-list entry: ident, state, ruled."""
+    """A minimal stand-in for a task-list entry: ident, state, ruled, status.
 
-    def __init__(self, ident, state="OPEN", ruled=None):
+    ★ `status` ADDED 2026-11-12. `_first_movable` now prefers an entry whose
+    work has NOT started, because it was naming finished work as "the next
+    unstarted entry" -- B158 at status TESTED, on every prod of a 34-prod turn,
+    and finished work can only leave OPEN via a commit so working never cleared
+    it. This stub carried no `status`, so the new read raised into the enclosing
+    `except` and silently returned "": the stub's gap disabled the behaviour it
+    was meant to exercise. The hook now uses `getattr` so no caller can do that
+    again, and the default here is PROPOSED so existing cases are unaffected.
+    """
+
+    def __init__(self, ident, state="OPEN", ruled=None, status="PROPOSED"):
         self.ident, self.state, self.ruled = ident, state, ruled
+        self.status = status
 
 
 class TestTheGateNamesAMovableEntry:
@@ -504,3 +517,202 @@ class TestTheGateNamesAMovableEntry:
         if n_open == 0:
             pytest.skip("no open entries")
         assert named, "the gate named nothing, which makes its refusal useless"
+
+
+class TestTheThreeFaultsFoundOn20261112:
+    """★ HIS INSTRUCTION, 2026-11-12: *"Is the hook you are using overactive?
+    Teminate it and fix it if so."* and *"It appears to firing every few
+    seconds."* It was: 34+ prods measured in 1 turn against its own declared
+    ceiling of 40. 3 faults beyond the residue polarity of B169, each tested
+    here because none of them had a test before.
+    """
+
+    def test_a_live_commit_board_allows_the_stop(self, mod, monkeypatch):
+        """★ B173b. The gate never asked whether a tree write was POSSIBLE.
+
+        While a commit board runs, every remaining action needs a tree write
+        and `scripts/blocker_triage.py` REFUSES to write during a board -- so
+        this gate was demanding work its own sibling mechanism forbids. The
+        detector already existed, built the same morning for B155, and nothing
+        here called it: an existing mechanism reaching 1 caller of 2.
+        """
+        monkeypatch.setattr(mod, "_a_commit_board_is_running", lambda: True)
+        monkeypatch.setattr(mod, "is_parked", lambda: False)
+        monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(
+            {"transcript_path": "/nonexistent-for-this-test"})))
+        assert mod.main() == 0, (
+            "the gate refused a stop while a commit board held the tree, so it "
+            "demanded work no caller could perform")
+
+    def test_it_still_fires_when_no_board_is_running(self, mod, monkeypatch):
+        """★ THE DISCRIMINATION HALF. A board check that always said True would
+        disable the gate permanently, which is the removal half of the additive
+        standard."""
+        monkeypatch.setattr(mod, "_a_commit_board_is_running", lambda: False)
+        assert mod._a_commit_board_is_running() is False
+        #: and the detector FAILS TOWARD FIRING: an undecidable board arms it.
+        monkeypatch.setattr(mod, "REPO", pathlib.Path("/nonexistent"))
+        assert mod._a_commit_board_is_running() is False
+
+    def test_a_bare_question_does_not_clear_a_standing_d(self, mod):
+        """★ B171. His own words: *"normally a 'd' would require you to stop and
+        answer my questions first, unless I say otherwise."* Both of the real
+        mid-turn messages that wiped a `d` on 2026-11-12 are cases here."""
+        for text in ("Is the hook you are using overactive?",
+                     "Maybe what is missing is a full qc sweep of our docs?",
+                     "It appears to firing every few seconds?"):
+            assert mod._is_bare_question(text), text
+
+    def test_an_instruction_DOES_clear_it(self, mod):
+        """★ THE DISCRIMINATION HALF, and the reason the reset is narrowed
+        rather than removed: a `d` from an earlier turn must not silence this
+        gate for ever. Anything carrying a command, or any imperative, clears
+        the set exactly as before."""
+        for text in ("y, install the hook fix", "a, d", "rs then sv",
+                     "Fix it properly then re-enable it.",
+                     "Build the steering feature now."):
+            assert not mod._is_bare_question(text), text
+
+    def test_an_empty_or_rubbish_message_does_not_count_as_a_question(self, mod):
+        for bad in ("", "   ", None, 12345):
+            assert mod._is_bare_question(bad) is False, repr(bad)
+
+    def test_it_names_unstarted_work_before_finished_work(self, mod, tmp_path,
+                                                          monkeypatch):
+        """★ B173a. It named FINISHED work as "the next unstarted entry" --
+        B158 at status TESTED -- and finished work can only leave OPEN via a
+        commit, so no amount of working cleared it and the gate prodded the
+        same entry for ever. Measured the same day: 9 of 27 open entries had
+        their work done, 0.333333, Wilson [0.186433, 0.521752]."""
+        (tmp_path / "how_many_decisions_actually_need_him_2026-11-01.py"
+         ).write_text(
+            "def bodies():\n"
+            "    return {'A1': 'mine', 'A2': 'mine'}\n"
+            "def classify_text(state, ruled, body):\n"
+            "    return {'kind': 'MINE'}\n")
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+        #: A1 is finished, A2 is not. The unfinished one must be named.
+        got = mod._first_movable([_E("A1", status="TESTED"),
+                                  _E("A2", status="PROPOSED")])
+        assert got == "A2", (
+            f"it named {got!r}; A1's work is TESTED and only a commit can clear "
+            f"it, so naming it cannot lead to progress")
+
+    def test_a_finished_entry_is_still_named_when_it_is_the_ONLY_one(
+            self, mod, tmp_path, monkeypatch):
+        """Started entries are reordered, NOT dropped: an entry at BUILT may
+        genuinely need more work, and dropping it would be the removal half of
+        the additive standard."""
+        (tmp_path / "how_many_decisions_actually_need_him_2026-11-01.py"
+         ).write_text(
+            "def bodies():\n"
+            "    return {'A1': 'mine'}\n"
+            "def classify_text(state, ruled, body):\n"
+            "    return {'kind': 'MINE'}\n")
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+        assert mod._first_movable([_E("A1", status="TESTED")]) == "A1"
+
+    def test_a_missing_status_attribute_cannot_disable_the_naming(self, mod,
+                                                                 tmp_path,
+                                                                 monkeypatch):
+        """★ THIS CAUGHT ITSELF. The first version of the ordering read
+        `e.status` directly, and this file's own entry stub carried no such
+        attribute -- so it raised into the enclosing `except` and SILENTLY
+        returned "", disabling the behaviour the test was meant to exercise.
+        The read is now `getattr`, so no caller can do that again."""
+        class _NoStatus:
+            def __init__(self, ident):
+                self.ident, self.state, self.ruled = ident, "OPEN", None
+        (tmp_path / "how_many_decisions_actually_need_him_2026-11-01.py"
+         ).write_text(
+            "def bodies():\n"
+            "    return {'Z1': 'mine'}\n"
+            "def classify_text(state, ruled, body):\n"
+            "    return {'kind': 'MINE'}\n")
+        monkeypatch.setattr(mod, "MARKERS", str(tmp_path))
+        assert mod._first_movable([_NoStatus("Z1")]) == "Z1"
+
+
+class TestTheTwoMutationsThatSurvived:
+    """★ THIS CLASS EXISTS BECAUSE 2 MUTATIONS SURVIVED, AND BOTH SURVIVED FOR
+    THE SAME REASON: the tests above MONKEYPATCH the thing they check, which is
+    circular, so the real delegation and the real transcript path were never
+    driven. `scripts/the_overactive_stop_gate_mutations_2026-11-12.py` reported
+    5 of 7 and named them.
+    """
+
+    def test_the_board_check_really_DELEGATES_to_blocker_triage(self, mod,
+                                                                tmp_path,
+                                                                monkeypatch):
+        """★ KILLS SURVIVOR 1. Every other board test replaces
+        `_a_commit_board_is_running` itself, so a wrapper that ignored
+        `blocker_triage` entirely would pass them all. This points `REPO` at a
+        temporary tree holding a stand-in detector and requires the wrapper's
+        answer to follow it -- both ways."""
+        scripts = tmp_path / "scripts"
+        scripts.mkdir()
+        stand_in = scripts / "blocker_triage.py"
+
+        stand_in.write_text("def a_commit_board_is_running():\n"
+                            "    return 'a board is live'\n")
+        monkeypatch.setattr(mod, "REPO", tmp_path)
+        sys.modules.pop("_bt_board", None)
+        assert mod._a_commit_board_is_running() is True, (
+            "the wrapper did not follow the detector when it reported a board, "
+            "so it is not consulting blocker_triage at all")
+
+        stand_in.write_text("def a_commit_board_is_running():\n"
+                            "    return ''\n")
+        sys.modules.pop("_bt_board", None)
+        assert mod._a_commit_board_is_running() is False, (
+            "the wrapper did not follow the detector when it reported no board")
+
+    def test_a_mid_turn_bare_question_does_not_wipe_a_standing_d(self, mod,
+                                                                tmp_path):
+        """★ KILLS SURVIVOR 2, and it is the fault he reported.
+
+        `turn_signals` resets the command set whenever one of his messages
+        arrives after assistant tool calls. On 2026-11-12 his mid-turn question
+        -- which carries no command -- wiped a standing `d`, so the gate prodded
+        34+ times past a barrier his own ruling calls never overridden. No test
+        drove the transcript path, so removing the narrowing left every guard
+        green.
+
+        This builds a transcript of exactly that shape: his instruction with
+        `a, d`, then assistant tool calls, then a bare question.
+        """
+        def user(text, midturn=False):
+            body = (("The user sent a new message while you were working\n" + text)
+                    if midturn else text)
+            return json.dumps({"type": "user",
+                               "message": {"content": [{"type": "text",
+                                                        "text": body}]}})
+
+        def tool_call():
+            return json.dumps({"type": "assistant",
+                               "message": {"content": [{"type": "tool_use",
+                                                        "name": "Bash",
+                                                        "input": {}}]}})
+
+        t = tmp_path / "transcript.jsonl"
+
+        t.write_text("\n".join([
+            user("Do the thing. a, d"), tool_call(), tool_call(),
+            user("Is the hook you are using overactive?", midturn=True),
+        ]) + "\n")
+        _calls, _prose, _commit, had_d = mod.turn_signals(t)
+        assert had_d is True, (
+            "his mid-turn bare QUESTION wiped his own standing `d`, which is "
+            "the fault he reported on 2026-11-12")
+
+        #: THE DISCRIMINATION HALF, and the reason the reset is narrowed rather
+        #: than removed: a mid-turn INSTRUCTION must still clear the set, or a
+        #: stale `d` would silence this gate for the rest of the session.
+        t.write_text("\n".join([
+            user("Do the thing. a, d"), tool_call(), tool_call(),
+            user("Now build the steering feature instead.", midturn=True),
+        ]) + "\n")
+        _calls, _prose, _commit, had_d2 = mod.turn_signals(t)
+        assert had_d2 is False, (
+            "a mid-turn INSTRUCTION left the earlier `d` standing, so a stale "
+            "barrier could silence this gate indefinitely")

@@ -270,6 +270,45 @@ def is_parked() -> bool:
         return False
 
 
+def _is_bare_question(text: str) -> bool:
+    """True when his message asks something and instructs nothing.
+
+    Deliberately NARROW: it must carry no MC command at all AND its last
+    sentence-ending character must be a question mark. An imperative that
+    happens to contain a question mark elsewhere is not a bare question.
+    """
+    try:
+        if founder_commands(text):
+            return False
+        stripped = (text or "").strip()
+        return bool(stripped) and stripped.rstrip().endswith("?")
+    except Exception:                                          # noqa: BLE001
+        return False        # fails toward CLEARING, which is today's behaviour
+
+
+def _a_commit_board_is_running() -> bool:
+    """True when a commit board is live, via the detector built for B155.
+
+    DELEGATES rather than re-deciding. A second copy of "is a board running"
+    would be a 2nd definition of the condition, and this project spent
+    2026-11-11 removing exactly that shape.
+    """
+    try:
+        for cand in (REPO / "scripts" / "blocker_triage.py",
+                     pathlib.Path.home() / "Developer_Projects"
+                     / "Constraint_Engineering" / "scripts" / "blocker_triage.py"):
+            if not cand.is_file():
+                continue
+            spec = importlib.util.spec_from_file_location("_bt_board", cand)
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules.setdefault("_bt_board", mod)
+            spec.loader.exec_module(mod)
+            return bool(mod.a_commit_board_is_running())
+    except Exception:                                          # noqa: BLE001
+        return False        # fails toward FIRING: an undecided board arms the gate
+    return False
+
+
 def founder_commands(text: str) -> list[str]:
     """His MC commands, read with the SAME parser the MC hook uses.
 
@@ -625,10 +664,55 @@ _HIS_RESIDUE = re.compile(r"""(
 )""", re.I | re.X)
 
 
+#: ★ "ONLY HE MAY REJECT ONE" IS A STATEMENT ABOUT A CLASS, NOT ABOUT THIS
+#: ENTRY. Added 2026-11-12. `_HIS_RESIDUE`'s `only he (may|can)` clause matched
+#: B168's own record of his rule -- *"a feature request stays OPEN until
+#: implemented, merged or rejected, and that only he may REJECT one"* -- and
+#: classified that entry as needing his permission when it is mine to build.
+#: The direction is the harmful one: a false positive moves an item OFF the
+#: movable set, so the gate goes quiet about work the session can do.
+#:
+#: ★ MY FIRST ATTEMPT AT THIS FIX WAS WORSE THAN THE DEFECT AND IS RECORDED
+#: HERE BECAUSE IT NEARLY SHIPPED. It excused any sentence "citing a rule",
+#: matched by a rule noun followed within 40 characters by `is`. Driven over the
+#: live entries before it was applied, it wrongly excused 2 of the 3 it changed:
+#: B104, where "the standard is a document ..." describes a DOCUMENT and not a
+#: rule, and B170, where it matched ACROSS A BRACKET in "[NEEDS HIS RULING] ON
+#: THE MERGE, which is" -- excusing the clearest residue statement in the queue,
+#: his own merge decision. A fix that silences his most important open item is
+#: not a fix.
+#:
+#: SO THE NARROWING IS SURGICAL: the `only he may/can` clause alone, and only
+#: when its object is INDEFINITE -- "a feature request", "one", "any entry".
+#: A definite object ("only he may approve THIS change") still reads as a
+#: residue, and no other clause of the pattern is touched.
+_CLASS_OBJECT = re.compile(
+    r"\bonly\s+he\s+(?:may|can)\s+\w+(?:\s+\w+)??\s+"
+    r"(?:a|an|one|any)\b", re.I)
+
+
 def _residue_is_his(body: str) -> bool:
-    """True when the entry's OWN TEXT says what remains is his permission."""
+    """True when the entry's OWN TEXT says what remains is his permission.
+
+    PER SENTENCE, not per document, so one class-statement cannot excuse a
+    genuine residue elsewhere in the same entry -- the document-level fault
+    recorded on 2026-11-10, where a flag silenced an ask 15,438 characters
+    below it.
+    """
     try:
-        return bool(_HIS_RESIDUE.search(body or ""))
+        for sent in re.split(r"(?<=[.!?])\s+", body or ""):
+            #: ★ EVERY MATCH IN THE SENTENCE, NOT THE FIRST. My first version
+            #: tested only `search()`'s first hit, so a class statement earlier
+            #: in a chunk excused a GENUINE residue later in the same chunk --
+            #: it wrongly moved B169, whose own text says it needs his
+            #: permission to edit this very file. Caught by driving it over the
+            #: live entries before it was applied.
+            for m in _HIS_RESIDUE.finditer(sent):
+                if m.group(0).lower().startswith("only he") \
+                        and _CLASS_OBJECT.search(sent):
+                    continue
+                return True
+        return False
     except Exception:          # noqa: BLE001
         return False           # fail-safe: costs the preference, never the gate
 
@@ -647,11 +731,32 @@ def _first_movable(opens) -> str:
         sys.modules.setdefault("_wnn_classify", mod)
         spec.loader.exec_module(mod)
         bodies = mod.bodies()
+        #: ★ PREFER AN ENTRY WHOSE WORK HAS NOT STARTED. Added 2026-11-12.
+        #: This took no account of `status`, so it named FINISHED work as "the
+        #: next unstarted entry" -- B158 at status TESTED, on every prod of a
+        #: 34-prod turn. Finished work can only leave OPEN via a COMMIT, so no
+        #: amount of working clears it and the gate prods the same entry for
+        #: ever. Measured the same day: 9 of 27 open entries had their work
+        #: done, 0.333333, Wilson [0.186433, 0.521752].
+        #:
+        #: THE STARTED ONES ARE STILL RETURNED, LAST, rather than skipped: an
+        #: entry at BUILT may genuinely need more work, and dropping it would be
+        #: the removal half of the additive standard.
+        _STARTED = {"BUILT", "TESTED", "COMMITTED"}
+        unstarted, started = [], []
         for e in opens:
             body = bodies.get(e.ident, "")
             kind = mod.classify_text(e.state, e.ruled, body)["kind"]
-            if kind != "OWED" and not _residue_is_his(body):
-                return e.ident
+            if kind == "OWED" or _residue_is_his(body):
+                continue
+            #: `getattr`, not `e.status`: a caller passing an object
+            #: without the attribute would otherwise raise into the
+            #: enclosing `except` and SILENTLY disable the naming -- which
+            #: is what this did to its own guard's entry stub.
+            (started if str(getattr(e, "status", "") or "").upper() in _STARTED
+             else unstarted).append(e.ident)
+        for ident in unstarted + started:
+            return ident
         return ""
     except Exception:
         return ""
@@ -705,9 +810,29 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
         c = his_text(d)
         if c is None:
             continue
-        if worked_since:
+        #: ★ A BARE QUESTION DOES NOT CLEAR A STANDING `d`. Added 2026-11-12
+        #: on his correction: *"normally a 'd' would require you to stop and
+        #: answer my questions first, unless I say otherwise."* The reset below
+        #: existed for the opposite failure, which is real -- a `d` from an
+        #: earlier turn would otherwise silence this gate indefinitely -- so it
+        #: is NARROWED rather than removed.
+        #:
+        #: THE DISCRIMINATOR IS HIS OWN RULING, NOT AN INVENTION. His rule of
+        #: 2026-10-30 is that an unmarked comment which does not end in a
+        #: question mark is a discussion; his rule of 2026-11-11 is that a `d`
+        #: is a BARRIER rather than an item in a sequence. Answering a question
+        #: does not lift a barrier. So a message carrying NO command and ending
+        #: in a question mark leaves the command set standing; anything else
+        #: clears it, which keeps the indefinite-silence case closed.
+        #:
+        #: PROVED ON THE LIVE TRANSCRIPT, 2026-11-12: his messages carried
+        #: ['a','d'] 3 times and then his mid-turn question carried [], which
+        #: wiped the `d` and let this gate prod 34+ times past a standing
+        #: barrier.
+        _new = set(founder_commands(c))
+        if worked_since and (_new or not _is_bare_question(c)):
             cmds = set()
-        cmds |= set(founder_commands(c))
+        cmds |= _new
         start = i
         worked_since = False
     had_d = "d" in cmds
@@ -806,6 +931,19 @@ def main() -> int:
         return self_test()
     if is_parked():
         return 0                      # parked by the founder; never refuse
+    #: ★ A COMMIT BOARD HOLDS THE TREE, SO NO ENTRY CAN BE ADVANCED. Added
+    #: 2026-11-12 on his instruction to fix this hook. While a board runs, every
+    #: remaining action needs a tree write, and `scripts/blocker_triage.py`
+    #: REFUSES to write during a board -- so this gate was demanding work its
+    #: own sibling mechanism forbids, 34+ times in 1 turn. The detector already
+    #: existed, built the same morning for B155, and nothing here called it:
+    #: an existing mechanism reaching 1 caller where it should reach 2.
+    #:
+    #: FAILS TOWARD FIRING. Any failure to decide leaves the gate armed, because
+    #: a guard that silently disables itself on an import error is worse than
+    #: the noise it treats.
+    if _a_commit_board_is_running():
+        return 0
     try:
         payload = json.load(sys.stdin)
     except Exception:

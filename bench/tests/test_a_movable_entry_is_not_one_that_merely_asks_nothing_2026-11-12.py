@@ -255,7 +255,15 @@ _ISOLATING_PROBES = (
     "amending it would widen his own scope for him",
     "it needs his permission first",
     "the threshold is his to authorise",
-    "only he may reject a feature request",
+    #: ★ CHANGED 2026-11-12 TO A DEFINITE OBJECT. This read "only he may
+    #: reject a feature request", and that sentence NO LONGER MATCHES, by
+    #: design: the clause was narrowed under B169 because it was reading
+    #: B168's record of his rule about feature requests IN GENERAL as a
+    #: claim on that entry. A probe must isolate the clause by its real
+    #: meaning -- his authority over THIS item -- so the object is now
+    #: definite. The indefinite form is asserted NOT to match, in
+    #: `TestTheClassStatementIsNotAClaim` below.
+    "only he may approve this particular change",
     "that is a behaviour change for the founder",
     "the design consequence is his",
     "it is held under his d",
@@ -339,3 +347,66 @@ class TestEveryClauseIsUniquelyReached:
             assert sup_only > 0, (
                 f"no string matches {sup!r} without {sub!r}, so the containment "
                 f"is not strict and the 2 clauses are the same clause")
+
+
+class TestTheClassStatementIsNotAClaim:
+    """★ B169. A sentence reporting his authority over a KIND of thing is not a
+    sentence claiming this entry.
+
+    THE DEFECT: `only he (may|can)` matched B168's own record of his
+    2026-10-17 rule -- that a feature request stays open until implemented,
+    merged or rejected, and that only he may reject one -- and so classified
+    that entry as needing his permission when it is mine to build. The
+    direction is the harmful one: a false positive moves an item OFF the
+    movable set, so the gate goes quiet about work the session can do, which is
+    the inverse of the fault the predicate was installed to fix.
+
+    ★ 2 OF MY OWN ATTEMPTS AT THIS FIX WERE WORSE THAN THE DEFECT, AND BOTH ARE
+    PINNED HERE AS CASES. The first excused any sentence "citing a rule", and
+    driven over the live entries it wrongly excused B170 by matching ACROSS A
+    BRACKET in "[NEEDS HIS RULING] ON THE MERGE, which is" -- silencing his own
+    merge decision. The second checked only the FIRST match in a sentence, so a
+    class statement earlier in a chunk excused a genuine residue later in it.
+    Both were caught by driving the predicate over the live task list before
+    anything was applied.
+    """
+
+    def test_an_indefinite_object_means_a_class_and_is_not_a_residue(self, WNN):
+        for s in ("only he may reject a feature request",
+                  "only he may REJECT one",
+                  "only he can withdraw any entry"):
+            assert not WNN._residue_is_his(s), s
+
+    def test_a_definite_object_is_still_a_residue(self, WNN):
+        """THE DISCRIMINATION HALF. Without this the narrowing could have
+        disabled the clause entirely and this file would not have noticed."""
+        for s in ("only he may approve this particular change",
+                  "only he can authorise the merge",
+                  "only he may rule on that threshold"):
+            assert WNN._residue_is_his(s), s
+
+    def test_a_mixed_sentence_keeps_its_GENUINE_residue(self, WNN):
+        """★ THE CASE THAT KILLED MY SECOND ATTEMPT. A class statement and a
+        real residue in one sentence must resolve to RESIDUE."""
+        assert WNN._residue_is_his(
+            "only he may reject one, but this entry NEEDS HIS PERMISSION too")
+
+    def test_the_bracketed_ruling_that_my_first_attempt_silenced(self, WNN):
+        """★ B170's own words. My first fix excused this and it is the single
+        most consequential residue in the queue."""
+        assert WNN._residue_is_his(
+            "[NEEDS HIS RULING] ON THE MERGE, which is not mine to take.")
+
+    def test_no_other_clause_was_narrowed(self, WNN):
+        """The narrowing is surgical: every other clause still fires."""
+        for s in ("the wiring is still his authorisation",
+                  "its own residue is unchanged",
+                  "that is for the founder to authorise",
+                  "this is his and not mine",
+                  "amending it would widen his own scope",
+                  "it needs his permission first",
+                  "the threshold is his to authorise",
+                  "that is a behaviour change for the founder",
+                  "the design consequence is his",
+                  "it is held under his d"):
+            assert WNN._residue_is_his(s), s

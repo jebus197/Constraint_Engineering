@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 12 November 2026 22:32 GMT (2026-11-12T22:32:20+00:00)
+Generated: 12 November 2026 23:18 GMT (2026-11-12T23:18:38+00:00)
 
 ---
 
@@ -18,34 +18,23 @@ Generated: 12 November 2026 22:32 GMT (2026-11-12T22:32:20+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `3cb05d66` sv: the hook fix is installed on his word, a --help could have edited the tree, and the figure telling him he owes 8 rulings rests on a proxy no sibling predicate agrees with
-- **Committed:** 2026-11-12 18:46:29 +0000
+- **Last commit (the PARENT of the commit containing this file):** `b18b397f` sv: the steering fix built on his lift, 11 of 11 source-text assertions resolved, my own orphan figure corrected from 33 to 6, and 6 new defects found by trying to carry out his instructions
+- **Committed:** 2026-11-12 22:32:21 +0000
 - **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/cdsfl_registry/domain_proposer.py`
-- `M  bench/cdsfl_registry/domain_vocabulary.py`
-- `M  bench/tests/test_a_heading_is_recorded_not_guessed_2026-11-10.py`
-- `M  bench/tests/test_the_composer_fallback_is_recorded_2026-11-09.py`
-- `A  bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py`
-- `M  bench/tests/test_the_fix_examined_is_what_the_fix_says_2026-11-11.py`
-- `M  bench/tests/test_the_severity_confidence_has_a_lawful_source_2026-11-08.py`
-- `A  bench/tests/test_the_steering_chat_can_recover_2026-11-12.py`
-- `M  bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py`
-- `M  bench/tests/test_which_of_b21s_five_steps_are_built_2026-11-09.py`
-- `M  bench/tickets/sv_completions.jsonl`
-- `M  bench/tickets/tickets.jsonl`
-- `M  bench/tickets/tickets_searches.jsonl`
-- `M  docs/CURRENT_STATE.md`
-- `MM experimental_notes/CDSFL_MASTER_TASK_LIST.md`
-- … and 10 more, not shown (list capped at 15 of 25 — run `git status --porcelain` for the full set)
+- `M bench/tests/test_a_movable_entry_is_not_one_that_merely_asks_nothing_2026-11-12.py`
+- `M bench/tests/test_work_not_narrate_hook_2026-09-10.py`
+- `M bench/tickets/sv_completions.jsonl`
+- `M hooks/work_not_narrate.py`
+- `?? scripts/the_overactive_stop_gate_mutations_2026-11-12.py`
 
 ---
 
 ## Tests
 
-**17428 tests collected** at 12 November 2026 22:32 GMT, HEAD `3cb05d66` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**17445 tests collected** at 12 November 2026 23:18 GMT, HEAD `b18b397f` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +64,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `b18b397f sv: the steering fix built on his lift, 11 of 11 source-text assertions resolved, my own orphan figure corrected from 33 to 6, and 6 new defects found by trying to carry out his instructions`
 - `3cb05d66 sv: the hook fix is installed on his word, a --help could have edited the tree, and the figure telling him he owes 8 rulings rests on a proxy no sibling predicate agrees with`
 - `75832cda sv: the board refused on 2 faults of mine and both are fixed; B155 owed 2 repairs where I had counted 1; 0 of the 12 open entries are now mine`
 - `072c038d sv: the 10 agreed items added to the task list and the registry, 5 of 10 measured DONE, and the instrument that measures them corrected twice in the flattering direction`
@@ -84,4 +74,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `a7fca3f3 He challenged 4 claims in my own report and was right about all 4, including 1 where I re-presented 5 decisions he had already ruled on inside the report whose subject was that exact defect`
 - `64b22872 sv: state save 10 November 2026, after the free round's 4 defects were folded back`
 - `371f55cc A free panel attacked the one change that puts derived prose in front of him and found 4 defects, one of which had inverted B81's meaning in the file he decides from`
-- `b0c32e02 He gave 2 routing rulings on 2026-11-10 that nothing implements, they lived in 1 paragraph of another entry, and the figure cited for them had no producer`
