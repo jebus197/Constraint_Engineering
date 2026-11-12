@@ -166,6 +166,113 @@ def propose(task: str, vocab: dict | None = None) -> dict:
     }
 
 
+#: ★ THE RECOVERY PATH, ENTRY B161, AND IT IS HIS DESIGN RATHER THAN MINE.
+#: Added 2026-11-12. The 4 simulated steering chats exercised selecting a domain
+#: and escalating to a dialogue, and never the case where the researcher simply
+#: says the proposal is wrong. His words: the classifier *"can be told to say
+#: some thing like 'Oh sorry about that. What category of problem would you like
+#: to discuss today. Would you like me to search again for you, or would you
+#: like to specify one exactly?' There can be a few allowed variations of this,
+#: so the response doesn't always seem too mechanical."*
+#:
+#: 3 SEPARABLE PIECES AND THEY ARE DELIBERATELY NOT 1 FUNCTION: the repair turn,
+#: a profile that survives a restart, and the test deciding when a query falls
+#: outside the loaded profile. Only the 3rd has a measurable criterion today,
+#: because the 4 simulated chats left a labelled set of 5 domain calls and 5
+#: subdomain calls; the phrasings are a user-experience choice with no
+#: falsifiable criterion, so they get a fitness review and not a falsification.
+#:
+#: THE VARIANTS ARE SELECTED BY INDEX, NEVER AT RANDOM. A random phrasing cannot
+#: be reproduced in a test or in a transcript, and this project's whole record
+#: is that an unreproducible behaviour is one nobody can check.
+REPAIR_PHRASINGS = (
+    "Sorry about that. What category of problem would you like to discuss "
+    "today? I can search again, or you can name the category exactly.",
+    "My mistake. Which area does this belong to? I can have another look, or "
+    "you can tell me outright.",
+    "Apologies, I had that wrong. What kind of problem are we working on? "
+    "Happy to search again, or you can specify it.",
+    "Sorry, let me try again. Which field is this in? I can look once more, or "
+    "you can name it directly.",
+)
+
+#: Why the question is asked at all, offered only if the researcher queries it.
+#: His words: *"the model can offer a short explainer that it just wants to be
+#: sure it can load the correct profile for the researcher."*
+EXPLAINER = ("I ask because the category decides which expert constraints get "
+             "loaded for you, and which severity scale a finding is judged on. "
+             "Getting it right once means I can keep the same profile loaded "
+             "from here on.")
+
+
+def repair_turn(attempt: int = 0) -> str:
+    """What to say when the researcher rejects the proposed category.
+
+    `attempt` selects a variant so a repeated repair does not read as a script.
+    It is taken modulo the number of phrasings, so any integer is safe and the
+    choice is REPRODUCIBLE -- a random pick could not be pinned by a test.
+    """
+    return REPAIR_PHRASINGS[int(attempt) % len(REPAIR_PHRASINGS)]
+
+
+def explainer() -> str:
+    """The short answer to 'why do you need to know?'."""
+    return EXPLAINER
+
+
+def profile_mismatch(task: str, profile: dict | None,
+                     vocab: dict | None = None) -> dict:
+    """Does `task` fall outside the profile already loaded for this researcher?
+
+    REUSES `propose` rather than deciding again. A second predicate for "which
+    domain is this" would be a second steering surface, and this project spent
+    2026-11-11 removing exactly that: 2 domain vocabularies that agreed on 3
+    names of 17, with every routing decision depending on which one a caller
+    happened to read.
+
+    AN AMBIGUOUS PROPOSAL ASKS; IT DOES NOT SILENTLY KEEP THE PROFILE. Keeping
+    it would judge a finding on a scale nobody chose, which is the same silent
+    default `consequence_domain` was written to remove.
+    """
+    loaded = list((profile or {}).get("domains") or [])
+    pr = propose(task, vocab)
+    if pr.get("ambiguous"):
+        return {"mismatch": True, "resteer": True, "proposed": pr.get("domain"),
+                "loaded": loaded, "proposal": pr,
+                "why": (f"the proposal is ambiguous ({pr.get('reason')}), so the "
+                        f"loaded profile cannot be assumed to cover it")}
+    if not loaded:
+        return {"mismatch": True, "resteer": True, "proposed": pr.get("domain"),
+                "loaded": loaded, "proposal": pr,
+                "why": "no profile is loaded yet, so the first steering chat is owed"}
+    if pr.get("domain") in loaded:
+        return {"mismatch": False, "resteer": False, "proposed": pr.get("domain"),
+                "loaded": loaded, "proposal": pr,
+                "why": (f"{pr.get('domain')} is already in the loaded profile, so "
+                        f"no steering chat is needed")}
+    return {"mismatch": True, "resteer": True, "proposed": pr.get("domain"),
+            "loaded": loaded, "proposal": pr,
+            "why": (f"{pr.get('domain')} is not in the loaded profile {loaded}, so "
+                    f"an additional encoding has to be chosen")}
+
+
+def accept(profile: dict | None, domain: str) -> dict:
+    """Add a domain to the loaded profile, without dropping what is there.
+
+    ADDITIVE BY CONSTRUCTION, and that is his design rather than a convenience:
+    *"the new (or additional) profile/encoding can be loaded"*. A researcher who
+    moves between 2 fields keeps both, so the 2nd steering chat does not undo
+    the 1st.
+    """
+    doms = list((profile or {}).get("domains") or [])
+    d = V.resolve(domain)   # the ONE vocabulary, never a second resolver
+    if d not in doms:
+        doms.append(d)
+    out = dict(profile or {})
+    out["domains"] = doms
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(
         description="Propose a (domain, subdomain) for a task's text. Proposes "

@@ -74,10 +74,33 @@ class TestTheOrphanIsNoLongerAnOrphan:
         assert callable(getattr(di, "domain_verification_set", None))
 
     def test_the_runner_reaches_it(self):
-        src = (REPO / "bench" / "reference_runner_v3.py").read_text()
-        assert "domain_verification_set" in src, (
-            "the gate does not reach the domain machinery, so wiring it "
-            "would be an addition nothing reaches")
+        """The runner must CALL it, not merely mention it.
+
+        ★ CONVERTED FROM A SUBSTRING TO A PARSED CALL, 2026-11-12, entry B158.
+        This asserted `"domain_verification_set" in src`. Measured on the live
+        runner, that literal appears **2** times: 1 genuine call, and 1 mention
+        inside a docstring that explains what the function does. So deleting the
+        call and leaving the prose would have kept this test GREEN while the
+        gate stopped reaching the domain machinery -- which is the exact fault
+        the test exists to catch, and the `None and f(...)` shape this project
+        has already recorded: the name is present and nothing is called.
+
+        The syntax tree cannot be satisfied by a comment or a docstring, so the
+        assertion now means what its own message says.
+        """
+        import ast                                             # noqa: PLC0415
+
+        name = "domain_verification_set"
+        tree = ast.parse((REPO / "bench" / "reference_runner_v3.py")
+                         .read_text(encoding="utf-8"))
+        calls = [n.lineno for n in ast.walk(tree)
+                 if isinstance(n, ast.Call)
+                 and ((isinstance(n.func, ast.Name) and n.func.id == name)
+                      or (isinstance(n.func, ast.Attribute) and n.func.attr == name))]
+        assert calls, (
+            f"{name} is never CALLED in the reference runner, so the gate does "
+            f"not reach the domain machinery and wiring it would be an addition "
+            f"nothing reaches -- a textual mention in a docstring is not a call")
 
 
 class TestItCanRefuse:

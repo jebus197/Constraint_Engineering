@@ -329,13 +329,52 @@ class TestStepFiveIsDecidedByExecution:
             "step 5 reads NOT DONE although a module produces the list")
 
     def test_the_name_search_is_kept_not_replaced(self):
-        """Removing it would trade one blind proxy for another."""
-        src = (REPO / "scripts"
-               / "which_of_b21s_five_steps_are_built_2026-11-09.py").read_text()
-        assert "SELECTABLE_NAMES" in src
-        assert "definitions(nm) for nm in SELECTABLE_NAMES" in src, (
-            "the lexical search was removed rather than kept beside the "
-            "behavioural one")
+        """Removing it would trade one blind proxy for another.
+
+        ★ CONVERTED FROM SOURCE TEXT TO EXECUTION, 2026-11-12, entry B158. This
+        asserted the literal `"definitions(nm) for nm in SELECTABLE_NAMES"`,
+        which is a comprehension's exact spelling -- a `for` loop doing the
+        identical thing would have turned it red, and a copy of the line in a
+        comment would have kept it green. The claim is that the LEXICAL search
+        is kept BESIDE the behavioural one, so what must be checked is that it
+        still exists and still searches.
+        """
+        m = self._mod()
+        names = getattr(m, "SELECTABLE_NAMES", None)
+        assert isinstance(names, (tuple, list)) and names, (
+            "SELECTABLE_NAMES is gone or empty, so the lexical half searches "
+            "for nothing")
+        assert callable(getattr(m, "definitions", None)), (
+            "`definitions` is gone, so there is nothing for the lexical half "
+            "to search with")
+
+        #: IT MUST STILL SEARCH, not merely exist -- but the POSITIVE CONTROL
+        #: must be a name the tree actually defines.
+        #:
+        #: ★ MY FIRST VERSION OF THIS ASSERTED A HIT ON THE 7 SELECTABLE NAMES
+        #: AND WAS WRONG, 2026-11-12. `definitions` returns [] for all 7 on the
+        #: live tree, and that is the truth rather than a defect: the lexical
+        #: half is kept as a CROSS-CHECK beside the behavioural one, so 0 hits
+        #: means the shape is not defined under those names, which is exactly
+        #: what the step-5 verdict is for. Demanding a hit would have made this
+        #: test fail whenever the lexical answer was honestly empty -- a probe
+        #: manufacturing the failure it reports.
+        control = m.definitions("definitions")
+        assert control, (
+            "`definitions` cannot find a function this very module defines, so "
+            "the lexical search is inert rather than merely empty-handed")
+        assert any(h.endswith(".py:189") or "which_of_b21s" in h
+                   for h in control), control
+        #: the 7 are reported, not asserted: an empty answer is a finding about
+        #: the tree and not about this test.
+        lexical = {nm: m.definitions(nm) for nm in names}
+        assert isinstance(lexical, dict) and len(lexical) == len(names), lexical
+
+        #: AND IT MUST DISCRIMINATE. A search returning something for an
+        #: invented name is a search that decides nothing.
+        assert not m.definitions("a_name_no_module_defines_2026_11_12"), (
+            "`definitions` returns hits for an invented name, so it cannot "
+            "distinguish a module that defines the shape from one that does not")
 
     def test_it_refuses_a_module_that_does_not_produce_the_shape(self, tmp_path,
                                                                  monkeypatch):

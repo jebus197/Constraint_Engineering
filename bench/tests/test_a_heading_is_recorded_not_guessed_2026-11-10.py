@@ -220,13 +220,75 @@ class TestEverySpokenGeneratorAppliesTheConvention:
             f"{[p.name for p in hits]}. His ruling governs the generated TTS "
             f"files, plural.")
 
+    @staticmethod
+    def _decisions_generator():
+        import importlib.util                                  # noqa: PLC0415
+        path = REPO / "scripts" / "build_decisions_file_2026-11-07.py"
+        spec = importlib.util.spec_from_file_location("_bdf", path)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m, path
+
     def test_the_decisions_generator_does_not_define_its_own_copy(self):
-        """One definition. A copy is a second thing to drift."""
-        src = (REPO / "scripts" / "build_decisions_file_2026-11-07.py").read_text(
-            encoding="utf-8")
-        assert "def _mark_my_paragraphs" not in src, (
-            "the decisions generator defines its own copy of the marker; it "
-            "must call the single implementation it already receives as `mrb`")
+        """One definition. A copy is a second thing to drift.
+
+        ★ CONVERTED FROM SOURCE TEXT TO A PARSED TREE, 2026-11-12, entry B158.
+        This asserted `"def _mark_my_paragraphs" not in src`, which is a
+        description of the file's spelling. The syntax tree answers the question
+        the test is actually asking, and catches what the literal cannot: a
+        decorated definition, an `async def`, a method on a class, or any
+        spacing other than the single space the literal assumed.
+        """
+        import ast                                             # noqa: PLC0415
+
+        _m, path = self._decisions_generator()
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        own = [n.lineno for n in ast.walk(tree)
+               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and n.name == "_mark_my_paragraphs"]
+        assert not own, (
+            f"the decisions generator defines its own copy of the marker at "
+            f"line(s) {own}; it must call the single implementation it already "
+            f"receives as `mrb`")
+
+    def test_the_generator_USES_the_marker_it_receives(self):
+        """★ THE POSITIVE HALF, AND IT IS THE STRONGER ONE. Not defining a copy
+        is not the same as using the shared one -- a generator that defined
+        nothing and called nothing would pass the test above. A fake `mrb` is
+        passed whose marker appends a sentinel, and the sentinel must reach the
+        rendered output."""
+        m, _path = self._decisions_generator()
+        sentinel = "SENTINEL_FROM_THE_SHARED_MARKER_2026_11_12"
+
+        class _FakeMRB:
+            #: `render` touches exactly 2 attributes of `mrb`, derived by syntax
+            #: tree rather than guessed: `_spoken` and `_mark_my_paragraphs`.
+            #: A thinner fake failed with an AttributeError on `_spoken`, which
+            #: is the fake being wrong and not the subject.
+            _spoken = staticmethod(lambda t: t)
+
+            @staticmethod
+            def _mark_my_paragraphs(lines, exempt_spans, headings):
+                lines.append(sentinel)
+                return 1
+
+        out = m.render(_FakeMRB(), [], spoken=True)
+        assert sentinel in out, (
+            "the decisions generator did not use the marker it was handed, so "
+            "his asterisk convention comes from somewhere this test cannot see")
+
+    def test_a_missing_marker_REFUSES_loudly_rather_than_silently(self):
+        """The branch's own promise is 'LOUD, not silent'. An absent marker must
+        stop the file being written, not produce one without the convention."""
+        m, _path = self._decisions_generator()
+
+        class _MRBWithoutIt:
+            _spoken = staticmethod(lambda t: t)   # present, so the refusal below
+                                                  # can only be about the marker
+
+        with pytest.raises(SystemExit) as e:
+            m.render(_MRBWithoutIt(), [], spoken=True)
+        assert "_mark_my_paragraphs" in str(e.value), str(e.value)
 
     def test_the_spoken_decisions_file_carries_the_convention(self):
         """END TO END on the artefact he actually listens to."""

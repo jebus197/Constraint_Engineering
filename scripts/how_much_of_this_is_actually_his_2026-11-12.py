@@ -187,9 +187,25 @@ def main() -> int:
 
     print()
     print("2. HOW MANY CARRY NO RECORDED RULING AT ALL")
+    #: ★ CORRECTED 2026-11-12, THE SAME DAY IT WAS WRITTEN, AND THE FAULT IS THE
+    #: ONE THIS SCRIPT EXISTS TO CATCH. `not ruled` means NO RULING DATE IS
+    #: RECORDED. That is NOT the same as "needs a ruling": an entry that is mine
+    #: and asks him nothing has no ruling date either, because none was ever
+    #: owed. Section 6 below used this set under the label "needing a RULING he
+    #: has never given", which was FALSE for B158 and B159 -- 2 entries raised
+    #: hours earlier that carry `no_ruling_needed` in their authored detail. A
+    #: figure answering a different question from the one its label asks is
+    #: exactly the defect recorded on 2026-10-31, where 6 per cent was 1,705 per
+    #: cent. The 2 sets are now reported SEPARATELY and section 6 intersects
+    #: with OWED.
     unruled = [r for r in rows if not r["ruled"]]
     print("      " + ", ".join(r["ident"] for r in unruled))
-    report("no ruling recorded", len(unruled), n)
+    report("no ruling DATE recorded (which is not the same as needing one)",
+           len(unruled), n)
+    unruled_owed = [r for r in unruled if r["kind"] == "OWED"]
+    print("      of those, classified OWED so a ruling IS owed: "
+          + ", ".join(r["ident"] for r in unruled_owed))
+    report("no ruling recorded AND a ruling owed", len(unruled_owed), n)
 
     print()
     print("3. THE CLASSIFIER'S OWN SPLIT, which the turn hook prints")
@@ -248,13 +264,32 @@ def main() -> int:
 
     print()
     print("6. THE DEFENSIBLE FLOOR OF WHAT IS OWED TO HIM")
-    print("      Entries needing a RULING he has never given: "
-          + ", ".join(r["ident"] for r in unruled))
-    print("      Entries needing only PERMISSION, which is a word not a day: "
-          + ", ".join(r["ident"] for r in caught))
-    print("      Entries whose residue cannot be decided by text "
-          "(3 predicates disagree): "
-          + ", ".join(r["ident"] for r in ruled_owed if True))
+    mine_movable = [r for r in mine if not r["residue_his"]]
+    groups = {
+        "needing a RULING he has never given": unruled_owed,
+        "needing only PERMISSION, which is a word not a day": caught,
+        "carrying his ruling, residue undecidable by text (3 predicates "
+        "disagree)": ruled_owed,
+        "MINE and movable without him": mine_movable,
+    }
+    for label, g in groups.items():
+        print(f"      {len(g):2d}  {label}: "
+              + (", ".join(r["ident"] for r in g) or "none"))
+    #: ★ THE INVARIANT, ASSERTED RATHER THAN HOPED FOR. The 4 groups must
+    #: PARTITION the open set: no entry in 2 groups, none in none. Without this
+    #: a relabelling can quietly double-count, which is how section 6 came to
+    #: describe 2 of my own entries as rulings he owed.
+    seen: dict[str, list[str]] = {}
+    for label, g in groups.items():
+        for r in g:
+            seen.setdefault(r["ident"], []).append(label)
+    dupes = {k: v for k, v in seen.items() if len(v) > 1}
+    missing = [r["ident"] for r in rows if r["ident"] not in seen]
+    if dupes or missing:
+        print(f"\n  PARTITION BROKEN -- in 2 groups: {dupes}; in none: {missing}")
+        return 1
+    print(f"      --  the 4 groups partition all {n} open entries exactly: "
+          f"0 in 2 groups, 0 in none")
     return 0
 
 

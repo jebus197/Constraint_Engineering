@@ -62,11 +62,44 @@ def seat_text() -> str:
 
 
 def test_the_runner_still_assembles_both_files():
-    """If this concatenation goes, the clause stops reaching seats silently."""
-    src = (REPO / "bench/reference_runner_v3.py").read_text()
-    assert 'cdsfl_text += "\\n\\n" + _operational_path.read_text(encoding="utf-8")' in src, (
-        "reference_runner_v3 no longer appends the operational directive to the "
-        "seat text, so every clause in it reaches nobody")
+    """If this concatenation goes, the clause stops reaching seats silently.
+
+    ★ CONVERTED FROM A SOURCE LITERAL TO A PARSED TREE, 2026-11-12, entry B158.
+    This matched one exact line of `reference_runner_v3`, including its
+    `encoding="utf-8"` keyword. That is the fragile shape this guard's own
+    census exists to count: 4 guards of this class broke on CORRECT changes in a
+    single day, and reformatting the keyword, splitting the line, or renaming
+    the local would all have turned it red while the behaviour was intact.
+
+    ★ WHAT IT GUARDS IS A REPRODUCTION, WHICH IS WHY IT CANNOT SIMPLY EXECUTE.
+    `seat_text()` above REPRODUCES the runner's assembly rather than importing
+    it, for the reason its own docstring gives: importing the runner executes a
+    20,000-line module for 2 file reads. So this test's job is to detect the
+    reproduction DRIFTING from the original, and the question it must ask is
+    structural -- does the runner still append the operational file to the seat
+    text -- not whether one line is spelled a particular way.
+    """
+    import ast                                                 # noqa: PLC0415
+
+    tree = ast.parse((REPO / "bench/reference_runner_v3.py").read_text(
+        encoding="utf-8"))
+    appends = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.AugAssign)
+                and isinstance(node.target, ast.Name)
+                and node.target.id == "cdsfl_text"):
+            continue
+        reads = [c for c in ast.walk(node.value)
+                 if isinstance(c, ast.Call)
+                 and isinstance(c.func, ast.Attribute)
+                 and c.func.attr == "read_text"]
+        if reads:
+            appends.append(node.lineno)
+    assert appends, (
+        "reference_runner_v3 no longer appends a file's contents to "
+        "`cdsfl_text`, so the operational directive reaches no seat and every "
+        "clause in it reaches nobody -- `seat_text()` in this file reproduces "
+        "an assembly the runner no longer performs")
 
 
 def test_the_clause_reaches_a_seat():

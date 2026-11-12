@@ -59,21 +59,44 @@ def test_record_miss_exists_and_has_one_home(routing):
         "which this module's own docstring names as the drift to avoid")
 
 
-def test_resolve_or_alarm_delegates_to_it(routing):
-    """1 DEFINITION, 2 CALLERS. A second copy is the defect, not the fix."""
-    import ast
-    src = (REPO / "bench/routing.py").read_text(encoding="utf-8")
-    tree = ast.parse(src)
-    body = None
-    for n in ast.walk(tree):
-        if isinstance(n, ast.FunctionDef) and n.name == "resolve_or_alarm":
-            body = ast.get_source_segment(src, n)
-    assert body, "resolve_or_alarm is gone"
-    assert "record_miss(" in body, (
-        "resolve_or_alarm no longer delegates, so the recording exists twice")
-    assert "_LOOKUP_MISSES.append" not in body, (
-        "resolve_or_alarm still appends to the ledger itself, so there are 2 "
-        "recording paths and they can drift")
+def test_resolve_or_alarm_delegates_to_it(routing, monkeypatch):
+    """1 DEFINITION, 2 CALLERS. A second copy is the defect, not the fix.
+
+    ★ CONVERTED FROM SOURCE TEXT TO EXECUTION, 2026-11-12, entry B158. This
+    extracted the function's source segment and asserted `"record_miss(" in
+    body` with `"_LOOKUP_MISSES.append" not in body`. Both are descriptions of
+    the body's spelling, and `execute-do-not-grep` names what they cannot do:
+    `None and record_miss(...)` contains the call and calls nothing, which is
+    the shape recorded on 2026-11-09 when 2 of 2 reversions came back green.
+
+    ★ BOTH HALVES ARE NOW DRIVEN, and they are different claims. The POSITIVE:
+    a spy replaces `record_miss` and must fire exactly once on a miss. The
+    NEGATIVE, which is the half that matters: with `record_miss` replaced by a
+    NO-OP, the ledger must NOT grow -- if `resolve_or_alarm` also appended
+    directly there would be a second recording path, and a no-op delegate could
+    not suppress it.
+    """
+    #: POSITIVE -- the delegate fires, exactly once.
+    calls = []
+    monkeypatch.setattr(routing, "record_miss",
+                        lambda *a, **k: calls.append((a, k)))
+    routing.resolve_or_alarm({"known": 1}, "unknown-seat-positive",
+                             "composer directive-set mapping", default="FB")
+    assert len(calls) == 1, (
+        f"resolve_or_alarm called the recorder {len(calls)} time(s) on 1 miss, "
+        f"so it no longer delegates exactly once")
+
+    #: NEGATIVE -- with the delegate neutered, NOTHING records. A second path
+    #: inside resolve_or_alarm would still append and the count would rise.
+    before = len(routing.lookup_misses())
+    monkeypatch.setattr(routing, "record_miss", lambda *a, **k: None)
+    routing.resolve_or_alarm({"known": 1}, "unknown-seat-negative",
+                             "composer directive-set mapping", default="FB")
+    after = len(routing.lookup_misses())
+    assert after == before, (
+        f"the miss ledger grew {before} -> {after} while the only recorder was "
+        f"a no-op, so resolve_or_alarm holds a SECOND recording path and the 2 "
+        f"can drift apart")
 
 
 def test_a_miss_is_recorded_and_returns_the_default(routing):
@@ -203,19 +226,52 @@ def test_the_producer_can_see_the_record_not_just_the_log():
 
     The predicate must therefore test for the RECORD. A log line alone leaves
     nothing any downstream instrument can count.
+
+    ★ CONVERTED FROM SOURCE TEXT TO EXECUTION, 2026-11-12, entry B158. This
+    asserted 3 literals in the producer's source: `_records_unconditionally`,
+    `ast.parse` and `_composer_records`. The last is a LOCAL VARIABLE, so no
+    importable surface carries it and the literal was the only handle on it --
+    but the first 2 describe a predicate that can simply be CALLED, and calling
+    it tests the property instead of the spelling. The producer importing `ast`
+    proves nothing about whether its predicate discriminates.
     """
-    src = (REPO / "scripts"
-           / "how_many_places_must_change_to_add_a_model_2026-10-16.py"
-           ).read_text(encoding="utf-8")
-    assert "_records_unconditionally" in src, (
-        "the producer no longer tests STRUCTURALLY for the record, so a "
-        "short-circuited call reads to it as a live one -- which is how 2 of "
-        "2 reversions came back green on 2026-11-09")
-    assert "ast.parse" in src, (
-        "the producer has gone back to a textual predicate")
-    assert "_composer_records" in src, (
-        "the producer has no separate notion of recording, so the ANNOUNCED "
-        "branch cannot exist")
+    import importlib.util                                      # noqa: PLC0415
+
+    path = (REPO / "scripts"
+            / "how_many_places_must_change_to_add_a_model_2026-10-16.py")
+    spec = importlib.util.spec_from_file_location("_hmp", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    pred = getattr(mod, "_records_unconditionally", None)
+    assert callable(pred), (
+        "the producer no longer exposes a structural predicate for the record, "
+        "so a short-circuited call reads to it as a live one -- which is how "
+        "2 of 2 reversions came back green on 2026-11-09")
+
+    #: 3 CONSTRUCTED HANDLERS. The 3rd is the one that matters: a substring
+    #: search says the call is there, and it records nothing.
+    logs_only = ('def handler():\n'
+                 '    log("COMPOSER FALLBACK for %s" % seat)\n'
+                 '    return default\n')
+    records = ('def handler():\n'
+               '    log("COMPOSER FALLBACK for %s" % seat)\n'
+               '    record_miss(key, where)\n'
+               '    return default\n')
+    short_circuited = ('def handler():\n'
+                       '    None and record_miss(key, where)\n'
+                       '    return default\n')
+
+    assert pred(records, 1, 20) is True, (
+        "a handler that calls the recorder as a whole statement is not seen as "
+        "recording, so the producer cannot notice the fix it exists to measure")
+    assert pred(logs_only, 1, 20) is False, (
+        "a handler that only LOGS is reported as recording, which is the "
+        "original defect: a log line leaves nothing any instrument can count")
+    assert pred(short_circuited, 1, 20) is False, (
+        "`None and record_miss(...)` is reported as recording. It contains the "
+        "name and records nothing, and a substring predicate cannot tell them "
+        "apart -- the exact reversion that came back green on 2026-11-09")
 
 
 def test_the_silent_count_is_now_zero():

@@ -320,6 +320,107 @@ def may_compose(a: str, b: str) -> tuple[bool, str]:
         f"formally defined conversion; report each in its own context")
 
 
+#: ★ THE 2 QUESTIONS A STEERING SURFACE MUST ANSWER, AND THEY ARE NOT 1.
+#: Added 2026-11-12 as entry B162, on his instruction to build the fix for the
+#: steering disagreement. A seat answering as a harness seat contradicted the
+#: orchestrator's own proposer about a pooled hazard ratio from 3 unlike trial
+#: sites: the proposer said statistics, the seat said biology, and the seat was
+#: right for a reason the manifest already states. Statistics declares
+#: `severity_scale = "none"` with the reason that a statistical error's
+#: consequence belongs to the application it serves, and the application was a
+#: vaccine dosing claim, so the consequence is patient harm.
+#:
+#: BOTH ANSWERS WERE CORRECT ABOUT DIFFERENT QUESTIONS. The SUBJECT domain
+#: decides which expert encoding a seat receives. The CONSEQUENCE domain decides
+#: what counts as a critical finding. A surface returning 1 label cannot express
+#: that, and the run record then cannot say which scale a finding was judged on.
+#:
+#: THE DATA WAS ALREADY DECLARED AND THE FLAG WAS ALREADY DEAD. Measured before
+#: writing this: 5 of the 10 real domains declare `severity_scale = "none"` with
+#: `inherits_from_application = true` -- mathematics, physics, statistics,
+#: information_science and logistics -- and `cross_domain` declares a composed
+#: scale, so 6 of 10 are cases where subject and consequence can differ. The
+#: flag `inherits_from_application` was written into `severity()`'s return by
+#: exactly 1 line and read by 0 callers: `may_compose` infers inheritance from
+#: `scale == "none"` instead, and the command-line report reads only the scale
+#: and the critical level. So this is not a new field; it is a declaration
+#: nothing reached, which the additive standard forbids in its symmetric form.
+#:
+#: AN UNRESOLVED CONSEQUENCE IS NAMED, NEVER DEFAULTED. The case that matters is
+#: a subject which inherits and no application given. Today that silently yields
+#: a scale of "none" and nothing notices. Here it returns `resolved=False` with
+#: a reason, so a caller must handle it rather than inherit a blank -- a gate
+#: admitting findings on an unresolved scale is the fault B143 and B144 already
+#: record from the other side.
+def consequence_domain(subject: str,
+                       application: str | None = None) -> dict[str, Any]:
+    """The domain whose severity scale judges a finding about `subject`.
+
+    Returns the subject's own scale where it declares one; the application's
+    where the subject declares none and inherits; and an UNRESOLVED answer,
+    named, where it inherits and no application is given.
+
+    `how` is always one of "own", "inherited", "composed" or "unresolved", so a
+    caller can record WHY a scale was used and not merely which.
+    """
+    subj = resolve(subject)
+    sev = severity(subj)
+    if sev["scale"] not in (None, "none", "composed"):
+        return {"subject": subj, "consequence": subj, "how": "own",
+                "scale": sev["scale"], "critical_level": sev["critical_level"],
+                "resolved": True,
+                "why": f"{subj} declares {sev['scale']!r} as its own scale"}
+    if sev["composes_from_selected"] or sev["scale"] == "composed":
+        #: `scale` is None, not "composed". The CONTRACT a caller depends on is
+        #: that `scale` holds a USABLE scale or nothing at all, so an
+        #: unresolved answer can never be read as one -- `how` already carries
+        #: the "composed" information. Its own guard caught this: the first
+        #: version returned "composed" here while reporting resolved=False,
+        #: which is a scale on an answer that has none.
+        return {"subject": subj, "consequence": None, "how": "composed",
+                "scale": None, "critical_level": None, "resolved": False,
+                "why": (f"{subj} composes its scale from the domains selected "
+                        f"for a run, so it cannot be resolved from the subject "
+                        f"alone")}
+    if not sev["inherits_from_application"]:
+        return {"subject": subj, "consequence": None, "how": "unresolved",
+                "scale": None, "critical_level": None, "resolved": False,
+                "why": (f"{subj} declares no scale and does not declare that it "
+                        f"inherits one, so the manifest cannot say what judges "
+                        f"a finding about it")}
+    if application is None:
+        return {"subject": subj, "consequence": None, "how": "unresolved",
+                "scale": None, "critical_level": None, "resolved": False,
+                "why": (f"{subj} inherits its scale from the application it "
+                        f"serves and no application was given; "
+                        f"{sev['reason'] or 'no reason recorded'}")}
+    app = resolve(application)
+    app_sev = severity(app)
+    if app_sev["scale"] in (None, "none", "composed"):
+        return {"subject": subj, "consequence": app, "how": "unresolved",
+                "scale": None, "critical_level": None, "resolved": False,
+                "why": (f"{subj} inherits from the application and the "
+                        f"application {app} declares no scale of its own "
+                        f"either, so the chain does not terminate")}
+    return {"subject": subj, "consequence": app, "how": "inherited",
+            "scale": app_sev["scale"],
+            "critical_level": app_sev["critical_level"], "resolved": True,
+            "why": (f"{subj} declares no scale and inherits from the "
+                    f"application; {app} declares {app_sev['scale']!r}")}
+
+
+def inheriting_domains() -> list[str]:
+    """Every domain whose consequence scale is not its own. 6 of 10 on the
+    manifest of 2026-11-12, which is the figure B162 rests on."""
+    out = []
+    for dom in domains():
+        sev = severity(dom)
+        if (sev["inherits_from_application"] or sev["composes_from_selected"]
+                or sev["scale"] in (None, "none", "composed")):
+            out.append(dom)
+    return out
+
+
 def owed() -> list[tuple[str, str, pathlib.Path, str]]:
     """(domain, subdomain, path, reason) for every encoding not yet written."""
     out = []

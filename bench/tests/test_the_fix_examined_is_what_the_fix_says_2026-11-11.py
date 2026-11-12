@@ -113,13 +113,58 @@ class TestNothingTheClosureBoughtIsGivenBack:
             "chemistry", _F(CLAIM, f"correct it to: {CLAIM}"))
         assert r["admits"] is True
 
-    def test_the_parser_is_imported_not_copied(self):
-        """★ A SECOND COPY OF A GRAMMAR IS 2 DEFINITIONS OF WHAT A FIX BLOCK IS."""
-        src = (ROOT / "bench" / "domain_immune.py").read_text(encoding="utf-8")
-        assert "import reference_runner_v3 as _rr" in src
-        assert "_rr.parse_search_replace_blocks" in src
-        assert "<<<< SEARCH" not in src, (
-            "the block grammar has been copied into this module; import it")
+    def test_the_parser_is_imported_not_copied(self, monkeypatch):
+        """★ A SECOND COPY OF A GRAMMAR IS 2 DEFINITIONS OF WHAT A FIX BLOCK IS.
+
+        ★ CONVERTED FROM SOURCE TEXT TO EXECUTION, 2026-11-12, entry B158. This
+        asserted 3 literals in `bench/domain_immune.py`: that it imports the
+        runner, that it calls `_rr.parse_search_replace_blocks`, and that the
+        string `<<<< SEARCH` does NOT appear. All 3 are descriptions of the
+        module, and `execute-do-not-grep` names exactly what they cannot do --
+        a producer and a consumer that disagree are each individually correct
+        about themselves, so no text assertion can see the disagreement. The
+        census guard's own advice is to CONVERT rather than widen its pinned
+        set, and this is that conversion.
+
+        ★ HOW IT EXECUTES THE SAME CLAIM, MORE STRONGLY. The runner's parser is
+        replaced with a stub that finds nothing. If `domain_immune` held its own
+        copy -- whether of the function or of the grammar -- the stub could not
+        reach it and the answer would not move. So the behaviour DIFFERENCE is
+        the proof that there is 1 definition, which no spelling of the import
+        can establish.
+
+        ★ THE FIRST PROBE OF THIS USED A BLOCK THE PARSER REJECTS, so the
+        patched and unpatched answers were identical and the test would have
+        passed on nothing. The grammar is `<<<< SEARCH <path>` / `====` /
+        `>>>> REPLACE` with 4 angle brackets, not 7, and the block below is
+        asserted to parse before it is relied on.
+        """
+        import reference_runner_v3 as _rr                      # noqa: PLC0415
+
+        block = ("<<<< SEARCH path/to/f.py\n"
+                 "old line\n"
+                 "====\n"
+                 "new line\n"
+                 ">>>> REPLACE\n")
+        #: ANTI-VACUITY: if the grammar ever changes this block stops parsing,
+        #: and the test below would compare 2 identical fallbacks.
+        assert _rr.parse_search_replace_blocks(block), (
+            "the probe block no longer parses, so this test would compare the "
+            "raw fallback with itself and pass on nothing")
+
+        before = di._fix_side_text(block)
+        assert before == "new line", before
+
+        monkeypatch.setattr(_rr, "parse_search_replace_blocks", lambda raw: [])
+        after = di._fix_side_text(block)
+
+        assert after != before, (
+            "stubbing the runner's parser did not change what domain_immune "
+            "returns, so this module is not using the runner's definition -- "
+            "it holds its own copy of the block grammar")
+        assert after == block.strip(), (
+            "with no blocks parsed the admission path must fall back to the raw "
+            "text, which is the conservative answer its own docstring promises")
 
     def test_an_import_failure_degrades_rather_than_raising(self, monkeypatch):
         """A gate that crashes is worse than a gate that is conservative."""

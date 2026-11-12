@@ -150,7 +150,22 @@ def interval(k: int, n: int, label: str) -> str:
     rather than retyped -- a retyped copy is a 2nd implementation wearing the
     canonical name, and the board guard asserts every `_iv` agrees with every
     other at 6 (k, n) pairs.
+    ★ AN EMPTY SET IS A RESULT, NOT A CRASH. Added 2026-11-12. This raised
+    `ZeroDivisionError` whenever `n` was 0, and on 2026-11-12 that happened for
+    the best possible reason: the B159 repair linked all 9 superseded note
+    standards into `MEMORY_ARCHIVE.md`, so the "named in NEITHER index" set
+    became EMPTY and this producer could not represent its own success. The
+    commit board refused on it, correctly, and the failure was a consequence of
+    a fix rather than of a defect.
+
+    A PROPORTION OVER AN EMPTY SET HAS NO VALUE, AND SAYING SO IS THE HONEST
+    OUTPUT. Reporting 0.000000 would assert a rate that was never measured,
+    which is the figure-answering-a-different-question fault this project
+    records. The COUNT is still printed, because 0 of 0 is informative.
     """
+    if n == 0:
+        return (f"{k} of {n} -- the set is EMPTY, so no proportion exists and "
+                f"none is reported ({label})")
     (wl, wh), (cl, ch), disagreement = _iv(k, n)
     _agree(f"{label}: the helper's own 2 routes", disagreement, 0.0, 1e-9)
     return (f"{k} of {n} = {k / n:.6f}  Wilson [{wl:.6f}, {wh:.6f}]  "
