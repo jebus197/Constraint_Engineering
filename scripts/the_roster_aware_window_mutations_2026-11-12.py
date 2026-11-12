@@ -86,4 +86,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # A `--help` MUST NOT run: this script WRITES, mutating a tracked file
+    # in place and restoring it from the bytes it read first.
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from _cli_help import answer_help
+    answer_help(__doc__, __file__)
     sys.exit(main())

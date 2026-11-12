@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 12 November 2026 08:41 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 12 November 2026 18:46 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -39,7 +39,21 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-11-01 12:05 GMT
+## CURRENT STATE — 2026-11-12 17:52 GMT
+
+**THE BOARD.** `sim/shakedown-2026-09-29`, in sync with its origin before this save. **299 entries: 272 DONE, 12 OPEN, 10 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()`, which is the canonical counter and the only one to use.
+
+**★ OF THOSE 12 OPEN ENTRIES, THE HONEST PARTITION IS 4 RULINGS AND 4 PERMISSIONS, NOT THE 8 THE TURN HOOK PRINTS.** Producer: `scripts/how_much_of_this_is_actually_his_2026-11-12.py`, every proportion carrying Wilson and Clopper-Pearson intervals on 2 routes. **4 of 12 carry no recorded ruling at all** — B141 the descriptor rule's cost guard, B142 the settings role mapping, B143 the appendix severity formula, B154 the encoding decisions — at 0.333333, Wilson [0.138120, 0.609378]. **4 more need only his permission** — B56 the demotion operating point, B104 the spoken identifier convention, B140 the 2 routing rulings, B144 the critical cut of 0.7. **The remaining 4 — B77, B84, B94, B125 — carry a ruling of his already, and whether anything is still owed on them cannot be decided from the text:** 3 predicates for "was this asked after he ruled" disagree on all 4, at 1.000000, Wilson [0.510109, 1.000000]. No 4th predicate was written, on the project's own rule that a surface defeating 3 predicates is the point to stop and raise it.
+
+**HALF THE QUEUE IS NEW FROM THE MOST RECENT WORK, AND THAT IS WORTH KNOWING BEFORE READING ANY REPORT OF IT.** 6 of the 12 were raised on or after 2026-11-10, at 0.500000, Wilson [0.253782, 0.746218], Clopper-Pearson [0.210945, 0.789055]. Work that finds defects raises entries, so a falling DONE-to-OPEN ratio is not evidence of regression and must not be read as one.
+
+**A STOP HOOK NOW DISTINGUISHES AN ENTRY THAT ASKS NOTHING FROM AN ENTRY WAITING ON HIS PERMISSION.** `hooks/work_not_narrate.py` holds `_residue_is_his`, installed 2026-11-12 on his `y`. The refusal budget was already conditional on movable work; it was counting an entry as movable whenever the entry asked no question, which is not the same thing. **The file shares an inode with `~/.claude/hooks/work_not_narrate.py`, so the repository copy and the live hook are 1 file: edit it IN PLACE.** A copy-and-rename breaks the link and silently unhooks the live gate.
+
+**A `--help` MUST NOT BE ABLE TO EDIT THE TREE, AND 6 MUTATION HARNESSES COULD.** A harness overwrites a tracked source file in place and restores it, so running one with the flag edits the repository. `scripts/help_writers_rate_2026-09-17.py` measured 7 of 749 tracked scripts in that state and the repair took it to 0 of 749 under both forms. **Every new script that writes anything must call `scripts/_cli_help.py:answer_help` at the top of its `__main__` block** — it returns without doing anything on an empty argv, so a plain run is unaffected.
+
+**SAVING IS NOT COMPLETE UNTIL THE CAPTURE AND THE PUSH HAPPEN.** Unchanged and still the easiest step to miss: documents, memory, commit, push, and the first 2 look finished on their own.
+
+## CURRENT STATE — 2026-11-01 12:05 GMT (SUPERSEDED by the block above)
 
 **THE BOARD.** `sim/shakedown-2026-09-29`, commit `619a7081`. **202 entries: 177 DONE, 11 OPEN, 9 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()`, which is the canonical counter. **The OPEN count fell and then rose overnight** — 7 at the previous save, 15 once the founder's annotations were read, 10 after 5 closures, 11 when the night's last finding was raised as B63. A single total cannot express that, so the trace is printed by `scripts/how_many_decisions_actually_need_him_2026-11-01.py` instead.
 

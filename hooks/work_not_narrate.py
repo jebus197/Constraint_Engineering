@@ -513,8 +513,17 @@ def movable_count() -> int:
         bodies = mod.bodies()
         n = 0
         for e in opens:
-            d = mod.classify_text(e.state or "", e.ruled, bodies.get(e.ident, ""))
-            if not d.get("live_asks"):
+            body = bodies.get(e.ident, "")
+            d = mod.classify_text(e.state or "", e.ruled, body)
+            #: ★ BOTH HALVES OR NEITHER. The NAMING and the BUDGET must
+            #: agree about what "movable" means, or the gate raises a
+            #: budget for entries it then refuses to name -- the exact
+            #: producer-consumer divergence this docstring warns about.
+            #: Measured 2026-11-12 after that night's closures: 5 open
+            #: entries pass live_asks and 3 of them say in their own text
+            #: that the residue is his, so the honest count is 2. The
+            #: budget moves from min(40, 8*5) = 40 to min(40, 8*2) = 16.
+            if not d.get("live_asks") and not _residue_is_his(body):
                 n += 1
         return n
     except Exception:                                          # noqa: BLE001
@@ -571,6 +580,58 @@ def open_items() -> tuple[int, str]:
         return 0, ""
 
 
+#: ★ A MOVABLE ENTRY IS NOT THE SAME AS AN ENTRY THAT DOES NOT ASK HIM A
+#: QUESTION. Added 2026-11-12. `_first_movable` skips entries whose text still
+#: ASKS him something, which repaired the 2026-11-09 case where the gate named
+#: an entry awaiting his ruling on every turn. It does NOT catch an entry whose
+#: residue is his PERMISSION, stated without a question. B56 is exactly that:
+#: its own body says, in capitals, that its residue "IS STILL HIS
+#: AUTHORISATION", because wiring the rule changes which seats the harness
+#: dispatches, against his standing rule never to bench a model.
+#:
+#: MEASURED 2026-11-12, and the first figure written for this was WRONG. A note
+#: prepared before measuring claimed 1 of 11. Deriving the language from the
+#: entries themselves gives 3 of 11 -- B56, B104 and B140 -- Wilson 95%
+#: [0.097461, 0.565645]. After that night's 6 closures the open set falls to 13
+#: and the movable set to 5, of which the SAME 3 are his, so only 2 are mine.
+#: At 5 the budget is min(40, 40) = 40 and at 2 it is 16, so the over-count now
+#: BITES, which it did not when the set was 11.
+#:
+#: IT IS A POLARITY TEST, NOT A KEYWORD TEST, and that is what the measurement
+#: forced. B146 carries the sentence "if it holds then you should implement it"
+#: -- a ruling ALREADY GIVEN, which is an instruction TO ME. A phrase-presence
+#: list excludes it and loses a movable entry. B56 and B104 each carry BOTH a
+#: past ruling and a live residue, so "has he ruled?" cannot be the question.
+#: The predicate matches only a FORWARD-LOOKING claim that something is still
+#: his.
+_HIS_RESIDUE = re.compile(r"""(
+    is\s+still\s+his\s+authoris | own\s+residue\s+is\s+unchanged
+  | for\s+the\s+founder\s+to\s+authoris
+  | wh(y|ich)\s+this\s+is\s+his\s+and\s+not\s+mine
+  | this\s+is\s+his\s+and\s+not\s+mine
+  | widen\s+his\s+own\s+scope
+  | (awaits?|await|pending|needs?|requires?)\s+his\s+(permission|authoris|ruling|sign|consent)
+  | his\s+to\s+authoris | only\s+he\s+(may|can)
+  | behaviour\s+change\s+for\s+the\s+founder
+  #: ★ 2 CLAUSES ADDED AFTER THE PREDICATE WAS FALSIFIED ON B144. The
+  #: first version caught B56, B104 and B140 and MISSED B144, whose own
+  #: text says "THE DESIGN CONSEQUENCE IS HIS AND IS HELD UNDER HIS `d`".
+  #: Both clauses are lifted from that entry rather than invented. Swept
+  #: over EVERY entry in the list: they newly catch exactly 3, of which
+  #: B144 is the only OPEN one, the other 2 being a WITHDRAWN and a
+  #: DEFERRED entry that are his by their own words. 0 false positives.
+  | (consequence|decision|choice|call)\s+is\s+his\b
+  | held\s+under\s+his\b
+)""", re.I | re.X)
+
+
+def _residue_is_his(body: str) -> bool:
+    """True when the entry's OWN TEXT says what remains is his permission."""
+    try:
+        return bool(_HIS_RESIDUE.search(body or ""))
+    except Exception:          # noqa: BLE001
+        return False           # fail-safe: costs the preference, never the gate
+
 def _first_movable(opens) -> str:
     """The first open entry whose own text does not still ask him something.
 
@@ -587,8 +648,9 @@ def _first_movable(opens) -> str:
         spec.loader.exec_module(mod)
         bodies = mod.bodies()
         for e in opens:
-            kind = mod.classify_text(e.state, e.ruled, bodies.get(e.ident, ""))["kind"]
-            if kind != "OWED":
+            body = bodies.get(e.ident, "")
+            kind = mod.classify_text(e.state, e.ruled, body)["kind"]
+            if kind != "OWED" and not _residue_is_his(body):
                 return e.ident
         return ""
     except Exception:
