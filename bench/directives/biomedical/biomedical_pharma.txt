@@ -30,6 +30,42 @@ SCOPE: Oral solid, oral liquid, and parenteral formulations — conventional sma
 - Verify that analytical methods are validated per ICH Q2(R1): specificity, linearity, accuracy, precision, range, robustness
 - Confirm forced degradation studies demonstrate stability-indicating capability of assay method
 
+[Diagnostic heuristics]
+- If every batch dissolves to near completion at the first timepoint, check the surfactant concentration and the sink-condition margin before concluding the formulation releases fast — a medium carrying excess surfactant dissolves anything and discriminates nothing
+- If dissolution %RSD is high at the early timepoints, check for coning under the paddle before touching the formulation: peak vessels, raising to 75 rpm, or moving to Apparatus IV are method fixes, and a reformulation chasing a method artefact is wasted work
+- If content uniformity fails while the composite assay passes, the defect is blend segregation or weight variation rather than potency — check blend uniformity by sample location and the tablet weight RSD before investigating the API
+- If a degradant appears at 40 C / 75% RH and is absent at long term, check the pathway's activation energy before extrapolating anything — ICH Q1E extrapolation is not available once significant change has occurred at the accelerated condition
+- If assay loss does not match the sum of the detected degradants, look for a non-chromophoric or column-retained species before accepting the method as stability-indicating; mass balance in the forced degradation study is where this is settled
+- If tablets harden on storage and dissolution slows while assay holds, run XRPD and DSC for polymorphic conversion or excipient interaction before increasing the disintegrant
+- If water by Karl Fischer is low and the product still degrades hydrolytically, measure water activity rather than total water — an excipient can hold water that is thermodynamically unavailable while a smaller free fraction drives the reaction
+- If an inhaler delivers the target dose but the fine particle fraction is low, check de-agglomeration in the device and the carrier interaction before re-milling the API — MMAD is a property of the emitted aerosol, not of the bulk powder
+
+[Known failure modes]
+- Developing a dissolution method that passes rather than one that discriminates
+- Assuming excipient compatibility from the IIG database or from prior use in another product instead of measuring it
+- Reading the API's bulk particle size distribution as the aerodynamic size of the emitted dose
+- Extrapolating shelf life from accelerated data after significant change has already occurred at the accelerated condition
+- Taking total water by Karl Fischer as a proxy for water activity
+- Changing API supplier, crystal form or particle size distribution without repeating dissolution and stability
+- Validating assay specificity against known impurities only, so a late-appearing degradant coelutes undetected
+- Scaling granulation or blending by batch size while holding process parameters fixed, so shear rate and impeller tip speed change silently
+- Judging dissolution by the mean when USP <711> acceptance runs in stages with per-unit limits — S1 requires each of 6 units at not less than Q + 5% — so a single failing unit disappears into the average
+
+[Exception catalogue]
+- The immediate-release dissolution target is not universal. Delayed-release products are tested under USP <711> Method B, with an acid stage limiting release and Q applied only in the buffer stage; modified-release products carry multi-point specifications with no single 30 min Q; and for a poorly soluble BCS Class II or IV drug a justified, discriminatory specification at a longer timepoint is accepted. In a BCS biowaiver the criterion inverts in purpose entirely: very rapid dissolution, not less than 85% in 15 min across pH 1.2, 4.5 and 6.8, substitutes for an in-vivo bioequivalence study
+- The long-term storage condition depends on the intended market, not on the standard alone. Climatic Zone IVb requires 30 C / 75% RH as the long-term condition, and a refrigerated product is stored at 5 +/- 3 C long term with 25 C / 60% RH serving as its accelerated condition. Rejecting a 30 C / 75% RH long-term protocol as non-compliant rejects the correct protocol for much of the world
+- ICH Q3A and Q3B thresholds do not govern mutagenic impurities. A DNA-reactive impurity, nitrosamines included, is controlled under ICH M7 against a threshold of toxicological concern of 1.5 ug/day for lifetime exposure, with staged higher limits for shorter durations. At a 100 mg daily dose that is 0.0015%, a factor of about 33 below the 0.05% Q3A reporting threshold, so a genotoxic impurity can be far out of specification while reading as not even reportable under Q3A
+- Some routes forbid a preservative outright, whatever the presentation. Intrathecal, epidural, intracameral and intravitreal products, and large-volume parenterals, must be preservative-free, and benzyl alcohol is contraindicated in neonates. For these, an antimicrobial effectiveness test is not the applicable control at all — terminal sterilisation or aseptic single-dose presentation is
+- Driving water activity down is not always the safe direction. Where the API is a stable hydrate, a water activity below its critical value dehydrates the crystal to a different solid form with different dissolution and different stability, so the specification needs a lower bound as well as an upper one
+- The Acceptance Value calculation is not the only route in USP <905>. For tablets and hard capsules in which the drug substance is at least 25 mg and makes up at least 25% of the unit weight, uniformity of dosage units may be demonstrated by weight variation instead; and where the dose is a measured volume rather than a discrete unit, the applicable controls are deliverable volume under USP <698>
+
+[Tool limitations]
+- HPLC with UV detection sees only species that absorb at the monitored wavelength and that actually elute; a non-chromophoric degradant, or one retained on the column, is invisible. Peak purity does not establish a stability-indicating method — mass balance under forced degradation does
+- Laser diffraction reports an equivalent-sphere volume distribution of the bulk powder and cannot report aerodynamic behaviour. Only a cascade impactor (NGI under USP <601>) measures MMAD, and the 2 routinely disagree for cohesive or non-spherical particles
+- DSC detects a thermal event; it cannot tell you whether that event is an interaction, a eutectic, a dehydration or an artefact of the heating rate. It is a screen, and the binary mixture study held at 40 C / 75% RH is the evidence
+- Arrhenius-based shelf-life prediction software fits a single rate-limiting pathway. Where the degradation route changes with temperature, or a glass transition or polymorphic change intervenes, the extrapolation is confidently wrong and the fit statistics will look sound
+- IVIVC and PBPK software will fit almost any dissolution dataset to an in-vivo profile given enough adjustable parameters. A good fit is not a validated correlation; prediction of a withheld batch within defined error limits is
+
 [Limitations]
 - Does not cover biological or protein formulations (different degradation pathways, cold chain requirements)
 - Does not cover nano-particle or liposomal drug delivery systems

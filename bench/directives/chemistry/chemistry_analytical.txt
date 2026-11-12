@@ -53,6 +53,106 @@ Confirm sample preparation does not introduce bias: test filter adsorption,
 Verify intermediate precision: different analyst, day, instrument where
   possible. RSD <= 2.0% (assay), <= 10% (at LOQ).
 
+[Diagnostic heuristics]
+
+If area RSD fails system suitability while retention-time RSD passes, the fault
+  is in the injection — partial draw, a cored septum, an air bubble in the
+  needle — not in the chromatography. Check the autosampler before touching the
+  column or the mobile phase.
+If early peaks split or shoulder while late peaks stay symmetric, check the
+  sample diluent strength before suspecting a voided column. A diluent stronger
+  than the mobile phase distorts only weakly retained peaks; a channel at the
+  column inlet distorts all of them.
+If tailing rises for basic analytes while neutral peaks hold T <= 2.0, check
+  mobile-phase pH against the analyte pKa and the buffer concentration before
+  replacing the column. A base buffered within about 1 pH unit of its pKa tails
+  for a chemical reason, not a packing one.
+If retention times drift steadily earlier across an isocratic sequence, check
+  the premixed mobile phase for evaporative loss of the organic component
+  before investigating the pump.
+If mass balance in forced degradation falls short of 95%, check the response
+  factor assumption and whether a degradant has lost its chromophore before
+  concluding that an unknown degradant is unaccounted for. A degradant with a
+  response factor of 0.3 relative to the parent reports at 30% of its true
+  level.
+If R^2 >= 0.999 but recovery is biased at the ends of the range, plot the
+  residuals and the response factors before accepting linearity. R^2 is
+  insensitive to the curvature implied by 120% recovery at the top of the range
+  and 90% at the bottom.
+If a UV method is non-linear at LOW absorbance, check adsorption onto the
+  cuvette, the filter and the vial before blaming detector noise. Adsorptive
+  loss is concentration-dependent; noise is not.
+
+[Known failure modes]
+
+Quantifying an impurity against the parent's response without measuring the
+  relative response factor. RRFs of 0.2 to 3 are ordinary, so an uncorrected
+  area ratio can be wrong by a factor of 5.
+Reporting area percent as an assay. Area percent assumes every component
+  responds equally and silently excludes anything that does not elute.
+Manual reintegration to bring a result into specification. The arithmetic is
+  defensible and the practice is a data-integrity finding.
+Identifying a peak by retention time alone, then carrying that identity into a
+  specification.
+Preparing standard and sample in different diluents, so the injection solvent
+  differs between them and the comparison is not like for like.
+Running system suitability only at the head of a sequence, so nothing
+  establishes that the system was still suitable at injection 60.
+Reporting assay on an as-is basis against a specification written on an
+  anhydrous, solvent-free basis, or the reverse.
+Inferring sample solution stability from the standard's stability. The standard
+  is pure; the sample carries matrix, excipients and degradants that catalyse.
+Reading carryover from a preceding high-level standard as a low-level impurity.
+
+[Exception catalogue]
+
+LOD and LOQ are not required validation characteristics for an assay. ICH Q2
+  requires them for impurity and degradation-product methods; a potency assay
+  operating at nominal concentration has no quantitation limit to establish,
+  and demanding one is over-validation.
+A method taken unchanged from a pharmacopoeial monograph is VERIFIED under USP
+  <1226>, not validated under ICH Q2. The user demonstrates suitability under
+  the actual conditions of use; repeating the full validation package duplicates
+  work the pharmacopoeia has already done.
+A pharmacopoeial reference standard (USP RS, EP CRS) carries no independent
+  purity determination by the user. It is used as directed, and applying a
+  purity factor to a standard whose label already accounts for content is an
+  error that biases every result derived from it.
+The system-suitability numbers belong to the monograph or to the validated
+  method, not to chromatography in general. USP <621> derives the permitted
+  replicate RSD from the number of injections and the limit being tested, and a
+  single-analyte assay with nothing eluting nearby has no resolution criterion
+  to meet at all.
+A mass balance below 95% is a correct result where the degradant is
+  non-chromophoric at the detection wavelength, volatile (CO2, formaldehyde, a
+  low-boiling amine), or does not elute. The obligation is to explain the gap
+  with evidence, not to close it.
+Early-phase and pre-clinical methods are qualified rather than validated. The
+  full ICH Q2 package is due before the method supports a GMP release decision
+  or a stability-indicating claim, not before it supports a development
+  decision.
+
+[Tool limitations]
+
+Photodiode-array peak purity can exclude gross co-elution and cannot establish
+  peak homogeneity. A co-eluting impurity with a similar spectrum, or present
+  below roughly 0.5% relative, returns a passing purity angle.
+The chromatography data system reports the area the processing method asks for.
+  Baseline placement and integration parameters on a shoulder or a tailing peak
+  move the result by more than the method's own precision, so 2 analysts can
+  disagree on the same raw file.
+Regression software returns R^2 and a p-value for curved data as readily as for
+  linear data. It fits the model it is given; it does not test whether the
+  linear model is the right one.
+Published spectra and predicted extinction coefficients do not supply a
+  response factor. Epsilon at the detection wavelength must be measured against
+  a characterised standard in the actual mobile phase.
+RDKit parses SMILES and validates syntax, not chemical plausibility: a
+  structure can be syntactically valid and physically impossible. It predicts
+  neither a chromophore nor a retention time, so a structure proposed for an
+  unknown degradant peak stays a hypothesis until an orthogonal measurement
+  supports it.
+
 [Limitations]
 
 Does not cover LC-MS/MS (distinct selectivity/matrix effect requirements).

@@ -52,6 +52,94 @@ STANDARDS: IEC 60529, IEC 60068-2 series, ASTM B488, IPC-TM-650,
 5. Verify EMI: max aperture vs lambda/20 at highest frequency.
    Check gasket-sealed joints maintain conductivity across seam.
 
+[Diagnostic heuristics]
+1. Intermittent connection that shows only when the assembly is handled, mounted or
+   vibrated: load the termination mechanically before probing it electrically. A
+   continuity test on an unloaded bench assembly cannot reproduce a strain-opened
+   crimp or a cracked fillet, and will report the joint good.
+2. Unit passes EMC on the bench and fails inside its enclosure: measure seam and
+   gasket contact resistance before re-tuning the circuit. Anodising, paint and
+   passivation are insulators, so a chassis bond that is mechanically perfect can be
+   electrically open, and the enclosure then radiates instead of shielding.
+3. EMI signature changes when a cable is moved: the leak is the shield termination,
+   not the aperture. Check for a 360-degree backshell bond before recalculating
+   lambda/20 — a pigtailed shield is an antenna at the frequencies that matter.
+4. Contact resistance rising over life with no corrosion present: count mating cycles
+   against the plating actually fitted (ASTM B488 thickness), not against the
+   connector family. Wear-through to the nickel underplate is a mechanical count.
+5. Arcing or tracking where the measured air gap is adequate: measure the CREEPAGE
+   path along the surface, over ribs, labels, slots and any potting meniscus.
+   Mechanical features change the surface path independently of the clearance.
+6. Enclosure passes IP67 on test and admits water in service: check the installed
+   orientation and whether internal heating cycles pump air past the seal. A static
+   immersion test does not cover a breathing enclosure.
+7. Solder joints cracking near a fastener, standoff or press-fit boss: check board
+   flex at assembly — torque sequence, standoff flatness, boss height tolerance —
+   before the reflow profile. A board bent at build has spent its strain budget
+   before the first power cycle.
+
+[Known failure modes]
+1. Grounding through an anodised, painted or passivated surface: mechanically bonded,
+   electrically open.
+2. Using the connector's rated pull force as though it were the board's retention
+   strength. The 2 figures are set by different parties and the weaker governs.
+3. Specifying mating cycles from the connector family rather than from the plating
+   option actually ordered.
+4. Applying the static bend radius to a cable that flexes in service, or the dynamic
+   figure to a harness routed once and clamped.
+5. Dressing a cable so the crimp, IDC or solder joint carries the flex instead of the
+   strain relief carrying it.
+6. Vibration-testing a bare board rather than the installed assembly, so mounting
+   stiffness, added connector mass and cable damping are all absent from the result.
+7. Setting gasket compression from the gasket spec alone and ignoring fastener pitch,
+   so the lid bows between screws and the seal opens mid-span while the corners pass.
+8. Sizing an EMI aperture at the clock frequency rather than at the highest harmonic
+   carrying significant energy.
+9. Reading FR4's in-plane CTE where the stress path is through-thickness: 14-18
+   against 40-70 ppm/C is a factor of 3 in the strain.
+
+[Exception catalogue]
+1. Press-fit and compliant-pin connectors legitimately exceed solder-pad retention,
+   because there is no pad to lift. Retention is in the plated barrel and the limit is
+   barrel and annular-ring stress, so the IPC-TM-650 2.4.21 pad-pull check named in
+   HARD 1 is the wrong instrument rather than a failed one.
+2. Break-away, magnetic and sacrificial connectors are SPECIFIED to release below the
+   board retention strength. The constraint is inverted by design: low retention is
+   the safety feature, and the board survives because the connector lets go first.
+3. A PCB on elastomeric or wire-rope isolators responds to the TRANSMITTED spectrum,
+   not the input. An f_n inside the input excitation band is acceptable where the
+   isolator's transmissibility has rolled it off, so HARD 3 must be evaluated against
+   the spectrum at the board, which is the only excitation the board can see.
+4. A pressure-equalising membrane vent breaks the sealed-volume route to an immersion
+   rating deliberately, and is the correct choice where thermal cycling would
+   otherwise pump moisture past a gasket. The enclosure then carries the vent's own
+   rating and HARD 5's compression figures govern the static seals only.
+5. Conductive EMI gaskets take their compression from the contact-resistance curve,
+   not from the 20-30 / 40-60 per cent sealing figures. Compressing a wire-mesh or
+   oriented-wire gasket to a sealing spec crushes the conductive path and leaves a
+   joint that seals and does not shield.
+6. On a non-metallic enclosure the lambda/20 aperture limit has no subject at the
+   wall. The shield is a conductive coating or an internal can, and the aperture rule
+   applies to that boundary and its seams, not to the plastic that carries it.
+
+[Tool limitations]
+1. Modal FEA returns the frequencies of the stiffness and mass supplied to it, and the
+   fasteners, gasket, connector mass and cable dressing are exactly what set the real
+   boundary condition. Measured f_n commonly differs from predicted by tens of per
+   cent, and in the direction of whatever was left out.
+2. Shielding effectiveness measured on a coupon cannot predict an assembled
+   enclosure, because the leaks are at seams, fastener pitch and cable penetrations,
+   and a coupon has none of them.
+3. CAD interference checking finds solid-body collisions. Creepage and clearance are
+   distances in air and along surfaces rather than collisions, so a model reporting no
+   interference says nothing about IEC 60664-1 compliance.
+4. An IP test is pass/fail at a single orientation for a single duration and yields no
+   margin. A unit that passed IP67 gives no number from which to extrapolate to
+   another orientation, a longer immersion or an aged gasket.
+5. A connector's rated mating cycles are measured on the manufacturer's fixture under
+   controlled alignment with no side load. They do not predict the life of a
+   hand-mated connector entered at an angle in a field enclosure.
+
 [Limitations]
 1. Does not cover high-voltage connectors (> 1 kV) — arc-flash requirements apply.
 2. Does not cover fibre optic interfaces — different rules and cleanliness requirements.

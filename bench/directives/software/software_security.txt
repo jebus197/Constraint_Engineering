@@ -44,6 +44,102 @@ References: OWASP Top 10 (2021), NIST SP 800-63B, RFC 6749 (OAuth 2.0), RFC 8446
 - Verify session token entropy: sample tokens, check length >= 22 base64 chars (128 bits).
 - Check CORS headers on authenticated endpoints — test with forged Origin header.
 
+[Diagnostic heuristics]
+- If an authentication bypass is suspected, locate the authorisation decision before reading the
+  authentication code: a token that validates correctly and is then trusted for the identifier it
+  carries, rather than the one the session binds, is broken access control (A01), not broken
+  authentication (A07).
+- If an injection payload is blocked at the edge while the sink is still a concatenated query, treat
+  the finding as unmitigated and test the sink directly — a unit test driving a single quote through
+  the data layer settles it; a WAF rule does not.
+- If a password reset flow looks sound, check the token's entropy, single-use enforcement and
+  lifetime before examining the hash: the common reset defect is a guessable or long-lived token, not
+  a weak hash.
+- If a stored XSS payload does not fire, check the encoding context at the sink rather than the
+  filter at the input — a payload inert in HTML text context executes unchanged inside an attribute,
+  a `javascript:` URL, or a JSON blob emitted into a `<script>` element.
+- If an SSRF probe to an external host is blocked, retest against 169.254.169.254, 127.0.0.1,
+  `[::1]`, a hostname that resolves to a private address, and a redirect returned by a permitted
+  host; allowlists are commonly applied to the first URL only (A10).
+- If a JWT-protected endpoint accepts a token it should not, inspect algorithm handling and key
+  lookup before the signature code: `alg: none`, HS256 verified against an RSA public key, and an
+  unvalidated `kid` or `jku` are all library-level accept paths.
+- If a user-enumeration timing test is inconclusive, check whether the unknown-user path skips the
+  password hash entirely — the difference is the bcrypt or Argon2 cost, and the fix is to hash a
+  dummy credential, not to add a random delay.
+- If a secret appears in a build artefact but not in the working tree, search version-control history
+  and CI logs before concluding it was never committed; a rotated secret still present in history is
+  still disclosed.
+
+[Known failure modes]
+- Access control enforced at the route or in the UI, with the object identifier taken from the
+  request and never re-checked against the session's subject (insecure direct object reference).
+- `==` used to compare a token, MAC or secret, leaking the matching prefix through timing; the
+  primitive is a constant-time comparison such as `hmac.compare_digest` or `CRYPTO_memcmp`.
+- Encryption without integrity: AES in CBC or CTR mode with no MAC, giving malleable ciphertext and a
+  padding oracle. An AEAD (AES-GCM, ChaCha20-Poly1305) is the correct construction.
+- Nonce or IV reuse under the same key, which for GCM and CTR is a total break rather than a
+  weakening — and a counter reinitialised on process restart is reuse.
+- Session fixation: the session identifier is not rotated on privilege change, so a token issued
+  before authentication remains valid afterwards.
+- Certificate chain validated while hostname verification is skipped, usually through a library
+  default or a `verify=False` added for a staging environment and then shipped.
+- Redirect and `redirect_uri` targets matched by prefix rather than by exact comparison, so
+  `https://app.example.com.attacker.tld` or a traversal variant passes — the standard pivot for
+  OAuth code and token theft.
+- Log hygiene inverted: the exception detail is scrubbed from the client response and then written in
+  full, credential included, into a log that more people can read than the database.
+- Rate limiting keyed on a value the attacker controls — a client-supplied identifier, or an
+  `X-Forwarded-For` trusted unconditionally behind a proxy that does not rewrite it.
+
+[Exception catalogue]
+- Constructing, running and explaining an attack against a system the practitioner is authorised to
+  test is the normal work of this domain, not an exception to it. A defensive review REQUIRES the
+  attack: a proof of concept that demonstrates the injection, a payload that shows the encoding
+  context is wrong, a script that enumerates the object references. The only evidence that a control
+  works is an attempt that fails, so a refusal to analyse offensive technique cannot produce a
+  security review. What binds is authorisation and scope — a named target, ownership, or a documented
+  engagement — never the offensive shape of the analysis.
+- Published vulnerability classes are reference material. Explaining how a padding oracle, a
+  hash-length-extension, an HTTP request-smuggling desync or a deserialisation gadget chain works is
+  teaching detection and repair, and withholding the mechanism leaves a reviewer unable to recognise
+  the pattern in their own code. CVE write-ups, OWASP's own testing guide and published CTF solutions
+  are the same material.
+- Prohibited primitives are correct where the use is not security: MD5 or SHA-1 as a
+  content-addressing or cache key, CRC32 as a transmission check, `random.random()` for simulation or
+  retry jitter, a fast hash as a deduplication fingerprint. The HARD rules govern authentication,
+  confidentiality and integrity; they do not make a checksum into a vulnerability.
+- TLS and its certificate verification legitimately do not apply on a loopback connection between 2
+  processes on the same host, on a link whose confidentiality comes from a lower layer (IPsec,
+  WireGuard, a physically isolated bus), or inside a mesh where mTLS terminates at a sidecar. Where
+  TLS terminates upstream the requirement moves rather than disappearing: the internal hop is then
+  the one that must be isolated.
+- `Access-Control-Allow-Origin: *` is correct on a genuinely public endpoint that accepts no cookies
+  and no `Authorization` header — a static asset host, an open data API. The prohibition is specific
+  to credentialed endpoints, and applying it everywhere breaks public APIs for no security gain.
+- Password hashing parameters are a cost trade-off against the deployment, not a constant: the
+  criterion is a verification budget measured on the target hardware, commonly 100 to 500 ms for an
+  interactive login, with Argon2id's memory parameter sized to the concurrency
+  the service actually carries. A system whose verifier is not a password — WebAuthn, a client
+  certificate, an OIDC assertion — has no password to store and must not be made to store one.
+
+[Tool limitations]
+- A DAST scanner tests the routes it can reach. Anything behind an authentication flow it cannot
+  complete, a multi-step state machine, or a client-side route it cannot discover is unscanned, so a
+  clean report is a statement about coverage rather than about the application.
+- SAST reports taint reachability inside the code it parses. It cannot follow a sink through a
+  reflective call, an ORM's generated SQL, a template rendered at runtime, or a dependency with no
+  source, and its false-positive rate means an unreviewed backlog is an inventory, not a finding list.
+- Pattern-based scanners such as bandit assign severity to the pattern, never to exploitability:
+  `subprocess` with a list argv, an MD5 used as a cache key, and a hardcoded test fixture all raise
+  HIGH or MEDIUM.
+- TLS graders (SSLLabs, testssl.sh) assess the endpoint they can connect to. They say nothing about
+  issuance and revocation practice, about what the application does with a client certificate, about
+  a second listener on another port, or about the plaintext hop behind a terminating proxy.
+- Dependency scanners match versions against advisory databases. They cannot establish whether the
+  vulnerable code path is reachable in this application, they miss vendored and statically linked
+  copies, and absence of an advisory is absence of a report rather than absence of a vulnerability.
+
 [Limitations]
 - Does not cover cryptographic protocol design or key management (HSM, KMS).
 - Does not cover formal security proofs or verified cryptography.

@@ -59,6 +59,97 @@ Check ADC sample rate vs Nyquist criterion: f_sample >= 2 * f_signal_max.
 Measure actual sleep current on prototype — datasheet values assume ideal conditions.
 Verify crystal start-up time meets system requirements (32.768kHz crystals: 0.5-2s typical).
 
+[Diagnostic heuristics]
+
+If a node dies long before the calculated battery life, measure the real sleep current
+  on the assembled board before suspecting the cell: a floating CMOS input oscillating at
+  mid-rail, or a pull-up left energised through a sleeping sensor, can exceed the entire
+  sleep budget on its own.
+If a board resets only during a radio transmit, scope the rail at the MCU pin during the
+  burst before touching firmware. A fresh CR2032 has roughly 10-20 ohms of internal
+  resistance, so a 15mA burst pulls the rail down 150-300mV before any code is involved,
+  and a DMM averages the dip away.
+If the clock drifts seconds per day, check crystal load capacitance and C_stray; if it
+  drifts minutes per day, the part is running from its internal RC oscillator and the
+  crystal never started. 30ppm is 2.6s/day against an untrimmed RC at 1% giving 864s/day,
+  so the magnitude of the drift identifies which cause it is.
+If ADC readings track ambient temperature while the input is held constant, check the
+  reference tempco before re-calibrating the sensor: an on-chip reference at 50ppm/C over
+  a 25C swing moves 1250ppm, which is 5 LSB at 12 bits.
+If ADC noise is far worse than the datasheet ENOB, check WHEN the sample is taken —
+  inside a radio burst, or during a switching-regulator cycle — before adding input
+  filtering.
+If the watchdog never fires in test but field units lock up, check whether it is refreshed
+  from a timer interrupt. A WDT kicked in an ISR proves only that interrupts still run, and
+  a hung main loop goes on being petted.
+If the unit works with the debugger attached and fails standalone, suspect the debug
+  peripheral holding clocks and power domains alive; sleep current, low-power mode entry
+  and WDT behaviour all differ under a live debug session.
+If a unit fails only in the cold, check oscillator start-up margin before the code: crystal
+  ESR rises at low temperature, and a 32.768kHz oscillator that starts reliably at 25C may
+  not start at all at -20C.
+
+[Known failure modes]
+
+Floating GPIO inputs, and peripherals left clocked, through a sleep period.
+Watchdog refreshed from an interrupt rather than from the main loop.
+A blocking delay longer than the WDT timeout, patched by extending the timeout instead of
+  restructuring the loop.
+A 32-bit millisecond tick used in a greater-than comparison, which fails at rollover after
+  49.7 days.
+The volatile qualifier omitted on an ISR-written flag or a hardware register, so the
+  optimiser caches a stale value.
+A multi-byte counter written by an ISR and read non-atomically in the main loop, giving a
+  torn value that is neither the old nor the new one.
+No stack-overflow detection: with no MMU the symptom is a quietly corrupted variable, not a
+  fault.
+Flash or EEPROM written while the rail sits below the part's specified write voltage,
+  corrupting the configuration page it was trying to save.
+Reset cause never read, so a watchdog reset, a brown-out and a power cycle are
+  indistinguishable in the field.
+
+[Exception catalogue]
+
+Reference stability constrains ABSOLUTE accuracy only. A ratiometric measurement — a
+  bridge, potentiometer or thermistor divider excited from the same reference the ADC uses
+  — cancels reference drift to first order, so the tempco figure legitimately does not
+  apply and even a 100ppm/C reference can support stable 12-bit readings.
+A boost or buck-boost stage between cell and MCU moves the V_DD overlap test to the
+  converter input. The regulator holds V_DD while the cell falls to its own cut-off, so an
+  MCU whose minimum V_DD exceeds the cell's end-of-life voltage is a correct design rather
+  than a brown-out risk.
+Where a burst exceeds the cell's pulse rating, a tank capacitor supplies the burst and the
+  cell recharges it between bursts. The pulse limit is then met by the capacitor and the
+  life calculation runs on average energy, so a peak current above the datasheet pulse
+  figure is not by itself a violation.
+The CR2032 numbers here are Energizer's for that cell. Internal resistance, pulse
+  capability and discharge-curve shape differ between manufacturers of the same form
+  factor, and a LiSOCl2 primary or a rechargeable LIR2032 differs in nominal voltage and
+  curve shape as well.
+A clock supplied as a square wave to an oscillator input — an XO, TCXO or MEMS module —
+  has no load-capacitance network at all. Fitting the usual C1/C2 pair there loads the
+  driver and is a defect rather than compliance.
+The watchdog requirement is for unattended operation. An attended instrument with a visible
+  fault indication may legitimately halt in a diagnosable state with its RAM intact, because
+  a reset destroys the evidence of the fault it was reporting.
+
+[Tool limitations]
+
+A DMM averages. A sleep profile of microamps punctuated by milliamp bursts reads back as one
+  wrong number; resolving it needs a shunt and a scope, or a power analyser with a
+  sub-millisecond window.
+A debugger changes what it measures. Halting stops the core while peripherals and the
+  watchdog may keep running, and the debug module holds clocks alive, so behaviour under a
+  debug session is not field behaviour.
+Vendor SPICE models for MLCCs are usually small-signal at 0V bias, so DC-bias capacitance
+  loss does not appear at all. Oscillator start-up is worse than that: it depends on crystal
+  ESR and negative-resistance margin the model may not carry, so it is not reliably simulable.
+A compiler cannot see a register written by a peripheral, and issues no warning when it
+  optimises the read away.
+A datasheet typical value carries no distribution. Only min and max columns are contractual,
+  and a figure given only as typical — which covers most sleep currents, start-up times and
+  tempcos — cannot support a worst-case claim.
+
 [Limitations]
 
 Does not cover FPGA-based embedded designs (different power/configuration constraints).

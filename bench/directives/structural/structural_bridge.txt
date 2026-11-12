@@ -73,6 +73,107 @@ Parapet certification: confirm parapet system holds valid crash test certificate
 Reinforcement detailing: verify cover, spacing, lap lengths, and anchorage
   against exposure class and specified design life (typically 120 years).
 
+[Diagnostic heuristics]
+
+If a bearing is found near the end of its travel, check the setting temperature recorded at
+  installation against the design range before suspecting creep or shrinkage: a bearing set at
+  20 degC on a deck designed for -20 to +40 degC must accommodate 20 degC of expansion and 40 degC
+  of contraction, and the 2 are not equal.
+If a fatigue check fails by a wide margin, confirm the detail category assigned to the connection
+  before refining the traffic model. Category 36 for a transverse non-load-carrying attachment
+  against Category 160 for plain base metal is a factor of 4.4 in permissible stress range, and at
+  m = 3 a factor of about 88 in life.
+If a continuous deck shows transverse cracking at regular spacing over a pier, examine the
+  differential temperature profile and the restraint moments it generates before the live load
+  model; the nonlinear gradients of BS EN 1991-1-5, 6.1.4 commonly govern top-fibre tension there.
+If rust staining appears at a joint or a drainage outlet and nowhere else, reconsider the exposure
+  class applying at that location rather than the cover specified generally: a leaking joint turns a
+  local XC surface into XD3, and the general-surface cover is then the wrong figure for it.
+If reactions in a grillage or deck model do not reflect the applied load, check the notional lane
+  division and the tandem positions before the element properties. LM1 lanes are notional and are
+  positioned to produce the worst effect, so a lane layout copied from the road markings understates
+  the load effects.
+If a steel or composite bridge returns an unexpected first natural frequency, check the section
+  assumptions before adjusting mass: short-term against long-term modular ratio, and whether the
+  deck slab was taken as cracked over the pier.
+If a parapet anchorage check passes under a simplified static load, obtain the anchorage forces from
+  the crash test report. Impact loads at the specified containment level are dynamic and routinely
+  exceed the equivalent static figure used for preliminary sizing.
+If a pier is governed by accidental vehicle impact, establish whether the client and the relevant
+  code require the pier to be designed for impact or to be shielded by a certified barrier; the 2
+  routes give very different sections, and choosing wrongly wastes a design cycle.
+
+[Known failure modes]
+
+Fatigue assessed on parent metal while the governing detail is a welded attachment, a cope hole or a
+  shear stud — detail category chosen by material rather than by geometry.
+Bearing schedules issued without the installation temperature and the construction-stage movements,
+  so available travel is consumed before the deck is complete.
+Integral construction adopted outside its range of span and skew, with the cyclic ratcheting of
+  earth pressure behind the abutment left out of the assessment.
+Joint and drainage details that discharge chloride-laden water onto bearing shelves, pier tops and
+  half-joints, creating a durability liability no element check reports.
+Half-joints and comparable inaccessible details specified at all: they cannot be inspected, and the
+  assessment record of existing structures is largely a record of their consequences.
+Construction-stage analysis omitted for a composite deck, so the beam is verified only as the
+  completed composite section while the critical case is the bare steel beam under wet concrete with
+  partial restraint.
+Supports taken as rigid in a continuous deck, understating hogging moments, bearing uplift and the
+  sensitivity of the design to differential settlement.
+Load groups applied selectively: gr1a verified while the horizontal-force group and the
+  thermal-with-traffic case are not.
+Crossfall achieved by varying surfacing thickness, so both the as-built dead load and the drainage
+  path differ from the design.
+
+[Exception catalogue]
+
+The alpha adjustment factors on LM1 are national and route-dependent, and the UK National Annex
+  permits reduced values where the traffic is demonstrably lighter — an accommodation bridge with a
+  physically enforced weight limit, a private or restricted-access road, a footbridge taking an
+  occasional maintenance vehicle. Applying alpha_Q1 = 1.0 with the full 2 x 300 kN tandem there is
+  over-design, not a safety requirement. The restriction must be physical and enforced, not advisory.
+Fatigue is governed by stress range and cycle count, so it legitimately does not govern a
+  reinforced-concrete member held in permanent compression under the fatigue load model, or a detail
+  whose computed stress range falls below the constant-amplitude fatigue limit. The verification is
+  still performed; the finding that it does not govern is a result, not an omission.
+Dynamic amplification is already inside the LM1 and LM2 characteristic values, so adding a separate
+  factor double-counts. The real exception runs the other way: a separate dynamic assessment is
+  required outside that calibration — very short spans under a single axle, expansion joints and
+  bearings taking wheel impact directly, and assessment of existing structures under abnormal
+  indivisible loads.
+Minimum cover is a provision against the exposure a surface actually sees, so 45 mm at XD3 is a
+  typical figure for an exposed UK highway deck and not a floor for every surface on the bridge. A
+  soffit permanently enclosed within a box girder, a surface under bonded waterproofing with
+  protected drainage, or stainless or galvanised reinforcement each change c_min,dur legitimately.
+Bearing travel provision does not apply where there is no bearing to travel: an integral bridge
+  accommodates expansion by flexing the abutments and mobilising the backfill, which is why the span
+  and skew limits exist. The requirement transfers to abutment flexure and backfill cycling rather
+  than disappearing.
+Crash-test certification to a containment level applies to vehicle parapets. A pedestrian or cycle
+  parapet on a structure with no vehicular access, and a parapet standing behind a separately
+  certified vehicle restraint system that takes the impact, are both legitimately outside the CD 377
+  containment levels — the geometric, loading and infill requirements for pedestrian protection
+  still apply.
+
+[Tool limitations]
+
+A grillage or shell model returns the load effects of the structure as modelled. It cannot establish
+  that the lane and tandem positions searched were the governing ones, and an automated
+  influence-surface search is only as complete as the set of positions it was given.
+Load-combination generators apply code factors to the load cases as named. A thermal case entered as
+  a variable action without its psi factors, or a construction-stage case left in the permanent
+  group, yields a combination that is arithmetically correct and code-non-compliant, and no check in
+  the package detects it.
+Fatigue post-processors compute damage from the stress histories at the points requested. They
+  cannot see the detail: the same node is Category 160 or Category 36 depending on whether a
+  stiffener is welded there, and that is a drawing decision the model does not hold.
+Capacity checkers use the section class, effective lengths and restraint conditions supplied to
+  them. Values carried through from a template rather than taken from the bracing actually detailed
+  are the commonest silent non-conservatism, and the reported utilisation looks precise regardless.
+Peak stresses at re-entrant corners and point supports in a finite element model are mesh-dependent
+  and do not converge. Quoting one as a fatigue or yield demand reports a property of the mesh; the
+  code's detail categories and effective-width rules already embed the real behaviour.
+
 [Limitations]
 
 Does not cover cable-stayed or suspension bridges (different load paths,

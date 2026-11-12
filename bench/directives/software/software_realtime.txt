@@ -48,6 +48,93 @@ References: Liu & Layland (1973) RMS, SHA (1990) priority ceiling, DO-178C, IEC 
   allocated stack sizes.
 - Test watchdog recovery: force a task overrun and verify the system resets correctly.
 
+[Diagnostic heuristics]
+- If a deadline miss appears after a change that did not touch the task, check instruction cache and
+  flash layout before re-measuring WCET — moving a function across a cache line or flash page
+  boundary changes execution time without changing the path.
+- If measured execution time exceeds the analytic bound, the analysis is wrong before the hardware
+  is: look for a path the analyser could not see, such as an indirect call through a function
+  pointer, a compiler-inserted memcpy for a struct copy, or a library division routine on a core
+  with no hardware divider.
+- If overruns are intermittent at a rate related to 2 task periods, suspect the critical instant (all
+  tasks released simultaneously) rather than a data-dependent path; RMS analysis assumes that instant
+  and a test harness rarely produces it.
+- If a shared variable is corrupted although every access is guarded, compare the access width
+  against the bus: a 32-bit read of a 64-bit counter, or an unaligned access on a core without
+  atomic halfword writes, tears without any lock being wrong.
+- If an ISR appears to run long, measure it with a GPIO toggle and a scope before trusting a software
+  timestamp — the timestamp read and the trace write sit inside the window being measured.
+- If the system resets and the watchdog log is empty, check whether the watchdog is kicked from a
+  timer ISR rather than from the task whose liveness it is meant to prove; a watchdog kicked by an
+  interrupt proves only that interrupts still fire.
+- If stack corruption appears in a single build only, compare the analysed maximum depth against the
+  ISR nesting the interrupt controller actually permits — an enabled nested-interrupt configuration
+  adds frames a single-level analysis never counted.
+- If jitter rises under load while mean latency is unchanged, look for priority inversion through a
+  shared resource (a logging mutex, a flash driver, an allocator lock) before raising a task's
+  priority; raising it relocates the inversion rather than removing it.
+
+[Known failure modes]
+- Priority inversion through an unexpected shared resource: a printf or logging mutex, a heap lock, a
+  flash or EEPROM driver serialising a high-priority task behind a low-priority one.
+- WCET taken as an average-case measurement plus a percentage margin, rather than derived from the
+  worst-case path.
+- `volatile` used as a synchronisation primitive. It prevents the compiler caching the value and
+  provides neither atomicity nor ordering against other accesses.
+- Interrupts disabled as the lock, with a data-dependent loop inside the disabled window, so the
+  critical section is unbounded and raises the worst-case latency of every task in the system.
+- Priorities assigned by perceived importance rather than by rate, which removes the premise the RMS
+  schedulability argument rests on.
+- Non-reentrant library functions called from both task and ISR context — `strtok`, anything holding
+  a static scratch buffer, and some toolchains' `errno` implementations.
+- Stack analysed per task with ISR frames, large automatic structs, variadic calls and
+  closed-source library usage all omitted.
+- An ISR deferring to a bottom half whose queue is unbounded, so a timing overrun becomes a silent
+  growing backlog instead of a detected miss.
+- A watchdog whose timeout exceeds the system's own hard deadline, making a deadline miss
+  undetectable by the mechanism installed to detect it.
+
+[Exception catalogue]
+- Soft and firm real-time are legitimate classes. Where a miss degrades quality rather than causing
+  failure — an audio buffer dropping a frame, a video pipeline, a telemetry sample — the correct
+  analysis is a miss-rate target or an (m,k)-firm bound, not a provable WCET. The HARD rules above
+  govern HARD real-time, and applying them to a soft path over-constrains the design.
+- Dynamic allocation is permitted in the initialisation phase, before the real-time schedule starts.
+  Allocating every pool and object at startup and never freeing is the normal pattern; the
+  prohibition is on allocation ON a hard real-time execution path.
+- Recursion is permitted where the depth is bounded by a structural invariant and the bound is proven
+  — a fixed-depth walk over a 4-level page table, a parser over a grammar with bounded nesting. A
+  loop-converted version needs the same proof for its explicit stack.
+- The RMS utilisation bound is sufficient, not necessary. A task set above n*(2^(1/n) - 1) can still
+  be proven schedulable by exact response-time analysis, and a harmonic task set is schedulable under
+  RMS up to U = 1.0. Rejecting a design for exceeding the Liu & Layland bound is a false negative.
+- Priority inheritance and ceiling protocols are unnecessary where no resource is shared across
+  priority levels: a strictly partitioned design communicating by message passing, or a
+  non-preemptive cyclic executive, has no inversion to control, and a protocol then adds blocking
+  terms to the analysis for nothing.
+- An external watchdog is not available on every part. A windowed on-chip watchdog clocked from an
+  independent low-speed oscillator, so that it neither stops when the main PLL does nor tolerates an
+  early kick, is accepted practice in automotive and industrial designs — that clock independence is
+  what the constraint protects, not the package boundary.
+
+[Tool limitations]
+- Static WCET analysers (aiT, Bound-T, OTAWA) need a timing model of the part. On a core with an
+  unmodelled cache replacement policy, speculative out-of-order execution, or a cache shared across
+  cores, the output is an estimate with no soundness claim, and the vendor's model may lag the
+  silicon revision.
+- Measurement-based timing analysis bounds only the paths executed. Code coverage is not timing
+  coverage: the worst-case path may be unreachable under the tested input distribution, and the
+  maximum of 10,000 runs is a sample maximum, not a bound.
+- `-fstack-usage` reports per-function frame sizes only. It does not compute the call-graph maximum,
+  omits frames the compiler adds for variadic calls and alloca, and attributes nothing to ISR nesting
+  or to library code with no source available.
+- A halt-mode breakpoint stops the core but not peripherals, DMA or the watchdog, so the state
+  inspected after a timing fault has already diverged from the state that caused it. Trace (ETM, ITM,
+  or an external timestamping probe) is the instrument for a timing question.
+- Instrumentation changes what it measures. A trace write lengthens the critical section it
+  instruments, and a trace buffer overflows precisely during the burst of interest, so the probe
+  effect is largest exactly at the overload under investigation.
+
 [Limitations]
 - Does not cover RTOS kernel design or scheduler implementation.
 - Does not cover safety certification processes (DO-178C for avionics, IEC 61508 SIL

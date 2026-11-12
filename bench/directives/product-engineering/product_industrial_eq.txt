@@ -51,6 +51,90 @@ STANDARDS: Machinery Directive 2006/42/EC, ISO 12100, ISO 13849-1,
    trace hardwired path from button to power contactors.
 6. Confirm all safety devices are listed/certified to applicable standards.
 
+[Diagnostic heuristics]
+1. If a calculated PL comes out higher than expected, check whether MTTFd was capped
+   and whether every component in the channel was included. ISO 13849-1 caps MTTFd per
+   channel at 100 years, and a contactor or valve left out of the chain inflates the
+   result.
+2. If Category 3 is claimed, check the cross-monitoring before the component list.
+   2 channels monitored by a single non-redundant contact is Category 1 with extra
+   parts; the discriminator is diagnostics, not duplication.
+3. If an interlocked guard can be opened while the hazard persists, check stopping
+   time against ISO 13855 rather than the switch rating. A correctly rated switch on a
+   correctly built guard still fails if the machine coasts: S = K * T + C.
+4. If a light curtain passes its functional test, check resolution against the body
+   part and minimum distance against total response time. A 30 mm resolution curtain
+   mounted at hand-detection distance does not protect a finger, and the distance must
+   include curtain, relay and final element.
+5. If a noise declaration sits at the limit, check whether L_pA is being read as an
+   exposure figure. L_pA is an emission quantity at a defined position and L_EX,8h is
+   a shift exposure, so a compliant declaration does not establish compliant exposure.
+6. If muting is in use, check what re-enables the protective function and whether
+   muting can latch. Unrestricted or persistent muting is the commonest route by which
+   a compliant safety system becomes unsafe in service.
+7. If an e-stop restores motion when the actuator is released, check the latching and
+   reset logic. ISO 13850 requires the stop command to latch and release of the
+   actuator never to restart the machine, so a non-latching head is a defect however
+   it is wired.
+8. If a risk assessment shows no residual risk, check whether maintenance and cleaning
+   were assessed at all. Those 2 lifecycle phases carry a large share of machinery
+   injuries and are the phases most often omitted.
+
+[Known failure modes]
+1. Safety distance calculated with no stopping-time term, ISO 13855 omitted.
+2. MTTFd quoted uncapped, or with a channel component left out of the chain.
+3. Category 3 claimed on duplicated channels with no cross-monitoring.
+4. Muting left latched, or re-enabled by the same signal that initiates it.
+5. Light-curtain resolution mismatched to the body part to be detected.
+6. Maintenance and cleaning modes absent from the risk assessment.
+7. An emission noise declaration presented as evidence of exposure compliance.
+8. A defeatable interlock, typically a spare coded actuator left on the machine.
+9. ISO 13857 table values interpolated instead of rounded to the safer entry.
+
+[Exception catalogue]
+1. The prohibition on software and networks applies to STANDARD control systems. A
+   safety function realised in a certified safety controller, or over a certified
+   safety protocol such as PROFIsafe, CIP Safety or FSoE, is accepted by ISO 13849-1
+   and IEC 62061 where the whole chain carries the required PL or SIL. Refusing such a
+   design specifies the wrong architecture rather than a safer alternative.
+2. Category 0 is not the safe default. Removing power instantly from a robot holding a
+   load, a large rotating mass or a vertical axis can create a worse hazard, which is
+   why Category 1 is correct for those machines and Category 2 is permitted where the
+   risk assessment supports it.
+3. Partly completed machinery under Annex II.1.B carries a Declaration of Incorporation
+   and assembly instructions, and does NOT carry the CE mark for the Machinery
+   Directive. Demanding a Declaration of Conformity for a partly completed assembly
+   refuses correct work.
+4. The 2003/10/EC figures are employer exposure duties, not product limits. A machine
+   may lawfully emit above 85 dB(A) provided the emission is declared and the employer
+   manages exposure, so rejecting a design on L_pA alone confuses a workplace
+   obligation with a product requirement.
+5. Machinery built for a non-EU market is outside the Machinery Directive and must meet
+   the destination regime instead. EN 60204-1 and NFPA 79 genuinely differ — on
+   control-circuit earthing, conductor colour coding and overcurrent protection among
+   others — so applying both at once produces a machine compliant with neither.
+6. A like-for-like repair does not create new machinery, while a substantial
+   modification does and triggers full conformity assessment. Machinery predating the
+   directive and not substantially modified legitimately remains in service without CE
+   under the work equipment regime.
+
+[Tool limitations]
+1. PL calculation software computes from the MTTFd, DC and CCF values entered. It has
+   no way to know that the diagnostic coverage claimed is not implemented in the
+   program, which is the commonest form of paper-only compliance.
+2. A safety controller's validation report proves the logic matches the program. It
+   says nothing about whether the program matches the risk assessment, and that link is
+   checked by no tool.
+3. Noise prediction from component sound-power data cannot capture enclosure
+   reverberation or structure-borne re-radiation, which routinely add several decibels,
+   so ISO 3744 or 3746 measurement on the built machine is not substitutable.
+4. Guard strength simulation predicts deflection for the modelled impact. ISO 14120
+   acceptance is a physical impact test with a specified projectile, and no simulation
+   is accepted in its place.
+5. A CE-marking checklist cannot determine whether an installation is a single machine,
+   an assembly of machinery or partly completed machinery — the classification that
+   decides the entire conformity route.
+
 [Limitations]
 1. Does not cover ATEX equipment (Directive 2014/34/EU).
 2. Does not cover pressure equipment (PED 2014/68/EU).

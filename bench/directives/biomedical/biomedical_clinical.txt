@@ -31,6 +31,42 @@ SCOPE: Randomised controlled trials for drug/biologic efficacy and safety — Ph
 - Check that missing data handling strategy is pre-specified (MMRM, multiple imputation, tipping point sensitivity analysis)
 - Confirm DSMB charter includes membership, meeting schedule, stopping boundaries, and communication procedures
 
+[Diagnostic heuristics]
+- If a Kaplan-Meier at-risk table decrements by more than the events plus censorings in that interval, check the time origin and the analysis set the table was built from before questioning the event count
+- If the baseline characteristics table shows a significant imbalance, check the randomisation list and the block size before adjusting the analysis for it — under valid randomisation a nominal imbalance somewhere across 20 baseline variables is expected, and hypothesis-testing baseline balance is itself a misuse that CONSORT discourages
+- If the ITT and per-protocol estimates differ in DIRECTION rather than in magnitude, check the stated reasons for per-protocol exclusion before reporting either — exclusion on a post-randomisation criterion correlated with outcome destroys the randomisation that licensed the causal claim
+- If the control-arm event rate is far below the rate assumed in the sample size calculation, check the screening and eligibility logs before re-estimating the effect size — the enrolled population is routinely healthier than the planning population, and the control-rate assumption fails more often than delta does
+- If the treatment effect is concentrated at a single site, check that site's source data, unblinding log and terminal-digit distribution before fitting a treatment-by-site interaction — a lone site outlier is a data-integrity signal before it is a biological one
+- If efficacy looks strong and withdrawal differs between arms, check whether the reason for withdrawal is related to the outcome before trusting MMRM — MMRM and multiple imputation are both MAR-conditional, and differential withdrawal is the commonest way MAR fails
+- If the final-analysis standard deviation is much smaller than the planning sigma, check for digit preference, protocol-mandated rounding and a measurement ceiling before concluding the trial was over-powered
+- If a multiplicity-adjusted primary endpoint fails and a secondary endpoint appears to succeed, check where that secondary sits in the pre-specified hierarchy — below a failed gate there is no alpha left to spend and no claim available
+
+[Known failure modes]
+- Outcome switching: changing the primary endpoint, or its timepoint, after unblinded data have been seen
+- Claiming a secondary or subgroup result after the primary endpoint failed its gate
+- Analysing a non-inferiority trial by ITT alone, the single setting in which ITT is anticonservative and per-protocol is the more cautious analysis
+- Setting the non-inferiority margin from what the affordable sample size can detect rather than from the historical active-control effect and its confidence bound
+- Last-observation-carried-forward as the missing-data method, which in a progressive disease biases toward the active arm
+- As-treated creep into the ITT set: analysing a subject in the arm actually received rather than the arm randomised
+- A composite endpoint driven by its least severe and most frequent component, so the headline result rests on the softest event in the composite
+- Treating an interim p-value as the final one, with the alpha already spent at the look unaccounted for
+- Reporting a subgroup effect with no pre-specified interaction test and no multiplicity control across the subgroups examined
+
+[Exception catalogue]
+- Consent before any study-specific procedure does not bind emergency research. 21 CFR 50.24 permits an exception from informed consent with community consultation, public disclosure and IRB approval, and EU CTR 536/2014 Article 35 permits enrolment in emergency situations with consent sought afterwards. Refusing such a design as a GCP violation refuses a lawful and sometimes the only possible trial type
+- ITT is not the privileged analysis set everywhere. In a non-inferiority or equivalence trial, non-compliance dilutes the comparison toward no difference and therefore toward the non-inferiority conclusion, so ICH E9 requires both sets and the per-protocol result carries real weight; and safety is always analysed on the as-treated set, never on ITT
+- Placebo control against a proven effective treatment is permitted where there are compelling, scientifically sound methodological reasons, per Declaration of Helsinki Article 33. Separately, an add-on design — both arms receive standard of care and the randomised comparison is drug against placebo on top of it — is placebo-controlled and withholds nothing
+- Blinding is impossible for some interventions: surgery, implanted devices, radiotherapy, behavioural therapy and most dose-titrated regimens. The accepted substitute is open-label treatment with blinded independent central review of the endpoint, not a sham procedure whose own risk cannot be justified
+- Protocol-defined disease-related endpoint events can be exempted from expedited SUSAR reporting by agreement with the authority under 21 CFR 312.32 and its anticipated-serious-adverse-event guidance, precisely so that a mortality or hospitalisation endpoint does not break the blind 1 event at a time; the DSMB reviews them instead
+- Blinded re-estimation of a nuisance parameter — the pooled variance, or the overall event rate across arms combined — changes the sample size without inflating type I error, because nothing about the treatment comparison is used. This is not the post-hoc adjustment the sample size constraint forbids
+
+[Tool limitations]
+- Power software (nQuery, PASS, G*Power) returns n for the assumptions it is handed. The assumed control event rate, sigma and clinically meaningful delta are inputs and they are the dominant error source; no calculator warns that delta was set to what the budget allows rather than to what matters clinically
+- MMRM and multiple imputation cannot distinguish MAR from MNAR, and no software flags the difference. That is why control-based imputation or a tipping-point analysis is required evidence rather than an optional sensitivity run
+- An EDC system's edit checks enforce ranges and cross-field logic and cannot see fabricated data that falls inside the range. Digit preference, implausibly low within-subject variance and inlier patterns are found by central statistical monitoring, not by the EDC
+- Group-sequential software (East, rpact) computes boundaries for a planned information fraction; if the information realised at the look differs, the printed boundary no longer controls alpha and the package will not say so
+- CDISC conformance checkers such as Pinnacle 21 validate structure and controlled terminology, not clinical correctness — a fully conformant ADaM dataset can carry the wrong analysis population
+
 [Limitations]
 - Does not cover first-in-human (FIH) dose escalation designs (3+3, CRM, BOIN — different framework)
 - Does not cover paediatric-specific trial requirements (PIP/PSP, extrapolation, age-appropriate formulations)

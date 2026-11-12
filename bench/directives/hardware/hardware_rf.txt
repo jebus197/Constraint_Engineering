@@ -66,6 +66,94 @@ Check that component land patterns match manufacturer-recommended footprints
   (RF passives are sensitive to pad geometry — parasitic L and C shift tuning).
 Perform pre-compliance radiated emissions scan before formal testing (CISPR 32 / FCC Part 15).
 
+[Diagnostic heuristics]
+
+If S11 is excellent and range is poor, measure total efficiency before re-tuning anything: a
+  50-ohm resistor has a perfect return loss and radiates nothing, so a match states only where
+  the power went IN, never where it went afterwards.
+If measured resonance sits below the design frequency, check ground-plane size and enclosure
+  loading before the matching network. A chip antenna's resonance is set largely by the copper
+  it sits on, and plastic, a battery or a hand all pull it down.
+If S11 changes when the coax is touched or re-dressed, there is common-mode current on the
+  cable shield; fit a ferrite or a quarter-wave sleeve and re-measure before believing either
+  reading.
+If a link falls a factor of 3 short of the Friis budget indoors, check path-loss exponent and
+  polarisation alignment before raising transmit power: indoor exponents run 3-4 rather than 2,
+  and a cross-polarised pair costs 15-25dB while doubling power buys 3dB.
+If a digital block misbehaves only while the radio transmits, trace the return current path and
+  look for a trace crossing a plane split before adding shielding. Shielding a return-path
+  problem moves the symptom and leaves the cause.
+If the prototype needs different matching values from the simulation, check pad parasitics and
+  the part's self-resonant frequency before the model: an 0402 capacitor above its SRF is an
+  inductor, and SRF falls as capacitance rises.
+If 2 nominally identical boards tune differently, check laminate batch and glass-weave
+  orientation before the assembly process. FR-4 is a woven composite, and a trace running over
+  bundle rather than over resin sees a different local Er.
+If receive sensitivity degrades only when a switching regulator is enabled, look for spurs
+  spaced at exactly f_sw before suspecting the radio; the spacing names the aggressor with no
+  further measurement.
+
+[Known failure modes]
+
+S11 measured with the calibration plane at the cable end rather than at the board connector,
+  so fixture loss flatters the return loss.
+Antenna characterised on an evaluation board whose ground plane differs in size from the
+  product's.
+Antenna tuned with no enclosure, battery, display or cables fitted — which are the loading
+  that sets the final tuning.
+Return loss reported as though it were radiation efficiency.
+Er for FR-4 treated as one constant, across frequency and across the panel.
+Ground stitching spaced for the fundamental when the frequency that matters is a harmonic or a
+  digital edge rate.
+Reference plane changed at a layer transition with no adjacent return path, so return current
+  detours through the nearest decoupling capacitor.
+ESD protection placed inside the matching network, where the diode's capacitance becomes part
+  of the tuning and the match cannot be recovered without re-tuning.
+Antenna gains mixed between dBi and dBd in one link budget, a 2.15dB error, or conducted
+  transmit power compared against an EIRP limit.
+
+[Exception catalogue]
+
+Conjugate match is the criterion for maximum POWER TRANSFER, and it is the wrong criterion at 2
+  common planes: a low-noise amplifier input is deliberately mismatched toward Gamma_opt for
+  minimum noise figure, and a power amplifier output is matched to a load-pull-determined
+  impedance for power or efficiency. A return loss below target at those planes can be the
+  correct design.
+The RL > 10dB target is a system convention, not physics. A deliberately low-Q,
+  mismatch-tolerant antenna in a small product may be specified at 6dB across a wide band
+  because total efficiency integrated over that band beats a sharply tuned 10dB match.
+Gamma computed against 50 ohms is meaningless where the reference impedance is not 50 ohms.
+  Balanced antenna ports, 75-ohm systems and differential feeds must be referred to their own
+  Z_0, and a balun's transformation comes before any reflection claim.
+Absence of copper is not automatically a defect. Slot antennas, coplanar waveguide sections,
+  antenna keep-outs and deliberate voids under inductors are all intentional; the
+  ground-continuity rule is about UNINTENDED discontinuities in a return current path.
+The microstrip closed form is an approximation over a bounded w/h and copper-thickness range,
+  for that geometry alone. Outside it, and for stripline, embedded microstrip or CPW, a field
+  solver governs — and solder mask alone shifts Z_0 by a couple of ohms on a thin dielectric.
+Friis assumes far field. Inside roughly 2 * D^2 / lambda, and for electrically small antennas
+  within about a wavelength, the free-space equation does not apply at all — which is why NFC,
+  inductive coupling and very-close-range on-body links are a different regime rather than
+  underperforming links.
+
+[Tool limitations]
+
+A VNA measures reflection at its calibration plane. Loss and radiation are indistinguishable in
+  S11, so efficiency needs an anechoic or reverberation chamber, a Wheeler cap, or a 3-antenna
+  method — never a 1-port measurement.
+A 2.5-D or 3-D solver is only as good as the stack-up handed to it. Er, loss tangent, copper
+  roughness and mask thickness are inputs, and fabrication tolerance is wider than the solver's
+  precision, so a Z_0 quoted to 0.1 ohm against +/-10% manufacturing spread is false precision.
+A spectrum analyser set to an arbitrary resolution bandwidth and detector does not return the
+  quantity a standard limits. CISPR specifies detectors (quasi-peak, average) and bandwidths
+  (9kHz below 30MHz, 120kHz above), and a peak reading overstates against a quasi-peak limit.
+A near-field probe locates a radiating structure but has no calibration to a far-field level at
+  3m, so it ranks candidates and cannot predict compliance.
+A link-budget spreadsheet assumes a static channel. It cannot represent fading statistics, so a
+  margin that satisfies mean path loss may still fail a stated percentage of the time — and the
+  margin required depends on whether the channel is Rayleigh or Rician, which the spreadsheet
+  does not carry.
+
 [Limitations]
 
 Does not cover millimetre-wave design (>30GHz — substrate losses, waveguide transitions dominate).

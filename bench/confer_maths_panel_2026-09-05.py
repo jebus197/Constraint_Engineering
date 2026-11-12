@@ -1654,6 +1654,74 @@ def _preserve_prior_attempt(path):
     return dest
 
 
+def stamp_brief_at_dispatch(brief, prompt: str) -> str:
+    """Stamp every artefact the brief names with its state AS DISPATCHED.
+
+    ★ B125's FIRST HALF, WIRED AT DISPATCH AND NOT IN A BRIEF BUILDER.
+    His accepted recommendation: the brief QUOTES THE STATE of every file it
+    references, so a seat's reading is attributable to the bytes it actually
+    read. `scripts/stamp_the_brief_artefacts_2026-11-06.py` has produced exactly
+    that table since 2026-11-06.
+
+    MEASURED 2026-11-12: of 17 archived JOINT briefs, 17 name an artefact and
+    **0** carry the stamp, Wilson 95% [0.000000, 0.184318]. The stamper was an
+    addition reaching nothing, which the additive standard forbids on its own,
+    independently of B125. The existing guard's own text predicted it: "a stamp
+    that reaches no brief cannot be composed with anything."
+
+    WHY AT DISPATCH RATHER THAN IN A BUILDER. A builder stamps only briefs IT
+    wrote. Briefs are also authored by hand -- the severity joint brief of this
+    date was -- and those reached dispatch unstamped. Dispatch is the only
+    placement that makes "every file it references" true rather than aspirational.
+
+    IT RETURNS THE TEXT THE SEATS MUST RECEIVE, which is the half that is easy to
+    get wrong: `PROMPT` is bound from the brief by `resolve_brief` long before
+    this runs, so writing the file without rebinding PROMPT would put the stamp
+    on disk and send the seats the UNSTAMPED text -- a cosmetic fix wearing a
+    real one's name. The caller assigns the return value back to PROMPT.
+
+    IT IS IDEMPOTENT BY GUARD, NOT BY THE STAMPER. Measured 2026-11-12: calling
+    `insert_stamp` twice adds the table twice, so the heading check below is
+    load-bearing rather than an optimisation.
+
+    IT NEVER BLOCKS A DISPATCH, and it says so when it fails rather than staying
+    quiet. A guard that refuses on its own malfunction is the shape this project
+    keeps having to withdraw, and an absent stamp is visible in the brief itself,
+    so a loud warning plus a dispatch is honest where a silent skip would not be.
+    """
+    if not brief or not brief.is_file():
+        return prompt
+    try:
+        body = brief.read_text(encoding="utf-8", errors="replace")
+        if "ARTEFACT STAMPS AT DISPATCH" in body:
+            print("    artefact stamp: already present, left as it is", flush=True)
+            return body
+        import importlib.util as _siu
+        _sp = _siu.spec_from_file_location(
+            "_brief_stamp",
+            _REPO / "scripts" / "stamp_the_brief_artefacts_2026-11-06.py")
+        _sm = _siu.module_from_spec(_sp)
+        _sp.loader.exec_module(_sm)
+        stamped = _sm.insert_stamp(body, _REPO)
+        if stamped and stamped != body:
+            brief.write_text(stamped, encoding="utf-8")
+            n = len(_sm.named_artefacts(body, _REPO))
+            print(f"    artefact stamp: {n} named artefact(s) stamped into the "
+                  f"brief at dispatch; the seats receive the stamped text "
+                  f"({len(stamped):,} chars)", flush=True)
+            return stamped
+        print("    artefact stamp: the brief names no resolvable artefact, so "
+              "nothing was stamped", flush=True)
+        return body
+    except Exception as exc:                       # pragma: no cover - never silent
+        print(f"    artefact stamp: NOT APPLIED -- {exc!r}. The brief goes out "
+              f"UNSTAMPED and a seat's reading will not be attributable to the "
+              f"bytes it read. Dispatching anyway rather than refusing.",
+              flush=True)
+        return prompt
+
+
+
 def main() -> int:
     # BIND THE BRIEF HERE, not at import. See `resolve_brief`.
     resolve_brief()
@@ -1680,7 +1748,13 @@ def main() -> int:
     # illegible shape A22's docstring records as the price of moving the binding
     # out of import time. `_logs_dir()` says to call `resolve_brief()` instead.
     # A real run is unaffected: `resolve_brief()` above always binds it.
-    global MODELS
+    #: ★ PROMPT JOINS THIS DECLARATION, 2026-11-12. The artefact stamp below
+    #: rewrites BRIEF.md, and PROMPT -- the text the seats actually receive --
+    #: was bound from that file at import time by `resolve_brief`. Stamping the
+    #: file without rebinding PROMPT would put the stamp on disk and send the
+    #: seats the UNSTAMPED text, which is a cosmetic fix wearing a real one's
+    #: name. The declaration must precede PROMPT's first use in this scope.
+    global MODELS, PROMPT
     MODELS = select_models(_ONLY, _logs_dir().name)
 
     # SPEND-GATE 2 OF 2, and it runs before any seat is built, for the same
@@ -1733,6 +1807,11 @@ def main() -> int:
     # one. Recording the declaration is what makes the omission measurable, and
     # `bench/tests/test_a_blind_round_has_a_joint_round_2026-10-08.py` is what
     # then refuses it.
+    # ARTEFACT STAMP, B125 half 1. Extracted to a named function so it can be
+    # TESTED: an inline block in main() is untestable by construction, which
+    # is how an unverified fix gets called verified.
+    PROMPT = stamp_brief_at_dispatch(BRIEF, PROMPT)
+
     _write_topology_record()
 
     # ─────────── ALIVENESS PROBE, before anything expensive ───────────

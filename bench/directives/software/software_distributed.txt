@@ -41,6 +41,87 @@ References: Brewer (2000) CAP theorem, Lamport (1978) clocks, Raft/Paxos consens
 - Inject network partitions (Jepsen-style) and verify system behaviour matches stated consistency model.
 - Verify clock usage: grep for wall-clock calls in latency/ordering code paths.
 
+[Diagnostic heuristics]
+- If a cluster loses quorum during a rolling restart but survives a single node kill, check whether
+  the orchestrator's readiness probe reports ready before the node has rejoined the consensus group
+  — a process accepting traffic is not necessarily a voting member.
+- If a replica's lag metric reads 0 while clients observe stale reads, check what lag measures:
+  bytes behind the leader's write position is not apply latency, and a replica can have received
+  everything and applied nothing.
+- If p99 latency clusters near a configured timeout plus jitter, read the retry schedule before
+  profiling handler code. That shape says requests are succeeding on attempt 2, not that the handler
+  is slow.
+- If the same message reaches state a second time despite an idempotency key, check the key's scope
+  (per-shard, per-partition, per-connection) and whether it derives from a client clock, before
+  suspecting the deduplication store's TTL.
+- If a test is reliable on a single machine and flaky in CI, check whether the assertion depends on
+  wall-clock ordering of events on different nodes rather than on a happens-before edge; a
+  single-machine run accidentally supplies a total order.
+- If observed aggregate throughput divided by the configured per-instance limit is not an integer,
+  look for a partial rollout or an autoscaler sitting at a replica count nobody declared, before
+  re-deriving the limit.
+- If leader elections flap with no steady leader, compare the election timeout against measured p99
+  heartbeat RTT and the worst observed stop-the-world pause before adding nodes; adding nodes raises
+  the quorum size and makes flapping worse.
+- If deleted records reappear, look for a replica partitioned past the tombstone GC window before
+  blaming the client — anti-entropy cannot distinguish a missing tombstone from a missing write.
+
+[Known failure modes]
+- Last-write-wins conflict resolution on wall-clock timestamps: the surviving write is the one whose
+  node's clock runs fast, and the loss is silent.
+- Read-modify-write against an eventually consistent store with no compare-and-set or version token,
+  giving lost updates under concurrency.
+- Retry amplification into metastable failure: client retries sustain the overload that caused them,
+  and recovery needs load shedding and a retry budget, not more capacity.
+- Synchronised cache expiry (identical TTLs, no jitter) producing a thundering herd against the
+  origin at the instant of expiry.
+- Unbounded queues presented as backpressure, converting a throughput deficit into unbounded latency
+  and eventually an out-of-memory kill.
+- Dual writes to a database and a message broker with no outbox or log tailing, so the 2 diverge
+  whenever the process dies between them.
+- Failover with no fencing token or lease epoch, so the deposed leader keeps writing — split brain
+  caused by the recovery mechanism rather than by the partition.
+- Treating a timeout as a definitive failure and running a compensating action, when the original
+  operation commits afterwards.
+- Health checks that assert the process is alive while saying nothing about its dependencies or its
+  group membership, so a node reports healthy and serves nothing.
+
+[Exception catalogue]
+- CAP's trade-off binds only while a partition exists. Describing a non-partitioned steady state as
+  both consistent and available is correct, and PACELC's latency-versus-consistency arm is the right
+  frame for normal operation.
+- Single-node and single-writer deployments have no partition to tolerate: an embedded store, a
+  single-leader service with a local synchronous commit, a batch job on 1 host. Imposing quorum and
+  partition machinery there adds failure modes instead of removing them.
+- Wall-clock time is the correct input where the quantity being computed IS civil time: billing
+  periods, retention and certificate expiry, legal deadlines, scheduled jobs. A monotonic clock
+  cannot answer whether 30 days have passed. The prohibition governs ordering and elapsed-time
+  measurement.
+- Bounded-uncertainty physical clocks are a sound ordering mechanism where the uncertainty interval
+  is read and respected: Spanner's TrueTime commit-wait, and ClockBound over a PTP-synchronised
+  fleet, order transactions by physical time legitimately. Dismissing these as display-only is wrong.
+- Strict majority is not the only safe quorum. Flexible Paxos admits any read and write quorum sizes
+  satisfying |Q_r| + |Q_w| > N; a 2-replica deployment plus a witness or tiebreaker is a real
+  pattern; and an even-sized cluster is legitimate as a transient state during a membership change.
+- Idempotency keys are unnecessary where the operation is idempotent by construction — an absolute
+  SET, an upsert on a natural key, a monotonic high-water mark. Append and increment are not, and
+  still need one.
+
+[Tool limitations]
+- Jepsen finds the safety violations it happens to schedule. A clean run bounds nothing about
+  unexplored interleavings, its nemesis set is a choice, and its checker detects only the anomaly
+  classes it was configured to look for.
+- Distributed tracing samples. Head-based sampling at 1% will almost never retain the tail event
+  under investigation, and tail-based sampling still drops spans whose parent was already dropped.
+- Closed-loop load generators cannot reproduce coordinated omission: when the system stalls the
+  generator stops issuing requests, so the measured p99 understates what users experience.
+- Chaos tooling injects the faults it can name. Grey failure — a node slow but not dead, a NIC
+  dropping a few per cent of packets, a disk returning correct data after 8 s — is the hardest class
+  to inject and the commonest in production.
+- Clock-offset metrics report what the local NTP or PTP daemon believes its offset to be. A host that
+  has silently lost its upstream reports healthy synchronisation while drifting, and only an
+  independent time source detects it.
+
 [Limitations]
 - Does not cover blockchain/consensus protocol design.
 - Does not cover hard real-time distributed systems (bounded deadlines).

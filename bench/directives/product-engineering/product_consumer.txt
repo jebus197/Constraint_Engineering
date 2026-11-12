@@ -52,6 +52,96 @@ STANDARDS: LVD 2014/35/EU, EMC 2014/30/EU, RoHS 2011/65/EU, REACH EC 1907/2006,
 6. Confirm EMC test setup matches intended installation conditions
    (cable lengths, peripheral configuration, operating mode).
 
+[Diagnostic heuristics]
+1. If radiated emissions fail at a single narrow frequency, check the clock and its
+   harmonics before the enclosure. A peak at an exact multiple of a crystal or
+   switching frequency is a source problem, and shielding a harmonic treats the
+   symptom.
+2. If emissions fail only with a peripheral cable attached, check the common-mode
+   current on that cable. Above 30 MHz most consumer radiated failures are
+   cable-driven, and the fix belongs at the cable's entry to the board, not in the
+   enclosure.
+3. If a product passes at the first lab and fails at a second, check the setup
+   geometry before the product. CISPR 32 fixes cable dressing, table height and
+   peripheral placement, and a double-digit decibel difference from cable routing
+   alone is ordinary.
+4. If a RoHS report passes on an assembly, check whether the analysis was per
+   homogeneous material or on a mixed sample. The limits apply per homogeneous
+   material, and a mixed digest dilutes a non-compliant plating below the limit.
+5. If a touch-temperature complaint arrives on a product that passed, check the
+   IEC 62368-1 table for the material and the contact duration rather than a single
+   figure. A metal surface fails at a temperature a plastic surface passes.
+6. If a pack passes UN 38.3 and the product still shows field safety issues, check
+   end-of-charge voltage at the cell and the charger tolerance stack. UN 38.3 is a
+   transport test and says nothing about in-use charging, which is IEC 62133-2
+   territory.
+7. If drop testing passed and field returns show cracked enclosures, check the
+   orientation set and the sample's assembly state. The standard fixes height and
+   surface; the worst orientation for a given design is usually a corner the sample
+   plan omitted.
+8. If a Declaration of Conformity looks complete, check each harmonised standard's
+   edition against the current Official Journal list before reading the content. A
+   withdrawn edition carries no presumption of conformity even when the product
+   passes it.
+
+[Known failure modes]
+1. An applicable directive missed entirely, most often the Radio Equipment Directive
+   once a wireless module is added.
+2. RoHS analysis on a mixed sample rather than per homogeneous material.
+3. REACH SVHC content assessed against whole-product weight rather than per article,
+   which dilutes the 0.1 per cent threshold.
+4. Test reports taken from prototype tooling or prototype firmware rather than from
+   the mass-production configuration.
+5. CISPR 32 Class A limits applied to a product that will reach the residential
+   market.
+6. A radio module's own certification assumed to transfer to the finished product with
+   no host assessment.
+7. CE mark applied below 5 mm, distorted in proportion, or with importer details
+   omitted from the product.
+8. A withdrawn edition of a harmonised standard cited in the Declaration of
+   Conformity.
+9. Cell supplier changed inside an approved pack design with no re-test.
+
+[Exception catalogue]
+1. RoHS carries published, time-limited exemptions in Annexes III and IV — lead in
+   high-melting-temperature solders, lead in the glass of optical components, and
+   others. An above-limit result against a valid, unexpired exemption is compliant, so
+   what must be checked is the exemption's expiry, not the concentration.
+2. CE marking is not universal. A product within the scope of no CE directive must NOT
+   carry the mark, and affixing it where nothing applies is itself an infringement
+   rather than an abundance of caution.
+3. The Low Voltage Directive's scope begins at 50 V AC and 75 V DC. A battery product
+   operating below that is outside the LVD entirely and is addressed instead by the
+   General Product Safety Regulation together with EMC and RoHS, so listing the LVD on
+   its DoC is an error.
+4. NRTL listing is not a federal legal requirement in the United States. It is driven
+   by the National Electrical Code as locally adopted, by OSHA for workplace equipment,
+   and by retailer and insurer requirements, which changes who can waive it and on what
+   grounds. The EU route carries no equivalent discretion.
+5. Class A is legitimate where the product is genuinely not intended for residential
+   use and carries the required warning. The EMC Directive does not require Class B of
+   everything.
+6. A cell already tested to UN 38.3 does not need re-testing when assembled into a
+   pack, provided the pack itself is tested and the cell design is unchanged within the
+   standard's stated limits. Re-testing identical cells per product is not required.
+
+[Tool limitations]
+1. An XRF screen returns an elemental total. It cannot distinguish Cr(VI) from Cr(III)
+   or identify which phthalate is present, so a result near a limit needs wet chemistry
+   and XRF alone cannot clear a restricted-substance claim.
+2. Pre-compliance EMC measurement shows relative improvement. Absolute margin against
+   a CISPR 32 limit line requires the standard's measurement distance, antenna and site
+   attenuation.
+3. Enclosure thermal simulation is only as good as the assumed ambient, orientation and
+   obstruction. The standard's worst case includes operation inside a cabinet or against
+   soft furnishing, which the model is rarely configured for.
+4. A supplier compliance portal reports what suppliers declared, with no analytical
+   basis. A complete full-material-declaration pass is a statement about paperwork, not
+   about the material.
+5. A certification mark database confirms that a certificate exists for a model number.
+   It cannot confirm that the shipping unit matches the certified construction, which is
+   what factory surveillance exists for.
+
 [Limitations]
 1. Does not cover toys (EN 71), cosmetics, or food-contact materials.
 2. Does not cover machinery (2006/42/EC) or PPE (EU 2016/425).

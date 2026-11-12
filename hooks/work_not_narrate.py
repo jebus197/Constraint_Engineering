@@ -78,6 +78,38 @@ import sys
 #: that refuses on its own malfunction is the shape this project keeps having to
 #: withdraw.
 MAX_REFUSALS_PER_TURN = 8
+
+#: ★ THE BUDGET IS NOW CONDITIONAL ON WHETHER THE WORK CAN MOVE WITHOUT HIM.
+#: Founder ruling 2026-11-12. His words: *"the limit of 8 is sensible, it stops
+#: you looping on things you fundamentally can't do without me"* and then the
+#: correction that matters: *"But it isn't sensible if it causes you to stop on
+#: things you can do."*
+#:
+#: HE IS RIGHT, AND THIS FILE ALREADY RECORDED THE MIRROR IMAGE OF THE FAULT.
+#: `open_items`'s own docstring says that through 2026-11-09 this gate named an
+#: entry awaiting his ruling and "refused the stop 8 times a turn against work
+#: nobody in the session could advance. A whole day of pushing at an entry that
+#: could not move." That half was repaired on 2026-11-10 by PREFERRING a movable
+#: entry. The budget was not touched, so the INVERSE case survived: a turn with
+#: plenty of work the session can do alone still yields after 8 refusals, and
+#: then only his next message restarts it.
+#:
+#: MEASURED BEFORE CHANGING ANYTHING, from this session's own transcript: the
+#: gate announced "allowing the stop" **219 times**, and its state file held 15
+#: refusals against a budget of 8 for a single turn. So the yield is not rare.
+#:
+#: THE DOCUMENTED INTENT IS PRESERVED EXACTLY. The reason recorded above is that
+#: "a hook that can never yield would trap a session that has genuinely
+#: finished". A session with movable work has not finished, which is precisely
+#: his distinction -- so the bound rises only in that case and a hard ceiling
+#: keeps it finite either way.
+#:
+#: THE CEILING IS A JUDGEMENT AND IS LABELLED AS ONE. 5x the base budget. No
+#: measurement here relates a refusal count to an outcome, so it must not be
+#: cited as derived. What IS derived is the per-item multiplier: the bound is the
+#: base budget once per movable entry, so a turn gets its 8 chances at each thing
+#: it can actually do, and a turn with nothing movable keeps exactly the old 8.
+MAX_REFUSALS_CEILING = 40
 STATE = pathlib.Path.home() / ".claude" / "hooks" / ".work_not_narrate_state.json"
 
 #: A turn doing real work makes more than this many tool calls.
@@ -457,6 +489,51 @@ def spend_refusal(key: str) -> int:
     return state["refusals"]
 
 
+def movable_count() -> int:
+    """How many OPEN entries can this session move WITHOUT him? 0 if unknown.
+
+    Reuses the classifier `open_items` already uses rather than re-deciding, so
+    the 2 cannot disagree about what "awaits him" means -- the producer-consumer
+    divergence this project keeps meeting.
+
+    FAIL-SAFE AND THAT IS NOT DECORATION: this runs on every attempted stop, so
+    a missing or slow classifier must cost the RAISED BUDGET and never the gate.
+    It returns 0 on any failure, which falls back to the original budget of 8.
+    """
+    try:
+        sys.path.insert(0, str(MARKERS))
+        from task_list_markers import parse_entries           # type: ignore
+        opens = [e for e in parse_entries(TASKS) if e.state == "OPEN"]
+        if not opens:
+            return 0
+        spec = importlib.util.spec_from_file_location(
+            "wnn_decide", MARKERS / "how_many_decisions_actually_need_him_2026-11-01.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        bodies = mod.bodies()
+        n = 0
+        for e in opens:
+            d = mod.classify_text(e.state or "", e.ruled, bodies.get(e.ident, ""))
+            if not d.get("live_asks"):
+                n += 1
+        return n
+    except Exception:                                          # noqa: BLE001
+        return 0
+
+
+def refusal_budget() -> int:
+    """The refusal budget for this turn, conditional on movable work.
+
+    His ruling of 2026-11-12: 8 is right for work that needs him, and wrong for
+    work the session can do. So the base budget stands when nothing is movable,
+    and rises by 1 base budget per movable entry otherwise, up to a ceiling.
+    """
+    n = movable_count()
+    if n <= 0:
+        return MAX_REFUSALS_PER_TURN
+    return min(MAX_REFUSALS_CEILING, MAX_REFUSALS_PER_TURN * n)
+
+
 def open_items() -> tuple[int, str]:
     """(open count, the next entry THIS SESSION CAN ACTUALLY MOVE). (0, '') if unknown.
 
@@ -693,12 +770,16 @@ def main() -> int:
     block, why = verdict(calls, prose, commit, had_d, n_open, nxt, raised)
     if block:
         used = spend_refusal(_turn_key(pathlib.Path(os.path.expanduser(t))))
-        if used > MAX_REFUSALS_PER_TURN:
+        budget = refusal_budget()
+        if used > budget:
+            movable = movable_count()
             print(f"work_not_narrate: {used - 1} refusals already this turn, which "
-                  f"is the budget. Allowing the stop so a finished session cannot "
-                  f"be trapped.", file=sys.stderr)
+                  f"is the budget of {budget} "
+                  f"({movable} open item(s) the session can move without him). "
+                  f"Allowing the stop so a finished session cannot be trapped.",
+                  file=sys.stderr)
             return 0
-        print(f"{why}\n\n(continuation {used} of {MAX_REFUSALS_PER_TURN} this turn)",
+        print(f"{why}\n\n(continuation {used} of {budget} this turn)",
               file=sys.stderr)
         return 2
     return 0

@@ -28,6 +28,42 @@ SCOPE: 3-axis milling and 2-axis turning of metals — conventional subtractive 
 - Validate that thermal expansion is accounted for in tight-tolerance work (steel grows ~12 um/m per degree C; aluminium ~23 um/m per degree C)
 - Check tool life expectations against batch size; plan tool change points to avoid mid-feature tool failure
 
+[Diagnostic heuristics]
+- If every part in a batch is out of tolerance in the same direction by a similar amount, the cause is a systematic offset — tool length or diameter offset, probe calibration, work offset — not the cutting process; check the offset table and a first-off measurement before changing feeds and speeds
+- If the error scatters unit to unit with no trend, look at loading repeatability (chip trapped under a locator, inconsistent clamp torque, burr on a datum face) before machine positioning accuracy; random part-to-part error is almost never the ballscrew
+- If a dimension drifts steadily through a batch, read the SHAPE of the drift: a step at each tool change is tool wear, a drift that follows warm-up and then plateaus is thermal growth, and a drift that continues indefinitely is neither — establish which before touching the programme
+- If a surface carries regular marks, count them against spindle revolutions and against tooth count before condemning the insert: 1 mark per revolution is runout or a single high tooth, marks at tooth-passing frequency are the normal feed scallop, and chatter marks sit at neither frequency, near a structural natural frequency instead
+- If achieved R_a is worse than f^2 / (32 * r_epsilon) predicts, check for built-up edge and tool runout before reducing feed; the equation is a geometric floor that assumes a sharp tool running true, and on aluminium a lower feed can make built-up edge worse rather than better
+- If chatter appears, change spindle speed before stiffening the setup: regenerative chatter is speed-dependent and a 10-20% change in n often removes it, whereas a stiffness change means a different tool, holder or fixture
+- If a bore passes a diameter check but the mating part will not assemble, check form and the measurement datum before size: a 2-point diameter cannot see lobing or taper, and an ISO 286 size tolerance does not control form
+- If a thin-walled part measures correctly clamped and fails released, the part is springing; measure free-state and quantify clamp-induced distortion before changing the toolpath
+
+[Known failure modes]
+- Tolerance stack-up across setups treated as the single-feature tolerance: 3 setups each holding +/-0.05 mm can put +/-0.15 mm between features machined in different setups, while the drawing tolerances the RELATIONSHIP rather than each setup
+- Worst-case stack applied where contributors are independent and statistical, or root-sum-square applied where they are not independent (a common fixture error appears in every contributor at once)
+- Programme datum scheme different from the drawing's datum reference frame, so the part is machined accurately to the wrong reference
+- Catalogue cutting data applied to a different condition of the same material (cold-drawn versus annealed, free-machining versus standard, work-hardened skin on austenitic stainless)
+- Coolant concentration never checked with a refractometer, so tool life and surface finish drift between batches with no recorded cause
+- Spindle and machine warm-up skipped, so the first parts of a shift differ systematically from the rest of the batch
+- Cutting to the nominal dimension where the fit is unilateral (an H7 bore, a shaft at h6), instead of aiming at the middle of the tolerance band and leaving room for tool wear
+- Parts measured at an unrecorded temperature and compared against a tolerance referenced to 20 C per ISO 1; steel moves ~12 um/m per degree C, so a 300 mm feature moves 3.6 um per degree C
+- First-off inspected and the batch never re-checked, so a drift is discovered after the last part is cut
+
+[Exception catalogue]
+- The h_min floor scales with EDGE RADIUS, not with the material: a ground HSS, PCD or polished-edge tool with r_edge of 1-5 um has h_min of roughly 0.25-1.6 um, so chip loads far below the 0.01 mm figure quoted for standard carbide inserts are correct cutting rather than ploughing
+- R_a ~ f^2 / (32 * r_epsilon) is a turning relation for a conventional nose radius; a wiper insert's flat trailing edge deliberately breaks it and holds the same R_a at roughly double the feed, and the relation does not describe milling at all (where stepover and tool radius set the scallop), nor ground or burnished surfaces
+- The deflection criterion applies to the UNCOMPENSATED residual: where a long-reach tool's deflection is known, repeatable and offset in the toolpath, or removed by spring passes, the raw delta may exceed tolerance/3 while the finished feature does not
+- The climb-milling preference inverts in 2 identifiable cases: on a machine with measurable backlash in the feed axis, where climb milling pulls the work into the cutter, and through an abrasive skin (castings, flame-cut edges, forging scale) where the entry condition rather than the exit condition governs tool life
+- F_grip * mu >= F_c * SF assumes friction resists the cut. Where the part bears against a positive stop, dowel or shoulder in the cutting direction, friction is not the governing term; vacuum and magnetic chucks are instead bounded by holding pressure times effective sealed or pole area
+- Thermal compensation is about DIFFERENTIAL temperature. A fit between 2 parts of the same material at the same temperature is self-compensating, and correcting one of them for expansion introduces the very error the correction was meant to remove
+
+[Tool limitations]
+- CAM software verifies geometry and collisions, not force: a toolpath that simulates cleanly can still deflect, chatter or break the tool, because the simulation carries no k_c, no stiffness and no damping
+- A CMM reports what it probed and how it was fitted: a 2-point or least-squares diameter carries no information about lobing or taper, and switching between least-squares and minimum-circumscribed fitting changes the reported size by more than the machine's repeatability
+- ISO 230 accuracy figures characterise the machine unloaded; they exclude tool deflection, thermal drift under cutting load and workholding error, which are usually the larger contributors to the error on the part
+- A published tool life is for a stated material, coolant and engagement, and the Taylor exponents for the actual combination are generally unavailable, so a predicted life carries no stated uncertainty
+- A roughness tester reports R_a over a chosen cut-off and filter; the same surface measured at a different cut-off returns a different number, and R_a cannot distinguish a uniformly smooth surface from one with isolated deep scratches — R_z or R_max is needed for that
+
 [Limitations]
 - Does not cover 4-axis or 5-axis simultaneous machining (different toolpath strategies, RTCP/TCP compensation)
 - Does not cover EDM (wire or sinker) — different material removal mechanism (no cutting forces)

@@ -54,7 +54,7 @@ The commit check refused once in this half and every failure was mine and real.
 
 ## PART 2. YOUR 6 QUESTIONS, ANSWERED FROM THE RECORD
 
-### Question 1. would the revised severity definition still block that run?
+### Question 1. Would the revised severity definition still block that run?
 
 No, it would not unblock it, and the reason is the substance rather than a technicality.
 
@@ -66,25 +66,25 @@ No, it would not unblock it, and the reason is the substance rather than a techn
 
 **Your constraint was honoured by construction.** The measurement is a pure read: the archived run was opened, the live predicate was applied to it in memory, and nothing was written. No verdict was restated and no historical entry was rewritten.
 
-### Question 2. was the severity gate reinstated, and was the worked proofs work ever done?
+### Question 2. Was the severity gate reinstated, and was the worked proofs work ever done?
 
 Both yes.
 
 **The gate was restored on 6 October on your ruling, and it is no longer the bare severity comparison it was.** It is the conjunctive release described above, and the proof half is the worked proof you authorised: the model's stated figure has to reproduce from the model's own stated inputs before any release is granted. That is measured rather than asserted, and it does open: across 2994 archived entries the proof condition holds for 295, which is 9.8530 per cent with a 95 per cent interval of 8.8364 to 10.9726, so roughly 1 entry in 10.
 
-### Question 3. on the integrity gate, am i proposing a fix or have we agreed it already?
+### Question 3. On the integrity gate, am I proposing a fix or have we agreed it already?
 
 **Agreed, and built. You ruled it on 16 October with the words Fix it all.** The carve out is live in the code that re runs a falsifier, and its 2 guards pass, 18 tests between them, including the one covering falsifiers that spawn a second interpreter. So this is neither a proposal nor an open question.
 
-### Question 4. on the proven floor, did we agree a fix?
+### Question 4. On the proven floor, did we agree a fix?
 
 **Agreed on the same date with the same words, and the decomposition floor guard passes.** The related repair is also verified live: the specification bound and the work bound are now separate fields, and every 1 of the 5 declared model phenotypes carries the specification bound unset, which means the project's own specification is delivered whole to every model rather than reduced.
 
-### Question 5. the 9 explanations owed, are they still relevant, and can i even trace them?
+### Question 5. The 9 explanations owed, are they still relevant, and can I even trace them?
 
 **Partly traceable and mostly superseded, and your suspicion was right.** 2 of the 9 are already discounted against the record in the generated report, with the reason attached to each rather than by judgement. The remaining 7 are from 30 August to 28 September and predate the register, so they carry no identity and no kind, which is exactly the diagnosis you gave. They are now reachable only through the triage script that produced them. My recommendation is to retire them as a block against a single statement, rather than answer 7 questions whose subjects have moved, and to say so in the report rather than carry them forward silently for another month.
 
-### Question 6. the directive flag dump, did i ever implement the agreed fix?
+### Question 6. The directive flag dump, did I ever implement the agreed fix?
 
 Yes, and it is verified by execution rather than by reading the code's own account of itself.
 

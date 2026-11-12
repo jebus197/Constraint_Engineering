@@ -69,35 +69,35 @@ Your question was whether severity can be calculated at all, whether it should b
 
 ## PART 4. THE 5 ENTRIES STILL OPEN, IN THE AGREED FORMAT
 
-### B21. the word for what a model does in a run.
+### B21. The word for what a model does in a run.
 **What it is. You asked for model and role selection to be as free as the project's claims of model independence imply, with roles such as worker, classifier and orchestrator individually selectable.** A role vocabulary already exists in the code and it is not yours: it names a seat's position in the topology.
 **Why it is relevant. The project claims model independence.** If the only role names available describe topology, a user cannot select what a model does, only where it sits.
 **What it affects. Nothing is broken today, which is the part worth knowing.** The structural axis is declared twice in the tree, in 2 incompatible value vocabularies, so a value drawn from either can never equal a value drawn from the other. Measured across the live tree: 68 occurrences of the lowercase vocabulary in 26 files, 104 of the enumerated vocabulary in 7 files, 1 file touching both, 0 importers of the first declaration's type alias, and 0 comparisons or assignments across the 2. In the single file that touches both, they never meet. So the hazard is latent, not live.
 **Recommendation. Build the functional layer as a 4th layer beside the 3 that exist, and leave both structural vocabularies alone.** ADDITIVE: it adds a layer and removes nothing, and all 10 domains currently return the same 8 policy keys with 0 role keys among them, so nothing is being replaced. SIMPLEST SUFFICIENT: it is 1 new layer and 1 new policy key; unifying the 2 structural vocabularies instead would touch 63 quoted values across 24 files to fix a hazard that has not fired. COMPOSABILITY: I am not claiming the 2 changes compose, because I have no measurement that doing both outperforms building the layer by itself, and your definition requires such a measurement. The layer alone is therefore preferred until such a measurement exists.
 **What needs you. Your go ahead to build the layer.** The second declaration needs no decision from you.
 
-### B22. what a fix means when there is nothing to run.
+### B22. What a fix means when there is nothing to run.
 What it is. Your question of whether this is yet a general purpose calculator for science and mathematics rather than a code reviewer, reframed by you into the question of what a proof should be in a non code field.
 Why it is relevant. It decides whether the harness has a defensible claim outside code at all, which is the project's stated aim.
 **What it affects. The harness has already converged on non code material 3 times.** Your 4 step pipeline exists on executing machinery. What does not work is the sign convention described in part 2: a proof and a falsifier share 1 field with an implicit sense, so the gate cannot tell a verified proof from a refuted falsifier.
 **Recommendation. Make the sense explicit as its own recorded field, and have the severity factor read that field rather than inferring the sense.** ADDITIVE: it adds a field and changes no existing record; the fix a seat wrote for it was tested and must not be folded back yet, because the hazard is prospective rather than realised and the test for it is still only in seat evidence. SIMPLEST SUFFICIENT: 1 field and 1 read, against the alternative of 2 parallel pipelines. COMPOSABILITY: this and the 4th convergence condition both touch the severity factor, so they are not independent, and I have no measurement that combining them beats doing the sign bit first. The sign bit alone is preferred, and it is also the precondition for the other.
 **What needs you. Nothing yet.** I will bring you a tested fix.
 
-### B41. the work queue of 19 october.
+### B41. The work queue of 19 october.
 What it is. A list of 8 jobs, mechanised onto the task list so the session stays on it.
 Why it is relevant. Mechanising the list onto the Stop gate is what kept the 20 hour sprint of 17 October alive, and this entry is the one whose own condition refuses to let it close early.
 **What it affects. 6 of the 8 are discharged with evidence.** Its own closing condition is that every line above it is resolved and the suite is re run on a tree nobody is editing. That condition has now refused it twice.
 **Recommendation and what I got wrong.** Your instruction was to close the 6 discharged lines and keep the entry open on the dispatch alone. I instead marked the whole entry done, which the suite then caught, and I withdrew it. The 6 lines are still not individually closed, and the entry's evidence field still names 2 written records rather than tests, which the evidence rule will refuse when I try again. ADDITIVE: closing a line on its own evidence removes nothing. SIMPLEST SUFFICIENT: 6 line closures plus an evidence field that names tests. COMPOSABILITY: not applicable; these are independent closures, not a composed fix, and saying otherwise is the misuse part 0 describes.
 **What needs you. Nothing.** This is mine to correct.
 
-### B56. the demotion rule's operating point.
+### B56. The demotion rule's operating point.
 What it is. How often the rule that demotes an underperforming model would demote a healthy model instead.
 Why it is relevant. You pushed back that a 1 in 20 chance of demoting a model performing perfectly well seemed unreasonably high, and you were right to.
 **What it affects. Nothing today.** The rule is not connected to anything, so the setting changes no behaviour, which your own accepted recommendation said. At 1 in 20 the rule wrongly demotes a healthy model 3.50 percent of the time and catches a real decline 93.53 percent of the time. There are 2 caveats I owe you. The figures come from a simulated model of how a model degrades, not from this project's runs. And a real decline means an individual model declining; the rule cannot identify the case where the whole roster declines together, and that is provable rather than merely unmeasured.
 **Recommendation. Keep 1 in 50 recorded and unconnected.** ADDITIVE: a number in a rule nothing reads. SIMPLEST SUFFICIENT: it is 1 number. COMPOSABILITY: not claimed.
 **What needs you. Nothing further.** Your acceptance is recorded.
 
-### C1. a working measurement connected to nothing.
+### C1. A working measurement connected to nothing.
 **What it is. A channel that reads each individual claim in a reviewed document and records whether a tool could decide it and whether it survived.** It works and nothing reads it.
 Why it is relevant. It is a measurement the project already pays for and gets nothing from.
 **What it affects. Its weight in the scoring equations is 0, so its multiplier is exactly 1.** I told you that 0 of the 6 archived reports carrying a claim ledger record the risk figure a weight would act on, and that there was nothing to compare against. That was wrong: 6 of 6 carry it. The figure is recorded per entry, not as a report level field, so searching for a report level field returned 0 and I read that 0 as an absence. The binding limit is different and it is real: all 106 archived values of that figure are identical at 0.500000, because the recursion re initialised every round until last night, so no weight can be shown safe against a range that has no range. Producer: scripts/the_largest_harmless_claim_weight_2026-10-31.py.

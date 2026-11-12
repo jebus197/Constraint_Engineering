@@ -164,6 +164,109 @@ Recommended S* floor: 0.60
   resolution. This is a conservative floor; the computed S* from the
   equation may be higher in practice.
 
+[Diagnostic heuristics]
+
+  - SEARCH block rejected with a body that looks identical: diff whitespace and
+    line endings first. A CRLF file, a tab-indented region, or a trailing space
+    on the anchor line defeats exact string match and renders identically in
+    every report.
+  - g1 passes and g2 fails: suspect the source encoding declaration or a
+    `from __future__` import placed after another statement. py_compile reads
+    the file as the interpreter will; ast.parse reads the text as given.
+  - e2 failure count differs between runs on the same fix: test ordering
+    dependence. Pin the order before attributing it to the fix — a baseline
+    captured under a given order is not comparable with a post-fix run under a
+    different one.
+  - e3 delta negative: an instrument fault, not a bonus. A fix cannot remove
+    violations from lines it did not touch, so the baseline was captured over a
+    different file set or with a different ruff version.
+  - mypy reports a new error on a line the fix did not touch: check whether the
+    fix narrowed a type upstream. Type errors attach to the use site, not the
+    change site, so the delta can point at the wrong file.
+  - A test starts passing and a sibling starts failing in the same module: look
+    for a module- or session-scoped fixture before concluding the fix is wrong.
+    The order in which the 2 tests acquire that fixture may have changed.
+  - pytest green but `python3 -c "import pkg"` fails: the run is importing from
+    the source tree while the installed distribution is stale. Check
+    `pkg.__file__` and `pip show -f` before editing further.
+  - e4 delta rises on a fix that only moved code: a count-based delta cannot
+    distinguish a relocated finding from a new one. Compare finding identities,
+    not counts.
+
+[Known failure modes]
+
+  - Late binding in a closure created inside a loop: the lambda captures the
+    variable, not its value, so every callback observes the final iteration.
+  - `assert` used for runtime validation: the check is stripped under
+    `python -O`, so the deployed configuration validates nothing.
+  - Monkeypatching the defining module's attribute when the consumer did
+    `from mod import dep`: the consumer's bound reference is untouched and the
+    test passes against unpatched code.
+  - `__eq__` defined without `__hash__`, or the reverse, making instances
+    unhashable or making dict and set lookups miss objects that compare equal.
+  - `datetime.utcnow()` returning a naive datetime that is then compared with,
+    or subtracted from, an aware one.
+  - `raise NewError(str(exc))` in place of `raise NewError(...) from exc`,
+    discarding the traceback that identifies the root cause.
+  - `if x:` used where `if x is not None:` was meant, rejecting 0, 0.0, an empty
+    string and an empty collection as though the value were absent.
+  - `@lru_cache` applied to a method: `self` enters the key, the instance is
+    kept alive for the process lifetime, and the cache is shared across what
+    the author believed were independent objects.
+  - Gates satisfied by suppression rather than repair — a `noqa` comment, a
+    `type: ignore` comment, a `skip` mark, a widened `pytest.approx` tolerance.
+    Every score improves and the defect survives.
+
+[Exception catalogue]
+
+  - The SEARCH/REPLACE format cannot express a new file, a whole-file deletion
+    or a rename. A fix that legitimately requires a new module is outside the
+    format rather than malformed, and must be escalated, not scored 0.
+  - g1 and g2 are admissibility gates for Python source. A correct fix may
+    target a non-Python artefact the Python code depends on — `pyproject.toml`,
+    a packaging manifest, a Jinja template, a SQL migration. Scoring it 0 on g1
+    confuses "not parseable as Python" with "wrong".
+  - g2 legitimately fails on a file containing syntax newer than the
+    interpreter running the gate, even where the construct sits behind a
+    `sys.version_info` guard, because py_compile compiles the whole file. The
+    admissibility question is which interpreter the deployment imports it with.
+  - e3 legitimately rises on a correct fix that adds code: a new broad `except`
+    at a process boundary raises BLE001 while being the reviewed behaviour. A
+    new violation carrying an explicit rule-coded suppression with a stated
+    reason is non-regression in substance; a bare, unexplained one is not.
+  - e4 flags patterns, so a correct fix can add findings. A non-cryptographic
+    `hashlib.md5(..., usedforsecurity=False)` used as a cache key raises B324,
+    and `subprocess.run` with a list argv and `shell=False` raises B603. The
+    exception requires the non-security use to be stated, not merely asserted.
+  - The S* floor of 0.60 is a decision threshold for autonomous application,
+    not a correctness test. A fix scoring below it may still be the right one to
+    apply under human authorisation, where the alternative is to ship nothing
+    against a live defect.
+
+[Tool limitations]
+
+  - `ast.parse` sees the file as text. It cannot see what the import system will
+    load: a namespace package shadowing the name, a `.pth` file, a compiled
+    extension of the same name, an editable install pointing elsewhere. A fix
+    can parse perfectly and never be the code that runs.
+  - `py_compile` writes `__pycache__` entries keyed on source mtime and size
+    under the default invalidation mode, so an edit preserving both can be
+    masked by a stale `.pyc`. Use checked-hash invalidation, or
+    `PYTHONDONTWRITEBYTECODE=1`, when the gate result matters.
+  - pytest's exit status collapses outcomes that are not test failures:
+    collection error, internal error and no-tests-collected all terminate
+    non-zero, and `pass_count / total_test_count` is undefined when collection
+    failed — so a fix that breaks collection can present as 0.0 rather than as
+    a gate failure.
+  - ruff's JSON output is keyed on rule code and location, and rules are
+    renamed, recategorised and added between releases. The e3 delta is valid
+    only when baseline and post-fix runs use the same pinned ruff version,
+    which `python3 -m ruff check` does not itself assert.
+  - mypy caches per module in `.mypy_cache` and, invoked on a single file, will
+    reuse results for dependencies outside the analysed set. A per-file
+    invocation is therefore not baseline-comparable unless the cache is cleared
+    or the whole package is analysed.
+
 [SOLUTION VERIFICATION LIMITATIONS]
 
 Cannot verify:

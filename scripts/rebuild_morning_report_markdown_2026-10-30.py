@@ -216,6 +216,56 @@ def _emphasise_lead(line: str) -> str:
     return f"**{lead}**" + line[len(lead):]
 
 
+#: ★ `str.capitalize()` LOWERCASES EVERYTHING AFTER THE FIRST CHARACTER, which
+#: destroyed 2 kinds of token in headings it had already shipped. Found
+#: 2026-11-12 while rendering that morning's companion.
+#:
+#: (1) AN ENTRY IDENTIFIER. `B50's price list is wrong` shipped in the
+#:     2026-10-30 report as `b50's`. A lowercased identifier is not the
+#:     identifier: it cannot be matched against the task list, and this project
+#:     requires a code to travel with its subject precisely so a reader can
+#:     follow it.
+#: (2) THE PRONOUN `I`, in 7 headings across the 2026-10-30, 2026-11-01 and
+#:     2026-11-12 reports -- `the part i would want you to read first`.
+#:
+#: WHY NOT AN ACRONYM ALLOWLIST TOO. The source line is ALL CAPS by the time it
+#: reaches here (`L.isupper()` is the gate above), so case carries NO signal and
+#: `THE` is indistinguishable from `UX` by shape alone. A list of acronyms would
+#: be an addition nothing reaches: measured over every heading in all 3 affected
+#: reports, 0 carry an acronym and 2 token shapes carry the damage. So the rule
+#: is driven by what the record actually holds -- a token bearing a DIGIT, and
+#: the standalone pronoun -- and not by what might one day appear.
+_ID_TOKEN = re.compile(r"^([A-Z]+[0-9][A-Za-z0-9]*|[0-9]+[A-Z][A-Za-z0-9]*)(['’][A-Za-z]+)?$")
+
+
+def _recase(line: str) -> str:
+    """`capitalize()`, then put back the tokens it had no right to lower."""
+    out = line.capitalize()
+    src, got = line.split(" "), out.split(" ")
+    if len(src) != len(got):
+        return out                      # shapes diverged; change nothing
+    for i, s in enumerate(src):
+        bare = s.strip(".,;:()[]\"")
+        if bare == "I":
+            got[i] = s
+            continue
+        m = _ID_TOKEN.match(bare)
+        if m:
+            #: Keep the identifier exactly; lower only a trailing possessive,
+            #: so `B50'S` becomes `B50's` and not `B50'S`.
+            kept = m.group(1) + (m.group(2).lower() if m.group(2) else "")
+            got[i] = s.replace(bare, kept, 1)
+    #: ★ AND THE 3RD THING `capitalize()` GETS WRONG: it capitalises the FIRST
+    #: character of the whole string and nothing else, so every sentence after a
+    #: full stop is lowered. `WHY I KEPT STOPPING. MEASURED, AND NOW FIXED`
+    #: shipped as `Why I kept stopping. measured, and now fixed`. Only a lower
+    #: case letter following a sentence end is raised, so an identifier or a
+    #: restored pronoun already in place is never touched twice.
+    return re.sub(r"([.!?]\s+)([a-z])",
+                  lambda m: m.group(1) + m.group(2).upper(),
+                  " ".join(got))
+
+
 def render(date: str = DEFAULT_DATE) -> str:
     """The markdown companion, as a string. Writes nothing."""
     src = source(date)
@@ -233,6 +283,7 @@ def render(date: str = DEFAULT_DATE) -> str:
             f"either incomplete or not a compliant note")
     foot_line = foot_lines[-1]
     cut = txt.rindex(foot_line)
+
     foot = txt[cut:]
     body = txt[:cut].split("\n")
     part_style = any(L.startswith("PART ") for L in body)
@@ -240,12 +291,12 @@ def render(date: str = DEFAULT_DATE) -> str:
     for i, L in enumerate(body):
         if L.startswith("SECTION "):
             m = re.match(r"SECTION (\d+)\.\s+(.*)", L)
-            out.append("## %s. %s" % (m.group(1), m.group(2).capitalize()))
+            out.append("## %s. %s" % (m.group(1), _recase(m.group(2))))
         elif L.startswith("PART "):
             # Case is PRESERVED: these headings are deliberately shouted.
             out.append("## " + L)
         elif L.isupper() and len(L) > 25 and not L.startswith(" "):
-            out.append("### " + L.capitalize())
+            out.append("### " + _recase(L))
         elif i == 0:
             out.append("# " + (L if part_style else L.title()))
         else:

@@ -52,6 +52,104 @@ Consistency partitions: for counting problems, verify that disjoint subsets
 Sign checks: verify that physical quantities (lengths, areas, volumes, rates)
   are non-negative where required.
 
+[Diagnostic heuristics]
+
+If an extremum was reported from a vanishing first derivative alone, the
+  second-order condition is the first thing to check: a maximum, a minimum and
+  an inflection all have a stationary point, and the first-order equations
+  cannot tell them apart.
+If a claimed maximum sits on the boundary of the domain, the stationary-point
+  machinery never applied there at all; compare interior and boundary
+  separately.
+If a definite integral disagrees between substitution and integration by parts,
+  check the transformed LIMITS before re-checking the antiderivative. The
+  integrand gets transformed and the limits get forgotten.
+If a probability exceeds 1, the cases overlap; if supposedly disjoint cases
+  fall short of the stated total, a case is missing. The 2 observables point at
+  different repairs, and both are repartitions rather than adjustments to any
+  single term.
+If a count is off by a small integer or factorial factor, an ordering was
+  imposed or removed: factors of 2, 6 and n! are a permutation counted once too
+  often or once too few, not an arithmetic slip.
+If a linear system returned a solution while the matrix is near-singular, check
+  the rank and the consistency of the augmented system before claiming
+  uniqueness: a least-squares answer arrives in the same shape as an exact one.
+If an ODE solution satisfies the equation but not the data, the homogeneous part
+  was dropped during simplification; a particular solution alone satisfies the
+  equation and almost never the initial condition.
+If the answer does not depend on a parameter the problem says it depends on,
+  look for a cancellation that quietly assumed that parameter is nonzero.
+
+[Known failure modes]
+
+Changing variables in a definite integral and leaving the original limits.
+Reporting a stationary point as an extremum with no second-order or boundary
+  argument.
+Cancelling or dividing by an expression that can vanish, which loses exactly
+  the root where it does.
+Stopping inclusion-exclusion at pairwise intersections, so triple overlaps are
+  subtracted twice and added back never.
+Conditioning errors: asserting P(A|B) = P(B|A), or multiplying probabilities of
+  events that are not independent.
+Evaluating a series or an improper integral before convergence is established,
+  where a formal manipulation returns a plausible finite wrong answer.
+Treating a necessary condition as sufficient -- Lagrange stationarity, the
+  first-derivative test, a nonzero determinant.
+Dropping the domain restriction a transformation introduced, by squaring both
+  sides or by cancelling a logarithm.
+Carrying an algebraic identity outside the region where both sides are defined,
+  such as sqrt(x*y) = sqrt(x)*sqrt(y) with a negative factor present.
+
+[Exception catalogue]
+
+The real-domain restrictions are restrictions on the REALS. The logarithm of a
+  negative number, the square root of a negative, and arcsin outside [-1, 1]
+  are all defined over the complex numbers, where the constraint becomes a
+  branch-cut question rather than a prohibition. Refusing the computation is
+  wrong; failing to declare the branch is the actual error.
+Divergence is a result. An infinite limit, a divergent series and an integral
+  that does not converge are each complete answers, and the convergence
+  requirement is discharged by establishing divergence just as well as by
+  establishing convergence.
+0/0 and the other indeterminate forms are not division-by-zero defects. They
+  are instructions to take a limit, and a removable singularity has a value by
+  continuous extension: sin(x)/x is 1 at 0.
+A formally divergent series is legitimately summable under a DECLARED method --
+  Abel, Cesaro, Borel -- and an asymptotic series is useful precisely where it
+  diverges. The requirement is that the method be named, not that the series
+  converge.
+Dimensional consistency has no subject in a purely mathematical statement. A
+  combinatorial identity, an inequality between dimensionless quantities or a
+  bound on a ratio carries no units to check, so demanding them is a category
+  error rather than rigour.
+Where the objective is not differentiable, the second-order condition does not
+  exist. A subgradient argument or a direct comparison is then the correct
+  sufficiency test, and its absence is not a gap.
+
+[Tool limitations]
+
+An unevaluated return is not a result. SymPy handing back Integral(...),
+  Sum(...) or an empty list from solve() is a statement about SymPy's methods
+  and not about the mathematics: it has NOT shown that no closed form exists,
+  and it has not shown that one does. The claim returns to unverified and needs
+  a different route.
+A constraint solver answering satisfiable has produced 1 witness. That settles
+  an existence claim and says nothing about a universally quantified one: to use
+  z3 on a "for all" statement, negate it, require unsat, and state the fragment
+  and the bounds over which that unsat holds. unknown is a third answer and is
+  neither of the other 2.
+simplify is not canonical. 2 correct forms can both resist simplification while
+  differing only in presentation, so subtract them and simplify the difference,
+  or evaluate both at random points, before concluding that they differ.
+Assumptions govern what is permitted. A symbol declared without positive=True
+  carries the complex branch, so an expected simplification is refused and an
+  unexpected one is allowed. A simplification that changes when an assumption
+  changes was never an identity over the wider domain.
+A numerical quadrature or root-finder reports an error estimate that assumes the
+  integrand is as smooth as the rule requires. A singularity or an oscillation
+  inside the interval breaks the estimate silently while the computation still
+  returns a number.
+
 [Limitations]
 
 Does not cover abstract algebra, topology, or number theory beyond elementary.

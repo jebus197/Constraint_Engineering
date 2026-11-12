@@ -90,6 +90,30 @@ Constraint-Driven Synthesis and Falsification. The protocol-level architecture f
 
 Popper's degree of corroboration. Measures how well evidence E supports hypothesis H given background knowledge. Used in the runner to track overall corroboration of findings. Defined in the white paper Section 2.1.
 
+### Cheap guards
+
+The subset of the test suite that the commit hook runs before allowing a commit,
+as distinct from the suite itself. The phrase is what `hooks/pre-commit` prints
+when it refuses -- "REFUSED. The cheap guards are red." -- so it is the first
+thing a reader meets when a commit is blocked, and until 2026-11-12 it was
+defined in no reference document at all: 6 files use it, 0 explain it.
+
+"Cheap" means cheap to run relative to the whole suite, not weak. The set is
+named explicitly in the hook rather than discovered, so adding a test file does
+not automatically add it to the board.
+
+**The share is MEASURED and MOVES, so it is not pinned here.** Run
+`scripts/the_gate_board_is_not_the_suite_2026-11-04.py` for the current figure.
+It is roughly a 6th of collected tests, which means the large majority are never
+run by a commit, and a regression outside the named set can sit unnoticed. 1 did,
+red for 26 commits. **2 stamped values for the same day are in circulation
+in this project's own notes and they disagree in the numerator, which is why the
+producer is cited here instead of a number.**
+
+**A green board is NOT a green suite**, and reporting it as one is a recorded
+failure of 2026-11-04. When quoting the result of a commit, say which set it
+covers.
+
 ### Closure-State Labels (F4 lexicon)
 
 Four-label vocabulary describing a code component's maturity within the runtime pipeline. Locked 21 April 2026 (three labels); extended 13 May 2026 (added `tripwire`). Full definitions in `resources/ONBOARDING.md` under "Closure-State Lexicon". Promotion order: `library_complete` → `tripwire` (if applicable) → `shadow_integrated` → `live_operational`. The `tripwire` tier is optional and applies specifically to flag-gated runtime guards.

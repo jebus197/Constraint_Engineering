@@ -31,6 +31,42 @@ SCOPE: Active and non-active medical devices, Classes I-III (EU MDR / FDA)
 - Validate sterilisation process parameters against ISO 11135 (EO), ISO 11137 (radiation), or ISO 17665 (steam)
 - Verify design verification and validation test protocols cover all design inputs
 
+[Diagnostic heuristics]
+- If every residual risk in the risk management file comes out acceptable, check whether the acceptability criteria were written before the risk estimates — ISO 14971 requires those criteria in the risk management plan, and criteria written afterwards can never fail anything
+- If the hazard list reads as a list of component failures, check whether hazardous situations were identified at all — ISO 14971 separates hazard, foreseeable sequence of events, hazardous situation and harm, and an FMEA alone cannot reach hazards that arise with no component failure: normal use, use error, and software defects
+- If patient leakage current measures near zero on mains-powered equipment, check that the standard's measuring-device network was used with the supply polarity reversed and the protective earth interrupted — a bench multimeter placed across the applied part is measuring something else
+- If an EMC immunity test passed, check the test plan for a defined Essential Performance monitor to be observed during exposure — a device that merely survived the field with nothing watching its Essential Performance has not been tested against the requirement
+- If a biocompatibility file rests on prior use of the material, check the processing chain rather than the resin: mould release, adhesives, colourants, sterilisation residuals and ageing all generate extractables, and ISO 10993-1 evaluates the finished device in its final, sterilised form
+- If software is classified Class A, check whether a software failure can still reach a hazardous situation once the external hardware mitigations are discounted — under IEC 62304 a risk control implemented inside the same software item cannot be used to lower that item's own safety class
+- If an accelerated-ageing shelf-life result lands exactly on the claimed service life, check the Q10 factor that was assumed — the ASTM F1980 convention of Q10 = 2.0 is a convention and not a measurement of your materials, and real-time ageing data is still owed
+- If a sterilisation validation reports no positives at all, check the bioburden and the D-value before claiming the SAL — SAL is extrapolated from the inactivation model, and a sterility test on a sample of 20 to 40 units cannot observe a failure rate of 1 in 1,000,000
+
+[Known failure modes]
+- FMEA used as the whole of the risk analysis, so hazards arising from normal use and from use error are never identified
+- Risk acceptability criteria written after the risk estimates are already in hand
+- Lowering a probability estimate to bring a risk under the acceptability line instead of adding a risk control
+- Biocompatibility tested on the raw material rather than on the finished, sterilised, aged device
+- A software risk control implemented inside the same software item whose failure it is meant to mitigate
+- SAL quoted as a test result rather than as an extrapolation from bioburden and D-value
+- Summative usability validation run with development-team or in-house clinical participants instead of the intended user profile
+- SOUP (software of unknown provenance) integrated with no published anomaly list, no pinned version and no evaluation against the device's own risk analysis
+- Indication creep in a 510(k): a predicate claimed as substantially equivalent while the intended use has quietly moved away from it
+
+[Exception catalogue]
+- Biological evaluation does not always require biological testing. ISO 10993-1:2018 allows the evaluation to be closed by chemical characterisation under ISO 10993-18 plus a toxicological risk assessment under ISO 10993-17 where the data justify it, and the standard's own stated position is to avoid animal testing where existing data suffice. Demanding fresh cytotoxicity, sensitisation and irritation studies for a fully characterised, long-used material in an unchanged process asks for more than the standard does
+- ISO 14971:2019 does not require risk to be driven as low as possible without limit — it removed ALARP. Risk is reduced as far as possible without adversely affecting the benefit-risk balance, and a residual risk that cannot be further reduced is acceptable where the documented benefit outweighs it. An irreducible residual risk carrying a benefit-risk justification is a complete risk file, not a deficient one
+- Aseptically processed product carries no SAL at all. The bioburden and overkill models behind 10^-6 belong to terminal sterilisation; an aseptically filled or aseptically assembled device is qualified by aseptic process simulation (media fill) against a zero-contaminated-unit action limit, so asking for its SAL is a category error rather than a gap
+- The pathway list above is incomplete as a map of routes to market. Most Class I devices and a substantial list of Class II devices are 510(k)-exempt under 21 CFR 862 to 892; a novel device of low-to-moderate risk with no predicate goes through De Novo rather than PMA; and a device for a condition affecting fewer than 8,000 individuals per year in the US can go through the Humanitarian Device Exemption. Design controls under 21 CFR 820.30 likewise do not reach most Class I devices
+- IEC 62304 has a legacy software route. Clause 4.4, added by Amendment 1 in 2015, permits a risk-based gap assessment and justification for software already in use rather than retrospective reconstruction of the full lifecycle record. Insisting on a complete 62304 development file for long-fielded firmware demands something the standard itself does not
+- Summative usability validation of critical tasks is not universal. Where the use-related risk analysis identifies no hazard-related use scenario there are no critical tasks to validate; and a user interface carried over unchanged can be supported by post-market data through the user-interface-of-unknown-provenance route in IEC 62366-1 rather than by new testing
+
+[Tool limitations]
+- An electrical safety analyser reports a current through the standard's measuring network. It cannot tell you the applied part was classified wrongly, or that the fault condition it applied is not the worst case for your topology
+- Risk management software enforces the traceability structure, not the completeness of the hazard list, and will report full coverage of hazards that nobody identified
+- An EMC chamber measures immunity against the levels written into the test plan. It cannot tell you that the deployment environment exceeds them, and an ambulance, an MRI suite and a home beside a cellular small cell all sit outside the generic assumptions
+- Static analysis and unit-test coverage produce the evidence IEC 62304 asks for at Class C and say nothing about whether the architecture segregates the safety-critical software item from everything else, which is the clause that actually bears on risk
+- Finite element analysis predicts stress for the geometry, loads and material model it was given. Fatigue life of an implant is dominated by surface finish, residual stress from manufacturing and the real in-vivo loading spectrum, none of which enter the model unless they are put there deliberately
+
 [Limitations]
 - Does not cover in vitro diagnostic devices (IVDR / 21 CFR 809 — separate regulatory framework)
 - Does not cover combination products (drug-device, biologic-device — additional regulatory requirements)

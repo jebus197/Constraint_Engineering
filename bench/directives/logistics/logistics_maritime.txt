@@ -48,6 +48,90 @@ References: SOLAS (VGM amendment 2016), IMDG Code, CSS Code, ISM Code, Suez Cana
 - Check that VGM documentation is complete before cut-off.
 - Validate ETA calculations include canal waiting time (Suez convoy scheduling, Panama slot booking).
 
+[Diagnostic heuristics]
+- If the draft check passes at every port, check the water density at each berth
+  before accepting the departure condition. The Panama Neopanamax 15.2m figure is
+  tropical fresh water, and a vessel floats deeper in fresh water than its salt-water
+  draft suggests.
+- If a stowage plan reports no IMDG conflict, check the segregation requirement
+  against the actual bay, row and tier positions rather than the class pairs alone.
+  "Away from" is satisfiable inside a single hold; "separated from" is not, and the
+  decisive input is distance, not class.
+- If a voyage fuel figure looks low, check whether the speed used is service speed or
+  design speed, then check the displacement the cubic law was applied at. A laden leg
+  and a ballast leg at the same speed are not the same consumption.
+- If demurrage is disputed, check the Notice of Readiness tender time and its validity
+  before re-doing the laytime arithmetic. An invalid NOR moves the start of laytime
+  and makes every figure after it wrong.
+- If a declared VGM differs from the terminal weighbridge by a few per cent, check the
+  tare stamped on the container's CSC safety approval plate against the tare used in
+  the Method 2 calculation. A repaired or re-plated box carries a tare the shipper's
+  static data does not hold.
+- If a 25-day Shanghai to Rotterdam schedule shows no slack, check canal convoy and
+  slot timing before blaming port productivity. Suez runs scheduled convoys and Panama
+  runs booked slots, so arriving early is waiting, not saving.
+- If lashing calculations pass, check the accelerations against the actual GM and the
+  position along the ship. CSS Code Annex 13 accelerations rise with metacentric
+  height, so a stiff ship gives larger transverse accelerations, not smaller.
+
+[Known failure modes]
+- Salt-water draft compared against a fresh-water limit, or the reverse.
+- Tare taken from static master data rather than from the CSC plate.
+- IMDG segregation assessed by class pair alone, ignoring stowage position and the
+  on-deck-only stowage category.
+- Design or maximum speed used in place of service speed in a transit estimate.
+- Laytime counted from arrival rather than from a valid NOR plus the contractual
+  notice period.
+- SHINC and SHEX interchanged, or weather working days excluded with no weather record
+  to support the exclusion.
+- 30,480 kg treated as payload when it is maximum gross mass, so a 40ft box's usable
+  payload is nearer 26,500 kg once tare is deducted.
+- Transhipment modelled as a single handover rather than 2 port calls with 2 cut-offs
+  and 2 chances of a rollover.
+- Slow steaming modelled as a saving per voyage when the cubic law governs consumption
+  per day and the voyage gets longer.
+
+[Exception catalogue]
+- SOLAS VGM applies to containers packed for carriage by sea on an international
+  voyage. Domestic and cabotage movements, and ro-ro trailers and chassis-mounted
+  units carried on their own wheels, fall outside it. Demanding a VGM for a ro-ro
+  trailer refuses correct work.
+- Published draft maxima are not constants. A berth may lawfully take a deeper draft
+  inside a tidal window, and permissible Suez draft is a function of beam read from
+  the SCA table, so a draft above the figure quoted for the widest beam class can be
+  entirely lawful.
+- The 30,480 kg ISO limit binds the box, not the journey. On the land leg the
+  operative limit is the national axle-weight and gross-combination limit, so a
+  lawfully packed container is frequently unlawful to move by road without a permit or
+  a rail leg.
+- IMDG segregation is relaxed by the Code's own provisions: limited and excepted
+  quantities are exempt from most of it, and Class 1 explosives are governed by the
+  compatibility-group table rather than by the general segregation table.
+- Laytime and demurrage exist only under a voyage charter. A liner booking or a
+  berth-terms contract of carriage carries neither, so demurrage arithmetic applied to
+  a liner shipment is a category error rather than a calculation error; carrier
+  detention and terminal storage are different charges on different terms.
+- The cubic consumption law holds inside the hull's design speed band. Below the main
+  engine's minimum safe continuous load the hotel and auxiliary load dominates,
+  specific consumption rises, and engine makers require de-rating, so "slower is
+  always cheaper" is false at the bottom of the range.
+
+[Tool limitations]
+- A stowage planning system validates against the declared commodity and the declared
+  weight. It cannot detect a mis-declaration, which is the dominant cause of container
+  fires, and an IMDG check on cargo declared as machinery parts returns clean.
+- An AIS-derived ETA is the destination and ETA field typed on the bridge. It is a
+  statement about what was entered, frequently stale, and not a computed arrival.
+- Weather routing works on a grid of tens of kilometres and hours, so it
+  systematically under-represents the short, steep seas that produce parametric
+  rolling and the largest lashing loads.
+- A loading computer checks stability and hull-girder strength for the condition
+  entered, and that condition is assembled from declared weights. Its pass is
+  conditional on a declaration it cannot audit.
+- Consumption models calibrated on sea trials assume a clean hull and a trim band.
+  Fouling adds materially across a docking cycle, and no noon-report model separates
+  fouling from weather without a long baseline.
+
 [Limitations]
 - Does not cover tanker operations (VLCC, chemical, LNG/LPG carriers).
 - Does not cover dry bulk cargo (grain trimming, ore density, liquefaction risk).

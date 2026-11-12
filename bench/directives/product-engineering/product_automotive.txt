@@ -51,6 +51,94 @@ STANDARDS: IATF 16949, AIAG PPAP 4th ed., AIAG-VDA FMEA Handbook,
 5. Verify Cpk meets OEM requirement (typically >= 1.67 special, >= 1.33 standard).
 6. Confirm DFMEA and PFMEA reflect current design/process revision.
 
+[Diagnostic heuristics]
+1. If a part passes component validation and fails on the vehicle, check the bracket
+   and the harness routing before the part. ISO 16750-3 profiles are applied at the
+   component's own fixing points, and a bracket resonance changes the spectrum the
+   part actually sees.
+2. If Cpk is high while the customer still reports variation, check whether the
+   subgroups were rational. A Cpk from consecutive pieces within a single shot
+   measures within-shot variation and excludes the shift-to-shift variation the
+   customer experiences.
+3. If a DFMEA produces no AP = High rows, check the severity ratings against the
+   vehicle-level effect rather than the component-level effect. A loss of function the
+   driver cannot detect at component level can still be severity 9 or 10 in the
+   vehicle.
+4. If a thermal failure appears in the field but not in the chamber, check junction
+   temperature rather than ambient. AEC-Q100 Grade 1 rates ambient, and
+   T_j = T_ambient + P * R_thja, so a Grade 1 part can exceed its own maximum junction
+   temperature in a +125 C under-hood location.
+5. If an IMDS submission is rejected with no substance named, check the material tree
+   for unclosed nodes and for node weights that do not sum to the part weight. IMDS
+   rejects on arithmetic and completeness before it rejects on content.
+6. If a warranty return shows no fault found, check the terminal and connector before
+   the electronics. Fretting corrosion at a tin-plated terminal under micro-motion is
+   intermittent, recovers on disassembly, and is the dominant no-fault-found cause.
+7. If a capability study passes on 30 pieces, check the sample plan against the PPAP
+   requirement. An initial process study needs at least 25 subgroups or 100
+   consecutive pieces, and a Cpk from 30 pieces carries a confidence interval wide
+   enough to contain 1.0.
+8. If a change was judged like-for-like and a field issue followed, check the
+   sub-supplier and the manufacturing location before the drawing. Those 2 are the
+   changes most often judged not to need notification, and both require re-PPAP.
+
+[Known failure modes]
+1. Severity rated at component level rather than at vehicle level.
+2. Cpk computed from irrational subgroups, capturing within-shot and not
+   between-shift variation.
+3. An ambient temperature rating treated as a junction or surface temperature limit.
+4. Vibration input applied on the wrong axis, or at the part rather than at its
+   mounting interface.
+5. Tin-plated terminals in a micro-motion joint, producing fretting corrosion and
+   no-fault-found returns.
+6. A sub-supplier or plant change released without customer notification and re-PPAP.
+7. A generic material grade left on the drawing in place of the OEM specification.
+8. Validation run on prototype tooling and reported as production-intent.
+9. Traceability broken at a rework or sort operation, where lot identity is not
+   carried forward.
+
+[Exception catalogue]
+1. A time-boxed and quantity-boxed deviation, or an interim approval PSW, legitimately
+   authorises shipment before full PPAP approval. "No production without approved
+   PPAP" is therefore not absolute, and the correct response to an urgent build is a
+   deviation request with containment, not a refusal.
+2. Lower AEC-Q100 grades are correct, not deficient, where the installation supports
+   them. Grade 2 (-40 to +105 C) and Grade 3 (-40 to +85 C) suit cabin and luggage
+   compartment electronics, and specifying Grade 1 everywhere buys cost with no
+   reliability gain.
+3. FMVSS 302 applies to materials within 13 mm of the occupant compartment air space.
+   Components wholly outside that envelope — under-body, engine bay, sealed internal
+   housings — are outside its scope, and the 102 mm/min burn rate is not a requirement
+   for them.
+4. Independent aftermarket and accessory parts not supplied into an OEM assembly plant
+   fall outside IATF 16949 and need no PPAP. Demanding a PSW for an independent
+   aftermarket part refuses correct work.
+5. Cpk is not required, and often not computable, for every characteristic. Attribute
+   characteristics, characteristics with a single specification limit bounded at 0, and
+   error-proofed or 100 per cent inspected operations are accepted by alternative means
+   in the control plan, and forcing a Cpk onto a pass/fail gauge produces a number with
+   no referent.
+6. A carry-over part already in production elsewhere can be released on PPAP-on-file
+   where design, process, plant and sub-suppliers are all unchanged. A new submission
+   is triggered by the change, not by the programme.
+
+[Tool limitations]
+1. A capability index describes a stable process. Cpk computed on an out-of-control
+   process is arithmetically valid and meaningless, and no statistics package refuses
+   to compute it.
+2. FEA predicts stress for the mesh, material model and boundary conditions supplied.
+   It does not predict the weld line, knit line or fibre orientation that actually sets
+   the strength of a moulded or welded part.
+3. Accelerated life models — Arrhenius, Coffin-Manson — assume 1 dominant mechanism
+   with a known activation energy. Where the field failure is a different mechanism,
+   the acceleration factor is a number with no physical referent.
+4. IMDS validates tree arithmetic and flags declarable substances against GADSL. It
+   cannot verify that the declared composition matches the material actually used,
+   which only analytical testing establishes.
+5. A pre-compliance EMC scan with a near-field probe shows relative change only. A
+   pass against a limit line requires the standard's measurement distance, antenna and
+   accredited site.
+
 [Limitations]
 1. Does not cover powertrain (engine, transmission, exhaust) — additional durability applies.
 2. Does not cover EV battery systems (UN ECE R100, UL 2580) or HV components (>60V DC).

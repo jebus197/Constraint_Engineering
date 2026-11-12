@@ -76,6 +76,100 @@ Simulate inductive switching transients: verify voltage overshoot stays within V
 Measure conducted emissions at prototype stage — pre-compliance scan before formal lab test.
 Verify thermal performance with IR camera or thermocouples at worst-case operating point.
 
+[Diagnostic heuristics]
+
+If a converter is stable on a bench supply and oscillates behind the product's own input
+  filter, compare the filter's output impedance with the converter's input impedance
+  (Middlebrook criterion) before touching the compensation network — the loop was never the
+  problem, the source impedance was.
+If measured efficiency falls short of calculation and the shortfall GROWS with switching
+  frequency, the missing term is switching, gate-charge or core loss. Conduction loss is
+  frequency-independent at fixed I_rms, so a gap that scales with f_sw exonerates it.
+If a device runs hotter than the loss budget predicts but its case is cool, measure T_c and
+  back out R_theta_cs before adding heatsink: a dry, starved or pumped-out interface shows as
+  a large T_j - T_c gap with entirely normal electrical waveforms.
+If turn-off overshoot exceeds the calculation, question the measurement before fitting a
+  snubber. A 150mm probe ground lead is about 150nH and rings with the probe capacitance, so
+  use a low-inductance tip or a coaxial shunt first.
+If conducted emissions fail above roughly 5-10MHz rather than at f_sw and its low harmonics,
+  work the common-mode path — switch-node-to-heatsink capacitance, Y-capacitors, earth
+  bonding — rather than re-sizing the differential filter, which is the low-frequency remedy.
+If a half-bridge shows a current spike as the opposite switch turns on, separate dead time
+  from diode reverse recovery before suspecting the driver: shoot-through scales with dead
+  time, and Q_rr-driven current does not.
+If a failure gets BETTER as load increases, it is not thermal. Look at discontinuous-mode
+  behaviour, bootstrap or charge-pump refresh at long off-times, and minimum-load requirements.
+If a thermal measurement disagrees with the model, check the instrument before the model. An
+  IR camera on bare aluminium (emissivity about 0.05) reads far too cold, and a thermocouple
+  bonded to the sink rather than the case is measuring the wrong node.
+
+[Known failure modes]
+
+Gate drive loop and power loop sharing a return path, so power-loop dI/dt appears as gate
+  voltage (common source inductance) and the device partially re-triggers itself.
+Dead time set from the driver's typical propagation delay, with no allowance for turn-on and
+  turn-off delay mismatch across temperature and part spread.
+Bootstrap capacitor sized without the duty extremes, so the high-side driver browns out near
+  100% duty or at very low switching frequency.
+Interface thermal resistance taken from a material's bulk conductivity, with no account of
+  bond-line thickness, mounting pressure, surface finish, or pump-out over thermal cycles.
+Heatsink R_theta_sa quoted at an airflow the enclosure never delivers, or a natural-convection
+  figure used inside a sealed box.
+A repetitive pulsed load sized from the single-pulse Z_theta_jc curve instead of the
+  duty-cycle family, which understates the steady-state rise it accumulates.
+SOA checked only at DC operating points, with linear-mode operation — inrush limiting,
+  hot-swap, current sharing — assumed safe because the DC SOA permits the point.
+Y-capacitance increased to pass an EMC scan without recomputing earth leakage current,
+  trading a compliance failure for a safety failure.
+Electrolytic bulk capacitor endurance not derated for ripple-induced core temperature:
+  lifetime roughly halves per 10C, so a 2000h/105C part running a 125C core lasts about 500h.
+
+[Exception catalogue]
+
+The snubber requirement is for hard-switched inductive turn-off. A resonant or ZVS topology,
+  an active clamp, or a synchronous rectifier whose channel carries the freewheel current all
+  recover that energy by design, and bolting on an RC snubber dissipates exactly what the
+  topology was built to return.
+P_sw = 0.5 * V_DS * I_D * (t_on + t_off) * f_sw is a hard-switching estimate that assumes
+  linear transitions. Under ZVS or ZCS it over-predicts by a large factor; under hard
+  switching into a charged C_oss it under-predicts, because C_oss energy and Q_rr are separate
+  terms the expression does not contain.
+The 2.5mm clearance and 3.2mm creepage figures hold for 240Vrms working voltage, pollution
+  degree 2, material group IIIb and basic insulation. A circuit that is SELV throughout takes
+  none of them, and a coated assembly qualified to IEC 60664-3 or a potted assembly meeting
+  the solid-insulation clauses is assessed on different tables entirely.
+The 3.5mA leakage figure is for an earthed, pluggable appliance. A Class II double-insulated
+  product, a permanently connected installation, and anything under IEC 60601-1 carry
+  different and, for medical equipment, far lower limits — so the number must come from the
+  product's own standard rather than from this line.
+The 25C T_j margin is a default, not a law. Where a mission profile and a thermal-cycle budget
+  exist — AEC-Q101 qualification, or a module with bond-wire and solder-fatigue data — the
+  governing criterion is cycles to failure against delta T_j, and a qualified part may run
+  legitimately closer to T_j,max than this margin allows.
+The silicon MOSFET temperature coefficients here do not transfer. SiC and GaN have different
+  R_DS(on) tempcos, and an IGBT's V_CE(sat) tempco can be negative below a crossover current
+  — which is why paralleled IGBTs do not share current the way paralleled MOSFETs do.
+
+[Tool limitations]
+
+Vendor SPICE models commonly carry no thermal network, a simplified C_oss and no reverse
+  recovery charge; and the parasitic inductance that actually sets the overshoot is a property
+  of the copper, absent from the netlist. A clean simulated waveform is therefore not evidence
+  about the built circuit.
+A thermal simulation's boundary conditions — ambient, airflow, emissivity, mounting
+  resistance — are inputs, not results. A 2x error in surface heat transfer coefficient moves
+  T_j further than most device-level choices do.
+A bench pre-compliance scan does not reproduce the product's earthing and cable configuration,
+  and conducted results move several dB with cable dress and equipment placement. Passing a
+  pre-scan detects gross failures and predicts nothing about the chamber.
+Current measurement perturbs the loop it measures: a clamp probe cannot see DC, so it cannot
+  detect transformer flux walk, and a shunt adds inductance to the commutation path it was
+  inserted to observe.
+IR thermography and thermocouples read SURFACES, with an emissivity the operator supplies. The
+  limit is written against T_j, which only an on-die sensor or a calibrated V_f / V_GS(th)
+  method reaches, and under pulsed load the surface-to-junction difference is the whole design
+  margin.
+
 [Limitations]
 
 Does not cover high-voltage DC applications (>1kV — different insulation coordination, partial discharge).

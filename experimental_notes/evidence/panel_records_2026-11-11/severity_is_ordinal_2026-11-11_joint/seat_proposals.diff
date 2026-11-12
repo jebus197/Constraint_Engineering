@@ -1,0 +1,789 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-12 06:18:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zkouhb4k/repo/.cdsfl_deny_canonical_writes.sb	2026-11-12 06:04:33
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_the_credence_half_carries_no_consequence_2026-11-12.py
+--- /dev/null	2026-11-12 06:18:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zkouhb4k/repo/bench/tests/test_the_credence_half_carries_no_consequence_2026-11-12.py	2026-11-12 06:12:44
+@@ -0,0 +1,104 @@
++"""The credence half of section 7.7.1's pair must carry no consequence factor.
++
++Joint round `severity_is_ordinal_2026-11-11_joint`, `fable` seat, 2026-11-12.
++
++Section 7.7.1 defines `severity_d(f) = (c_d(f), credence(f))` to SEPARATE a
++consequence from a belief.  As first written it defined the second component as
++section 7.7's product `W(class) * confidence * Ver(verification)`, and section
++7.7 caution 3 states that consequence magnitude enters `Sev` through `W` alone.
++So the pair carried a consequence factor in both components and performed no
++separation; caution 3's collapse travelled with the product into the new slot.
++
++These tests are the regression guard.  The derivation lives in
++`scripts/the_credence_half_still_carries_the_consequence_2026-11-12.py`, which
++these tests EXECUTE rather than restate, so the two cannot drift.
++"""
++from __future__ import annotations
++
++import pathlib
++import re
++import subprocess
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++PRODUCER = (REPO / "scripts"
++            / "the_credence_half_still_carries_the_consequence_2026-11-12.py")
++
++
++def _s771() -> str:
++    t = APPENDIX.read_text(encoding="utf-8")
++    i = t.index("### 7.7.1 The symbolic form")
++    j = t.index("### 7.8 Multi-Verifier Severity")
++    return t[i:j]
++
++
++def test_the_producer_exists_and_exits_clean() -> None:
++    """The derivation is executable, and a stale producer fails here."""
++    assert PRODUCER.is_file(), f"producer missing: {PRODUCER}"
++    r = subprocess.run([sys.executable, str(PRODUCER)], cwd=REPO,
++                       capture_output=True, text=True, timeout=300)
++    assert r.returncode == 0, f"producer exited {r.returncode}\n{r.stdout}\n{r.stderr}"
++    assert "FALSIFIED" not in r.stdout, r.stdout
++    # the mutation test inside it must have fired, else the check is vacuous
++    assert "the predicate DOES fire on the superseded sentence" in r.stdout
++    for tok in ("z3 -> unsat", "solveset -> EmptySet"):
++        assert tok in r.stdout, f"{tok!r} absent -- derivation did not run"
++
++
++def _predicate():
++    """Import the producer's OWN predicate rather than re-implementing it.
++
++    A first version of this test re-implemented the check as a bare negative
++    match on the superseded sentence, and it FAILED on the repaired file --
++    because the amendment QUOTES the sentence it supersedes, which is this
++    project's recording convention.  The producer's predicate is a conjunction
++    (superseded phrasing present AND the repaired definition absent) and does
++    not have that false positive.  Two copies of one predicate drift, which is
++    the defect `bench/immune_agents.py` records for its own alias table, so
++    there is one copy and this is a loader for it.
++    """
++    import importlib.util
++    spec = importlib.util.spec_from_file_location("_cred_producer", PRODUCER)
++    mod = importlib.util.module_from_spec(spec)
++    assert spec.loader is not None
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def test_credence_is_defined_without_a_consequence_factor() -> None:
++    mod = _predicate()
++    s = _s771()
++    assert re.search(r"\*\*credence\(f\)\s*=\s*S_v\(f\)\s*·\s*Ver\(verification\)\*\*", s), (
++        "section 7.7.1 no longer defines `credence(f) = S_v(f) · Ver(verification)`"
++    )
++    assert not mod.credence_half_carries_consequence(s), (
++        "the superseded definition is live again: section 7.7's product contains "
++        "W(class), which caution 3 names as the CONSEQUENCE term"
++    )
++    # the predicate must still be CAPABLE of firing, or this test is vacuous
++    mutant = s.replace("**credence(f) = S_v(f) · Ver(verification)**", "")
++    assert mod.credence_half_carries_consequence(mutant), (
++        "the predicate no longer fires on the superseded form -- it has gone blind"
++    )
++
++
++def test_ver_is_retained_because_s_v_has_no_zero() -> None:
++    """Deleting `Ver` makes the key property unrepresentable, not merely unstated."""
++    import sympy as sp
++    L = sp.symbols("L", real=True)
++    assert sp.solveset(sp.Eq(1 / (1 + sp.exp(-L)), 0), L,
++                       domain=sp.S.Reals) == sp.EmptySet
++    s = _s771()
++    assert "has no zero" in s.lower(), (
++        "section 7.7.1 must state WHY `Ver` is retained alongside `S_v`"
++    )
++
++
++def test_w_is_relocated_and_not_removed() -> None:
++    """The additive standard: `W` is the only ordering the 6 `none` domains have."""
++    s = _s771()
++    assert "NOT DELETED" in s and "constraint-class proxy" in s, (
++        "section 7.7.1 must state that `W` survives as the declared fallback "
++        "ordering where sigma_d = none and the application supplies no scale"
++    )
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-12 05:13:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zkouhb4k/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-12 06:10:17
+@@ -1477,11 +1477,86 @@
+ severity is an ORDERED PAIR:
+ 
+ > **severity_d(f) = ( c_d(f) , credence(f) )**
++>
++> **credence(f) = S_v(f) · Ver(verification)**
+ 
+-with `credence(f)` being today's §7.7 product under its own name. A product of a
+-consequence and a belief is neither. **§7.7 is NOT removed**: it remains the
+-definition of the credence factor, and the pair makes explicit which half it is.
++**★ THE SECOND COMPONENT WAS WRONG AS FIRST WRITTEN, AND THE CORRECTION IS THE
++WHOLE POINT OF THE PAIR, 2026-11-12 (joint round
++`severity_is_ordinal_2026-11-11_joint`, `fable` seat).** This block read: *"with
++`credence(f)` being today's §7.7 product under its own name."* Today's §7.7
++product is `W(class) · confidence · Ver(verification)`, and **`W` is the
++consequence term** — §7.7 caution 3 states it in those words: *"Consequence
++magnitude enters `Sev` through `W` alone."* So the pair as first written put a
++consequence factor in **both** components, and the separation it exists to
++perform was not performed. Two consequences follow, each derived rather than
++asserted (producer
++`scripts/the_credence_half_still_carries_the_consequence_2026-11-12.py`):
++
++1. **The second component is not a function of the evidence.** Two findings with
++   identical evidence (same belief factor, same `Ver`) but different constraint
++   class receive different values — `1·B` against `(1/2)·B`. A constraint solver
++   returns **unsat** for the existence of any evidence with `Ver > 0` on which
++   the two agree, so the divergence is not an edge case but the whole domain.
++2. **Caution 3's collapse PERSISTS inside the credence half.** For every
++   `c ∈ (W(SOFT), W(HARD)]`, `W·B ≥ c ⇔ class = HARD ∧ B ≥ c` — the solver
++   returns **unsat** for the negation over `W`, `B` and `c` at once.
++   Independently corroborated with Wolfram Language:
++   `Resolve[ForAll[{B,c}, Implies[0≤B≤1 ∧ 1/2<c≤1, Equivalent[B/2 ≥ c, False]]], Reals]`
++   returns `True` and the matching `Exists` returns `False`, so the `W(SOFT)`
++   branch is unreachable above the cut. Relocating a collapsed product into the
++   second slot of a pair does not uncollapse it.
+ 
++**WHAT EACH HALF IS, CORRECTED.**
++
++| half | quantity | who computes it | scale |
++|---|---|---|---|
++| `c_d(f)` | consequence | the DOMAIN, via `bench/cdsfl_registry/domain_manifest.toml` | `σ_d`, reported as a (value, scale-name) pair |
++| `credence(f)` | posterior belief that the claim is true | the HARNESS, §7.8 Approach B | probability in `[0, 1]`, no consequence term |
++
++**WHY `S_v` AND NOT `confidence`.** `confidence` is model-asserted and is present
++on **0 of 3,170** archived entries (Wilson 95% [0.000000, 0.001210], §7.7 above),
++so it is sourceless as well as self-reported. `S_v = 1 / (1 + exp(−Λ_total))` is
++harness-computed from verifier operating characteristics. This is §7.7 caution 1's
++substitution, applied to the credence half where it belongs.
++
++**WHY `Ver` IS RETAINED AND NOT FOLDED INTO `S_v`.** `S_v` **has no zero** —
++SymPy's `solveset(1/(1+exp(−Λ)) = 0, Λ, Reals)` returns `EmptySet` and the
++`Λ → −∞` limit of `0` is unattained — so `credence = S_v` alone **cannot
++represent** the key property at all. Numerically, the disproved case §7.8 itself
++tabulates scores `S_v = 0.27289178365887057`, not `0`. With `Ver` retained,
++`credence = S_v · Ver(False) = 0` exactly, and the key property survives as a
++property of the credence half, which is where §7.7 always said it belonged.
++A seat proposing the pair `(c_d(f), S_v(f))` is proposing a pair on which the
++key property is unrepresentable rather than merely unstated.
++
++**`W` IS NOT DELETED. IT IS RELOCATED AND DEMOTED TO A DECLARED FALLBACK.** `W`
++is the only consequence ordering the framework owns that applies to every domain,
++and **6 of the 10 declared domains carry `severity_scale = "none"`**. Where
++`σ_d = none` *and* the application supplies no scale either, `c_d` falls back to
++the 2-level ordering `{SOFT ≺_W HARD}` with `θ_W = HARD`, and the scale name
++reported is `"constraint-class proxy (2 levels)"` so the reader sees the
++resolution rather than inferring a precision that is not there. This is a
++relocation under the additive standard, not a removal: nothing renders `W`
++redundant on those 6 domains, and the measurement that would is a declared scale
++for each of them.
++
++**WHAT THIS DOES NOT FIX, STATED SO IT IS NOT MISTAKEN FOR FIXED.** The declared
++per-domain levels **reach no consumer**. `bench/cdsfl_registry/domain_vocabulary.py:281`
++exposes `severity(name)`, returning the scale, the levels and the critical level;
++an AST sweep of `bench/**/*.py` and `scripts/**/*.py` finds **0 call sites**. The
++one importer of that module, `bench/cdsfl_registry/composer.py:911`, uses
++`resolve_pair`, `is_known`, `default_subdomain`, `subdomains` and `encoding_path`
++and never `severity`, so **no seat prompt carries its domain's scale**. Meanwhile
++the live gate `bench/dm/_convergence.py:381` still reads
++`ec.aggregated_severity >= self.config.eta_veto` with `eta_veto = 0.9`
++(`bench/dm/_types.py:91`) — a **fixed value**, the form a solver returns `sat`
++against. On the one scale that can receive a number as a rank, `0.9 → 9.0` is the
++**Critical** band while the manifest declares `software.critical_level = "High"`
++(floor `7.0`): **the declared level and the executed cut disagree by one band.**
++Until `severity()` has a caller, the per-domain design is declared and validated
++but not executed, which is this project's own measured failure class — 11
++confirmed defects since 2026-08-01 were additions nothing reached.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+
+### cc2:attempt-1:scripts/are_items_12_to_21_done_2026-11-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/are_items_12_to_21_done_2026-11-12.py	2026-11-12 06:12:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zkouhb4k/repo/scripts/are_items_12_to_21_done_2026-11-12.py	2026-11-12 05:28:05
+@@ -277,18 +277,9 @@
+ # ---------------------------------------------------------------- 18
+ def item_18():
+     """The 4 steering chats simulated with the orchestrator as HIL. Is there a record?"""
+-    #: ★ CASE-INSENSITIVE BY COMPARISON, NOT BY GLOB PATTERN. Corrected
+-    #: 2026-11-12: the first version globbed `*[Ss]teering*`, which matches
+-    #: "steering" and "Steering" and NOT "STEERING". The record was written as
+-    #: `STEERING_SIMULATION_RECORD_2026-11-12.md`, which is the convention in
+-    #: docs/ux -- every other file there is upper case -- so the FILE was right
+-    #: and the predicate could not see it. A character-class glob is a hand-rolled
+-    #: case fold that silently omits the case nobody thought of; comparing lowered
+-    #: names cannot.
+-    roots = (REPO / "bench" / "logs", REPO / "experimental_notes",
+-             REPO / "docs" / "ux")
+-    cands = [p for root in roots if root.is_dir()
+-             for p in sorted(root.iterdir()) if "steering" in p.name.lower()]
++    cands = list((REPO / "bench" / "logs").glob("*steering*")) \
++        + list((REPO / "experimental_notes").glob("*[Ss]teering*")) \
++        + list((REPO / "docs" / "ux").glob("*[Ss]teering*"))
+     checks = {"a steering-simulation record exists anywhere in the repo": bool(cands)}
+     return (DONE if cands else NOT), checks, \
+         (f"{len(cands)} candidate record(s): {[p.name for p in cands[:4]]}"
+
+### cc2:attempt-1:scripts/the_credence_half_still_carries_the_consequence_2026-11-12.py
+--- /dev/null	2026-11-12 06:18:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_zkouhb4k/repo/scripts/the_credence_half_still_carries_the_consequence_2026-11-12.py	2026-11-12 06:11:21
+@@ -0,0 +1,214 @@
++#!/usr/bin/env python3
++"""The credence half of section 7.7.1's pair still carried the consequence.
++
++PRODUCER for the joint round `severity_is_ordinal_2026-11-11_joint` (`fable`
++seat, 2026-11-12).
++
++WHAT IS CLAIMED.  `docs/MATHEMATICAL_APPENDIX.md` section 7.7.1 defines severity
++as the ordered pair `severity_d(f) = (c_d(f), credence(f))`, and as first written
++it defined the second component as "today's section 7.7 product under its own
++name".  That product is `W(class) * confidence * Ver(verification)`, and section
++7.7 caution 3 says in its own words that "Consequence magnitude enters `Sev`
++through `W` alone".  So the pair put a CONSEQUENCE factor in BOTH components and
++did not perform the separation it exists to perform.
++
++WHY THAT IS MATERIAL AND NOT A NAMING QUIBBLE.  Caution 3's collapse is a
++property of the SHAPE `W * B`, not of a particular `B`.  Moving a `W`-bearing
++product into the second slot of a pair carries the collapse with it, so a cut on
++the "credence" half is still a test of the constraint class plus a test of
++belief, and still bounds consequence not at all -- the exact defect the pair was
++introduced to cure.
++
++HOW IT IS DECIDED.  Not by reading the prose.  The factor values are PARSED from
++the live appendix's own section 7.7 table at run time, then:
++  * z3 decides both collapse statements over the parsed values;
++  * SymPy decides whether `S_v` can represent `Ver(False) = 0` (it cannot);
++  * a MUTATION TEST re-runs the appendix predicate against the superseded
++    sentence, so a check that cannot detect the defect fails loudly rather than
++    passing vacuously.
++
++ADMISSIBLE INPUTS ONLY.  This script reads `docs/MATHEMATICAL_APPENDIX.md`,
++`bench/dm/_types.py`, `bench/dm/_convergence.py`,
++`bench/cdsfl_registry/domain_manifest.toml` and the `bench/` + `scripts/` Python
++trees by AST.  It reads no scoring key, no answer file and no planted-defect
++manifest, and it writes nothing.
++
++EXIT 0 and no `FALSIFIED` token  = the defect is absent from the live appendix.
++AssertionError / `FALSIFIED`     = the defect is present.
++"""
++from __future__ import annotations
++
++import ast
++import pathlib
++import re
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parent.parent
++APPENDIX = REPO / "docs" / "MATHEMATICAL_APPENDIX.md"
++
++FALSIFIED = False
++
++
++def note(ok: bool, label: str, detail: str = "") -> None:
++    global FALSIFIED
++    print(f"  [{'ok ' if ok else 'BAD'}] {label}" + (f"  -- {detail}" if detail else ""))
++    if not ok:
++        FALSIFIED = True
++
++
++# ---------------------------------------------------------------- 1. parse
++def parse_factors(text: str) -> dict[str, float]:
++    """Read W and Ver from section 7.7's OWN table. Never retyped here."""
++    out: dict[str, float] = {}
++    for row in re.finditer(r"^\|\s*(W|Ver)\((HARD|SOFT|True|None|False)\)\s*\|\s*"
++                           r"([0-9.]+)\s*\|", text, re.M):
++        out[f"{row.group(1)}({row.group(2)})"] = float(row.group(3))
++    return out
++
++
++def section(text: str, start: str, end: str) -> str:
++    i, j = text.index(start), text.index(end)
++    assert i < j, f"{start!r} does not precede {end!r}"
++    return text[i:j]
++
++
++# -------------------------------------------- 2. the appendix-text predicate
++#: TRUE when the appendix defines the credence half as the W-BEARING section 7.7
++#: product.  Matched on the superseded sentence's own distinguishing phrase.
++SUPERSEDED = re.compile(
++    r"with\s+`credence\(f\)`\s+being\s+today's\s+§7\.7\s+product\s+under\s+its\s+own\s+name",
++    re.I | re.S)
++#: TRUE when the credence half is defined WITHOUT a consequence factor.
++REPAIRED = re.compile(r"\*\*credence\(f\)\s*=\s*S_v\(f\)\s*·\s*Ver\(verification\)\*\*")
++
++
++def credence_half_carries_consequence(s771: str) -> bool:
++    return bool(SUPERSEDED.search(s771)) and not bool(REPAIRED.search(s771))
++
++
++def main() -> int:
++    text = APPENDIX.read_text(encoding="utf-8")
++    s77 = section(text, "### 7.7 Per-Finding Severity",
++                  "### 7.7.1 The symbolic form")
++    s771 = section(text, "### 7.7.1 The symbolic form",
++                   "### 7.8 Multi-Verifier Severity")
++
++    print("=" * 74)
++    print("THE CREDENCE HALF STILL CARRIES THE CONSEQUENCE -- producer, 2026-11-12")
++    print("=" * 74)
++
++    fac = parse_factors(s77)
++    print(f"\n1. FACTORS PARSED FROM THE LIVE SECTION 7.7 TABLE: {fac}")
++    for k in ("W(HARD)", "W(SOFT)", "Ver(True)", "Ver(None)", "Ver(False)"):
++        note(k in fac, f"section 7.7 table still declares {k}",
++             "" if k in fac else "table shape changed; this producer is STALE")
++    if FALSIFIED:
++        print("\nFALSIFIED (table unreadable -- cannot decide)")
++        return 1
++    WH, WS = fac["W(HARD)"], fac["W(SOFT)"]
++    VERS = sorted({fac["Ver(True)"], fac["Ver(None)"], fac["Ver(False)"]})
++
++    # ------------------------------------------------- 3. z3 on parsed values
++    from z3 import And, Not, Or, Real, RealVal, Solver, sat, unsat
++    print("\n2. z3 ON THE PARSED VALUES (the collapse is a property of the SHAPE)")
++    conf, ver = Real("conf"), Real("ver")
++    dom = And(conf > 0, conf <= 1, Or(*[ver == RealVal(str(v)) for v in VERS]))
++    s = Solver()
++    s.add(dom, ver > 0,
++          Not(RealVal(str(WH)) * conf * ver != RealVal(str(WS)) * conf * ver))
++    r1 = s.check()
++    note(r1 == unsat,
++         "B1  no evidence with Ver>0 makes credence(HARD)==credence(SOFT)",
++         f"z3 -> {r1}; unsat means the 'credence' half varies with the CONSEQUENCE class")
++
++    cut, B, W = Real("cut"), Real("B"), Real("W")
++    s2 = Solver()
++    s2.add(Or(W == RealVal(str(WH)), W == RealVal(str(WS))), B >= 0, B <= 1,
++           cut > RealVal(str(WS)), cut <= RealVal(str(WH)),
++           Not((W * B >= cut) == And(W == RealVal(str(WH)), B >= cut)))
++    r2 = s2.check()
++    note(r2 == unsat,
++         "B2  W*B >= cut  <=>  class=HARD and B >= cut, for every cut in (W_SOFT, W_HARD]",
++         f"z3 -> {r2}; unsat means caution 3's collapse PERSISTS inside the pair")
++
++    # the control: a cut named by a DISTINGUISHED ELEMENT is not breakable,
++    # while a cut named by a FIXED VALUE is.  Both run, so neither is assumed.
++    a, b, c, pa, pb, pc = (Real(x) for x in "a b c pa pb pc".split())
++    order = And(a < b, b < c, pa < pb, pb < pc)          # phi strictly increasing
++    from z3 import If, Sum
++    fx = RealVal("7/10")
++    sf = Solver(); sf.add(order, Not(
++        Sum([If(x >= fx, 1, 0) for x in (a, b, c)]) ==
++        Sum([If(x >= fx, 1, 0) for x in (pa, pb, pc)])))
++    st = Solver(); st.add(order, Not(
++        Sum([If(x >= b, 1, 0) for x in (a, b, c)]) ==
++        Sum([If(x >= pb, 1, 0) for x in (pa, pb, pc)])))
++    rf, rt = sf.check(), st.check()
++    note(rf == sat, "A1  a FIXED-VALUE cut is breakable by an order-preserving relabel",
++         f"z3 -> {rf}")
++    note(rt == unsat, "A2  a TRANSPORTED level is not", f"z3 -> {rt}")
++
++    # ------------------------------------- 4. SymPy: S_v cannot carry the zero
++    import sympy as sp
++    print("\n3. SymPy -- WHY `Ver` CANNOT BE FOLDED INTO `S_v`")
++    L = sp.symbols("L", real=True)
++    Sv = 1 / (1 + sp.exp(-L))
++    zeros = sp.solveset(sp.Eq(Sv, 0), L, domain=sp.S.Reals)
++    note(zeros == sp.EmptySet,
++         "S_v = 1/(1+exp(-L)) has NO zero over the reals",
++         f"solveset -> {zeros}; so credence=S_v alone cannot represent Ver(False)=0")
++    note(sp.limit(Sv, L, -sp.oo) == 0,
++         "its infimum is 0 and unattained", "limit L->-oo = 0")
++    note(sp.simplify(Sv * fac["Ver(False)"]) == 0,
++         "credence = S_v * Ver(False) = 0 EXACTLY -- the key property survives")
++
++    # ------------------------------- 5. mutation test: can the check even fail?
++    print("\n4. MUTATION TEST -- a check that cannot detect the defect is worthless")
++    mutant = s771.replace("**credence(f) = S_v(f) · Ver(verification)**", "") + (
++        "\nwith `credence(f)` being today's §7.7 product under its own name.\n")
++    note(credence_half_carries_consequence(mutant),
++         "the predicate DOES fire on the superseded sentence",
++         "mutant detected")
++    note(not credence_half_carries_consequence(s771),
++         "the predicate does NOT fire on the live section 7.7.1",
++         "live text repaired" if not credence_half_carries_consequence(s771)
++         else "LIVE DEFECT PRESENT")
++
++    # --------------------------- 6. REPORTED, NOT ASSERTED: the wiring measure
++    print("\n5. REPORTED MEASUREMENT (a separate, UNFIXED defect -- not asserted here)")
++    callers = []
++    for fp in list((REPO / "bench").rglob("*.py")) + list((REPO / "scripts").rglob("*.py")):
++        if fp.name == "domain_vocabulary.py":
++            continue
++        try:
++            tree = ast.parse(fp.read_text(encoding="utf-8"))
++        except Exception:                                    # noqa: BLE001
++            continue
++        for n in ast.walk(tree):
++            if isinstance(n, ast.Call):
++                f = n.func
++                nm = f.attr if isinstance(f, ast.Attribute) else (
++                    f.id if isinstance(f, ast.Name) else None)
++                if nm == "severity":
++                    callers.append(f"{fp.relative_to(REPO)}:{n.lineno}")
++    print(f"   call sites of domain_vocabulary.severity() outside the module: "
++          f"{len(callers)} {callers}")
++    veto = (REPO / "bench" / "dm" / "_convergence.py").read_text(encoding="utf-8")
++    print(f"   _convergence.py still gates on a FIXED VALUE: "
++          f"{'eta_veto' in veto and 'aggregated_severity >= self.config.eta_veto' in veto}")
++    tys = (REPO / "bench" / "dm" / "_types.py").read_text(encoding="utf-8")
++    m = re.search(r"eta_veto:\s*float\s*=\s*([0-9.]+)", tys)
++    ev = float(m.group(1)) if m else None
++    print(f"   eta_veto = {ev}  ->  on CVSS v4.0 that is {ev*10 if ev else '?'}, "
++          f"the CRITICAL band, while the manifest declares critical_level = 'High' (7.0)")
++
++    print()
++    if FALSIFIED:
++        print("FALSIFIED")
++        return 1
++    print("CLEAN -- the credence half carries no consequence factor in the live appendix.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-12 06:18:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/.cdsfl_deny_canonical_writes.sb	2026-11-12 06:04:53
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-12 05:13:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-12 06:15:03
+@@ -1472,16 +1472,76 @@
+ **WHAT §7.7's PRODUCT BECOMES.** `Sev(f) = W(class) · confidence · Ver(verification)`
+ is a **credence** formula wearing a consequence name — a finding both seats of the
+ 2026-11-11 blind round reached independently. Its key property, that a disproved
+-finding scores 0, is right for credence and wrong for consequence, because a
++finding scores 0, is right for selection and wrong for consequence, because a
+ disproved finding has NO consequence rather than a consequence of zero. So
+ severity is an ORDERED PAIR:
+ 
+-> **severity_d(f) = ( c_d(f) , credence(f) )**
++> **severity_d(f) = ( c_d(f) , S_v(f) )**
+ 
+-with `credence(f)` being today's §7.7 product under its own name. A product of a
+-consequence and a belief is neither. **§7.7 is NOT removed**: it remains the
+-definition of the credence factor, and the pair makes explicit which half it is.
++with the credence half being §7.8 Approach B's posterior `S_v(f) = σ(Λ_total)`.
++
++**★ THE CREDENCE HALF WAS CORRECTED 2026-11-12 (joint round
++`severity_is_ordinal_2026-11-11_joint`), and the superseded form is kept
++visible.** This passage first read *"with `credence(f)` being today's §7.7
++product under its own name"*. That slot assignment fails as a credence on 4
++grounds, each mechanically checked by the committed producer
++`scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py`:
++
++1. **Class-invariance.** A credence conditioned on identical evidence must not
++   depend on the consequence class. `W ∈ {0.5, 1.0}` makes the renamed product
++   differ by a factor of exactly 2 at equal `(confidence, Ver)` — `0.5·c·v`
++   against `1.0·c·v` for every `c, v > 0` (SymPy: the ratio simplifies to 2;
++   z3: sat for a class-dependent value at equal evidence). A fully verified
++   SOFT finding would carry "credence" ≤ 0.5 — the pair would assert the panel
++   half-believes a finding its own falsifier confirmed. This is the SAME
++   category error §7.7.1 exists to remove, in the mirror direction: the old
++   defect put belief inside the consequence; the renamed product puts
++   consequence inside the belief. If the class genuinely carries prior
++   information about truth, its admissible entry point is an additive
++   `Λ_prior(class)` in §7.8's log-odds, never a multiplicative factor on a
++   probability. `S_v` is class-invariant by construction: Λ_total has no class
++   term.
++2. **Provenance.** `confidence` is model-asserted and sourceless — 0 of 3,170
++   archived entries carry it (§7.10 row above), and B87 records it as NOT
++   built. Every input of `S_v` is a harness-computed verifier outcome. Tools
++   decide, not votes.
++3. **Neutral update.** `Ver(None) = 0.5` is multiplicative, so belief HALVES on
++   no evidence; the Bayesian neutral update is `Λ += 0`, which §7.8's `D_det`
++   exclusion already implements (`D_det = ∅ ⇒ S_v = 0.5 =` prior, unchanged).
++   No multiplicative factor of 0.5 is the identity update for any prior in
++   (0, 1) (SymPy: `p/2 = p` has no positive solution).
++4. **The key property RELOCATES rather than dies, and exact zero was wrong for
++   a credence anyway.** §7.8's own table declares SymPy FNR = 0.01, so the
++   posterior of a SymPy-falsified claim is 0.0099 (lone falsifier) or 0.272
++   (veto case), never 0 — an exact-zero credence would assert the verifier is
++   infallible, contradicting the declared rates. The operational content — a
++   disproved finding is never actioned — is §7.11's: every verifier row has
++   FNR < TNR, so a lone falsification gives `Λ = log(FNR/TNR) < 0`, hence
++   `S_v < 0.5`, hence rejected; and the veto property covers
++   SymPy-falsified-with-others-verified. A caller requiring a hard veto writes
++   it as a CONJUNCT in `selected(f)`, not as a multiplicative zero inside a
++   probability. Caution 1's warning against `Sev = W·S_v` with the `Ver`
++   column deleted is about the single-number GATE quantity `Sev` and stands
++   unchanged; the pair is not that gate.
++
++**MEASURED: the correction changes no archived decision.** On the archive,
++`confidence` and `constraint_class` exist on 0 entries, so the renamed product
++degenerates to `Ver` alone, three-valued `{0, 0.5, 1}`; single-verifier `S_v`
++is three-valued `{σ(log FNR/TNR), 0.5, σ(log TPR/FPR)} ≈ {0.0099, 0.5, 0.999}`;
++the two orderings coincide and §7.11's `≥ 0.5` selection decides IDENTICALLY on
++every distinct archived entry (the producer above re-runs the census under both
++candidates and asserts 0 decision flips). So the candidates disagree today on
++exactly 0 entries, and the choice between them is decided by provenance and by
++the 4 grounds, not by the archive. Where per-verifier outputs are not yet
++collected, `S_v` is computed in its single-verifier form from the falsifier
++verdict the harness already records on every entry.
+ 
++A product of a consequence and a belief is neither. **§7.7 is NOT removed**: its
++product remains the legacy selection heuristic referenced by §7.11, and caution 1
++(substituting `S_v` for `confidence` inside it) still governs any use of that
++single-number form as a gate. The pair makes explicit that the credence half is
++§7.8's, the consequence half is the domain's, and no multiplication joins them.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+
+### fable:attempt-1:scripts/are_items_12_to_21_done_2026-11-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/are_items_12_to_21_done_2026-11-12.py	2026-11-12 06:12:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/are_items_12_to_21_done_2026-11-12.py	2026-11-12 05:28:05
+@@ -277,18 +277,9 @@
+ # ---------------------------------------------------------------- 18
+ def item_18():
+     """The 4 steering chats simulated with the orchestrator as HIL. Is there a record?"""
+-    #: ★ CASE-INSENSITIVE BY COMPARISON, NOT BY GLOB PATTERN. Corrected
+-    #: 2026-11-12: the first version globbed `*[Ss]teering*`, which matches
+-    #: "steering" and "Steering" and NOT "STEERING". The record was written as
+-    #: `STEERING_SIMULATION_RECORD_2026-11-12.md`, which is the convention in
+-    #: docs/ux -- every other file there is upper case -- so the FILE was right
+-    #: and the predicate could not see it. A character-class glob is a hand-rolled
+-    #: case fold that silently omits the case nobody thought of; comparing lowered
+-    #: names cannot.
+-    roots = (REPO / "bench" / "logs", REPO / "experimental_notes",
+-             REPO / "docs" / "ux")
+-    cands = [p for root in roots if root.is_dir()
+-             for p in sorted(root.iterdir()) if "steering" in p.name.lower()]
++    cands = list((REPO / "bench" / "logs").glob("*steering*")) \
++        + list((REPO / "experimental_notes").glob("*[Ss]teering*")) \
++        + list((REPO / "docs" / "ux").glob("*[Ss]teering*"))
+     checks = {"a steering-simulation record exists anywhere in the repo": bool(cands)}
+     return (DONE if cands else NOT), checks, \
+         (f"{len(cands)} candidate record(s): {[p.name for p in cands[:4]]}"
+
+### fable:attempt-1:scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py
+--- /dev/null	2026-11-12 06:18:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py	2026-11-12 06:15:39
+@@ -0,0 +1,177 @@
++#!/usr/bin/env python3
++"""The pair's credence half is S_v (section 7.8), not section 7.7's renamed product.
++
++Joint round `severity_is_ordinal_2026-11-11_joint`, fable seat, 2026-11-12.
++
++CLAIM UNDER TEST. docs/MATHEMATICAL_APPENDIX.md section 7.7.1 defines severity
++as an ordered pair. Two candidates exist for the credence slot:
++
++    candidate P (superseded) : W(class) * confidence * Ver(verification)
++    candidate S (adopted)    : S_v(f) = sigmoid(Lambda_total)   (section 7.8 B)
++
++This script is the committed producer for the 4 grounds on which P fails as a
++credence and for the archive measurement showing the correction flips 0
++archived decisions. DIRECTION OF FAILURE: this is a fix-verifier, so it raises
++AssertionError and prints FALSIFIED iff one of the ADOPTED amendment's claims
++is false, and exits 0 iff every claim checks. Grounds are checked with SymPy
++and, where decidable, independently with z3.
++
++Frame: the archive census reuses the exact frame of
++scripts/severity_was_never_computed_from_the_model_2026-10-12.py --
++LOGS.glob("**/runner_state.json"), sha256 whole-file dedup, registry.entries.
++"""
++import hashlib
++import json
++import math
++import pathlib
++import sys
++
++import sympy as sp
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LOGS = REPO / "bench" / "logs"
++
++#: Section 7.8's declared verifier operating characteristics (TPR, FPR).
++RATES = {"sympy": (0.99, 0.001), "dimensional": (0.80, 0.10),
++         "numerical": (0.70, 0.15)}
++
++FAILED = []
++
++
++def check(name, ok, detail=""):
++    tag = "PASS" if ok else "FALSIFIED"
++    print(f"[{tag}] {name}" + (f"  {detail}" if detail else ""))
++    if not ok:
++        FAILED.append(name)
++
++
++def s_v(outcomes):
++    """Section 7.8 Approach B. outcomes: {verifier: 1|0|None}. None = indeterminate."""
++    lam = 0.0  # Lambda_prior = 0, uniform prior
++    for v, o in outcomes.items():
++        if o is None:
++            continue  # excluded from D_det: the neutral update is ADDITIVE zero
++        tpr, fpr = RATES[v]
++        fnr, tnr = 1.0 - tpr, 1.0 - fpr
++        lam += math.log(tpr / fpr) if o == 1 else math.log(fnr / tnr)
++    return 1.0 / (1.0 + math.exp(-lam))
++
++
++# ---------------------------------------------------------------- ground 1
++# Class-invariance: candidate P depends on the consequence class at EQUAL
++# evidence. (S_v is class-invariant by construction: Lambda has no class term.)
++c, v = sp.symbols("c v", positive=True)
++ratio = sp.simplify((sp.Integer(1) * c * v) / (sp.Rational(1, 2) * c * v))
++check("G1a sympy: P(HARD)/P(SOFT) == 2 at equal (confidence, Ver), all c,v>0",
++      ratio == 2, f"ratio={ratio}")
++try:
++    import z3
++    zc, zv = z3.Reals("zc zv")
++    s = z3.Solver()
++    # sat = there EXISTS an equal-evidence input where the classes differ.
++    s.add(zc > 0, zv > 0, zc <= 1, zv <= 1, 1.0 * zc * zv != 0.5 * zc * zv)
++    check("G1b z3: class-dependence of P at equal evidence is sat",
++          s.check() == z3.sat)
++except ImportError:
++    print("[skip] z3 not installed; G1b rests on sympy G1a")
++soft_verified = 0.5 * 1.0 * 1.0
++check("G1c a fully verified SOFT finding gets P-credence <= 0.5",
++      soft_verified <= 0.5, f"P = {soft_verified}")
++
++# ---------------------------------------------------------------- ground 3
++# Neutral update: under S, no determinate verifier leaves belief at the prior;
++# under P, Ver(None)=0.5 halves it. (Ground 2, provenance, is measured below.)
++check("G3a S: D_det empty => S_v == 0.5 == prior, belief unmoved",
++      s_v({"sympy": None, "dimensional": None, "numerical": None}) == 0.5)
++p = sp.symbols("p", positive=True)
++sols = sp.solve(sp.Eq(sp.Rational(1, 2) * p, p), p)
++check("G3b sympy: 0.5*belief == belief has NO positive solution -- the "
++      "multiplicative 0.5 is never the identity update", sols == [])
++
++# ---------------------------------------------------------------- ground 4
++# Key property relocates: S_v is never exactly 0, yet every falsification
++# routes the finding below the 0.5 selection threshold of section 7.11.
++lam_s = sp.symbols("lam", real=True)
++sig = 1 / (1 + sp.exp(-lam_s))
++check("G4a sympy: sigmoid(Lambda) = 0 has no real solution",
++      sp.solve(sp.Eq(sig, 0), lam_s) == [])
++check("G4b sympy: the Lambda -> -oo limit is 0 and unattained",
++      sp.limit(sig, lam_s, -sp.oo) == 0)
++for name in RATES:
++    tpr, fpr = RATES[name]
++    fnr, tnr = 1 - tpr, 1 - fpr
++    check(f"G4c {name}: FNR < TNR so a lone falsification gives S_v < 0.5",
++          fnr < tnr and s_v({name: 0}) < 0.5, f"S_v = {s_v({name: 0}):.6f}")
++veto = s_v({"sympy": 0, "dimensional": 1, "numerical": 1})
++check("G4d veto: SymPy falsified + others verified => S_v < 0.5 "
++      "(appendix verified line: 0.272)", veto < 0.5, f"S_v = {veto:.6f}")
++check("G4e veto inequality: |log(FNR/TNR)|_sympy > sum of other positive weights",
++      abs(math.log(0.01 / 0.999)) > math.log(0.80 / 0.10) + math.log(0.70 / 0.15),
++      f"{abs(math.log(0.01/0.999)):.4f} > "
++      f"{math.log(0.80/0.10) + math.log(0.70/0.15):.4f}")
++
++# ------------------------------------------------- ground 2 + the archive
++# Provenance and decision-invariance, on the SAME frame as the 2026-10-12
++# producer: each distinct registry counted once, by whole-file sha256.
++seen, n = {}, 0
++n_conf = n_class = 0
++flips = 0
++tpr, fpr = RATES["sympy"]
++SV1 = {"CONFIRMED": 1 / (1 + math.exp(-math.log(tpr / fpr))),
++       None: 0.5,
++       "REFUTED": 1 / (1 + math.exp(-math.log((1 - tpr) / (1 - fpr))))}
++for fp in sorted(LOGS.glob("**/runner_state.json")):
++    try:
++        raw = fp.read_bytes()
++    except OSError:
++        continue
++    dig = hashlib.sha256(raw).hexdigest()
++    if dig in seen:
++        continue
++    seen[dig] = fp
++    try:
++        d = json.loads(raw.decode("utf-8", errors="ignore"))
++    except Exception:  # noqa: BLE001
++        continue
++    for cid, e in (((d or {}).get("registry") or {}).get("entries") or {}).items():
++        if not isinstance(e, dict) or not isinstance(e.get("severity"), (int, float)):
++            continue
++        n += 1
++        if "confidence" in e:
++            n_conf += 1
++        if "constraint_class" in e:
++            n_class += 1
++        verdict = str(e.get("falsifier_verdict") or "").strip().upper()
++        verdict = verdict if verdict in ("CONFIRMED", "REFUTED") else None
++        # candidate P on the archive: both missing factors default to their
++        # stricter readings (W=1, confidence=1), reducing P to Ver alone.
++        p_cred = {"CONFIRMED": 1.0, None: 0.5, "REFUTED": 0.0}[verdict]
++        s_cred = SV1[verdict]
++        if (p_cred >= 0.5) != (s_cred >= 0.5):
++            flips += 1
++print(f"\n[frame] distinct registries: {len(seen)}; entries with numeric severity: {n}")
++check("G2a archive: `confidence` present on 0 entries (candidate P's "
++      "model-asserted factor has no writer)", n_conf == 0, f"present on {n_conf}/{n}")
++print(f"[info] constraint_class present on {n_class}/{n} "
++      "(writer exists since B84; population pending)")
++check("M1 archive: 7.11 selection at >= 0.5 decides IDENTICALLY under both "
++      "candidates on every entry -- 0 decision flips", flips == 0,
++      f"flips = {flips}/{n}")
++check("M2 archive frame is non-empty (else the measurement is void)", n > 0)
++
++# ------------------------------------------------- the amendment is wired in
++appendix = (REPO / "docs" / "MATHEMATICAL_APPENDIX.md").read_text(encoding="utf-8")
++check("W1 appendix pair now reads ( c_d(f) , S_v(f) )",
++      "severity_d(f) = ( c_d(f) , S_v(f) )" in appendix)
++check("W2 appendix keeps the superseded form visible and cites this producer",
++      "the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py" in appendix
++      and "under its own name" in appendix)
++check("W3 section 7.7 is NOT removed (additive standard)",
++      "### 7.7 Per-Finding Severity" in appendix and "NOT removed" in appendix)
++
++print()
++if FAILED:
++    print("FALSIFIED: " + "; ".join(FAILED))
++    raise AssertionError(f"{len(FAILED)} claim(s) failed: {FAILED}")
++print(f"ALL CHECKS PASS ({n} archived entries; 0 decision flips; "
++      "4 grounds verified with sympy" + ("+z3" if "z3" in sys.modules else "") + ")")

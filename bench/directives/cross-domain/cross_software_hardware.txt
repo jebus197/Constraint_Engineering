@@ -51,6 +51,98 @@ STANDARDS: ARM AMBA/AHB/APB, I2C (NXP UM10204), SPI (de facto standard),
    (volatile + interrupt-disable or atomic operations).
 6. Verify worst-case stack covers main + ISR + nested ISR depths with margin.
 
+[Diagnostic heuristics]
+1. Bug disappears at -O0 and returns at -O2: suspect a missing volatile or a missing
+   barrier before suspecting the optimiser. The compiler is almost always right and
+   the memory-model declaration is almost always wrong.
+2. Peripheral works under single-stepping and fails at full speed, or a register read
+   in a watch window behaves differently from the same read in code: the debugger is
+   part of the circuit. It inserts milliseconds between register writes, hiding every
+   required delay, and it performs real bus reads, consuming clear-on-read and FIFO
+   data before the code gets there.
+3. DMA data correct at the start of a buffer and corrupt later, or the reverse: check
+   cache-line alignment and the maintenance RANGE before the descriptor. A partial
+   line invalidate takes its neighbours with it.
+4. Received words are a consistent bit rotation of the expected value: that is CPHA,
+   not noise. A 1-bit shift on every word points at the clock phase, whereas a wiring
+   or integrity fault is not word-aligned.
+5. Multi-byte fields all plausible but wrong by a factor near 256 or 16777216:
+   endianness, not scaling. Check the swap at every external boundary before adjusting
+   any conversion factor.
+6. Interrupt re-fires immediately after the first event: check whether the flag is
+   write-1-to-clear or clear-on-read and whether the ISR used the matching mechanism,
+   before raising priority or adding a software debounce.
+7. System runs for hours and then corrupts whichever variable happens to sit lowest in
+   memory: measure worst-case stack depth with nesting before investigating the data.
+8. I2C NAKs only once every device is populated: scope the rise time and total the bus
+   capacitance against the 400 pF budget before changing the retry count.
+
+[Known failure modes]
+1. volatile applied to the pointer instead of the pointee. uint32_t * volatile p
+   qualifies the wrong object and leaves every access eligible for elision.
+2. Treating volatile as a concurrency primitive. It stops the compiler caching or
+   eliding an access; it orders nothing against another core, a DMA engine or a store
+   buffer.
+3. Bit-field structs used as a register map or a wire-format map, so the layout moves
+   with the compiler, the target or the optimisation level.
+4. A DMA buffer on the stack, so the maintenance range overlaps live locals and the
+   invalidate discards them.
+5. Clearing an interrupt flag on the wrong side of the data read, on a peripheral
+   where the read itself clears: either the first event or every event is lost.
+6. Synchronising a multi-bit bus bit-by-bit through double flip-flops, producing
+   intermediate values that never existed on the source side.
+7. Reading a wide counter as 2 narrower halves with no latch, catching the carry
+   between the 2 reads.
+8. Read-modify-write across a whole register inside a HAL, clobbering bits another
+   driver owns or writing 0 into reserved bits the datasheet says to preserve.
+9. Quoting a worst-case ISR latency that was measured as an average.
+
+[Exception catalogue]
+1. A level-triggered line shared between devices is CORRECTLY left asserted while any
+   sharer still has a pending condition. HARD 8 speaks about the peripheral's own
+   flag; clearing the controller's pending bit while a source is still asserted is the
+   actual defect, and the ISR must re-poll every sharer instead of returning.
+2. Where the architecture provides a separate interrupt stack — a dedicated IRQ stack,
+   or ARM's main stack pointer while threads run on the process stack — nesting does
+   not compound onto the thread stack. That stack bears the exception entry frame, plus
+   any lazily stacked FPU frame, and nothing more; handler locals and every nested
+   frame land on the interrupt stack. The 2 must therefore be bounded SEPARATELY, and
+   the single summed figure of HARD 9 both overstates the thread stack and hides the
+   interrupt stack, which is usually the smaller of the 2 and overflows first.
+3. Cache maintenance is unnecessary, and can be harmful, where the DMA master is
+   hardware-coherent for that region through a coherent interconnect or an accelerator
+   coherency port. An invalidate there is not conservative: it can discard a line the
+   CPU owns and has not yet written back.
+4. Synchronisers are not required between clock domains derived from a common source
+   with a statically known phase relationship. Inserting one into a synchronous
+   integer-ratio divide adds latency and can break the cycle-accurate relationship the
+   design depends on, so HARD 5 binds genuinely asynchronous boundaries.
+5. Bit-fields are legitimate where the layout is not an external contract — internal
+   flags within a single compilation unit and ABI. HARD 2 binds register maps and wire
+   formats, not every bit-field in the program.
+6. Many devices accept more than 1 SPI mode, latching on a single edge polarity and
+   tolerating either idle level. Where the datasheet names mode 0 or mode 3, either
+   satisfies HARD 7, and refusing to proceed without a single named mode is
+   over-caution rather than rigour.
+
+[Tool limitations]
+1. A logic analyser sees the pins and not the cache. A DMA coherency fault is invisible
+   on the bus because the bus traffic is correct — the stale copy is inside the CPU,
+   where no external instrument reaches.
+2. Static analysis can confirm that an access is volatile-qualified and cannot confirm
+   that the ADDRESS is right. A volatile write to the wrong register is perfectly
+   well-formed code and raises nothing.
+3. Compiler warnings are silent on bit-field layout, because the layout chosen is
+   conforming. The standard permits it, so there is nothing to warn about and nothing
+   is said when the layout changes under a new toolchain.
+4. Instruction-set simulators and core emulators model the core, not the peripheral's
+   analogue reality. Metastability, setup and hold violations, bus capacitance and rise
+   time do not exist there, so passing in simulation says nothing about clock domain
+   crossing or I2C integrity.
+5. A MISRA or CERT checker enforces properties of the source text. It cannot see the
+   hardware contract that source is meant to satisfy, so a fully compliant driver can
+   have every register semantic wrong.
+
 [Limitations]
 1. Does not cover FPGA/ASIC RTL design (timing closure, synthesis, formal verification).
 2. Does not cover high-speed serial protocols (PCIe, USB 3.x, Ethernet PHY).

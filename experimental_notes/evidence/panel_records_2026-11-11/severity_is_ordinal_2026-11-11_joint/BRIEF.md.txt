@@ -1,0 +1,279 @@
+# BRIEF — JOINT ROUND on whether severity is ordinal and its scale domain-supplied
+
+**Round:** `severity_is_ordinal_2026-11-11_joint`. Free seats only (`cc2`, `fable`).
+**Parent:** `severity_is_ordinal_2026-11-11`, the BLIND half, in which you each
+answered this question without seeing the other. Both of your replies landed.
+This is the JOINT half: you are now shown the other seat's actual words.
+
+**Tree state:** repository at the commit this brief is dispatched from. Every file
+quoted below is quoted AT THAT COMMIT with its line numbers, because a previous
+joint round (entry B125) asked 2 seats about a file that had changed since they
+answered, so their correct reading read as an error. Report any difference you
+find rather than assuming it is your mistake.
+
+---
+
+## 0. WHAT IS BEING ASKED
+
+**NOT being asked:** whether you agree, or whether the other seat is right. A
+canonical rule of this project is that **there are no votes in CDSFL**. "I
+concur" carries no information and will be recorded as a non-answer.
+
+**BEING asked:** 3 things. (1) Where you and the other seat DISAGREE, resolve it
+by measurement or state precisely what measurement would. (2) Where you AGREE,
+say whether the agreement survives seeing the other's reasoning, because 2 seats
+reaching one answer by one flawed route is not corroboration. (3) The founder has
+since made 3 rulings and 1 correction that neither of you had: say what they
+change in your answer.
+
+---
+
+## 1. THE OTHER SEAT'S ACTUAL WORDS, VERBATIM
+
+### What `cc2` said — its refutation of P4
+
+```
+**P4** | Does not break the model, which asserts existence + order only | **REFUTE AS STATED** — incomplete for exactly the reason above. Existence + order is not enough to support a gate. The model must assert existence + order + a distinguished level. |
+| **P5** | Consequence is a property of the application, not the error's form | **AGREE** |
+| **P6** | §7.7 is a credence formula wearing a consequence name | **AGREE** (see `q7` for where it fails as credence too) |
+| **P7** | `ΔV = Σ V(f)` is inadmissible and must become an order statistic | **AGREE on the mathematics, REFUTE the urgency.** `Σ` fails 4 of 6 relabellings. But the live analogue — `kappa_set` at `_convergence.py:267`/`:303` — is t
+```
+
+### What `fable` said — its measurement of where the cut transfers
+
+```
+`q4` — The 0.7 cut transfers to exactly one scale
+
+With `x → lo + 0.7·(hi−lo)` (executed): CVSS → **7.0, exactly the High boundary** — expressible as the rank "High or above". FMEA → **7.3**, CTCAE → **3.8**, INES → **4.9** — all **between levels** (brief's own 0.7×5 = 3.5 convention lands between CTCAE grades too). So the frozen cut cannot be carried arithmetically into P3's scales; each θ_d must be a **per-scale frozen level**. Concrete defect in P3 as drafted; repaired in the delivered amendment.
+
+## `q5` — Yes, and here is where
+
+The capability fingerprint dimension **A = mean severity** (`bench/dm/_manager.py:722`, `obs_a`), persisted per model and updated by windowed mean or EMA (~:735-740
+```
+
+---
+
+## 2. WHERE YOU DISAGREED, AND IT IS THE CENTRE OF THE QUESTION
+
+**P4 — does the model asserting existence and order suffice?** `cc2` REFUTED it:
+existence plus order "is not enough to support a gate", and the model must assert
+"existence + order + a distinguished level". `fable` AGREED with P4 and backed it
+with a measurement: archived gate decisions "do not depend on the numbering
+(301/301 preserved under 3 order statistics)".
+
+**These are not obviously incompatible and that is the work.** `fable` measured
+that the ORDERING is preserved; `cc2` argued that an ordering alone cannot site a
+CUT. Both can hold. Say whether they do, and if they do, say what P4 should read.
+
+**P6 — is section 7.7's product a good credence formula?** `cc2` AGREED; `fable`
+REFUTED, holding that it "fails as credence too". Resolve or sharpen.
+
+---
+
+## 3. WHAT THE FOUNDER HAS RULED SINCE YOU ANSWERED
+
+**(a) The scale and the critical level are DOMAIN-SUPPLIED and now declared.**
+`bench/cdsfl_registry/domain_manifest.toml` declares, per domain, a severity scale
+and a critical LEVEL — or `none` with a reason where no recognised scale exists.
+4 of 10 domains carry a recognised scale; 6 declare none and inherit the
+application's. Does that implement your position, overshoot it, or miss it?
+
+**(b) The frozen constant is named as the artefact under refutation and nowhere
+as a level.** His correction, verbatim: *"you again appear to be pinning 0.7 as a
+meaningful cut point. Haven't we just established that it isn't?"*
+
+**(c) Composition across domains.** His rule, verbatim: *"where two (or more)
+quantities across domains don't compose, the solution is straightforward enough,
+which is to instruct the models to quote both quantiles in their own specific
+context... (The only exception being where a valid conversion between any two
+quantities may already formally exist.)"* Tested with pint: 1 inch + 1 cm
+composes to 3.540000 cm; 1 m + 1 s is refused. BUT a clinical grade and a
+software score are both DIMENSIONLESS, so `CTCAE 3 + CVSS 7.0` evaluates to 10.0
+and dimensional analysis cannot refuse it. **Is carrying the scale NAME with the
+number sufficient, and what breaks it?**
+
+---
+
+## 4. WHAT HAS BEEN MEASURED SINCE, WHICH YOU SHOULD TRY TO BREAK
+
+**The cut is not ordinal-admissible.** z3 returns `sat` for a strictly increasing
+re-scaling that preserves every pairwise order and still changes
+`count(severity >= 0.7)`; `unsat` for the same attack on a cut named by a
+distinguished element. On the archive's 3,170 severities an affine re-scaling with
+Spearman rho exactly 1.0000000000 destroys **1,416 of 1,416** critical calls —
+1.000000, Wilson [0.997294, 1.000000].
+
+**174 of those 1,416 turn on a representation tie.** The binary64 nearest 0.7 is
+0.6999999999999999555910790149937383830547332763671875, strictly BELOW the real
+7/10 — 0.122881 of the critical calls, Wilson [0.106795, 0.141009].
+
+**`fable`'s scale-transfer result, extended.** CVSS v4.0 was confirmed from
+first.org's own Table 22: High begins at exactly 7.0. So `fable`'s finding stands
+on a primary source. FMEA has **2** landmarks, not 1: 7-8 is *high* and 9-10 is
+*safety or regulatory*. 7 was declared as the conservative cut. **Is that the
+right landmark, and does a 2-landmark scale change the argument?**
+
+---
+
+## 5. THE FALSIFIABLE QUESTIONS FOR THIS ROUND
+
+**J1.** Reconcile `cc2`'s P4 refutation with `fable`'s 301/301 measurement, or
+show they cannot be reconciled.
+**J2.** Does declaring a per-domain scale and critical level in a config
+discharge P2 and P3, or merely relocate the problem?
+**J3.** Carrying the scale name with the number is the proposed enforcement for
+the composition rule. Break it.
+**J4.** 6 of 10 domains declare `severity_scale = "none"` and inherit the
+application's. Is that honest or is it an evasion, and what would distinguish the
+two?
+**J5.** Does the 174-of-1,416 representation tie change any conclusion either of
+you reached, or is it orthogonal?
+**J6.** What is the strongest argument that this whole position is wrong and the
+project should keep a single project-wide cut?
+
+---
+
+## 6. WHAT WOULD REFUTE THE POSITION
+
+Name a STEM domain with a recognised consequence scale that the manifest declares
+`none` for, or one where the declared critical level is not the field's own
+threshold. Either refutes the per-domain design as implemented.
+
+## 7. TERMINATION
+
+Answer every question or say which you could not and what you would need. Where
+you cannot refute, say which question you tried hardest on.
+
+
+## What the blind half actually said, lifted byte-exact
+These are MECHANICAL extracts, not chosen quotations: each is exactly 240 characters taken at a fixed fraction of the seat's landed reply, which is the span the topology gate itself samples. They therefore begin and end mid-sentence. That is deliberate -- a joint round that reads a summary of its parents is not a cross-check but a second opinion on my paraphrase, so the gate requires the parent's own bytes and these are them. Seats are referred to by POSITION, not by vendor, per the standing instruction to describe measured capability rather than model names.
+
+### Seat 1, reply 38458 characters
+
+At 0.25 of the reply:
+
+```
+efore Bench Run 2, not after.
+
+---
+
+## `q6` — the founder's own question
+
+### `q6_notation`
+
+**Short answer: conventional notation already covers it, and the model does not currently use that notation. Nothing exotic is needed; what is need
+```
+
+At 0.50 of the reply:
+
+```
+exp(t)','log(1+t)']
+     phi(median)=25/4   median(phi)=13/2
+   LOWER median: non-commuting []
+   count >= cut, cut TRANSPORTED : non-commuting []
+   count >= cut, cut HELD FIXED  : non-commuting ['t**2','sqrt(t)','exp(t)','log(1+t)','2t']
+
+```
+
+At 0.75 of the reply:
+
+```
+brief's own §3.6 table already exhibits four distinct attainable values at *fixed* confidence — `{0.0, 0.225, 0.45, 0.9}` — so the claim is contradicted inside the brief.
+
+The SymPy half fails too. `d(Sev)/dW = C·V` is **≥ 0**, not `> 0`; i
+```
+
+### Seat 2, reply 18683 characters
+
+At 0.25 of the reply:
+
+```
+ass_weight * ec.aggregated_severity`, a distinct line from the cited :267 (same function).
+
+The census's claim that `reference_runner_v3.py` does no magnitude arithmetic **survives**: I inspected every AST candidate there (10334–21412); all
+```
+
+At 0.50 of the reply:
+
+```
+ne; the right pair is (sev_d(f), S_v(f)), and §7.7's only correctly-behaving factor, V_ver, is already inside S_v's determinate handling. The key property survives: W·S_v·V_ver(False) = 0 (appendix caution 1, already derived there).
+
+## `q8
+```
+
+At 0.75 of the reply:
+
+```
+ion — it is the committed producer the project's own evidence rule requires for the amendment's figures.
+
+## `commands_run` (principal, verbatim)
+
+```
+python3 scripts/severity_was_never_computed_from_the_model_2026-10-12.py
+python3 scripts/
+```
+
+## What this joint round is asked to settle
+
+The 2 seats AGREE that section 7.7's product is a credence wearing a consequence
+name. They DISAGREE about the repair, and that disagreement is the question.
+1 seat argues the universal scale distinguishes at most 2 consequences, so a
+single constant is an auditable WRONG answer and per-domain levels are right.
+The other argues the project already owns the correct credence in section 7.8's
+log-odds fusion, so renaming 7.7 is the wrong repair.
+
+Both cannot be adopted as written. State which pairing the maths model should
+carry, name the property your answer dominates on, and say what measurement
+would refute you. Disagreement is preserved as information; do not converge for
+the sake of converging.
+
+
+## Produce a fix, and test it
+
+A finding without a fix is INCOMPLETE. A fix without a runnable falsifier that
+you have EXECUTED is a hypothesis, not a fix. So for whichever pairing you argue
+for, produce the repair and then try to break it.
+
+Write your fix INTO the sandbox repository tree at its real path, as a file. A
+fix described in prose, or left in scratch space, is destroyed at teardown and
+has not been delivered. Name the path you wrote and the falsifier you ran, and
+paste the falsifier's actual output rather than describing it.
+
+Use the harness. The mathematical instruments are available to you and the tool
+output IS the evidence: a constraint solver and a symbolic algebra system are
+both installed, and a claim about admissibility under re-scaling is decidable by
+them rather than arguable. Where a result can be checked a second way, check it.
+
+COMPOSABILITY, as the founder defines it and not as the word is loosely used:
+compose 2 repairs ONLY on a DEMONSTRATED advantage over each repair alone, where
+the demonstration is a MEASUREMENT and not a judgement, and prefer the single
+repair wherever it performs as well. Both candidate pairings below could be
+composed; saying so is not an argument for doing it.
+
+## What would refute you
+
+State, before you argue, what result would make your answer wrong. An answer
+with no refuting condition is a preference. If a measurement you name would
+settle it and you can run it in the sandbox, run it.
+
+## Output shape
+
+Return these fields, each named, in this order.
+
+1. PAIRING — which pairing the maths model should carry, in 1 sentence.
+2. PROPERTY — the named property your pairing dominates the alternative on.
+3. FIX_PATH — the repository path you wrote your fix to.
+4. FALSIFIER_PATH — the path of the runnable falsifier you executed.
+5. FALSIFIER_OUTPUT — its actual output, pasted, not summarised.
+6. REFUTED_BY — the result that would make your answer wrong.
+7. DISAGREEMENT — where you disagree with the other seat's blind reply, quoted.
+8. COMPOSABILITY — whether you claim a composed repair, and the MEASUREMENT for
+   it if you do, or an explicit statement that you do not claim one.
+
+## Termination
+
+Stop when you have delivered all 8 fields with a falsifier you have executed, or
+when you can state precisely which field you cannot complete and why. Do not
+converge toward the other seat for the sake of agreement: disagreement is
+preserved here as information, and a seat that changes position without new
+evidence has added noise rather than signal.

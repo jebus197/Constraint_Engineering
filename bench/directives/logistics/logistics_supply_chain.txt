@@ -50,6 +50,85 @@ References: APICS/ASCM CSCP body of knowledge, FM Global Property Loss Preventio
 - Verify that pick slot assignments reflect current velocity data, not historical.
 - Confirm cycle count programme covers A items more frequently than C items.
 
+[Diagnostic heuristics]
+- If service level is below target while inventory sits above plan, check the shape of
+  the demand distribution before raising safety stock. Intermittent or lumpy demand
+  breaks the normal assumption, and z * sigma_d * sqrt(LT) then buys stock in the
+  wrong SKUs.
+- If forecast accuracy improves while stockouts rise, check the level at which
+  accuracy is measured. Aggregate error falls with pooling while the SKU-location
+  forecast that actually drives the reorder point gets worse.
+- If bullwhip amplification is being attributed to customer behaviour, check order
+  batching and the review period first. Both generate variance amplification with
+  perfectly stable end demand.
+- If a supplier reports 98 per cent on-time delivery while lines stop, check whether
+  the measure runs against the original request date or the latest confirmed date. A
+  re-confirmation resets the clock and hides every delay before it.
+- If a cycle count finds no discrepancy, check whether the count was blind. A counter
+  who can see the system quantity confirms it, so a non-blind count measures agreement
+  rather than accuracy.
+- If lead time looks stable in the planning system, check the variance of each
+  component separately. The mean is usually dominated by transit while the variance is
+  dominated by customs and receiving inspection, and safety stock responds to
+  variance.
+- If a capacity model clears peak volume, check the labour curve and dock-door turn
+  time rather than storage cube. Peak is almost always constrained at receiving and
+  shipping, not by available volume.
+- If an ABC classification has not moved in a year, check whether it was built on
+  quantity shipped or on order-line frequency. Slotting responds to pick frequency,
+  and a volume-based classification mis-slots high-frequency, low-quantity items.
+
+[Known failure modes]
+- Safety stock sized from demand variability with lead-time variability omitted.
+- Normal demand assumed for intermittent or lumpy SKUs.
+- Reorder point set without safety stock, delivering about 50 per cent service level.
+- Lead time carried as a single supplier-quoted number in the item master.
+- Supplier on-time performance measured against a re-confirmed date.
+- ABC classification built on quantity shipped rather than on pick frequency.
+- Peak capacity modelled from average volume, with no labour or dock constraint.
+- Phantom inventory: system quantity positive, location empty, pick short.
+- Minimum order quantities and supplier batch sizes left out of a reorder model, so
+  the calculated order can never actually be placed.
+
+[Exception catalogue]
+- The 30 to 35 per cent cubic utilisation ceiling describes conventional racking with
+  aisles. An automated storage and retrieval system, mobile racking or a drive-in
+  installation removes the aisle and legitimately exceeds it, so a 60 per cent figure
+  for an AS/RS is not a calculation error.
+- Make-to-order, configure-to-order and engineer-to-order items legitimately carry no
+  safety stock and no reorder point. The formulae here assume replenishment against a
+  forecast, and applying them to a project item builds stock that can never be
+  consumed.
+- FIFO is the wrong rule for date-coded stock: the correct discipline is FEFO, and
+  strict FIFO will ship an older-received lot with longer remaining life ahead of a
+  newer-received lot about to expire. LIFO is also legitimate for non-perishable bulk
+  reclaimed from a stockpile, where it is the only physically available order.
+- Customs clearance is legitimately near 0 for some regimes. An intra-EU movement
+  crosses no customs frontier at all, and an authorised economic operator with
+  pre-lodged declarations can clear in minutes. The 1 to 5 business day figure
+  describes a third-country import, not every movement.
+- Pick path optimisation does not apply to goods-to-person or cross-dock operations.
+  Picker travel is effectively 0 in a goods-to-person cell, so the 50 to 60 per cent
+  travel share is a property of person-to-goods picking and quoting it elsewhere
+  overstates what batching can buy.
+
+[Tool limitations]
+- A planning system's lead time field is a parameter someone typed, not a measurement.
+  The actual distribution exists only in purchase-order receipt history, which no
+  planning run reads.
+- A warehouse management system reports the quantity it believes a location holds and
+  has no sensor. Phantom inventory is invisible to it by construction; only a count or
+  a short pick exposes it.
+- Discrete-event simulation of a facility is calibrated on observed cycle times that
+  already embed the current slotting and staffing, so it cannot predict the effect of
+  changing either without re-calibration.
+- A mixed-integer solver returns the optimum for the model supplied. A network design
+  omitting duty, minimum order quantities or labour step-costs is optimal for a
+  network that does not exist.
+- Percentage-error forecast metrics are undefined or unstable at 0 demand, because
+  they divide by actual. The intermittent SKUs that cause most stockouts are precisely
+  the ones such a metric cannot score.
+
 [Limitations]
 - Does not cover reverse logistics or returns processing.
 - Does not cover 3PL contract negotiation or rate benchmarking.

@@ -30,6 +30,42 @@ SCOPE: Carbon and low-alloy steel, manual and mechanised arc welding (MMA/SMAW, 
 - Verify consumable storage conditions and traceability (batch certificates, hydrogen designation, shelf-life compliance)
 - Confirm all welders on the project hold valid qualifications covering the range of work assigned to them
 
+[Diagnostic heuristics]
+- If cracking is found, establish WHEN before anything else: a centreline crack present at once with a dendritic fracture face is solidification cracking and points at consumable composition, dilution and joint restraint, while a crack appearing 24-72 hours later, usually transverse and in the HAZ, is hydrogen-induced cold cracking and points at preheat, hydrogen and hardness
+- If porosity runs along a weld made with a shielded process, check gas flow, draught at the joint, nozzle condition and liner before the consumable — and check flow in BOTH directions, because excessive flow aspirates air into the shield as readily as insufficient flow leaves the pool uncovered (MAG typically 12-18 l/min)
+- If a radiograph shows a faint linear indication parallel to the fusion boundary, confirm with angled UT before accepting the radiograph: RT is weak on planar defects lying along the beam, which is precisely the orientation of lack of sidewall fusion in a narrow-gap joint
+- If distortion exceeds allowance, change welding sequence, balance and restraint before reducing heat input; angular distortion is dominated by sequence and through-thickness gradient, and dropping below the WPS heat input range invites lack of fusion in exchange
+- If production HAZ hardness exceeds the limit although the WPS was followed, check recorded arc energy and travel speed against actual values, and recompute CE from the CAST ANALYSIS rather than the specification maximum — the 2 CE figures routinely differ by enough to move the preheat band
+- If an irregular profile or undercut appears in one welding position only, check the welder's qualification range against the position actually welded (ISO 6947 PF and PG are separate qualifications) before adjusting parameters
+- If a repair cracks again at the same location, stop repeating the repair and examine restraint and residual stress: a second excavation in a restrained joint usually raises local stress, and codes limit repeat repairs at one location for that reason
+- If arc strikes, stray marks or temporary-attachment removal sites are found, treat them as weld features rather than cosmetic marks: an arc strike on hardenable steel is an unpreheated micro-weld with a hard untempered spot, and therefore a crack initiation site
+
+[Known failure modes]
+- Carbon equivalent computed from the specification maximum rather than the cast analysis, or computed with the wrong formula for the steel (CE_IIW, Pcm and CET are not interchangeable and disagree materially on low-carbon grades)
+- Combined thickness taken as the plate thickness, ignoring that a T-joint or cruciform sums the heat-sink paths of all members meeting at the joint
+- Preheat read on the heated face moments after the torch, instead of at the code-specified distance from the joint or on the opposite face after a soak, so the recorded figure is a surface temperature while the through-thickness temperature is lower
+- Heat input averaged across a multi-pass weld rather than checked pass by pass, so a hot cap pass or a cold root hides inside a compliant average
+- Consumable exposure time out of the holding oven unlogged, so an H5 or H10 designation is claimed for electrodes that have reabsorbed moisture from shop air
+- PWHT recorded by soak time alone, with thermocouple placement, ramp rates and through-thickness uniformity unverified, so the hold is documented but the section never reached temperature
+- Hardness surveyed in the weld metal or several mm out, when the peak sits within roughly 1 mm of the fusion boundary in the coarse-grained HAZ; a survey in the wrong place passes while the critical point fails
+- NDT performed before the code's hydrogen delay period has elapsed, so delayed cracking has not yet formed when the weld is examined and accepted
+- Tack welds and temporary attachments made outside the WPS — wrong consumable, no preheat — and then consumed into the production weld
+
+[Exception catalogue]
+- AWS D1.1's prequalified-WPS provisions permit production welding with NO qualification test where joint detail, process, material group, consumable and parameters all fall inside the prequalified envelope, so the blanket requirement to qualify every WPS by testing is the ISO 15614 route rather than a universal rule
+- Qualified controlled-deposition and temper-bead procedures are accepted in lieu of PWHT where PWHT is impracticable, which is the normal case for in-service repair of installed plant; refusing a repair because thickness alone mandates PWHT refuses work the codes explicitly provide for
+- Preheat is set by carbon equivalent AND combined thickness AND consumable hydrogen AND heat input together, never by CE alone: a high-CE thin section at high heat input with an H5 consumable can be compliant with no preheat, and on quenched and tempered steel an unnecessarily high preheat or interpass temperature is itself a defect because it over-tempers the parent metal
+- The 350 HV10 figure is service-dependent and is neither a floor nor a universal ceiling: sour service under ISO 15156 / NACE MR0175 typically demands 250 HV or 22 HRC for carbon steel weldments, while a non-critical structural weld in a dry, non-sour environment may be accepted higher by its own code
+- Operators of mechanised, automatic and robotic equipment qualify under ISO 14732, not ISO 9606-1, and the essential variables differ; demanding a manual welder qualification of a robot cell's operator is the wrong document rather than a stricter one
+- RT and UT extents are written for butt welds. A fillet weld cannot be meaningfully radiographed and is examined by VT with MT or PT, and conventional angle-probe UT is unreliable on thin sections (below roughly 6-8 mm) and on small-diameter pipe, so a blanket volumetric requirement is unachievable rather than merely expensive
+
+[Tool limitations]
+- RT gives a 2-D projection and is poor on planar defects aligned with the beam; UT finds those but is operator-, calibration- and coupling-dependent with a near-surface dead zone; and neither reports residual stress or restraint, which are what drive cracking
+- MT and PT are surface methods only, and PT cannot be trusted on a shot-blasted, peened or machined surface where indications have been smeared closed unless the surface is re-prepared
+- A WPQR proves that a procedure produced an acceptable coupon on an unrestrained test plate welded under favourable conditions; it carries no information about restraint in the production joint, and restraint is the variable qualification does not test
+- Hardness results depend on method: HV10 on a polished macro is a destructive point measurement, while portable UCI and rebound instruments on a curved, coarse-grained weld surface carry much wider uncertainty and are not equivalent to the code figure
+- A power source's displayed current and voltage are not calibrated instrument readings and can differ from true arc values by 5-10%, so a heat input computed from panel figures is not a measurement unless the equipment is calibrated to ISO 17662
+
 [Limitations]
 - Does not cover welding of aluminium alloys (different shielding requirements, no preheat CE model, different filler selection)
 - Does not cover titanium or nickel alloy welding (inert gas trailing shields, different metallurgy)

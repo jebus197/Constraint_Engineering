@@ -94,12 +94,57 @@ class TestItCannotFireOnTheOrdinaryCase:
 
 
 class TestItCannotTrapTheSession:
-    def test_stop_hook_active_exits_immediately(self):
-        r = subprocess.run([sys.executable, str(HOOK)], input=json.dumps(
-            {"stop_hook_active": True, "transcript_path": "/nonexistent"}),
-            capture_output=True, text=True, timeout=30)
-        assert r.returncode == 0, (
-            "the loop guard failed; a Stop hook that blocks twice traps the session")
+    def test_the_budget_is_always_FINITE_which_is_what_prevents_a_trap(self, mod):
+        """★ REPLACES `test_stop_hook_active_exits_immediately`, 2026-11-12.
+
+        THE OLD TEST ASSERTED A BEHAVIOUR THIS PROJECT DELIBERATELY RETIRED. It
+        required exit 0 whenever `stop_hook_active` was true. The hook's own line
+        751 says the opposite in as many words -- *"`stop_hook_active` is NOT read
+        as 'give up'"* -- and `test_stop_hook_active_no_longer_surrenders` below
+        asserts THAT. 2 tests in this file therefore demanded opposite outcomes
+        from the same input.
+
+        AND IT WAS PASSING FOR AN INCIDENTAL REASON: the live counter happened to
+        hold more refusals than the budget, so the hook yielded on the BUDGET and
+        the test credited the yield to `stop_hook_active`. Raising the budget on
+        his ruling of 2026-11-12 exposed it -- the same input then returned 2.
+
+        WHAT ACTUALLY PREVENTS A TRAP IS THAT THE BUDGET IS FINITE, so this tests
+        that instead. The bound must never be unbounded however much movable work
+        exists, and it must yield once spent.
+        """
+        assert mod.refusal_budget() <= mod.MAX_REFUSALS_CEILING
+        assert mod.MAX_REFUSALS_CEILING < 10_000, "a ceiling this high is no bound"
+        assert mod.refusal_budget() >= mod.MAX_REFUSALS_PER_TURN, (
+            "the conditional budget must never fall BELOW the original 8")
+
+    def test_it_yields_even_with_stop_hook_active_once_the_budget_is_spent(
+            self, tmp_path, monkeypatch):
+        """The trap-prevention path, driven to exhaustion rather than assumed."""
+        import importlib.util as _iu
+        spec = _iu.spec_from_file_location("wnn_spent", HOOK)
+        m = _iu.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        monkeypatch.setattr(m, "STATE", tmp_path / "s.json")
+        monkeypatch.setattr(m, "MAX_REFUSALS_CEILING", 3)
+        monkeypatch.setattr(m, "MAX_REFUSALS_PER_TURN", 3)
+        used = 0
+        for _ in range(10):
+            used = m.spend_refusal("turn-trap")
+        assert used > m.refusal_budget(), (
+            f"after 10 refusals, {used} must exceed the budget "
+            f"{m.refusal_budget()} or the session could be trapped")
+
+    def test_the_budget_rises_only_when_work_is_MOVABLE(self, mod, monkeypatch):
+        """His ruling: 8 for work that needs him, more for work that does not."""
+        monkeypatch.setattr(mod, "movable_count", lambda: 0)
+        assert mod.refusal_budget() == mod.MAX_REFUSALS_PER_TURN, (
+            "with nothing movable the budget must stay exactly as it was")
+        monkeypatch.setattr(mod, "movable_count", lambda: 1)
+        assert mod.refusal_budget() == mod.MAX_REFUSALS_PER_TURN
+        monkeypatch.setattr(mod, "movable_count", lambda: 99)
+        assert mod.refusal_budget() == mod.MAX_REFUSALS_CEILING, (
+            "a large movable count must be capped by the ceiling, not unbounded")
 
     def test_a_broken_payload_never_breaks_the_session(self):
         r = subprocess.run([sys.executable, str(HOOK)], input="not json at all",

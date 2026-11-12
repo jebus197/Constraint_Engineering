@@ -1692,6 +1692,59 @@ _MEMORY_BULLET_RE = re.compile(r"^\s*[-*]\s+")
 _MEMORY_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
+#: ★ AN INTERIOR BOLD SUB-HEADING IS SHARED TEXT, AND CHARGING IT TO THE POINTER
+#: IN FRONT OF IT IS THE SAME ERROR `_memory_index_group_preamble` BELOW ALREADY
+#: RECORDS -- "charging shared text to one pointer makes the longest pointer an
+#: artefact of where it sits in the line." That fix covered a heading at the
+#: START of a line. The Feedback grouper also merges groups so that a heading
+#: lands in the MIDDLE, and that case was never covered.
+#:
+#: MEASURED 2026-11-12, on the save this closed. The entry "3 failed predicates
+#: means STOP" was charged 186 characters, of which its own link and hook are
+#: 143 and the remaining 43 are `· **MY INSTRUMENTS ARE THE WEAK POINT.** ·`, a
+#: heading shared by the 38 pointers that follow it. 15 other entries on that
+#: line were genuinely over and were shortened; this 1 was an artefact, and the
+#: only way to shorten it enough would have been to DELETE its hook, losing
+#: information to satisfy a measure that was wrong.
+#:
+#: SPLITTING THE LINE DOES NOT WORK AND THAT WAS TRIED FIRST. The grouper owns
+#: the line: it re-merges separate lines that share a heading, so a split is
+#: undone on the next save. Proven by running the grouper on a copy of the
+#: index, which reported 0 merges only because the split had ALREADY been undone.
+#:
+#: THE HEADING IS NOT CHARGED TO NOBODY, which the docstring below names as the
+#: other error: `_memory_index_interior_headings` returns each one and the audit
+#: holds it to the same limit in its own right.
+#: ★ NO UPPER BOUND, and the first version had one. `{4,120}` let a heading
+#: LONGER than the limit escape the pattern entirely, so it was measured by
+#: nothing -- the exact opposite error the preamble note names. Caught by
+#: `test_an_over_long_interior_heading_IS_caught`, which is why that test
+#: exists. `[^*\n]` cannot cross another `**`, so the bound bought nothing.
+_MEMORY_INTERIOR_HEADING = re.compile(r"\*\*[^*\n]{4,}\*\*")
+_MEMORY_INTERIOR_HEADING_TAIL = re.compile(
+    r"(?:\s*·)?\s*\*\*[^*\n]{4,}\*\*\s*(?:·\s*)?$")
+
+
+def _memory_index_interior_headings(line: str) -> list[tuple[str, int]]:
+    """Bold sub-headings that sit INSIDE a merged line, with their own lengths.
+
+    The first heading on a bulleted line is the line's own preamble and is
+    measured by `_memory_index_group_preamble`; only the later ones are returned
+    here, so no heading is measured twice and none is measured by nothing.
+    """
+    if not _MEMORY_BULLET_RE.match(line):
+        return []
+    first_link = _MEMORY_LINK_RE.search(line)
+    if first_link is None:
+        return []
+    out: list[tuple[str, int]] = []
+    for m in _MEMORY_INTERIOR_HEADING.finditer(line):
+        if m.start() < first_link.start():
+            continue                 # the line's own preamble, measured there
+        out.append((m.group(0).strip("* "), len(m.group(0))))
+    return out
+
+
 def _memory_index_pointers(line: str) -> list[tuple[str, str, int]]:
     """Every pointer on one index line, with the length the one-line rule charges.
 
@@ -1710,6 +1763,8 @@ def _memory_index_pointers(line: str) -> list[tuple[str, str, int]]:
     out: list[tuple[str, str, int]] = []
     for i, m in enumerate(links):
         seg = line[bounds[i]:bounds[i + 1]].rstrip(" ;,")
+        #: Shared heading text belongs to no single pointer. See the note above.
+        seg = _MEMORY_INTERIOR_HEADING_TAIL.sub("", seg).rstrip(" ;,·").rstrip()
         out.append((m.group(1), m.group(2), len(seg)))
     return out
 
@@ -2142,6 +2197,11 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
         pre = _memory_index_group_preamble(line)
         if pre is not None and pre[1] > _MEMORY_ENTRY_ONE_LINE_CHARS:
             audit.over_long_preambles.append((pre[1], pre[0]))
+        #: ★ AND THE INTERIOR HEADINGS, held to the same limit so that removing
+        #: them from a pointer's charge does not leave them measured by nothing.
+        for label, n in _memory_index_interior_headings(line):
+            if n > _MEMORY_ENTRY_ONE_LINE_CHARS:
+                audit.over_long_preambles.append((n, label))
     audit.over_long_preambles.sort(reverse=True)
 
     targets = {t for _title, t, _n in audit.entries if t.endswith(".md")}

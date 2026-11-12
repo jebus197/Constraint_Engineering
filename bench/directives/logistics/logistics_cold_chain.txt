@@ -52,6 +52,86 @@ References: EU GDP 2013/C 343/01, WHO PQS, Codex Alimentarius, ISTA 7E, USP <107
 - Verify pre-cooling records: cargo temp at loading must be documented.
 - Check PCM conditioning (freeze/thaw activation) completed — unconditioned PCM = zero protection.
 
+[Diagnostic heuristics]
+- If an excursion report shows every logged point within limits but the product fails
+  release, check the logging interval and the probe position before the vehicle. A
+  15-minute interval cannot resolve a 4-minute door-open spike, and a probe buried in
+  the pallet core will not see it at all.
+- If a temperature trace is unnaturally flat, with no diurnal ripple at all, check
+  whether the reading comes from the reefer's return-air sensor rather than a cargo
+  probe. Return air is a duct temperature and tracks the set point by design.
+- If a freeze-sensitive vaccine shows no excursion but fails potency, check the
+  recorded MINIMUM and the latching freeze indicator, never the mean. A 20-minute dip
+  below 0C disappears into an average taken over a 10-day shipment.
+- If a passive shipper qualified on an ISTA 7E summer profile fails in winter, check
+  the direction of failure first. Winter failures are usually the PCM freezing the
+  payload — packs conditioned at -20C against a +2C to +8C product — not insufficient
+  cooling capacity.
+- If cargo arrives warm while the reefer logged its set point throughout, check the
+  air path before the unit. Stacking above the red load line, or pallets blocking the
+  T-floor channels, defeats circulation while the unit reports correctly.
+- If an excursion appears on the first leg only and never repeats, check the
+  pre-cooling record and the loading duration before suspecting the vehicle. Warm
+  cargo takes hours to pull down and the ingress is a single load event.
+- If a mean kinetic temperature calculation clears a shipment whose trace breached the
+  upper limit, check whether MKT is admissible for that product at all. MKT is a
+  storage statistic for stability assessment and does not license a transport
+  excursion against a hard limit.
+
+[Known failure modes]
+- Probe placed in the free air stream rather than at the mapped warmest and coldest
+  load positions.
+- Logger started after loading, so the pull-down excursion is never recorded.
+- Frozen gel packs used for a +2C to +8C payload, which freezes the product.
+- PCM mass sized for nominal ambient rather than the lane's seasonal extreme.
+- Reefer set point cited as evidence of cargo temperature.
+- A monitoring gap at a carrier handover reported as "no excursion".
+- Alarm thresholds set at the product limit with no margin, so every alarm arrives
+  after the breach rather than before it.
+- Partial thaw and refreeze reported as compliant because the arrival temperature is
+  in range.
+- Logger accuracy (typically +/-0.5C) ignored against a 6C-wide window, and
+  calibration drift left uncorrected.
+
+[Exception catalogue]
+- Lyophilised (freeze-dried) vaccines — BCG, measles, yellow fever — are not
+  freeze-sensitive before reconstitution and may legitimately be shipped and stored
+  frozen. The never-below-0C rule attaches to liquid adjuvanted vaccines and to the
+  accompanying diluent, which must not freeze.
+- Where the marketing authorisation holder holds an approved stability budget derived
+  from ICH Q1A data, a documented time-out-of-range within that budget does not render
+  the product non-viable. The TTOR accounting still applies; the disposition decision
+  belongs to the authorisation holder, not to the carrier.
+- Controlled room temperature product (+15C to +25C) sits within GDP scope but has no
+  cold chain, and refrigerating it can itself cause damage, crystallisation in
+  suspensions being the usual example. The +2C to +8C window is product-specific, not
+  a default for everything GDP covers.
+- Continuous per-consignment logging is a GDP expectation for temperature-sensitive
+  medicines, and national competent authorities differ on ambient and oral solid dose
+  product, where a qualified lane profile plus vehicle mapping is accepted in place of
+  a logger in every box. Check the destination regime before declaring a gap.
+- A standby generator is not a universal requirement. Where a documented
+  maximum-safe-hold analysis shows the room holds its range longer than the longest
+  credible outage with doors closed, the control is hold time and door discipline. EU
+  GDP names no generator; specific national rules and WHO PQS facility requirements
+  do.
+
+[Tool limitations]
+- A data logger reports the temperature at the probe, not of the product. Without a
+  thermal mapping study relating probe position to the extreme load points, a
+  compliant trace is evidence about 1 point in the load.
+- Mean kinetic temperature collapses a trace to a single figure and is mathematically
+  incapable of showing that a freeze event occurred, so it can never clear a
+  freeze-sensitive product.
+- Thermal models calibrated on an empty-chamber or full-payload qualification
+  over-predict hold time for a part load, which carries less thermal mass and more
+  free air volume than the qualification run.
+- Latching freeze indicators record that a threshold was crossed, not for how long, so
+  they cannot separate a transient surface dip from a frozen core.
+- Calibration certificates state accuracy at the points actually calibrated, usually
+  0C and +25C. Accuracy at -20C or -70C is extrapolation unless the certificate covers
+  that point explicitly.
+
 [Limitations]
 - Does not cover cryogenic transport (LN2 -196C, dry ice -78.5C) or organ transport.
 - Does not cover controlled atmosphere (CA) for fresh produce (O2/CO2/N2 management).

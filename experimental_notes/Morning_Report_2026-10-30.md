@@ -52,7 +52,7 @@ They had also been sitting in a session scratchpad, reachable by nothing, which 
 
 And your instinct about the 800 archived merge verdicts was right in a way that means the opposite of what you feared. The repair is done with 18 guard tests. Correcting the archive is not a large task because it is not a task at all: a failed merge was recorded as an ordinary confirmation, indistinguishable from a genuine confirmation, so all 800 are successes by construction and nothing can say which inverted. Recorded as an unquantifiable error rather than repaired, consistent with your position against rewriting history.
 
-## 5. The part i would want you to read first
+## 5. The part I would want you to read first
 
 I made 13 claims to you across these 19 hours that later measurement withdrew or corrected. The composition matters more than the total of 13, and it is produced by a committed script rather than counted from memory.
 
@@ -114,7 +114,7 @@ The second: I almost reported that refused commit to you as landed. The command 
 
 My own producer also repeated the exact error it was written to correct. Its first version counted 6 sites and reported 4 awaiting your decision, because the error path of an already ruled channel and a method that merely serialises a class flag were each counted as separate obligations. The unit is the channel, not the site. That is now how it counts, and the guard checks the grouping on a synthetic case so no change to the real tree can make it vacuous.
 
-## 9. And more after that. b50's price list is wrong, and a guard on this report was red through 3 commits
+## 9. And more after that. B50's price list is wrong, and a guard on this report was red through 3 commits
 
 This section changes recommendation 2 the way section 8 changed recommendation 4. B50 is the immune memory item recommendation 2 asks you to rule on, and the ruling is still yours. What was wrong is the price list it gave you.
 
@@ -152,7 +152,7 @@ Third, the memory ledger. 262 files on disk against 260 stated, because 2 memory
 
 In the first 2 the measurement was right and only the sentence was wrong, which is the harder case to catch by reading, because a wrong number usually looks wrong and a right number under a wrong denominator reads perfectly. And the hook's hedged hint about the ledger, which was wrong the first time I saw it tonight, was right the second time. That is what hedged means, and it is a reason to check it rather than to discount it.
 
-## 10. This supersedes section 1. you have fewer decisions than that section says, because 2 of them you already made
+## 10. This supersedes section 1. You have fewer decisions than that section says, because 2 of them you already made
 
 Section 1 was written before this was found, and it overstates what you owe. Read this section instead: it names 6 open entries of which 1 is a ruling in the sense section 1 meant.
 
@@ -174,7 +174,7 @@ And the guard for that detector contained an assertion that could never fail, wh
 
 The list still provably terminates. New entries per entry closed stands at 0.7791 with a 95 per cent interval from 0.6181 to 0.9821 and an exact test against 1 at p equals 0.0198, so it remains subcritical.
 
-## 11. 1 decision for you with a number attached, and 2 defects i made after section 10 was written
+## 11. 1 decision for you with a number attached, and 2 defects I made after section 10 was written
 
 THE DECISION, AND IT IS 1 LINE. The pre commit board that gates every commit runs an explicit list of 73 test files. There are 727 in the repository. So it never reaches 654 of them, which is 0.8996 of the suite, and every guard written tonight is among those 654. That figure now has a producer, which it did not when this section was first written: it is reported by the gate cost script, so it can be re derived rather than retyped. I had written it by hand 4 times in one night and it went stale every time, because adding a guard increments the count and prose cannot follow it. No interval is attached to the 0.8996, because it is a census of every test file rather than a sample and there is no sampling uncertainty to quantify.
 

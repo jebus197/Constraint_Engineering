@@ -52,6 +52,97 @@ STANDARDS: IPC-2152, IPC-SM-785, JEDEC JESD51 series, MIL-HDBK-217
 5. Solder fatigue life (Coffin-Manson or Engelmaier model) must exceed
    required product lifetime with safety factor >= 2.
 
+[Diagnostic heuristics]
+1. T_j converged in a single pass: check whether the derating was applied at all.
+   R_DS(on) rising ~0.4%/C makes P a function of T, so a calculation that
+   did not iterate has assumed a constant-power device by construction.
+2. Thermal model stable at every steady-state operating point and the hardware fails
+   in service anyway: test the SLOPE condition dP_diss/dT against dP_cooling/dT. A
+   fixed point can exist and be unstable, and solving for the fixed point cannot see
+   that.
+3. Part survives DC at full power and fails on a pulsed profile at lower average
+   power: steady-state R_theta is the wrong instrument whenever the pulse is shorter
+   than tau. Check Z_theta(t) with the duty-cycle correction before re-sizing
+   anything.
+4. 1 device on a shared heatsink runs hot while its neighbours do not: compute the
+   heatsink rise from the TOTAL dissipation before blaming that device's interface.
+   Superposition gives every device the same SUM(P_i)*R_theta(sa) term.
+5. Adding copper area has stopped helping: the bottleneck has moved to the z-axis.
+   Count thermal vias before widening the plane, because through-plane FR4 is
+   0.3 W/(m*K) and the in-plane spread has already saturated.
+6. T_case matches prediction and the die still fails: the error is inside the package
+   or in the power figure, not in the heatsink. Recompute P from electrical quantities
+   measured AT temperature before re-sizing the sink.
+7. An electrolytic capacitor is the first failure in a design whose semiconductors all
+   sit within margin: measure its own local ambient rather than the board's. On
+   Arrhenius it is the part whose life halves soonest, and it is usually sitting
+   downstream of someone else's heatsink.
+8. Solder joints cracking under a profile that Coffin-Manson says is safe: use delta_T
+   at the JOINT rather than the ambient swing, and check the DNP of the package that
+   actually failed. The largest part sees the largest strain for the same board
+   delta_T.
+
+[Known failure modes]
+1. Computing T_j from nominal power at nominal ambient and never iterating, which
+   excludes the positive temperature coefficient by construction.
+2. Omitting R_theta(cs) because the part is bolted down. A dry, thin, pumped-out or
+   voided TIM layer is frequently the largest term in the whole chain.
+3. Using typical rather than maximum R_theta(jc) from the datasheet.
+4. Reading the single-pulse Z_theta(t) curve as though it were the duty-cycle curve.
+5. Analysing each device on a shared heatsink as though it were alone on it.
+6. Taking FR4's in-plane conductivity for a through-board heat path.
+7. Assuming an exposed pad is thermally connected when it is unsoldered, partially
+   wetted or voided. The electrical connection can be perfect while the thermal one is
+   absent.
+8. Checking thermal stability only at the rated operating point, when runaway is a
+   derivative condition and can bite below the rating.
+9. Mixing a measured T_case with a datasheet R_theta(ja), which already contains the
+   case-to-ambient path and therefore counts it twice.
+
+[Exception catalogue]
+1. The positive temperature coefficient that is a liability in a single device is the
+   mechanism that makes paralleled MOSFETs share current: the hotter device's rising
+   R_DS(on) diverts current to the cooler one. Reading HARD 3 as "positive tempco is a
+   defect" would refuse a standard and correct design.
+2. The SIGN in HARD 3 is device- and range-specific, never universal. An IGBT below
+   its crossover point and a forward-biased diode both carry a NEGATIVE coefficient,
+   which inverts the runaway inequality and the current-sharing argument together.
+   Establish the coefficient over the actual operating range before applying either.
+3. PTC heaters, self-regulating elements and foldback-limited regulators satisfy the
+   runaway inequality deliberately and in a bounded way: the positive feedback IS the
+   control loop. HARD 4 identifies an instability, and an instability with a saturating
+   ceiling is a design rather than a fault.
+4. For packages whose heat leaves through the leads and the board rather than the top
+   — most QFN, SOIC and small exposed-pad parts with no usable case path — R_theta(ja)
+   on a declared JEDEC board governs, and building the jc-cs-sa chain of HARD 1
+   produces a confident wrong answer against a case path that does not exist.
+5. Pulse widths far shorter than every tau make the steady-state network of HARD 1
+   inapplicable, and a design that violates its steady-state limits can be entirely
+   correct under Z_theta(t). Symmetrically, for pulses far longer than every tau the
+   transient machinery is unnecessary and the steady-state sum is exact.
+6. Coffin-Manson cycle life is not the limiting mechanism for a part that sees very
+   few deep thermal cycles across its service life. A continuously powered device
+   wears out by time at temperature — intermetallic growth, electrolyte loss,
+   electromigration — so demanding a cycle count there answers the wrong question.
+
+[Tool limitations]
+1. A CFD or FEA thermal solve takes dissipation as an INPUT, so an uncoupled run
+   cannot detect thermal runaway at all: it will report a comfortable temperature for
+   a design that diverges. Only a solve with the electrical temperature dependence fed
+   back can see the loop.
+2. A thermal camera measures surface radiance and needs a correct emissivity per
+   surface. Bare copper and solder read tens of degrees low, and the hottest point in
+   the system is a die under a package the camera cannot see at all.
+3. A datasheet R_theta(ja) belongs to a specific JEDEC test board in still air. It is
+   a comparison figure between parts, not a prediction for another board, and using it
+   as a design number is the commonest overestimate of available margin.
+4. Published Z_theta(t) curves are single-pulse and drawn at a fixed set of duty
+   cycles. Interpolating between them is an approximation with no stated error, and
+   extrapolating below the shortest plotted pulse has no basis at all.
+5. MIL-HDBK-217 returns a failure rate from a parts count and is not predictive in
+   absolute terms. It can rank 2 designs against each other; it cannot be quoted as a
+   service life.
+
 [Limitations]
 1. Does not cover liquid cooling (cold plates, microchannels, pumped loops).
 2. Does not cover phase-change cooling (heat pipes, vapour chambers).

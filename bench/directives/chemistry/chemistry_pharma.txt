@@ -25,8 +25,17 @@ Polymorphic form control: crystal form specified, controlled, monitored.
   storage must not induce uncontrolled form conversion.
 Starting material per ICH Q11: adequate structural complexity, well-defined
   quality attributes. Multi-supplier sourcing requires equivalence data.
-Elemental impurity limits per ICH Q3D (R2), oral PDE:
-  Pd <= 10 ug/day, Pt <= 10 ug/day, Ni <= 20 ug/day, Cu <= 300 ug/day.
+Elemental impurity limits per ICH Q3D (R2), ORAL PDE:
+  Pd <= 100 ug/day, Pt <= 100 ug/day, Ni <= 200 ug/day, Cu <= 3000 ug/day.
+  CORRECTED 2026-11-12. This line read 10, 10, 20 and 300 ug/day, which is the
+  PARENTERAL column, not the oral one it was labelled as. All 4 figures were
+  uniformly 10x low, which is the signature of a column slip rather than 4
+  independent errors, and the effect was to over-control every oral product by
+  a factor of 10. The parenteral PDEs ARE 10, 10, 20 and 300 ug/day, so the
+  superseded numbers are correct for a route this line does not cover. For
+  reference, inhalation is 10x lower again at 1, 1, 5 and 30 ug/day.
+  Route-specific and never transferable between routes; see the exception
+  catalogue below, which was written against the corrected values.
   Pd from catalytic hydrogenation: scavenger or crystallisation purge required.
 Stability per ICH Q1A (R2): 25C/60%RH long-term, 40C/75%RH accelerated.
   6 months accelerated data minimum for clinical supply.
@@ -46,6 +55,119 @@ Verify all intermediates have purity specs with validated analytical methods.
 Map every ICH M7 alerting structure; document purge or control strategy.
 Check patent freedom to operate for key transformations and catalysts.
 Verify final API crystallisation reliably delivers target polymorph.
+
+[Diagnostic heuristics]
+
+If ee falls between the penultimate intermediate and the isolated API, check the
+  final crystallisation and any basic wash for epimerisation at the alpha
+  stereocentre before re-examining the asymmetric step. If ee RISES across an
+  unoptimised crystallisation, the compound is a conglomerate and the gain is a
+  eutectic effect, not a better reaction.
+If residual Pd fails the Q3D limit after a coupling or a hydrogenation, check
+  the oxidation state and ligation of what remains before adding more scavenger.
+  Colloidal Pd(0), Pd(II) chelated by a pyridine or thioether in the product,
+  and Pd adsorbed on carbon each purge by a different route, and a thiol resin
+  that strips Pd(II) does little to a Pd(0) colloid.
+If a DSC endotherm shifts or disappears between batches, run TGA on the same
+  material and XRPD before and after drying before reporting a new polymorph.
+  DSC alone cannot separate desolvation from melting, and a hydrate with a
+  variable water history presents as 2 forms.
+If a residual solvent will not dry below a plateau, check whether the material
+  is a solvate rather than extending the dry. A stoichiometric solvate holds its
+  solvent until the form converts, and a hotter, longer dry converts the form
+  instead of meeting the Q3C limit.
+If an impurity appears at scale and not in the laboratory, check time at
+  temperature — addition duration, hold times, heat-up and cool-down profiles —
+  before suspecting a reagent lot. Most scale-only impurities are a longer
+  thermal history rather than new chemistry.
+If a genotoxic impurity is found in the API and its alerting structure is
+  introduced 3 or more steps upstream, compute the purge factor before
+  developing a ppm-level method. ICH M7 accepts a justified purge argument, and
+  a purge of 1000-fold or better can remove the need for an API control
+  altogether.
+If a crystallisation that always worked fails to nucleate after a vessel change
+  or a cleaning revalidation, suspect a lost seeding history rather than a
+  changed solubility. The vessel was effectively clean for the first time.
+
+[Known failure modes]
+
+Treating an ICH M7 structural alert as a finding of mutagenicity. An alert
+  triggers an assessment — literature, Ames, or a control strategy — and is not
+  itself a conclusion.
+Applying the lifetime TTC of 1.5 ug/day to a 14-day clinical study, so an
+  impurity is controlled far tighter than M7 requires and a viable route is
+  abandoned for it.
+Reporting ee from a chiral method whose system suitability never demonstrated
+  that the minor enantiomer is resolved and detectable at the specification
+  level.
+Seeding with a slurry of unverified form, or seeding above the metastable zone
+  width where the seed dissolves, and then claiming form control.
+Proposing a regulatory starting material 1 or 2 steps from the API. The
+  designation carries the GMP boundary and the whole impurity control strategy
+  with it, and a regulator who rejects it rejects both.
+Quoting atom economy or PMI for the final step rather than for the sequence,
+  including solvents, water and recovery losses.
+Placing the elemental impurity control where the measurement is convenient
+  rather than where the purge happens, so the API is tested and the intermediate
+  that actually carries the Pd is not.
+Reading 6 months of accelerated data as a shelf-life claim. Accelerated data
+  support a provisional shelf life; the long-term station sets the real one.
+Scaling a hydrogenation on catalyst loading per mole while gas-liquid mass
+  transfer falls, so rate and selectivity both change and the impurity profile
+  changes with them.
+
+[Exception catalogue]
+
+A racemate registered as a racemate has no ee specification, and a stereocentre
+  that is not configurationally stable cannot carry one that means anything. For
+  a compound that epimerises in buffer at physiological pH, or whose centre
+  inverts freely in solution, single-enantiomer control is not a quality
+  attribute — it is a measurement of how recently the sample was dissolved.
+ICH M7 does not govern impurities in a drug substance developed under ICH S9
+  for advanced cancer. Where the API is itself cytotoxic or genotoxic by design,
+  applying a 1.5 ug/day TTC to its impurities is incoherent, and S9 sets the
+  expectation instead.
+The 1.5 ug/day TTC is a lifetime figure. M7's less-than-lifetime staged limits
+  are higher — of the order of 120 ug/day for exposure up to 1 month and
+  20 ug/day up to 12 months — and an impurity with its own carcinogenicity data
+  takes a compound-specific acceptable intake rather than the default.
+Q3D PDEs are route-specific and the oral column does not transfer. The oral PDE
+  is 100 ug/day for Pd and Pt, 200 ug/day for Ni and 3000 ug/day for Cu, and the
+  parenteral PDE is 10-fold lower in each case, with inhalation lower again. The
+  figures given above as oral PDEs are in fact the PARENTERAL values, so an oral
+  product held to them is controlled 10 times tighter than Q3D requires. A PDE
+  also applies to the drug product at the maximum daily dose, so no API
+  specification is required where the product risk assessment demonstrates
+  control elsewhere.
+Polymorph control is not required where the drug substance is amorphous by
+  design, is an oil or a liquid, or is dissolved before administration. Form
+  control exists to protect dissolution and solid-state stability; where neither
+  is at stake, specifying a form constrains manufacture for no quality benefit.
+The 25C/60%RH long-term condition is for climatic Zones I and II. A product for
+  Zone IVb is stored at 30C/75%RH, and a refrigerated substance runs 5C
+  long-term with 25C/60%RH as its accelerated condition. Applying this file's
+  pair to a hot, humid market understates the challenge rather than meeting it.
+
+[Tool limitations]
+
+RDKit parses SMILES and validates syntax, not chemical plausibility: a structure
+  can be syntactically valid and physically impossible. For an API it accepts
+  a stereo descriptor on an atom that is not stereogenic, a tautomer that does
+  not exist in the solid state, and a valence-legal arrangement no route reaches
+  — so a SMILES is never evidence that the compound exists.
+A SMARTS-based alert screen returns the alert, not the assessment ICH M7 asks
+  for. It cannot see that a flagged fragment is sterically blocked or
+  electronically deactivated, and it has no view of whether the impurity is
+  actually formed or purged.
+Crystal-structure prediction and cheminformatics do not give a polymorph
+  landscape that can be filed. The number of accessible forms is the output of a
+  solvent, antisolvent and thermal screen, and a form absent from a screen is
+  absent from the screen, not from the compound.
+Retrosynthesis and reaction-prediction tools rank precedent and plausibility.
+  They say nothing about the impurity profile, the heat flow, the catalyst
+  residue or the GMP controllability, so a top-ranked route can be unmakeable.
+Predicted log P, pKa and solubility are model outputs and cannot become a
+  specification. A quality attribute needs a measurement on the actual material.
 
 [Limitations]
 

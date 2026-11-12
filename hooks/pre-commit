@@ -992,7 +992,36 @@ if [ "$CODE" -ne 0 ]; then
     echo "              python3 -c \"import sys,pathlib; sys.path.insert(0,'scripts'); import cdsfl_sv as sv; sv._update_memory_exclusions_ledger(pathlib.Path('.').resolve())\"" >&2
     echo "" >&2
     echo "pre-commit: to commit anyway, deliberately: git commit --no-verify" >&2
-    CDSFL_REFUSAL="desktop-mirror-drifted"
+    # ★ B155's 2ND DEFECT, FIXED 2026-11-12. This line read
+    #   CDSFL_REFUSAL="desktop-mirror-drifted"
+    # and it sits in the branch that prints "REFUSED. The cheap guards are red."
+    # On 2026-11-12 a 1950-second board recorded `"why":"desktop-mirror-drifted"`
+    # while ALL 4 MIRRORS WERE IN SYNC -- verified by `cmp -s` on each, and the
+    # board's own log said so -- and the real cause was 2 red cheap guards on an
+    # evidence field using a SPACE where 87 markers use a comma. A recorded cause
+    # that contradicts the board's own output is worse than no cause, because it
+    # is acted upon: it sent the next session after the mirrors.
+    #
+    # B155'S OWN ACCOUNT OF THIS WAS WRONG TOO and is corrected with it. It says
+    # the field is "populated by a classifier that guessed from an earlier run's
+    # reason". There is no classifier. `desktop-mirror-drifted` appears ONCE in
+    # this whole file, on this line, so no mirror-drift path ever used it -- the
+    # label named the cause the author EXPECTED, not the one that fired.
+    #
+    # MEASURED BEFORE CHANGING IT: 8 refusal paths, 8 labels, and this is the
+    # ONLY one whose label contradicts what its branch prints. The other 7 are
+    # correct, so this is 1 line and not a redesign.
+    #
+    # THE LABEL NOW NAMES THE FAILING GUARD. A bare "cheap-guards-red" would
+    # still need the log to act on, and a refusal leaves no other trace. The
+    # first FAILED test is appended when pytest named one. Only characters safe
+    # inside a JSON string survive, because this value is interpolated into the
+    # ledger's JSON by printf and an unescaped quote would corrupt the row.
+    _cdsfl_first_fail=$(printf '%s\n' "$OUT" \
+        | grep -oE '^(FAILED|ERROR) [^ :]+' | head -1 \
+        | sed -e 's/^FAILED //' -e 's/^ERROR //' -e 's#.*/##' \
+        | tr -cd 'A-Za-z0-9._-')
+    CDSFL_REFUSAL="cheap-guards-red${_cdsfl_first_fail:+:$_cdsfl_first_fail}"
     exit 1
 fi
 

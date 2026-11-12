@@ -45,6 +45,119 @@ Check vent sizing for worst-case gas evolution (DIERS two-phase flow).
 Confirm solvent-material compatibility vs pH, temperature, halide content.
 Verify mixing: blend time < 5% of reaction half-life for kinetic control.
 
+[Diagnostic heuristics]
+
+If the batch runs hotter at scale on the same jacket setpoint, check A/V before
+  suspecting U. Geometric scale-up from 1 L to 1000 L multiplies volume by 1000
+  and jacket area by about 100, so specific cooling falls roughly 10-fold and
+  chemistry that was isothermal in glass approaches adiabatic in steel.
+If the reaction mass stops following the jacket, check wall fouling and the
+  agitator's actual power draw before concluding the reaction has finished. Lost
+  U and lost mixing both present as a reaction that has stopped.
+If an exotherm arrives late in a metered addition rather than at the start, stop
+  the dose. An induction period has been accumulating reagent, and the
+  unreleased heat is already in the vessel.
+If calorimetry and the observed temperature rise disagree, check whether the
+  measurement used the real reagent order, concentration and dosing profile. A
+  DSC pan gives a decomposition onset, not the accumulation that a slow dose
+  creates; reaction calorimetry run on the actual profile is the number that
+  bears on dT_ad.
+If a step is slower at scale at the same temperature and concentration, check
+  the mixing regime and the interfacial area before suspecting a reagent lot. A
+  mass-transfer-limited rate is a function of the stirrer, not of the kinetics.
+If a quench overshoots on pH or temperature at scale but never did in glass,
+  check where the addition enters relative to the impeller. A 10 m3 vessel can
+  hold a local composition for tens of seconds that the bulk never sees.
+If a solid fouls the vessel at scale and not in the laboratory, check the WALL
+  temperature rather than the bulk. Crystallisation starts at the coldest
+  surface, and a large jacket delta-T puts that surface well below the measured
+  batch temperature.
+If a solvent or mass balance closes above 100.0%, suspect a recovered or
+  recycled stream counted both as an input and as a recovery before crediting
+  the yield.
+
+[Known failure modes]
+
+Setting the addition rate in proportion to volume rather than to the achievable
+  heat removal, so the dose out-runs the reaction at scale and the reagent
+  accumulates.
+Taking a DSC onset as a safe operating ceiling. Onset is scan-rate dependent,
+  and the temperature at which time to maximum rate is 24 hours can sit 50 K
+  below it.
+Using the jacket's nameplate duty instead of the dT_lm achievable at process
+  temperature. A jacket served by a -10C chiller removes very little heat from a
+  mass held at 0C.
+Resting the safety case on the agitator running, with no independent basis for
+  that assumption. Loss of agitation with accumulated reagent is the canonical
+  runaway.
+Judging inerting by nitrogen flow rather than by measured headspace oxygen.
+Sizing the condenser for the stoichiometric gas and ignoring the solvent vapour
+  carried with it.
+Treating filtration and drying as scale-neutral. Cake resistance and drying time
+  scale with bed depth, not with volume, and this is where campaign time is
+  actually spent.
+Distilling to the same pot temperature at scale, where the longer time at
+  temperature degrades a thermally labile product that survived a laboratory
+  rotary evaporator.
+Omitting heel volumes, line rinses and hold times from the mass and energy
+  balance, then finding the cycle does not fit the vessel or the shift pattern.
+
+[Exception catalogue]
+
+Metered addition is not always the safer mode, and mandating it can create the
+  hazard it is meant to prevent. Dosing a reagent into a mass held at a
+  temperature where the reaction does not proceed accumulates the full charge
+  with no dose control at all; for such chemistry the correct mode is an all-in
+  charge followed by a controlled ramp, so heat release tracks the temperature
+  the operator holds. Dose control is a safeguard only where consumption keeps
+  pace with addition.
+At reflux the jacket calculation does not govern. The solvent's latent heat is
+  the heat sink and the vessel is temperature-clamped, so binding constraints
+  move to condenser duty and vent capacity, and a U * A * dT_lm shortfall
+  against Q_rxn,max is not a reason to refuse a refluxing step.
+dT_ad above 50 K does not by itself require independent secondary protection.
+  Stoessel's criticality class depends on where the maximum temperature of the
+  synthesis reaction sits relative to the boiling point and to the 24-hour
+  time-to-maximum-rate temperature. A large adiabatic rise whose MTSR stays
+  below the boiling point and far below T_D24 is class 1 or 2, and the solvent
+  and the jacket control it.
+No explosive atmosphere means no hazardous zone. A flammable solvent handled
+  wholly in a closed, inerted system, or present at a concentration that cannot
+  reach the LFL in the headspace, generates no zone to classify — and
+  conversely, a solvent with a flash point above 60C handled ABOVE its flash
+  point does need assessment, which a flash-point threshold alone would miss.
+Mixing scale-up is not a risk where the kinetics are slow relative to blend
+  time. A reaction with a half-life of hours against a blend time of seconds is
+  kinetically controlled at every scale in range, and CFD or a mixing
+  correlation for it is effort spent on a question already answered.
+Material compatibility verdicts are condition-bound. Anhydrous HCl in an organic
+  stream is routine service for 316 stainless, because chloride stress corrosion
+  cracking needs water, chloride and tensile stress together, so refusing a dry
+  HCl step on a wet-service corrosion rule is wrong. The same table entry is
+  correct for aqueous HCl and must not be relaxed there.
+
+[Tool limitations]
+
+A structure file carries no thermochemistry. RDKit parses SMILES and validates
+  syntax, not chemical plausibility — a structure can be syntactically valid and
+  physically impossible — and it returns no enthalpy of reaction, no
+  decomposition onset and no gas stoichiometry, so nothing drawn from a SMILES
+  bears on dT_ad or on vent sizing. Those are calorimetric measurements.
+DSC reports a scan-rate-dependent onset, not a safe temperature. The quantity
+  that sets an operating limit is the adiabatic time to maximum rate, from
+  adiabatic or isothermal calorimetry on the real mass.
+A simulator's heat-transfer coefficient is a correlation fitted to a clean wall
+  and an idealised Newtonian fluid. Fouling, a slurry and a shear-thinning mass
+  fall outside its validity, and U on a specific vessel is measured, not
+  predicted.
+CFD resolves the hydrodynamics of the geometry and boundary conditions supplied
+  to it. It carries no kinetics unless kinetics are supplied, so it cannot
+  predict a mixing-sensitive selectivity on its own.
+A vent-sizing code applies the methodology to the flow regime selected for it.
+  Choosing all-vapour where the real case is 2-phase returns a confidently
+  undersized device, and the regime comes from a closed-vessel adiabatic test
+  rather than from the code.
+
 [Limitations]
 
 Does not cover polymerisation (distinct runaway kinetics, viscosity effects).

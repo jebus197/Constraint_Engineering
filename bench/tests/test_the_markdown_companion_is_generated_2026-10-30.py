@@ -283,3 +283,86 @@ class TestThePartStyleReportAndTheDateArgument:
         assert dst.read_text() == gen.render("2026-10-31"), (
             "the 2026-10-31 companion differs from a rebuild; regenerate it "
             "with --date 2026-10-31 rather than editing it by hand")
+
+
+class TestCapitaliseDoesNotDestroyTokensItHasNoRightToLower:
+    """★ `str.capitalize()` LOWERCASES EVERYTHING AFTER THE FIRST CHARACTER.
+
+    Found 2026-11-12 while rendering that morning's companion, which did not
+    exist. It had already shipped 2 kinds of damage into delivered markdown:
+
+      (1) AN ENTRY IDENTIFIER. `B50's price list is wrong` shipped in the
+          2026-10-30 companion as `b50's`. A lowercased code is not the code --
+          it cannot be matched back to the task list, and this project's own
+          rule is that an identifier never travels without its subject.
+      (2) THE PRONOUN `I`, in 7 headings across the 2026-10-30, 2026-11-01 and
+          2026-10-31 companions.
+
+    And a 3rd found in the same pass: only the FIRST character of the whole
+    string was ever raised, so every sentence after a full stop was lowered --
+    `Why I kept stopping. measured, and now fixed`.
+
+    THE PREDICATE IS DRIVEN BY WHAT THE RECORD HOLDS. The source line is ALL
+    CAPS by the time it reaches the heading branch, so case carries no signal
+    and `THE` cannot be told from `UX` by shape. An acronym allowlist would be
+    an addition nothing reaches, so the rule covers a token bearing a DIGIT and
+    the standalone pronoun, which is what the damage actually was.
+    """
+
+    def test_the_pronoun_survives(self, gen):
+        assert gen._recase("THE PART I WOULD WANT YOU TO READ FIRST") == \
+            "The part I would want you to read first"
+
+    def test_an_entry_identifier_survives_with_a_lowered_possessive(self, gen):
+        """★ THIS TEST PASSED FOR THE WRONG REASON AND A MUTATION CAUGHT IT.
+
+        It first used the exact heading that shipped wrong on 2026-10-30,
+        `AND MORE AFTER THAT. B50'S PRICE LIST IS WRONG` -- where `B50'S`
+        happens to sit immediately after a full stop. The sentence-case rule
+        therefore raised its first letter anyway, so reverting the identifier
+        restoration left the test GREEN and nothing checked that branch at all.
+
+        The identifier is now placed MID-SENTENCE, where only the identifier
+        rule can save it, and the original heading is kept as a second case so
+        the real-world token is still covered.
+        """
+        mid = gen._recase("THE PRICE LIST FOR B50 IS WRONG IN 2 PLACES")
+        assert "B50" in mid, mid
+        assert "b50" not in mid, mid
+
+        shipped = gen._recase("AND MORE AFTER THAT. B50'S PRICE LIST IS WRONG")
+        assert "B50's" in shipped, shipped
+
+    def test_an_identifier_mid_sentence_is_not_saved_by_the_sentence_rule(self, gen):
+        """The discriminating case, stated on its own so it cannot be lost in a
+        later edit: no full stop anywhere, so the sentence rule cannot fire."""
+        got = gen._recase("A GUARD ON C0036 AND B21 WENT RED THIS EVENING")
+        assert "C0036" in got and "B21" in got, got
+
+    def test_a_sentence_after_a_full_stop_is_raised(self, gen):
+        assert gen._recase("WHY I KEPT STOPPING. MEASURED, AND NOW FIXED") == \
+            "Why I kept stopping. Measured, and now fixed"
+
+    def test_an_ordinary_word_is_still_lowered(self, gen):
+        """★ THE FALSIFIER. Every word in an ALL-CAPS source matches `[A-Z]{2,}`,
+        so a rule keyed on capitals alone would preserve the whole line and this
+        function would silently do nothing."""
+        got = gen._recase("A DESIGN FINDING THAT NEEDS YOUR AWARENESS TODAY")
+        assert got == "A design finding that needs your awareness today", got
+
+    def test_a_shape_change_falls_back_rather_than_mangling(self, gen):
+        """Fail-safe: if the token counts diverge the plain result is returned,
+        because a wrong restoration is worse than no restoration."""
+        assert isinstance(gen._recase("A  DOUBLE  SPACED  LINE  OF  TEXT"), str)
+
+    def test_no_committed_companion_has_a_bare_lowercase_pronoun_heading(self):
+        """Not vacuous: this failed on 3 files before the fix."""
+        import re as _re
+        bad = []
+        for p in sorted((REPO / "experimental_notes").glob("Morning_Report_*.md")):
+            for i, line in enumerate(p.read_text(encoding="utf-8",
+                                                 errors="replace").split("\n"), 1):
+                if line.startswith("#") and _re.search(r"\bi\b", line):
+                    bad.append(f"{p.name}:{i}: {line[:80]}")
+        assert not bad, "a heading still writes the pronoun in lower case:\n  " \
+            + "\n  ".join(bad)

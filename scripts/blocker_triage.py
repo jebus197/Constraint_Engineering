@@ -41,6 +41,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import os
 import pathlib
 import re
 import subprocess
@@ -333,7 +334,80 @@ def classify(text: str) -> tuple[str, str, str]:
     return "PARK", why, perm
 
 
+class BoardIsRunning(RuntimeError):
+    """Raised instead of writing while a commit board holds the tree."""
+
+
+#: ★ B155: THIS SCRIPT'S OWN WRITE DAMAGED 3 COMMIT BOARDS IN ONE NIGHT.
+#: The Stop gate refuses a stop and names this script as the remedy. On
+#: 2026-11-12 the obstacle BEING reported was that a commit board was mid-pytest
+#: and no file in the tree could be edited -- and running the remedy APPENDED a
+#: section to experimental_notes/PARKED_FOR_THE_FOUNDER.md, a file in the tree,
+#: 27 minutes into that board. 3 of the board's 259 test files read that path,
+#: and one asserts the count of `## ` headings is equal across 2 reads of it.
+#: The append took that count from 72 to 73, failing the assertion on a tree
+#: that was otherwise correct: a TIMING ARTEFACT INDISTINGUISHABLE FROM A
+#: DEFECT. It happened 3 times, and the gate repeated the same advice twice more
+#: while the replacement board ran.
+#:
+#: WHY THE WRITER AND NOT THE GATE, which is the composability question his own
+#: standard asks. 2 repairs were available: the gate checks for a live board
+#: before naming a writer, or the writer refuses while one runs. The 2nd is
+#: simpler and closer to the fault -- the writer KNOWS it is writing, the gate
+#: does not -- and composing both is NOT recommended without a measurement
+#: showing the pair dominates either alone.
+#:
+#: THE SHELL EXCLUSION IS REUSED, NOT REWRITTEN. `hooks/cy_monitor_gate.py`
+#: already carries a `pgrep -f` matcher corrected on his 2026-11-08 ruling,
+#: because `-f` matches the WHOLE COMMAND LINE and a shell whose arguments
+#: merely NAME the runner was being reported as a live run. Measured here
+#: against a real board on 2026-11-12: a raw `pgrep` returned 4 pids of which 3
+#: were shells, so without the exclusion this predicate would refuse against its
+#: own monitor. A second matcher would be the producer-consumer divergence this
+#: project keeps meeting.
+_BOARD_PATTERN = "cdsfl_sv.py --commit"
+
+
+def a_commit_board_is_running() -> str:
+    """A live commit board's pid, or the word for whatever else proves one, or ''.
+
+    FAIL-SAFE TOWARD WRITING: any failure of this predicate returns '', so a
+    fault here costs the protection and never the triage. Refusing to classify
+    because the detector broke would be worse than the defect it prevents.
+    """
+    #: ★ A TEST SEAM, the same one `hooks/cy_monitor_gate.py` carries and for
+    #: the same reason: without it a guard cannot isolate this predicate from
+    #: whatever happens to be running on the machine, so the test would pass or
+    #: fail by accident of timing. `1` forces a board, `0` forces none.
+    forced = os.environ.get("CDSFL_BT_BOARD", "").strip()
+    if forced:
+        return "forced-by-seam" if forced != "0" else ""
+    try:
+        if (REPO / ".git" / "index.lock").exists():
+            return "index.lock"
+        out = subprocess.run(["pgrep", "-f", _BOARD_PATTERN],
+                             capture_output=True, text=True, timeout=4)
+        pids = [x for x in (out.stdout or "").split() if x.strip()]
+        if not pids:
+            return ""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "bt_cy_gate", REPO / "hooks" / "cy_monitor_gate.py")
+        cy = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cy)
+        for pid in pids:
+            if not cy._is_shell(pid):
+                return pid
+        return ""
+    except Exception:                                        # noqa: BLE001
+        return ""
+
+
 def park(title: str, detail: str, stamp: str | None = None) -> pathlib.Path:
+    #: ★ REFUSE BEFORE ANY WRITE, not after. See B155 above.
+    board = a_commit_board_is_running()
+    if board:
+        raise BoardIsRunning(board)
     if stamp is None:
         stamp = subprocess.run(["date", "-Iseconds"], capture_output=True,
                                text=True).stdout.strip()
@@ -460,7 +534,15 @@ def main() -> int:
                    f"meanwhile.")
     if perm:
         detail += f"\n\n**Needs your decision — {perm}.** Not blocking; nothing on the list waits on it."
-    p = park(a.title, detail)
+    try:
+        p = park(a.title, detail)
+    except BoardIsRunning as live:
+        #: The CLASSIFICATION succeeded and is printed above; only the WRITE
+        #: is deferred, so this is not an error and does not exit non-zero.
+        print(f"  -> NOT written: a commit board is live ({live}), and writing to "
+              f"the tree mid-board changes counts that board's own tests assert on")
+        print("     Re-run this once the board lands; the verdict above is unchanged.")
+        return 0
     if p is None:
         # ALREADY PARKED. A queue that grows a heading every time an item
         # is re-triaged inflates the count of DECISIONS with copies of one

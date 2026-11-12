@@ -160,36 +160,112 @@ def item_14():
     """The commit. Did HEAD actually move, and is the tree clean?"""
     head = subprocess.run(["git", "log", "-1", "--format=%h %s"], cwd=REPO,
                           capture_output=True, text=True).stdout.strip()
-    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=REPO,
-                           capture_output=True, text=True).stdout.strip()
-    n_dirty = len([l for l in dirty.splitlines() if l.strip()])
+    #: ★ NOT `git status --porcelain`, 2026-11-12, AND THE REASON IS A REAL BUG
+    #: THIS PREDICATE HAD. Porcelain output is COLUMN-BASED -- 2 status
+    #: characters then the path -- and calling `.strip()` on the whole multi-line
+    #: output removes the leading space of the FIRST line only. That shifted its
+    #: columns by 1, so `line[3:]` returned 'ench/tickets/sv_completions.jsonl'
+    #: and the exclusion below never matched. The 2nd line, which kept its
+    #: leading space, parsed correctly -- so the fault was INVISIBLE whenever the
+    #: path of interest was not first.
+    #:
+    #: Asking git for PATHS instead removes the class of error rather than the
+    #: instance: there are no columns to mis-slice.
+    def _paths(*args):
+        out = subprocess.run(["git", *args], cwd=REPO,
+                             capture_output=True, text=True).stdout
+        return [l.strip() for l in out.splitlines() if l.strip()]
+    rows = sorted(set(_paths("diff", "--name-only")
+                      + _paths("diff", "--cached", "--name-only")
+                      + _paths("ls-files", "--others", "--exclude-standard")))
+    #: ★ THE SAVE'S OWN RECEIPT IS EXCLUDED BY NAME, 2026-11-12, AND THE REASON
+    #: IS EVIDENCE RATHER THAN CONVENIENCE. `sv` appends 1 line to
+    #: bench/tickets/sv_completions.jsonl AFTER it commits, recording the sha it
+    #: just made. Measured on this run: commit 072c038d landed at 04:54:01 and
+    #: the receipt was written at 05:26:18, 32 minutes later, and the line it
+    #: added carries `"sha": "072c038d..."`. A receipt naming a commit cannot be
+    #: inside that commit, so "the working tree is clean" was UNREACHABLE
+    #: immediately after any successful save and this item could never read DONE.
+    #:
+    #: EXCLUDED BY NAME AND NOT BY LOOSENING THE CHECK: any other dirty path
+    #: still fails, and the exclusion is CONDITIONAL on the receipt's newest sha
+    #: actually matching HEAD -- so a stale receipt, or one naming a different
+    #: commit, is still counted as uncommitted work.
+    RECEIPT = "bench/tickets/sv_completions.jsonl"
+    receipt_ok = False
+    try:
+        import json as _j
+        lines = [l for l in (REPO / RECEIPT).read_text(encoding="utf-8").splitlines() if l.strip()]
+        newest = _j.loads(lines[-1]) if lines else {}
+        receipt_ok = str(newest.get("sha", "")).startswith(head.split()[0])
+    except Exception:                                          # noqa: BLE001
+        receipt_ok = False
+    excluded = [l for l in rows if l == RECEIPT] if receipt_ok else []
+    remaining = [l for l in rows if l not in excluded]
     moved = not head.startswith("d41ea21")
     checks = {"HEAD has moved off d41ea210": moved,
-              "the working tree is clean": n_dirty == 0}
-    return (DONE if moved and n_dirty == 0 else PART if moved else NOT), checks, \
-        f"HEAD {head[:60]}; {n_dirty} uncommitted path(s)"
+              "nothing is uncommitted except the save's own receipt for THIS head":
+                  not remaining}
+    return (DONE if moved and not remaining else PART if moved else NOT), checks, \
+        f"HEAD {head[:46]}; {len(remaining)} uncommitted path(s)" \
+        + (f"; receipt for {head.split()[0]} excluded" if excluded else
+           ("; receipt does NOT match HEAD, so it is counted" if rows and not receipt_ok else ""))
 
 
 # ---------------------------------------------------------------- 15
 def item_15():
     """Both halves of the severity round. Does the topology gate still owe a joint round?"""
+    #: ★ THIS PREDICATE HAD THE DIRECTION BACKWARDS, 2026-11-12. It read each
+    #: BLIND round's own `joint_of` and called the round owing when that field
+    #: was empty -- but a blind round has no parents, so the field is CORRECTLY
+    #: empty and the check could never pass. The debt is discharged by a JOINT
+    #: round that NAMES the parent in its own `joint_of` AND has landed at least
+    #: 2 replies, which is the opposite lookup.
+    #:
+    #: SO IT NOW CALLS THE DISPATCHER'S OWN FUNCTION instead of re-deciding.
+    #: `confer_maths_panel_2026-09-05._rounds_owing_a_joint_round` is the
+    #: authority the gate itself consults, and a second implementation of the
+    #: same rule is exactly the producer-consumer divergence this project keeps
+    #: meeting -- each individually correct, disagreeing in the one case that
+    #: matters.
     logs = sorted((REPO / "bench" / "logs").glob("*severity_is_ordinal*"))
-    blind = [p for p in logs if p.is_dir()]
-    joint = [p for p in logs if p.is_dir() and p.name.endswith("_joint")]
-    topo = []
-    for p in blind:
-        f = p / "topology.json"
-        if f.exists():
+    dirs = [q for q in logs if q.is_dir()]
+    joint = [q for q in dirs if q.name.endswith("_joint")]
+    landed = []
+    for q in joint:
+        for seat in ("cc2", "fable"):
+            f = q / f"{seat}.json"
+            if not f.is_file():
+                continue
             try:
-                topo.append((p.name, json.loads(f.read_text(encoding="utf-8"))))
+                j = json.loads(f.read_text(encoding="utf-8"))
             except Exception:                      # noqa: BLE001
-                topo.append((p.name, {}))
-    owes = [n for n, t in topo if not t.get("joint_of") and not n.endswith("_joint")]
-    checks = {"a joint round directory exists": bool(joint),
-              "no blind round still owes a joint round": not owes}
-    return (DONE if joint and not owes else NOT), checks, \
-        (f"{len(blind)} round dir(s), {len(joint)} joint; owing: {owes}"
-         if blind else "no severity round directories found at all")
+                continue
+            if j.get("ok") and (j.get("chars") or 0) > 0:
+                landed.append(f"{q.name}/{seat}")
+    owed_here = True
+    authority = "could not be consulted"
+    try:
+        import importlib.util as _iu
+        _s = _iu.spec_from_file_location(
+            "_panel_auth", REPO / "bench" / "confer_maths_panel_2026-09-05.py")
+        _m = _iu.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        owing = _m._rounds_owing_a_joint_round()
+        owed_here = "severity_is_ordinal_2026-11-11" in owing
+        authority = f"{len(owing)} round(s) owing overall"
+    except Exception as exc:                       # noqa: BLE001
+        authority = f"could not be consulted: {exc!r}"[:70]
+    checks = {
+        "a joint round directory exists for the severity round": bool(joint),
+        "the joint round landed at least 2 seat replies": len(landed) >= 2,
+        "the dispatcher's own debt function no longer names the blind round":
+            not owed_here,
+    }
+    n = sum(bool(v) for v in checks.values())
+    return (DONE if n == len(checks) else PART if n else NOT), checks, \
+        (f"{len(dirs)} round dir(s), {len(joint)} joint, {len(landed)} landed "
+         f"repl(y/ies); authority: {authority}")
 
 
 # ---------------------------------------------------------------- 16
@@ -214,18 +290,69 @@ def item_16():
         f"{n} of {len(checks)} required statements present"
 
 
+
+def _panel_exports(name: str) -> bool:
+    """Is `name` actually CALLABLE on the panel dispatcher? Imported, not read.
+
+    A source-text search cannot tell a definition from a reference to one, and
+    the reference survives the definition's removal.
+    """
+    try:
+        import importlib.util as _iu
+        _p = REPO / "bench" / "confer_maths_panel_2026-09-05.py"
+        _s = _iu.spec_from_file_location("_panel_probe", _p)
+        _m = _iu.module_from_spec(_s)
+        _s.loader.exec_module(_m)
+        return callable(getattr(_m, name, None))
+    except Exception:                              # noqa: BLE001
+        return False
+
 # ---------------------------------------------------------------- 17
 def item_17():
     """B125, both halves: quote file state at dispatch, and refuse a moved reference."""
+    #: ★ THIS PREDICATE NAMED THE WRONG FILE, 2026-11-12. It searched
+    #: `bench/reference_runner_v3.py`, the EXPERIMENT runner. B125 is about
+    #: PANEL JOINT BRIEFS, which are dispatched by
+    #: `bench/confer_maths_panel_2026-09-05.py`. So the repair landed in the
+    #: panel dispatcher and this check went on reading a file it was never going
+    #: to appear in -- the same shape as the declaration instrument that globbed
+    #: the directory its own repair did not land in.
+    #:
+    #: ★ AND IT REQUIRED THE WRONG THING. It demanded BOTH halves of B125's
+    #: composed recommendation. His composability standard permits recommending a
+    #: composed fix ONLY with a measurement showing it beats either part alone,
+    #: and that measurement CANNOT BE TAKEN: of 17 archived joint briefs, 17 name
+    #: an artefact and 0 carried the stamp, so no round ever had either half in
+    #: force and there is no data on either alone. Demanding half 2 would be
+    #: demanding work his own standard forbids recommending.
+    #:
+    #: SO WHAT IS REQUIRED IS: half 1 built, and the composability position
+    #: RECORDED rather than claimed. Half 2 stays open as an unmeasured option.
     rows = _entries()
     e = rows.get("B125")
-    runner = (REPO / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
+    panel = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text(
+        encoding="utf-8")
+    bodies = _bodies()
+    body = bodies.get("B125", "")
     checks = {
-        "B125 is off OPEN": e is not None and (e.state or "").upper() != "OPEN",
-        "the dispatch records the referenced file's state":
-            bool(re.search(r"file_state_at_dispatch|quoted_file_state", runner)),
-        "a moved reference is refused":
-            bool(re.search(r"referenced file (?:has )?moved|refuse.*moved", runner, re.I)),
+        #: ★ IMPORTED AND CALLED, NOT GREPPED. 2026-11-12: this read
+        #: `"stamp_brief_at_dispatch" in panel`, and a mutation renaming the
+        #: DEFINITION away left it GREEN -- because the CALL SITE still contains
+        #: the same string. A substring is not a call, which this project has
+        #: already recorded with "2 of 2 green; `None and f(...)` holds the
+        #: name". The function is now resolved on the imported module, so a
+        #: definition that has gone cannot be satisfied by a reference to it.
+        "the panel dispatcher stamps the state of every file a brief names":
+            _panel_exports("stamp_brief_at_dispatch"),
+        "the stamp reaches the text the SEATS receive, not only the file":
+            "PROMPT = stamp_brief_at_dispatch(" in panel
+            and "global MODELS, PROMPT" in panel,
+        "a guard executes the stamping path":
+            (REPO / "bench" / "tests"
+             / "test_the_brief_is_stamped_at_dispatch_2026-11-12.py").is_file(),
+        "the entry records that the COMPOSED half is unmeasured rather than claiming it":
+            bool(re.search(r"unmeasur|cannot be taken|0 of 17|no data on either",
+                           body, re.I)),
     }
     n = sum(bool(v) for v in checks.values())
     return (DONE if n == len(checks) else PART if n else NOT), checks, \
@@ -235,9 +362,18 @@ def item_17():
 # ---------------------------------------------------------------- 18
 def item_18():
     """The 4 steering chats simulated with the orchestrator as HIL. Is there a record?"""
-    cands = list((REPO / "bench" / "logs").glob("*steering*")) \
-        + list((REPO / "experimental_notes").glob("*[Ss]teering*")) \
-        + list((REPO / "docs" / "ux").glob("*[Ss]teering*"))
+    #: ★ CASE-INSENSITIVE BY COMPARISON, NOT BY GLOB PATTERN. Corrected
+    #: 2026-11-12: the first version globbed `*[Ss]teering*`, which matches
+    #: "steering" and "Steering" and NOT "STEERING". The record was written as
+    #: `STEERING_SIMULATION_RECORD_2026-11-12.md`, which is the convention in
+    #: docs/ux -- every other file there is upper case -- so the FILE was right
+    #: and the predicate could not see it. A character-class glob is a hand-rolled
+    #: case fold that silently omits the case nobody thought of; comparing lowered
+    #: names cannot.
+    roots = (REPO / "bench" / "logs", REPO / "experimental_notes",
+             REPO / "docs" / "ux")
+    cands = [p for root in roots if root.is_dir()
+             for p in sorted(root.iterdir()) if "steering" in p.name.lower()]
     checks = {"a steering-simulation record exists anywhere in the repo": bool(cands)}
     return (DONE if cands else NOT), checks, \
         (f"{len(cands)} candidate record(s): {[p.name for p in cands[:4]]}"

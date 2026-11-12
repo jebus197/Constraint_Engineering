@@ -67,6 +67,103 @@ Connection assumptions: pinned connections in analysis must be detailed as pins;
 Check both ULS and SLS: a design that passes strength may fail deflection,
   and vice versa. Natural frequency check if span > ~10m (f >= 4 Hz typical).
 
+[Diagnostic heuristics]
+
+If a beam passes moment capacity with margin and still fails, check the lateral-torsional buckling
+  verification and the effective length between restraints before increasing the section: M_b,Rd
+  with an unrestrained compression flange can be a small fraction of M_c,Rd.
+If utilisation rises when the section is made larger, check flange thickness against BS EN 10025
+  Table 7. Crossing 16 mm reduces f_y for S355 from 355 to 345 MPa and crossing 40 mm reduces it
+  again, so a deeper section can be weaker in yield terms than the one it replaced.
+If a frame analysis returns less sway than expected, confirm that notional horizontal loads were
+  applied and that second-order effects were considered: alpha_cr below 10 means they are not
+  negligible, and the frame must be amplified or analysed second-order.
+If a floor satisfies L/360 and occupants still report movement, check the fundamental frequency,
+  modal mass and damping rather than adding stiffness: a long-span lightweight floor can pass
+  deflection and fail a vibration response factor.
+If column base reactions do not balance the applied vertical load, look for load applied to elements
+  the model treats as unloaded — cladding rails, secondary beams released at both ends — before
+  suspecting the solver.
+If a connection is reported adequate while the member is at full capacity, check the assumed pin or
+  fixity against the detail. A nominally pinned end plate detailed stiff attracts a moment the beam
+  was never designed for; a nominally fixed connection that is flexible sheds moment into the span.
+If a punching shear check fails at a flat-slab column, examine the column head detail and whether
+  the control perimeter has been reduced by a slab edge or a nearby opening before adding shear
+  reinforcement.
+If a fire period is satisfied by a section-factor calculation for a beam carrying a compartment wall,
+  confirm which criteria apply: protecting the steel for load-bearing capacity R 60 does not by
+  itself give the wall it supports integrity and insulation for the same period.
+
+[Known failure modes]
+
+Lateral-torsional buckling omitted because the beam carries a slab. Composite action requires shear
+  connection, and a slab resting on the top flange restrains nothing during construction.
+Effective length factors taken for an idealised end condition the connection does not provide, most
+  often treating a nominal 4-bolt base plate as fixed.
+Notional horizontal loads for equivalent imperfections left out of the lateral design, or applied in
+  a single direction and a single combination.
+Robustness and tying-force requirements assumed satisfied, with no check that the horizontal tie
+  forces can pass through the connections actually detailed.
+Composite beams designed for the composite section throughout, with no verification of the bare
+  steel beam under wet concrete and construction load, and no propping specified.
+Transfer structures and discontinuous columns introduced by a layout change without re-tracing the
+  vertical load path, so a column lands on a slab.
+Deflection checked as a total when the brittle-finish limit applies to deflection occurring after the
+  finish is installed, and precamber credited against a limit it does not relieve.
+Fire protection specified as a generic thickness rather than by section factor and required period,
+  leaving slender members under-protected and stocky ones over-protected.
+Bolt groups verified for bolt shear while the governing mode is unchecked: bearing on a thin plate,
+  block shear at an end connection, or the long-joint reduction on a line of bolts.
+
+[Exception catalogue]
+
+The deflection limits of NA.2.23 are recommendations for conventional construction, not absolute
+  requirements, and the governing criterion is fitness for the finishes and services actually
+  present. A documented relaxation is legitimate for an exposed steel roof with no brittle finish,
+  or for a member whose movement is taken up by a joint — and the limit tightens below L/360 where a
+  facade, a lift guide or a crane rail demands it.
+Eq. 6.10 is 1 of 3 permitted routes. BS EN 1990 also offers the pair 6.10a and 6.10b, and the UK
+  National Annex permits either, so a verification using 6.10b with the reduction factor on the
+  permanent action is code-compliant rather than under-designed. Mixing expressions within a single
+  verification is the error, not choosing the less conservative pair.
+Capacity design — connection stronger than member — is required where ductility is relied on for
+  force redistribution or for robustness. For a non-dissipative member in a conventional non-seismic
+  frame, a connection designed for the applied effects with its own partial factors is sufficient and
+  is normal UK practice; forcing full-strength connections throughout adds cost and fabrication risk
+  with no mechanism that needs them.
+Class 4 slender sections are not excluded by the expressions quoted above, which cover Class 1 and 2
+  with W_pl and Class 3 with W_el. A Class 4 member is verified with effective section properties to
+  BS EN 1993-1-5, so a cold-formed or slender plate-girder design is not non-compliant merely for
+  falling outside those equations.
+The yield strengths listed are specified minima for the grade and thickness. Where a design relies on
+  tested material — an assessment of an existing structure using coupon results, or steel certified
+  to a higher minimum — the tested characteristic value governs under its own evaluation rules; and
+  where overstrength is unwelcome, as in a deliberate fuse element, it is the upper characteristic
+  value that matters rather than the lower.
+A fire resistance period of 0 is legitimate for elements whose failure affects neither means of
+  escape, nor compartmentation, nor the stability of the structure — single-storey elements under the
+  boundary-distance rules, and members inside a sacrificial non-load-bearing assembly. The period
+  follows from use, height and compartmentation, not from a minimum applied to every member.
+
+[Tool limitations]
+
+Analysis packages report utilisation against the checks requested. A member with no
+  lateral-torsional buckling check configured, or a column with no second-order amplification
+  applied, returns a figure below 1.0 that says nothing about the omission.
+A linear elastic analysis cannot reveal a mechanism. Acceptable capacity ratios throughout do not
+  establish stability, because a model's restraints or rigid-diaphragm assumptions can supply in a
+  given direction what the detailing does not.
+Model-based quantity take-off reports what is modelled. Connections, stiffeners, fire protection and
+  non-structural restraint usually sit outside the structural model, so self-weight derived from it
+  is systematically light and the restraint it implies is not the restraint that will be built.
+Section property libraries hold nominal dimensions. Rolling tolerances, corrosion loss on existing
+  steel, and flange or web material removed for a notch or a service penetration are absent, so a
+  check against library properties overstates the capacity of the member that exists.
+Fire engineering tools compute a limiting temperature and a protection thickness from the section
+  factor and load ratio supplied. They do not verify that the load ratio reflects the fire
+  combination, nor that protection is continuous across connections and penetrations, which is where
+  it actually fails.
+
 [Limitations]
 
 Does not cover seismic design (BS EN 1998 / ASCE 7 required separately).

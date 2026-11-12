@@ -148,3 +148,77 @@ class TestTheLiveIndexPassesUnderTheNewUnit:
         if len(audit.entries) == old:
             pytest.skip("this index currently has no grouped lines to find")
         assert len(audit.entries) > old
+
+
+class TestAnInteriorHeadingIsNotChargedToItsNeighbour:
+    """★ THE 4TH SHAPE OF ONE RECURRING BLIND SPOT, closed 2026-11-12.
+
+    `_memory_index_group_preamble` already records the principle: "charging
+    shared text to one pointer makes the longest pointer an artefact of where it
+    sits in the line." That fix covered a heading at the START of a line. The
+    Feedback grouper also merges groups so a heading lands in the MIDDLE, and
+    that case was never covered.
+
+    MEASURED ON THE SAVE THIS CLOSED. The entry "3 failed predicates means STOP"
+    was charged 186 characters against a 150 limit, of which its own link and
+    hook are 143 and the remaining 43 are a heading shared by the 38 pointers
+    after it. 15 other entries on that line were genuinely over and were
+    shortened; this 1 was an artefact, and shortening it enough would have meant
+    DELETING its hook to satisfy a measure that was wrong.
+
+    SPLITTING THE LINE WAS TRIED FIRST AND DOES NOT WORK: the grouper re-merges
+    separate lines that share a heading, so a split is undone on the next save.
+
+    AND THE HEADING IS NOT MEASURED BY NOTHING, which the preamble docstring
+    names as the opposite error. `test_an_over_long_interior_heading_IS_caught`
+    is what holds that half.
+    """
+
+    HEAD = "**MY INSTRUMENTS ARE THE WEAK POINT.**"
+
+    def test_the_heading_is_not_charged_to_the_pointer_before_it(self, sv):
+        line = f"- [a]({'a'*8}.md) a hook · {self.HEAD} · [b]({'b'*8}.md) a hook"
+        charged = {t: n for _ti, t, n in sv._memory_index_pointers(line)}
+        bare = "- [a](" + "a"*8 + ".md) a hook"
+        bare_charged = {t: n for _ti, t, n in sv._memory_index_pointers(bare)}
+        assert charged[f"{'a'*8}.md"] <= bare_charged[f"{'a'*8}.md"] + 2, (
+            f"the heading is still charged to the preceding pointer: "
+            f"{charged} against {bare_charged}")
+
+    def test_a_pointer_genuinely_over_the_limit_is_STILL_caught(self, sv):
+        """★ THE FALSIFIER. A change that simply stopped measuring would pass
+        every other test here while removing the check entirely."""
+        line = "- [x](x.md) " + "y" * 200
+        assert any(n > sv._MEMORY_ENTRY_ONE_LINE_CHARS
+                   for _t, _g, n in sv._memory_index_pointers(line))
+
+    def test_an_over_long_interior_heading_IS_caught(self, sv):
+        line = f"- [x](x.md) hook · **{'H'*200}** · [y](y.md) hook"
+        assert any(n > sv._MEMORY_ENTRY_ONE_LINE_CHARS
+                   for _l, n in sv._memory_index_interior_headings(line)), (
+            "an interior heading is now measured by nothing, which the preamble "
+            "docstring names as the opposite error")
+
+    def test_the_lines_own_leading_heading_is_not_double_counted(self, sv):
+        """It belongs to the preamble measure; counting it here too would hold
+        one span to the limit twice and report it as 2 faults."""
+        line = f"- {self.HEAD} · [a](a.md) hook"
+        assert sv._memory_index_interior_headings(line) == [], \
+            sv._memory_index_interior_headings(line)
+
+    def test_the_live_index_has_no_over_long_entry_or_heading(self, sv):
+        """Not vacuous: this failed at 16 entries, then at 1, before the fix."""
+        import pathlib
+        idx = pathlib.Path.home() / ".claude" / "projects" \
+            / "-Users-georgejackson-Developer-Projects" / "memory" / "MEMORY.md"
+        if not idx.is_file():
+            import pytest
+            pytest.skip("the private memory index is not readable here")
+        lim = sv._MEMORY_ENTRY_ONE_LINE_CHARS
+        bad = []
+        for ln in idx.read_text(encoding="utf-8", errors="replace").splitlines():
+            bad += [f"entry {t} at {n}" for _ti, t, n
+                    in sv._memory_index_pointers(ln) if n > lim]
+            bad += [f"heading {l!r} at {n}" for l, n
+                    in sv._memory_index_interior_headings(ln) if n > lim]
+        assert not bad, "over the one-line limit:\n  " + "\n  ".join(bad)

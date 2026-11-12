@@ -29,6 +29,42 @@ SCOPE: Single-component thermoplastic injection moulding — conventional proces
 - Validate gate size: too small causes gate freeze-off before packing; too large causes long cycle time and gate vestige
 - Check that venting is adequate (vent depth 0.02-0.05 mm for most thermoplastics, 0.01-0.02 mm for nylons to prevent flash)
 
+[Diagnostic heuristics]
+- If the part is short at the end of fill, confirm the shot is being delivered — cushion present and repeatable, non-return valve sealing — before raising melt temperature; a worn check ring loses pressure during hold and shows as short shots AND shot-to-shot weight variation together
+- If part weight varies shot to shot with every setting constant, look at cushion and screw recovery repeatability before the process window; a cushion reaching zero means the part is being filled against a volumetric stop rather than packed
+- If a sink mark sits opposite a rib or boss, the cause is local thickness ratio, not pack pressure: a rib base above roughly 0.6 of nominal wall sinks whatever the hold profile does
+- If flash appears on one side of the tool only, check platen parallelism, tie-bar strain balance and shut-off wear before adding tonnage; adding tonnage to chase one-sided flash crushes the shut-off and makes the flash permanent
+- If a dimension measured at the press disagrees with the inspection bench, fix a conditioning time and measure to it: semi-crystalline parts go on shrinking for 24 hours or more, and PA66 grows as it takes up moisture
+- If a part with uniform walls still warps, compare the 2 mould halves' surface temperatures before touching the shrinkage allowance: a delta T across the cavity bends the part toward the hotter side with no help from the material
+- If a defect sits exactly at the last place to fill, read it as venting, because trapped air compresses and burns there; a void at the thickest section instead is a shrinkage void, and sectioning the part separates the 2 by POSITION rather than by appearance
+- If a glass-filled part holds tolerance along the flow and loses it across the flow, the fill pattern or gating has changed, not the shrinkage allowance; confirm the fill pattern before re-cutting steel
+
+[Known failure modes]
+- Tool steel cut to the middle of a published shrinkage range rather than steel-safe, so correcting the first article means adding metal by welding instead of removing it
+- Shrinkage taken as one number for a material family, when filler content, wall thickness, hold pressure and mould temperature each move it within the published range
+- Machined-metal tolerances applied to a moulding; ISO 20457 exists because tool tolerance, shrinkage variation and process variation stack, and a general +/-0.05 mm on a 150 mm moulded dimension is not achievable
+- Fibre orientation ignored in structural analysis, so a glass-filled part is modelled with isotropic bulk properties that overstate stiffness and strength across the flow direction
+- Regrind added at an unrecorded ratio, so molecular weight, colour and impact properties drift between batches with no traceable cause
+- Drying verified by hopper residence time rather than by a moisture measurement; PA and PET hydrolyse at melt temperature and the damage is invisible in the moulded part
+- Cycle shortened by cutting cooling time, so the part is ejected above its heat deflection temperature and distorts on the conveyor rather than in the tool
+- Process window established in the first 20-30 shots, before the tool reaches thermal steady state, so the settings do not hold once production is running
+- Ejector force raised to overcome insufficient draft, which polishes, then galls, then scores the cavity wall
+
+[Exception catalogue]
+- Draft is a STRAIGHT-PULL requirement. Zero-draft and undercut faces are routine where the tool carries a side action, lifter, collapsing core or unscrewing core, and shallow undercuts in flexible materials are deliberately stripped off the core — so a zero-draft face is a tooling decision, not a violation
+- The uniform-wall rule is for conventionally cooled solid sections. Structural foam, gas-assist and physically or chemically foamed parts deliberately run thick sections with a cellular core, and a lens or light guide runs very thick on purpose with a long slow pack and extended cooling
+- Residence time must be COMPUTED from shot size and barrel capacity, not read off the datasheet: a part using a small fraction of the barrel reaches the degradation limit in far less wall-clock time than the published minutes, while a part using most of the barrel has more headroom than the figure suggests
+- D_tool = D_part * (1 + S) is a free-shrinkage scale. A dimension constrained by steel through cooling — an internal diameter around a core, a feature between 2 shut-offs — does not shrink freely, and applying the full factor there over-compensates
+- The 3-5 tonnes/cm^2 projected-area heuristic is a filled-cavity-at-full-pack estimate. It over-predicts for a thin centrally gated part filled at low pressure and under-predicts for a long thin high-viscosity flow path, and injection-compression moves the requirement off projected area entirely
+- Mould temperature below the published window is correct where LOW crystallinity is the goal: clarified PP, amorphous PET and high-gloss skins are deliberately quenched, trading post-mould shrinkage and dimensional stability for clarity or surface
+
+[Tool limitations]
+- Mould-flow simulation predicts fill pattern, weld-line position and air traps well, and warpage much less well, because warpage depends on fibre orientation, crystallisation kinetics and residual stress rather than on flow alone
+- A simulation's material card is a fitted viscosity and pvT model for a nominal grade; a different lot, a colour masterbatch or any regrind changes the rheology, and the card does not know it has
+- Closed-form cooling time assumes 1-D conduction through a uniform wall into a mould face at constant temperature, so it is wrong at exactly the places that end the cycle: corners, ribs, bosses and anywhere a core is thermally isolated
+- A micrometer or touch-probe CMM applies force to a compliant moulding and the reading includes the deflection; optical and scanning methods avoid it but struggle on translucent and high-gloss surfaces
+- A cavity pressure sensor reports the pressure AT THE SENSOR: a single gate-side sensor cannot distinguish gate freeze-off from a pack shortfall at the far end of the cavity
+
 [Limitations]
 - Does not cover thermoset moulding (different cure chemistry, no remelt, different tooling requirements)
 - Does not cover multi-component or overmoulding processes (sequential or rotary)

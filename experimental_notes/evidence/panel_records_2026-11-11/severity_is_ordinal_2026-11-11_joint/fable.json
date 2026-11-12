@@ -1,0 +1,152 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13629,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}",
+      "t_offset_s": 13.452
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/cdsfl_registry/*\"}",
+      "t_offset_s": 13.741
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/bench/cdsfl_registry/domain_manifest.toml\"}",
+      "t_offset_s": 17.581
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"7\\\\.7\\\\|7\\\\.8\\\\|log-odds\\\\|log_odds\\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/cdsfl_operational.md | head -40\", \"description\": \"Locate sections 7.7 and 7.8 in operational spec\"}",
+      "t_offset_s": 48.632
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"kappa_set|aggregated_severity\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/bench/dm/_convergence.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 50.137
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/cdsfl_operational.md\"}",
+      "t_offset_s": 52.734
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^## \\\\|^### \\\" /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/bench/directives/universal/cdsfl_operational.md | head -60\", \"description\": \"List section headers of operational spec\"}",
+      "t_offset_s": 56.912
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"log-odds\\\\|log_odds\\\\|logit\\\" docs/*.md | head -20 && echo --- && grep -n \\\"7\\\\.7\\\\|7\\\\.8\\\" docs/MATHEMATICAL_APPENDIX.md | head -20\", \"description\": \"Find log-odds fusion and \\u00a77.7/7.8 references in docs\"}",
+      "t_offset_s": 63.913
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/docs/MATHEMATICAL_APPENDIX.md\", \"offset\": 1253, \"limit\": 330}",
+      "t_offset_s": 70.291
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"credence\\\\|severity_d\\\\|ordered pair\\\\|\\u227d\\\\|theta_d\\\\|\\u03b8_d\\\" bench/directives/universal/cdsfl_core_formal.md | head -30\", \"description\": \"Find pair statement in seat-facing formal doc\"}",
+      "t_offset_s": 332.459
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"critical_level|severity_scale\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo\", \"glob\": \"**/*.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 30}",
+      "t_offset_s": 335.349
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CRITICAL_SEVERITY_THRESHOLD\\\" bench/*.py bench/dm/*.py 2>/dev/null | head; which wolframscript || echo NO_WOLFRAM\", \"description\": \"Locate severity threshold constant; check for wolframscript\"}",
+      "t_offset_s": 336.751
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/bench/cdsfl_registry/domain_vocabulary.py\", \"offset\": 280, \"limit\": 95}",
+      "t_offset_s": 350.225
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' scripts/severity_was_never_computed_from_the_model_2026-10-12.py | head -60; echo ===; ls bench/logs | head\", \"description\": \"Inspect the archive census producer's frame\"}",
+      "t_offset_s": 355.575
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"rglob\\\\|glob\\\\|sha256\\\\|confidence\\\\|constraint_class\\\\|verification\\\" scripts/severity_was_never_computed_from_the_model_2026-10-12.py | head -30\", \"description\": \"Extract frame and field logic from census producer\"}",
+      "t_offset_s": 360.105
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/severity_was_never_computed_from_the_model_2026-10-12.py\", \"offset\": 100, \"limit\": 100}",
+      "t_offset_s": 365.085
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,78p' scripts/severity_was_never_computed_from_the_model_2026-10-12.py\", \"description\": \"Read DISPROVED/VERIFIED verdict sets\"}",
+      "t_offset_s": 424.188
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/docs/MATHEMATICAL_APPENDIX.md\", \"old_string\": \"**WHAT \\u00a77.7's PRODUCT BECOMES.** `Sev(f) = W(class) \\u00b7 confidence \\u00b7 Ver(verification)`\\nis a **credence** formula wearing a consequence name \\u2014 a finding both seats of the\\n2026-11-11 blind round reached independent",
+      "t_offset_s": 461.049
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/docs/MATHEMATICAL_APPENDIX.md\", \"old_string\": \"**WHAT \\u00a77.7's PRODUCT BECOMES.** `Sev(f) = W(class) \\u00b7 confidence \\u00b7 Ver(verification)`\\nis a **credence** formula wearing a consequence name \\u2014 a finding both seats of the\\n2026-11-11 blind round reached independent",
+      "t_offset_s": 487.784
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The pair's credence half is S_v (section 7.8), not section 7.7's renamed product.\\n\\nJoint round `severity_is_ordinal_2026-11-11_joint`, fable seat, 2026-11-12.\\n\\nCLAIM UNDER TEST. docs/M",
+      "t_offset_s": 559.912
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/.write_probe && ls -la /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/.write_probe && rm /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo/scripts/.write_probe && echo WRITABLE\", \"description\": \"Probe whether repo",
+      "t_offset_s": 566.586
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"docs/MATHEMATICAL_APPENDIX.md\\\")\\nt = p.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"\\\"\\\"**WHAT \\u00a77.7's PRODUCT BECOMES.** `Sev(f) = W(class) \\u00b7 confidence \\u00b7 Ver(verification)`\\nis a **credence** formula wearing a consequence name \\u2014 a finding both seats of the\\n2026-11-11 blind round reached independently. Its key pro",
+      "t_offset_s": 610.7
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The pair's credence half is S_v (section 7.8), not section 7.7's renamed product.\\n\\nJoint round `severity_is_ordinal_2026-11-11_joint`, fable seat, 2026-11-12.\\n\\nCLAIM UNDER TEST. docs/MATHEMATICAL_APPENDIX.md section 7.7.1 defines severity\\nas an ordered pair. Two ca",
+      "t_offset_s": 646.422
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"/Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript -code 'Print[{Solve[1/(1+Exp[-x])==0, x, Reals], Limit[1/(1+Exp[-x]), x->-Infinity], Abs[Log[1/100/(999/1000)]] > Log[80/10]+Log[70/15] // Simplify, Reduce[ForAll[{c,v}, 0<c<=1 && 0<v<=1, c*v == (1/2)*c*v], Reals]}]'\", \"description\": \"Wolfram second check: sigmoid has no zero, ",
+      "t_offset_s": 658.775
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"severity_d\\\\(f\\\\)|credence\\\\(f\\\\)\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo\", \"output_mode\": \"content\", \"-n\": true, \"glob\": \"!docs/MATHEMATICAL_APPENDIX.md\", \"head_limit\": 20}",
+      "t_offset_s": 679.771
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py 2>&1 | tail -5; echo \\\"exit=$?\\\"; sed -n '/WHAT \\u00a77.7/,+12p' docs/MATHEMATICAL_APPENDIX.md | head -14\", \"description\": \"Regression-run the appendix-parsing producer; view splice head\", \"timeout\": 240000}",
+      "t_offset_s": 692.15
+    }
+  ],
+  "n_tool_calls": 26,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 821.5,
+  "response": "All evidence is in. The regression producer still exits 0, and its own output records a prior joint round's warning that deleting `Ver` without relocating its zero was the trap \u2014 my amendment writes the relocation in explicitly rather than falling into it.\n\n---\n\n## J1 \u2014 cc2's P4 refutation vs my 301/301: reconciled as a lemma pair\n\nThey are both true and they are necessity and sufficiency halves of one statement. cc2's claim is about **definability**: a total preorder has no distinguished element, so `critical_d` is undefined from order alone \u2014 the gate cannot be *sited*. My 301/301 is about **invariance**: *given* a distinguished level transported with the scale, decisions are preserved under every order-preserving relabelling. My measurement never defended order-only; it proved the repaired gate's invariance. So my blind AGREE on P4-as-stated does **not** survive cc2's reasoning \u2014 P4 was incomplete as written \u2014 and P4 should read what appendix \u00a77.7.1 now asserts: *the model asserts existence of the triple `(\u227d_d, \u03b8_d, \u03c3_d)` and nothing about any numbering of it*. cc2's refutation accepted; the 301/301 becomes its sufficiency proof.\n\n## J2 \u2014 the manifest discharges the specification half and relocates enforcement\n\nMeasured: `bench/cdsfl_registry/domain_vocabulary.py` reads and **validates** the declarations (raises on a scale with no `critical_level`, on `none` with no reason \u2014 :96\u2013:107) and renders `severity()` with the scale name beside the level. So the declarations have readers. But the gating path is unchanged: `reference_runner_v3.py:1253/:3049` and `audit_closing_window.py:198` still compare a model-asserted float against `CRITICAL_SEVERITY_THRESHOLD = 0.7`. No gate consumer compares `c_d(f)` against a declared level. Until one does, P2/P3 are **declared, not discharged** \u2014 and a validated-but-ungated config field sits adjacent to this project's measured defect class of additions nothing reaches. The remainder is B143 (the formula whose inputs are read from nowhere).\n\n## J3 \u2014 breaking name-carriage\n\nFour breaks, in increasing depth: **(1)** Enforcement is string comparison, so free-text spellings (`\"CVSS\"` vs `\"CVSS v4.0 base score\"`) defeat it \u2014 names must resolve by identity against the manifest's declared `\u03c3_d`, or the 3-of-17 vocabulary drift recurs at the scale layer. **(2)** Homonymous versions with different landmark semantics: AIAG 4th-edition severity (RPN era) vs AIAG-VDA 2019 (Action Priority) share the 1\u201310 range; the edition must be in the name, as the manifest's own v3.1\u2192v4.0 correction demonstrates. **(3)** The exception clause (\"a formally defined conversion exists\") is too weak as worded: CVSS numeric \u2192 qualitative band is formal and citable yet **many-to-one**, so composing through it loses order information; the exception must require an order-embedding, not merely a published mapping. **(4)** Deepest: a name *beside* a number is documentation, not enforcement. `may_compose()` refuses correctly \u2014 but only for callers that call it; a bare float pulled out of the `severity()` dict bypasses the refusal, and pint cannot catch two dimensionless grades (the manifest's `arbiter` line admits this). Sufficient only when comparison and composition sites are forced through the vocabulary module or a carrier type whose comparison consults the name.\n\n## J4 \u2014 honest, with one measured near-evasion, and the distinguisher is executable\n\nDistinguishers: `none` is honest iff (a) no recognised field-owned scale exists and the stated reason survives a source check, and (b) inheritance is **operational** \u2014 a run records *which* application scale was inherited. On (a), all 5 nones survive my refutation attempts (maths: none exists; statistics: none field-wide; physics: INES is event-scoped nuclear/radiological, exactly as the reason states; information science: CVSS inheritance stated; logistics: excursion classes don't generalise). **I could not produce the \u00a76 refutation** \u2014 no domain declared `none` has a recognised scale I can name. But the **mirror defect exists on a declared domain**: biology declares CTCAE v5.0 *domain-wide*, and CTCAE is a clinical adverse-event scale \u2014 correct for the `biomedical` subdomain, a category error for `natural_world`, `zoology`, `genetics` (3 of 4 subdomains; an ecology finding has no CTCAE grade). The repair is placement, not design: declare scales at the granularity the founder's own correction placed encodings \u2014 the subdomain. On (b), `inherits_from_application = true` currently has no run-time mechanism: nothing records the inherited scale, so today it is a promise. That is the line between honest and evasive, and it is checkable: grep a run artefact for an inherited `(value, scale)` pair \u2014 today, zero exist.\n\n## J5 \u2014 corroborating for the shared half, orthogonal to the disagreement\n\nThe 174/1,416 ties (binary64's nearest 0.7 = 0.69999999999999995559\u2026, strictly below real 7/10) show the frozen cut was not even a stable *value* \u2014 a class of decisions turned on a representation artefact. Under level-named gates the class vanishes: ranks have no float. It adds one requirement the manifest already satisfies \u2014 declared levels must be representation-exact, and all four are strings/integers (\"High\", \"Category 2\", \"Grade 3\", \"7\"). It bears not at all on the credence-slot question: both candidates are three-valued on the archive, nowhere near a 0.7 tie.\n\n## J6 \u2014 strongest case for a single project-wide cut, and its defeater\n\nThe manager's selection (\u00a77.11) works a multi-domain finding pool and needs cross-domain ranking; per-domain levels make inter-domain comparison undefined beyond binary critical/not, and the composition rule then mandates quoting both \u2014 the manager loses its total order. Add simplicity: one constant audited at 5 sites versus 10 declarations + inheritance + composition rules, against a project record of 11 additions nothing reached. **Defeater, measured:** the total order was fictitious \u2014 an order-preserving rescale with Spearman \u03c1 = 1.0 destroys 1,416/1,416 critical calls, and on the computed quantity the archive is three-valued, so the cut's position anywhere in (0.5, 1.0] carried zero information (0.7\u21920.95 reclassifies 0 entries). Comparability that does not survive relabelling is dependence on a labelling, not a property.\n\n---\n\n## The eight fields\n\n**1. PAIRING** \u2014 The maths model should carry `severity_d(f) = (c_d(f), S_v(f))`: domain-supplied consequence on `(\u227d_d, \u03b8_d, \u03c3_d)` paired with \u00a77.8 Approach B's harness-computed posterior \u2014 not the renamed \u00a77.7 product in the credence slot.\n\n**2. PROPERTY** \u2014 **Provenance** (the appendix's own term for it: who computed the belief factor), measured as computability on the archive: `S_v` is computable on **3,170/3,170** distinct entries from the recorded `falsifier_verdict`, while the renamed product's model-asserted factor `confidence` is present on **0/3,170** \u2014 at a cost of **0** \u00a77.11 decision flips. Secondary dominations, each tool-derived: class-invariance (the renamed product differs by exactly 2\u00d7 at equal evidence; z3 sat / Wolfram `Reduce \u2192 False`), and the correct neutral update (`\u039b += 0` vs an unmotivated multiplicative halving).\n\n**3. FIX_PATH** \u2014 `docs/MATHEMATICAL_APPENDIX.md` \u00a77.7.1, \"WHAT \u00a77.7's PRODUCT BECOMES\" (pair corrected; superseded form kept visible; \u00a77.7 retained as the legacy selection heuristic \u2014 nothing removed; the key property explicitly **relocated** to \u00a77.11 rather than silently lost). Plus the committed producer `scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py`, cited from the amendment so the doc and its falsifier reach each other.\n\n**4. FALSIFIER_PATH** \u2014 `scripts/the_credence_half_is_sv_not_the_renamed_product_2026-11-12.py` (raises `AssertionError`/prints `FALSIFIED` iff any amendment claim is false; exits 0 otherwise). Executed; plus one Wolfram Language call as second falsifier.\n\n**5. FALSIFIER_OUTPUT** \u2014 actual output, in full:\n\n```\n[PASS] G1a sympy: P(HARD)/P(SOFT) == 2 at equal (confidence, Ver), all c,v>0  ratio=2\n[PASS] G1b z3: class-dependence of P at equal evidence is sat\n[PASS] G1c a fully verified SOFT finding gets P-credence <= 0.5  P = 0.5\n[PASS] G3a S: D_det empty => S_v == 0.5 == prior, belief unmoved\n[PASS] G3b sympy: 0.5*belief == belief has NO positive solution -- the multiplicative 0.5 is never the identity update\n[PASS] G4a sympy: sigmoid(Lambda) = 0 has no real solution\n[PASS] G4b sympy: the Lambda -> -oo limit is 0 and unattained\n[PASS] G4c sympy: FNR < TNR so a lone falsification gives S_v < 0.5  S_v = 0.009911\n[PASS] G4c dimensional: FNR < TNR so a lone falsification gives S_v < 0.5  S_v = 0.181818\n[PASS] G4c numerical: FNR < TNR so a lone falsification gives S_v < 0.5  S_v = 0.260870\n[PASS] G4d veto: SymPy falsified + others verified => S_v < 0.5 (appendix verified line: 0.272)  S_v = 0.272043\n[PASS] G4e veto inequality: |log(FNR/TNR)|_sympy > sum of other positive weights  4.6042 > 3.6199\n\n[frame] distinct registries: 67; entries with numeric severity: 3170\n[PASS] G2a archive: `confidence` present on 0 entries (candidate P's model-asserted factor has no writer)  present on 0/3170\n[info] constraint_class present on 0/3170 (writer exists since B84; population pending)\n[PASS] M1 archive: 7.11 selection at >= 0.5 decides IDENTICALLY under both candidates on every entry -- 0 decision flips  flips = 0/3170\n[PASS] M2 archive frame is non-empty (else the measurement is void)\n[PASS] W1 appendix pair now reads ( c_d(f) , S_v(f) )\n[PASS] W2 appendix keeps the superseded form visible and cites this producer\n[PASS] W3 section 7.7 is NOT removed (additive standard)\n\nALL CHECKS PASS (3170 archived entries; 0 decision flips; 4 grounds verified with sympy+z3)\n```\n\nWolfram second falsifier (local Wolfram Engine via wolframscript; values attributed to Wolfram Language): `{{}, 0, True, False}` \u2014 \u03c3(\u039b)=0 has no real solution; the \u039b\u2192\u2212\u221e limit is 0; the veto inequality holds in exact rationals; `Reduce[ForAll[{c,v}, \u2026, c\u00b7v == c\u00b7v/2]] = False` (the renamed product is not class-invariant). Regression: `scripts/no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py` still exits 0 against the amended appendix.\n\n**6. REFUTED_BY** \u2014 (a) A committed calibration showing `W\u00b7confidence\u00b7Ver`, scored as a probability against HIL-adjudicated finding truth, achieves lower log-loss or Brier than `S_v` on the same findings \u2014 that restores the renamed product on the only property a credence is for. (b) A measurement that HARD/SOFT class predicts `P(true | same verifier outcomes)` \u2014 that would readmit class into the credence (though as `\u039b_prior(class)`, still amending my text). (c) Any archived entry where the two candidates' \u00a77.11 decisions differ (`M1 flips > 0`) \u2014 voiding my changes-nothing claim. None of the three exists today; (c) was tested against all 3,170.\n\n**7. DISAGREEMENT** \u2014 Three, against cc2's blind reply. **(i)** *\"the right pair is (sev_d(f), S_v(f))\"* \u2014 right occupant, wrong name: `Sev(f)` already denotes \u00a77.7's product in the same document, and letter-collision is the pathology the founder paid to fix on 2026-11-11 (the V\u2192Ver rename). The consequence half is `c_d(f)`. **(ii)** *\"\u00a77.7's only correctly-behaving factor, V_ver, is already inside S_v's determinate handling\"* \u2014 false for the property that matters: `S_v` carries Ver's *order* but not its *zero* (SymPy: no real solution to \u03c3(\u039b)=0; Wolfram: `{}`; a falsified finding scores 0.0099\u20130.272, never 0). The zero is a selection property and must be relocated explicitly to \u00a77.11 \u2014 the appendix's caution 1 warns that otherwise the key property becomes \"unrepresentable rather than merely unstated\", and the 2026-11-06 producer's output records a prior joint round where exactly this silent deletion was proposed. My amendment writes the relocation in. **(iii)** cc2's P7 *\"REFUTE the urgency\"* of \u03a3\u2192max: `kappa_set` sums `aggregated_severity` at `_convergence.py:267/:276/:303` and feeds the convergence gate at `:364` \u2014 an inadmissible sum in a live gating path is material, not deferrable; it needs its own round with a flips-under-max measurement. Conversely I **concede P4**: my blind agreement with it as stated does not survive cc2's argument (J1). Position-change disclosure: I moved on the credence slot from my blind delivery \u2014 with the new evidence of G2a, M1, and G4a\u2013e above, not for convergence's sake.\n\n**8. COMPOSABILITY** \u2014 I claim a composed repair, under the founder's definition, with measurements: the adopted pairing combines my blind half (per-domain `(\u227d_d, \u03b8_d, \u03c3_d)` consequence, pair structure) with cc2's credence occupant (`S_v`), repaired on the zero-relocation. Against my blind pairing alone it dominates on **provenance/computability**: 3,170/3,170 vs 0/3,170, at 0 decision flips (G2a, M1 \u2014 executed). Against cc2's as written it dominates on **key-property preservation**: G4a proves the zero is unrepresentable in `S_v`, so cc2's form silently loses a property the appendix declares load-bearing; mine relocates it explicitly and G4c\u2013e prove the operational effect (disproved \u21d2 rejected) survives in every case. Neither blind half alone carries both measurements; the composition is therefore demonstrated, not assumed.\n\n**Residual finding worth its own entry:** biology's domain-wide CTCAE declaration is a category error for 3 of its 4 subdomains (J4) \u2014 scale declarations belong at subdomain granularity, exactly where the founder's 4-subdomain correction placed encodings. I tried hardest on \u00a76's direct refutation (a `none` domain owning a recognised scale) and could not produce one; the biology placement defect is the closest surviving relative.",
+  "t_start_epoch": 1794463493.103214,
+  "t_end_epoch": 1794464314.573535,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_aqj2nrva/repo",
+      "built": false
+    }
+  ]
+}
