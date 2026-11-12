@@ -1,0 +1,135 @@
+DOMAIN: Cross-Domain — General
+SCOPE: Any problem spanning 2 or more STEM domains, including meta-reasoning
+       about method, protocol and calibration. The general box for composing
+       the constraints and the scales of 2 or more declared domains.
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: composed. By construction a cross-domain finding carries 2 or
+       more scales.
+SOURCES: The composition rule below is the founder's, 2026-11-12, and is
+       quoted verbatim because paraphrasing it would change it.
+
+★ WHY THIS ENCODING EXISTS. The 3 existing cross-domain boxes answer 3 specific
+PAIRS -- mechanical-electrical, software-hardware, thermal-electrical. The March
+2026 analysis found that 2 of the 5 cross-domain frontier tasks were
+META-REASONING problems about proof protocols and calibration, "no
+mechanical-electrical content at all", and they were given the
+mechanical-electrical box because it sorts first alphabetically. This is the
+general box that was missing, and it is the declared default.
+
+★★★ THE COMPOSITION RULE, HIS WORDS, VERBATIM:
+
+  "where two (or more) quantities across domains don't compose, the solution is
+  straightforward enough, which is to instruct the models to quote both
+  quantiles in their own specific context. Just as you said earlier today a sum
+  written as 1 inch + 1 cm (or similar) is both nonsensical and they do not
+  compose. We should not expect potentially more complex examples to compose in
+  this case either. (The only exception being where a valid conversion between
+  any two quantities may already formally exist.)"
+
+VERIFIED WITH pint, 2026-11-12. Where a formal conversion exists it composes:
+1 inch + 1 cm = 3.540000 cm, with SymPy's exact 127/50 and pint agreeing to
+0.000e+00. Where none exists it is refused: 1 m + 1 s and 1 K + 1 V both raise.
+BUT THE SEVERITY CASE IS NOT COVERED BY pint, and this is the operative
+limitation: a clinical grade and a software score are both DIMENSIONLESS, so
+`CTCAE 3 + CVSS 7.0` evaluates happily to 10.0. Dimensional analysis has
+nothing to refuse. The refusal must therefore be on the SCALE NAME, which means
+the name must be carried with every number.
+
+[HARD constraints — non-negotiable]
+
+REPORT EACH QUANTITY IN ITS OWN SCALE unless a formally defined conversion
+  between the 2 scales already exists. Do not average, sum, or otherwise
+  combine 2 scales into 1 number. 2 numbers, each with its scale named, is the
+  correct output and is not a failure to answer.
+
+Every domain in scope must be DECLARED, and each contributes its own
+  constraints in full. A cross-domain problem does not relax either domain's
+  hard constraints; it is bound by the union of them.
+
+Where 2 domains' constraints CONFLICT, the conflict is the finding. Report it
+  rather than resolving it by preference, and name which domain each side comes
+  from.
+
+The interface is where cross-domain errors live. Units, sign conventions,
+  sampling rates, coordinate frames and reference states must be stated at
+  every boundary, because each domain has its own defaults and the defaults
+  disagree silently.
+
+A conversion that exists formally must be cited, not assumed. "These are both
+  measures of severity" is not a conversion.
+
+Where 1 domain declares a scale and the other declares none, there is nothing
+  to convert between and the composed report is the only honest output.
+
+[SOFT constraints — negotiable]
+
+Prefer naming the dominant domain for the decision while reporting both scales.
+Prefer a dimensionless formulation at the interface where one exists.
+Prefer stating which domain's constraint binds first, so a reader can see the
+  order of attack.
+Where the problem is meta-reasoning about method rather than about a physical
+  system, say so explicitly -- the domain boxes then apply to the method, not
+  to a substance.
+
+[Verification procedures]
+
+pint for every dimensional quantity crossing a boundary, and an explicit check
+  for whether a formal conversion exists before composing anything.
+The declared scale name, carried with every severity, as the arbiter for
+  ordinal scales -- because pint cannot refuse their combination.
+Check the union of both domains' verification procedures, not the intersection.
+For any interface, round-trip a quantity across it and back, and report the
+  residual.
+
+[Diagnostic heuristics]
+
+If a composed number is suspiciously interpretable, 2 scales were probably
+  averaged.
+If a result is insensitive to one of the declared domains, either that domain
+  is not actually in scope or its contribution was dropped.
+If 2 domains give the same answer by different routes, that is the strongest
+  evidence available here.
+If a conflict resolves too easily, check whether one side's constraint was
+  quietly relaxed.
+
+[Known failure modes]
+
+Averaging or summing 2 ordinal scales, which no dimensional check refuses.
+Applying only the first-named domain's constraints.
+Assuming a conversion exists because both quantities share a name.
+Dropping a unit at an interface, where each side's default differs.
+Treating a meta-reasoning task as a physical one and applying a substance box
+  to it, which is exactly what the 2026-03 analysis found happening.
+Resolving a genuine inter-domain conflict by preference and reporting a single
+  answer.
+
+[Exception catalogue]
+
+Formally defined conversions DO compose: SI prefix changes, inch to
+  centimetre, calorie to joule, and any conversion with a defining standard
+  behind it.
+Where both quantities are on the SAME named scale they compose trivially,
+  which is the only case where severities combine.
+A domain declaring no scale of its own inherits the application's, so 2 such
+  domains in the same application may share a scale after all -- check before
+  refusing.
+Some cross-domain problems reduce to one domain once non-dimensionalised, and
+  then the single-domain box is correct.
+
+[Tool limitations]
+
+pint refuses dimensional mismatches and CANNOT refuse a combination of 2
+  dimensionless scales. This is the central limitation of the domain and the
+  reason the scale name is carried as data.
+No tool enumerates which conversions formally exist; that is a standards
+  question and must be cited.
+A unit library cannot detect a sign-convention mismatch at an interface,
+  because both sides are dimensionally identical.
+
+[Limitations]
+
+Does not replace either domain's own encoding; it composes them.
+Does not cover the 3 specific pairs that have their own boxes.
+Does not adjudicate which domain's constraint should win in a conflict, by
+  design.

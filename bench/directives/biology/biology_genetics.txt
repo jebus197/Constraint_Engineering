@@ -1,0 +1,109 @@
+DOMAIN: Biology — Genetics and Molecular
+SCOPE: Sequence analysis, variant interpretation, inheritance, gene
+       expression, molecular cloning, genome annotation
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
+       a person. Research-only work inherits the application's scale.
+SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.
+
+[HARD constraints — non-negotiable]
+
+Coordinates require a genome build. A position without its assembly is
+  meaningless, and the same number refers to different loci across builds.
+  This is the commonest source of a silently wrong variant call.
+
+Strand must be stated. A sequence and its reverse complement are different
+  strings and a variant reported on the wrong strand is a different variant.
+
+Reading frame must be stated for any coding interpretation. An indel whose
+  length is not a multiple of 3 shifts the frame, and the consequence is
+  qualitatively different from a substitution.
+
+Reference and alternate alleles must not be swapped. The swap inverts every
+  downstream frequency and zygosity claim while remaining internally
+  consistent.
+
+Multiple testing across the genome is severe. A nominally significant
+  association at one of millions of positions is expected by chance, and the
+  correction must be stated.
+
+Hardy-Weinberg expectations are a diagnostic, not an assumption. Departure
+  usually indicates a genotyping artefact before it indicates selection.
+
+Variant interpretation must distinguish EVIDENCE from CONCLUSION. A variant of
+  uncertain significance is a result, and forcing it into pathogenic or benign
+  is a fabrication of certainty.
+
+[SOFT constraints — negotiable]
+
+Prefer standard nomenclature for variants, with the transcript identifier
+  included.
+Prefer reporting allele frequency with the population it came from; frequencies
+  are strongly population-specific.
+State the sequencing depth and the caller for any variant claim.
+Prefer a functional assay over a prediction where the decision matters.
+State whether expression is absolute or relative, and relative to what.
+
+[Verification procedures]
+
+Biopython for sequence manipulation, translation and reverse complement --
+  never by hand, because a hand-written reverse complement is a transcription
+  risk with no upside.
+Round-trip every coordinate conversion and compare.
+Translate the coding sequence by execution and check the protein against the
+  expected length and the stop position.
+scipy.stats and statsmodels for association statistics, with the multiple-
+  testing correction named.
+Check Hardy-Weinberg by execution as a genotyping diagnostic.
+
+[Diagnostic heuristics]
+
+If a variant looks novel and the position is suspiciously round, check the
+  build.
+If a protein comes out the wrong length, check the frame before the sequence.
+If allele frequencies sum to something other than 1, the alleles are
+  mis-assigned.
+If an association signal is a single isolated position with no neighbours, it
+  is probably an artefact; real signals have linkage structure around them.
+If expression changes are uniformly in one direction, suspect a normalisation
+  problem.
+
+[Known failure modes]
+
+Build mismatch between coordinate systems.
+Strand and reverse-complement errors.
+Reference and alternate allele swap.
+Frame errors on indels.
+Treating a prediction tool's score as a functional result.
+Ignoring population structure in an association study.
+Reporting a variant of uncertain significance as pathogenic or benign.
+
+[Exception catalogue]
+
+Mitochondrial and chloroplast genomes have their own genetic codes, so the
+  standard translation table is wrong for them.
+Selenocysteine and pyrrolysine recode stop codons, so an apparent premature
+  stop may be correct.
+RNA editing means the transcript sequence legitimately differs from the
+  genomic one.
+Polyploid and aneuploid organisms break diploid zygosity assumptions entirely.
+Some regions are legitimately unmappable, and a gap there is honest rather
+  than a failure.
+
+[Tool limitations]
+
+Variant callers have systematic biases by variant type and region, and a
+  single caller's output is a single route.
+Prediction tools are trained on known variants and are optimistic on anything
+  resembling their training set.
+Annotation databases disagree with one another, and the disagreement is not
+  noise but a difference in evidence standards.
+Biopython validates syntax and not biological plausibility.
+
+[Limitations]
+
+Does not cover clinical reporting or regulatory requirements.
+Does not cover structural biology or protein folding.
+Does not cover population genetics theory in depth.
+Does not cover laboratory protocol validation.

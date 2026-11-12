@@ -1,0 +1,138 @@
+DOMAIN: Software — General
+SCOPE: Algorithms, data structures, correctness, type systems, computational
+       geometry, API and interface design; the general constraints before
+       distributed, real-time or security specialisation
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: CVSS v4.0 base score, critical at High (7.0).
+       ★ CVSS is the ONLY one of the 4 validated scales this project carried
+       the frozen 0.7 constant into that lands on a RECOGNISED boundary: High
+       begins at exactly 7.0, so here and only here the old cut is expressible
+       as a rank. On FMEA it landed at 7.3, on CTCAE at 3.8 and on INES at 4.9,
+       all between levels.
+       Where the finding is not security-bearing, CVSS does not describe it and
+       the consequence INHERITS the application's scale -- say so rather than
+       forcing a score.
+SOURCES: CVSS v4.0, FIRST, released November 2023; bands read directly from
+       the specification document Table 22, Qualitative Severity Rating Scale:
+       None 0.0, Low 0.1-3.9, Medium 4.0-6.9, High 7.0-8.9, Critical 9.0-10.0.
+       Confirmed 2026-11-12.
+
+★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 6 software tasks
+were given the DISTRIBUTED SYSTEMS box because it sorts first alphabetically,
+and only 1 of the 6 had any distributed-systems content; the other 5 were about
+data structures, algorithms, type inference and computational geometry. This is
+the general box that was missing, and it is the declared default.
+
+[HARD constraints — non-negotiable]
+
+A TEST THAT ASSERTS ON SOURCE TEXT ASSERTS ONLY THAT THE MODULE DESCRIBES
+  ITSELF CONSISTENTLY. It cannot detect a producer and a consumer that
+  disagree, because each description is individually correct. Where both forms
+  exist as live code, CALL them and compare outputs. This project has 4
+  confirmed defects found by executing 2 forms against each other and none
+  found by reading.
+
+A SUBSTRING IS NOT A CALL. Matching a function name in source text finds the
+  definition, the comment and the dead branch alongside the call. `None and
+  f(...)` contains the name and never calls it. Resolve the call, by syntax
+  tree at minimum.
+
+Complexity claims must state the measure and the case: time or space, worst,
+  average or amortised, and in which parameter. An unqualified complexity claim
+  is not checkable.
+
+Boundary conditions are part of the specification: empty input, single
+  element, maximum size, duplicate keys, self-reference. A function correct on
+  the generic case and wrong on the empty one is wrong.
+
+Integer overflow and division by zero must be ruled out explicitly for every
+  arithmetic path, not assumed from the absence of a crash in testing.
+
+Mutation of shared state must be stated. A function that mutates its argument
+  and also returns a value has 2 contracts and callers will use the wrong one.
+
+Error paths are code. An exception swallowed is not a record: this project has
+  a recorded instance where 2 of 2 handlers held the error and computed
+  nothing.
+
+A GUARD THAT CANNOT FAIL IS NOT A GUARD. Any check added must be shown to go
+  red when the property it protects is removed; otherwise it is an addition
+  nothing reaches.
+
+[SOFT constraints — negotiable]
+
+Prefer immutability where the cost permits; it removes a whole class.
+Prefer total functions over partial ones, and make partiality explicit in the
+  type where the language allows.
+Prefer failing loudly at the earliest point the error is detectable.
+State invariants at the interface rather than relying on callers to preserve
+  them.
+Prefer a narrower type over a comment describing the valid range.
+
+[Verification procedures]
+
+ast for any structural claim about code -- never a text search, for the reason
+  above.
+pytest for behaviour, with the boundary cases enumerated rather than assumed.
+crosshair for contract and invariant claims; it is symbolic execution via z3
+  and finds counterexamples a test suite will not.
+mypy for signature and type claims; ruff for unused and unreachable code;
+  bandit for the security-adjacent classes.
+dis where a control-flow or dead-branch claim is made, because the bytecode
+  settles it.
+For every guard added, MUTATE the subject and confirm the guard goes red.
+
+[Diagnostic heuristics]
+
+If a test passes after the feature is deleted, the test asserts nothing.
+If a function's name and behaviour disagree, trust the behaviour and fix the
+  name -- but check which callers rely on which.
+If a bug appears only at scale, suspect an overflow, a hash collision or a
+  quadratic path before suspecting concurrency.
+If a fix makes an unrelated test fail, the 2 shared a hidden assumption and
+  that assumption is the finding.
+If the same input gives different outputs across runs, look for set or dict
+  iteration order before looking for randomness.
+
+[Known failure modes]
+
+Asserting on source text instead of behaviour.
+Matching a substring and calling it a call site.
+Off-by-one at a boundary, which generic-case tests never reach.
+Swallowing an exception and returning a default that reads as success.
+A guard written to pass rather than to catch.
+Mutating an argument and returning a value.
+Reading a wrapper's exit code as the program's -- a pipeline returns its LAST
+  element's status, so `cmd | tail` reports tail's success. This project hit
+  that 3 times in 2 days with different punctuation each time.
+
+[Exception catalogue]
+
+Mutation is correct and necessary in hot paths and in-place algorithms; the
+  constraint is that it be declared.
+Broad exception handling is correct at a process boundary where the
+  alternative is a crash, provided the error is RECORDED.
+Source-text assertions are correct for claims genuinely about text -- a
+  licence header, a generated-file marker -- where there is no behaviour to
+  call.
+A deliberately quadratic algorithm may be correct for small bounded n, and
+  optimising it is not always a fix.
+
+[Tool limitations]
+
+A type checker proves the types and not the logic; a well-typed program can be
+  entirely wrong.
+Symbolic execution times out on realistic loops and its silence is not a
+  proof.
+Coverage measures lines executed and not properties checked; 100 per cent
+  coverage is compatible with asserting nothing.
+A linter's advice is a hypothesis: following it has broken working code in
+  this project's record.
+
+[Limitations]
+
+Does not cover distributed systems; see the distributed encoding.
+Does not cover real-time constraints; see the realtime encoding.
+Does not cover security analysis; see the security encoding.
+Does not cover numerical stability; see the numerical mathematics encoding.

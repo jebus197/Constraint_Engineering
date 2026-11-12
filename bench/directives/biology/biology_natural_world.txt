@@ -1,0 +1,121 @@
+DOMAIN: Biology — Natural World
+SCOPE: Ecology, physiology, evolution, taxonomy, population biology, field
+       observation; the general biological constraints before clinical,
+       genetic or zoological specialisation
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3. Inherited from the
+       biomedical subdomain because that is where biological error realises
+       consequence for a person. Where the work is ecological rather than
+       clinical the scale INHERITS from the application -- a conservation
+       decision has its own consequence structure and CTCAE does not describe
+       it, which must be said rather than forced.
+SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27, confirmed current
+       2026-11-12: Grade 3 is severe or medically significant but not
+       immediately life-threatening.
+
+[HARD constraints — non-negotiable]
+
+Biological variation is the signal, not noise to be averaged away. A single
+  measurement on a single organism supports no population claim, and the n and
+  the sampling frame must be stated.
+
+Correlation in observational biology is not causation, and the confounders in
+  living systems are numerous and usually unmeasured. A causal claim needs an
+  intervention or an explicit identification argument.
+
+Units and scale must be stated: per organism, per gram, per unit area, per
+  unit time. A rate without its denominator is the commonest error here and it
+  balances dimensionally often enough to survive a units check.
+
+Taxonomic names must be current and must carry their authority where ambiguity
+  exists. A synonym treated as a distinct taxon inflates diversity counts.
+
+Evolutionary arguments must not be teleological. A trait does not exist in
+  order to serve a function; selection acts on variation that already exists,
+  and the reversed framing produces unfalsifiable claims.
+
+Homeostasis bounds: physiological quantities have ranges outside which the
+  organism is not functioning rather than merely unusual. A model producing a
+  value outside the range has an error, and the range locates it.
+
+Sample independence must be established. Individuals from one site, one clutch
+  or one clone are not independent, and treating them as such understates the
+  interval exactly as autocorrelation does in time series.
+
+[SOFT constraints — negotiable]
+
+Prefer reporting the distribution over the mean for any biological quantity.
+Prefer effect sizes with intervals over significance tests.
+State the life stage, sex and condition of organisms; most physiological
+  quantities depend on all 3.
+Prefer a mechanistic explanation that makes a further prediction over one that
+  merely fits.
+State whether a measurement is in vivo, in vitro or in silico; the 3 are not
+  interchangeable evidence.
+
+[Verification procedures]
+
+Biopython for any sequence handling rather than string manipulation.
+scipy.stats and statsmodels for the inference, with every proportion carrying
+  an interval and the method named.
+pint for any rate or concentration expression.
+Check the physiological plausibility of every computed value against its known
+  range, by execution against a stated range rather than by recall.
+For any count or diversity measure, report the sampling effort alongside;
+  diversity measures are strongly effort-dependent.
+
+[Diagnostic heuristics]
+
+If a physiological value is an order of magnitude from the known range, check
+  the units before the biology -- per litre against per millilitre is the
+  usual cause.
+If a diversity measure rises with sampling effort, it has not saturated and
+  the comparison between sites is confounded by effort.
+If a dose-response curve is monotone over the whole range, the range is too
+  narrow to see the turnover.
+If a trait correlates with body size, check whether the relationship survives
+  normalising for it; most do not.
+If an effect is present in vitro and absent in vivo, the in vitro condition is
+  the finding.
+
+[Known failure modes]
+
+Pseudoreplication: treating non-independent samples as independent.
+Reporting a rate without its denominator.
+Using an outdated taxonomic name and double-counting a taxon.
+Teleological reasoning about adaptation.
+Extrapolating a dose-response relationship beyond the tested range.
+Ignoring allometric scaling when comparing across body sizes.
+Treating a laboratory strain's physiology as representative of the wild type.
+
+[Exception catalogue]
+
+Clonal and inbred populations legitimately have near-zero genetic variance, so
+  a low-variance result there is correct rather than suspicious.
+Some physiological extremes are real: hibernation, diapause and diving
+  responses produce values far outside the active range and a plausibility
+  check calibrated on the active range will refuse them.
+Non-model organisms may lack reference ranges entirely, and the honest report
+  is that no range exists rather than borrowing one.
+Phylogenetic non-independence means species are not independent data points,
+  so a comparative analysis needs a phylogenetic correction.
+
+[Tool limitations]
+
+Sequence tools validate syntax and not biological plausibility; a valid
+  sequence may be nonsense.
+Statistical libraries assume independence and will give an answer for
+  pseudoreplicated data without complaint.
+Reference ranges in any database are population- and method-specific, and
+  applying one across populations is an assumption that must be stated.
+No tool distinguishes a biologically meaningful effect from a statistically
+  detectable one.
+
+[Limitations]
+
+Does not cover clinical or regulatory work; see the biomedical subdomain.
+Does not cover molecular genetics; see the genetics encoding.
+Does not cover animal behaviour and welfare in depth; see the zoology
+  encoding.
+Does not cover biochemistry or structural biology.

@@ -1,0 +1,115 @@
+DOMAIN: Information Science — Retrieval and Ranking
+SCOPE: Search, ranking, relevance judgement, evaluation metrics,
+       classification routing, recall and precision trade-offs
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's.
+SOURCES: Standard information-retrieval evaluation practice. ASA statement on
+       p-values (2016) for the inferential constraints that carry over.
+
+WHY THIS SUBDOMAIN MATTERS TO THIS PROJECT. The harness's own domain classifier
+is a retrieval problem: it routes a claim to a domain, and its accuracy is
+measurable rather than assumable. Measured on the project's own 29-claim STEM
+corpus, routing reaches 25 of 29 after the 2026-11-11 widening, leaving 4
+unrouted -- a recall figure that must be stated rather than rounded away.
+
+[HARD constraints — non-negotiable]
+
+Precision and recall must BOTH be reported. Either alone is manipulable: a
+  system returning 1 correct result has perfect precision, and one returning
+  everything has perfect recall.
+
+The relevance judgements must be independent of the system being evaluated. A
+  system scored against judgements it produced is scoring its own agreement
+  with itself.
+
+A SET MUST BE PINNED, NOT A COUNT. A match ratio hides compensating misses and
+  spurious matches; report the items in each difference.
+
+The evaluation set must be stated, with its size and how it was selected. A
+  metric on an unstated set is not a measurement.
+
+A threshold is part of the system. Reporting the best metric over a swept
+  threshold, without declaring that the threshold was swept, overstates
+  performance by the amount of the sweep.
+
+Inter-judge agreement must be reported where judgements are human. A metric
+  against judgements that disagree with each other is bounded by that
+  disagreement, and reporting the metric without it implies a precision the
+  ground truth does not have.
+
+A RESTRICTED RANGE ATTENUATES AGREEMENT TOWARD ZERO BY CONSTRUCTION. This
+  project has a recorded instance: a kappa of -0.0227 over a window 0.09 wide
+  was read as "no better than chance" when the window alone reduced power to
+  0.1443, and drawing the same sample from the full range raised it to 1.0.
+
+[SOFT constraints — negotiable]
+
+Prefer reporting the full precision-recall curve over a single operating point.
+Prefer a held-out set over cross-validation where data permits, and state
+  which.
+State the tie-breaking rule; ties are common and their handling changes the
+  metric.
+Prefer absolute counts beside every rate.
+Prefer reporting the failures, not only the rate of failure.
+
+[Verification procedures]
+
+Compute the metric on 2 routes and report agreement; a single implementation
+  is a single point of failure.
+Report the confusion matrix, not only the summary metric, because the summary
+  cannot distinguish 2 very different error profiles.
+Every rate carries a confidence interval, with the method named.
+Hold out the evaluation set before any tuning, by execution -- split first,
+  then normalise, or the normalisation leaks.
+For a classifier, test the NEGATIVE cases explicitly: a classifier that admits
+  everything scores well on positives alone.
+
+[Diagnostic heuristics]
+
+If precision is high and recall low, the threshold is conservative, not the
+  system accurate.
+If a metric improves when the evaluation set grows, the earlier set was too
+  small to measure anything.
+If performance is identical across very different configurations, the metric
+  is not sensitive to what is being varied.
+If an agreement statistic is near 0 on a narrow range, suspect restriction
+  before concluding independence.
+If the 4 items that fail are always the same 4, they are a class, not noise.
+
+[Known failure modes]
+
+Reporting a single metric and omitting the other.
+Sweeping a threshold and reporting the maximum.
+Normalising before splitting, which leaks the test set into the training set.
+Treating a count ratio as coverage.
+Evaluating against judgements the system helped produce.
+Reporting a rate with no denominator and no interval.
+Concluding independence from a weak agreement measured on a restricted range.
+
+[Exception catalogue]
+
+Zero retrieved items gives undefined precision, not zero precision, and the
+  convention used must be stated.
+In a known-item search, recall is 0 or 1 and the usual curve is meaningless.
+Where relevance is graded rather than binary, binary metrics discard the
+  grading and a rank-sensitive measure is required.
+A census of the corpus needs no sampling interval.
+
+[Tool limitations]
+
+Metric libraries differ in their handling of ties, zero-denominators and
+  averaging across classes; 2 libraries can give different numbers for the
+  same name.
+A classifier's reported confidence is not a probability unless it was
+  calibrated, and calibration is a separate measurement.
+No tool detects leakage between training and evaluation; it is a property of
+  the pipeline order.
+
+[Limitations]
+
+Does not cover the general information constraints; see the general encoding.
+Does not cover storage or lifecycle; see the data-management encoding.
+Does not cover representation and ontology; see the knowledge-representation
+  encoding.
+Does not cover learning algorithms themselves.

@@ -1,0 +1,116 @@
+DOMAIN: Physics — Classical Mechanics and Continuum
+SCOPE: Newtonian and Lagrangian mechanics, rigid bodies, oscillations, waves,
+       fluid and solid continuum mechanics, elasticity
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's. Where the work
+       bears on a structure or a machine the engineering scale applies
+       (AIAG-VDA FMEA severity, critical at 7), because that is where the
+       consequence is realised.
+SOURCES: SI Brochure 9th edition (BIPM, 2019) for units and constants.
+
+[HARD constraints — non-negotiable]
+
+Free-body completeness: every force acting on the body must appear, including
+  constraint reactions, friction and body forces. An omitted force is the
+  single most common source of a wrong answer here, and it is invisible in the
+  algebra because the remaining equations are self-consistent.
+
+Newton's third law pairs act on DIFFERENT bodies. A third-law pair never
+  appears in the same free-body diagram, and treating it as a cancellation
+  within one body is an error that yields zero net force on everything.
+
+Inertial frames: F = ma holds in an inertial frame only. In a rotating frame
+  the centrifugal and Coriolis terms are not optional corrections, they are
+  part of the equation of motion.
+
+Energy accounting must be closed: kinetic plus potential plus dissipated plus
+  work done by external agents. A derivation in which energy appears or
+  vanishes has an error, and the magnitude of the imbalance bounds it.
+
+Small-angle approximation (sin θ ≈ θ) must be declared where used and is not
+  valid beyond roughly 0.1 rad for 1 per cent accuracy. Carrying it into a
+  large-amplitude pendulum is a regime error, not an approximation.
+
+Continuum assumption: the Knudsen number must be small for continuum mechanics
+  to apply at all. Below that, the equations do not merely lose accuracy, they
+  lose meaning.
+
+Material frame-indifference: a constitutive relation must be independent of
+  the observer's frame. A stress-strain law that is not objective will produce
+  spurious stresses under rigid rotation.
+
+[SOFT constraints — negotiable]
+
+Prefer the Lagrangian route where constraints are holonomic and numerous; it
+  removes the constraint forces from the algebra rather than from the physics.
+Prefer dimensionless groups for any scaling argument.
+State whether a deformation is treated as small-strain or finite-strain; the
+  two disagree by a factor that grows with strain.
+Prefer energy methods for equilibrium problems and momentum methods for
+  collision problems; the reverse works but costs more algebra.
+
+[Verification procedures]
+
+SymPy for the symbolic equations of motion, with conserved quantities checked
+  by differentiating them along the solution and confirming zero.
+pint on every force, stress and modulus expression.
+Limiting cases: zero friction, infinite mass, zero stiffness. Each should
+  reduce the result to a known textbook form.
+Numerical integration (scipy.integrate) as a second route against any closed
+  form, with energy drift reported -- an integrator that loses energy is
+  telling you about the integrator, not the physics.
+
+[Diagnostic heuristics]
+
+If a reaction force comes out negative, the assumed direction was wrong and
+  the magnitude is still right. If it comes out imaginary, a constraint is
+  being violated.
+A natural frequency that scales as the square root of stiffness over mass is
+  almost certainly right in form; check the numerical factor against the
+  simplest case.
+A result independent of mass in a gravitational problem is usually correct and
+  is worth noticing, because it indicates the mass cancelled rather than was
+  dropped.
+A stress that does not fall off with distance in a 3-dimensional elastic
+  problem has a missing geometric factor.
+
+[Known failure modes]
+
+Confusing mass and weight, which balances dimensionally in any expression
+  where g appears and so survives a units check.
+Using engineering strain where true strain is required, or the reverse, past
+  about 5 per cent strain.
+Omitting the parallel-axis term when moving a moment of inertia between axes.
+Treating a distributed load as a point load at the wrong centroid.
+Assuming a pin joint carries no moment and then applying a moment to it.
+Applying a static factor of safety to a dynamic or fatigue problem.
+
+[Exception catalogue]
+
+Non-holonomic constraints -- rolling without slipping is the standard case --
+  cannot be eliminated by a Lagrangian coordinate choice and need the
+  multiplier treatment.
+Rigid-body dynamics has no energy dissipation term, so a rigid-body collision
+  model must declare its restitution coefficient rather than conserve energy.
+Buckling is an instability, not a strength failure: a column can buckle at a
+  stress far below yield and no strength check will see it.
+Resonance makes a correct steady-state solution useless; a frequency-domain
+  result near a natural frequency needs the damping stated.
+
+[Tool limitations]
+
+A symbolic solver will return a valid root that is physically inadmissible --
+  a negative length, a speed above c -- and will not flag it. Admissibility is
+  the caller's check.
+Numerical integrators conserve energy only for symplectic schemes; a
+  general-purpose solver will drift and the drift is not a physical effect.
+pint cannot distinguish stress from pressure, or energy from torque, because
+  each pair shares dimensions. The distinction is physical, not dimensional.
+
+[Limitations]
+
+Does not cover relativistic mechanics beyond flagging the regime boundary.
+Does not cover turbulence modelling or any closure problem.
+Does not cover fracture mechanics or plasticity beyond yield.
+Does not cover finite-element practice; the constraints here are analytical.

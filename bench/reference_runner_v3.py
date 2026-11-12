@@ -1622,6 +1622,99 @@ REQUIRED_QUIET_RUN = 3
 HARDENED_GATE_DEFAULT = True
 
 
+def required_quiet_run(k: int, n_declared: int, n_live: int | None) -> int:
+    """How many consecutive quiet rounds the gate needs at a DEGRADED roster.
+
+    ★ B77, THE ROSTER-BLIND COUNT SIDE. The convergence gate is two-sided: the
+    decay curve must have flattened AND K consecutive rounds must have produced
+    no novel CRITICAL. The second condition gets EASIER as the roster shrinks,
+    because fewer seats generate fewer findings. A run that lost 2 of 6 seats
+    reaches "0 new criticals" sooner -- not because the problem space is
+    exhausted but because fewer eyes are looking -- and the gate cannot tell
+    those apart, because 0 new criticals from a healthy panel and 0 from a
+    depleted one are the same integer. That is this project's recurring failure
+    shape: a failure that does not look like a failure.
+
+    THE FORMULA IS HIS ACCEPTED DESIGN AND WAS PROVEN BEFORE IT WAS WIRED:
+    `K_required = ceil(K * n_declared / n_live)`, sufficient at EVERY
+    intra-round correlation and tight at independence. Producer:
+    `scripts/does_the_roster_window_bound_hold_2026-11-02.py`. Guard:
+    `bench/tests/test_the_roster_window_bound_is_sound_2026-11-02.py`.
+
+    WHY THIS FUNCTION EXISTS AT ALL, which is the defect it closes. The maths
+    was proven and guarded on 2026-11-02 and NO PRODUCT CODE HELD IT -- the
+    formula lived only in its own producer and that producer's test. Under
+    `additive-standard`'s symmetric form an addition nothing reaches is not
+    additive, so the proof was inert. His instruction of 2026-11-12 was to wire
+    BOTH convergence arms, because `HARDENED_GATE_DEFAULT = True` meant the
+    accepted design targeted the arm that does not run.
+
+    IT ONLY EVER MAKES THE GATE STRICTER, and that is checkable rather than
+    asserted: at full roster `n_live == n_declared`, the ratio is 1 and the
+    result is K EXACTLY, so no existing run's verdict changes. Below full
+    roster the requirement rises. It never falls.
+
+    ★ "NOT MEASURED" AND "MEASURED AS ZERO" ARE DIFFERENT AND MUST NOT BE
+    CONFLATED -- the distinction that keeps this additive. `n_live=None` means
+    NO COUNTER WAS SUPPLIED, and returns K unchanged: today's behaviour, because
+    a caller that cannot count seats is not evidence of a degraded roster.
+    `n_live=0` means the count was TAKEN and nothing answered, which is a real
+    degraded state and returns the strictest value. Collapsing the 2 would have
+    made every existing caller demand `K * n_declared` quiet rounds and stopped
+    every run converging -- a fail-safe so aggressive it is a denial of service.
+
+    FAIL SAFE, NOT FAIL OPEN, for a MEASURED count. A measured non-positive live
+    count returns the STRICTEST value this function can justify rather than K,
+    because "the seats were counted and none answered" must not be the cheapest
+    path to convergence.
+    """
+    if n_live is None:
+        try:
+            return max(1, int(k))
+        except (TypeError, ValueError):
+            return 1
+    try:
+        k_i = int(k)
+        dec = int(n_declared)
+        live = int(n_live)
+    except (TypeError, ValueError):
+        return max(1, int(k) if isinstance(k, int) else 1)
+    if k_i < 1:
+        return 1
+    #: An unknown or impossible live count must not converge SOONER. `dec` is
+    #: the strictest multiplier this formula can produce, so an absent count is
+    #: treated as "1 seat answered" rather than as "all of them did".
+    if live < 1:
+        return k_i * max(1, dec)
+    if dec < 1 or live >= dec:
+        return k_i
+    return -((-k_i * dec) // live)          # ceil of k*dec/live, integer-only
+
+
+def live_seat_count(round_idx: int, counts_per_model: dict | None) -> int:
+    """How many declared seats actually recorded a count for this round.
+
+    `raw_counts_per_model` maps a model label to a per-round list and is
+    already threaded through the round loop and persisted into
+    `runner_state.json`, so the live-seat signal needed by
+    `required_quiet_run` exists without new plumbing -- which is why B77's
+    wiring is a wire and not a build.
+
+    A seat with no entry for the round, or a `None` at that position, did not
+    answer. 0 is returned rather than guessed at, and `required_quiet_run`
+    treats 0 as the STRICTEST case.
+    """
+    if not isinstance(counts_per_model, dict) or round_idx < 0:
+        return 0
+    n = 0
+    for _label, series in counts_per_model.items():
+        if not isinstance(series, (list, tuple)) or len(series) <= round_idx:
+            continue
+        if series[round_idx] is not None:
+            n += 1
+    return n
+
+
 @dataclass
 class RunnerConfig:
     """All parameters for a reference experiment run."""
@@ -10157,6 +10250,7 @@ def _check_gamma_alt_convergence(
     irreducible_queue: int = 0,
     gamma_critical: float = 1.0,
     total_findings: int = 0,
+    n_live: int | None = None,
 ) -> Tuple[bool, str]:
     """Critical-quiescence convergence path (panel redesign 2026-05-23; TWO-SIDED gate
     2026-06-10).
@@ -10221,7 +10315,16 @@ def _check_gamma_alt_convergence(
             f"{cfg.gamma_alt_earliest_round})"
         )
 
-    window = cfg.gamma_alt_consecutive_zero_crit
+    #: ★ B77: THE ROSTER-AWARE QUIET WINDOW, wired 2026-11-12 on his instruction
+    #: to wire BOTH convergence arms. `n_live=None` means no counter was supplied
+    #: and the window is K unchanged -- today's behaviour -- so this is additive
+    #: for every existing caller. A SUPPLIED count below the declared roster
+    #: raises the window by ceil(K * n_declared / n_live), which only ever makes
+    #: the gate stricter; at full roster it is K exactly, so no existing run's
+    #: verdict changes. The formula was proven and guarded on 2026-11-02 and no
+    #: product code held it until now.
+    window = required_quiet_run(
+        cfg.gamma_alt_consecutive_zero_crit, len(getattr(cfg, "models", []) or []), n_live)
     recent_tail = (
         novel_critical_history[-window:]
         if len(novel_critical_history) >= window
@@ -11497,7 +11600,7 @@ def _location_keyed_critical_series(registry, max_round, symbols) -> List[int]:
 
 
 def _check_hardened_convergence(
-    round_idx: int, registry, cfg: RunnerConfig,
+    round_idx: int, registry, cfg: RunnerConfig, n_live: int | None = None,
 ) -> Tuple[bool, str, Dict[str, Any]]:
     """Hardened gate (F4 + F6 + conjunction + dual-series + sparsity).
 
@@ -11525,7 +11628,16 @@ def _check_hardened_convergence(
     g_crit = _estimate_gamma(crit_s)
     cum_crit = sum(crit_s)
     theta = cfg.gamma_alt_threshold
-    W = cfg.gamma_alt_consecutive_zero_crit
+    #: ★ B77: THE ROSTER-AWARE QUIET WINDOW, wired 2026-11-12 on his instruction
+    #: to wire BOTH convergence arms. `n_live=None` means no counter was supplied
+    #: and the window is K unchanged -- today's behaviour -- so this is additive
+    #: for every existing caller. A SUPPLIED count below the declared roster
+    #: raises the window by ceil(K * n_declared / n_live), which only ever makes
+    #: the gate stricter; at full roster it is K exactly, so no existing run's
+    #: verdict changes. The formula was proven and guarded on 2026-11-02 and no
+    #: product code held it until now.
+    W = required_quiet_run(
+        cfg.gamma_alt_consecutive_zero_crit, len(getattr(cfg, "models", []) or []), n_live)
     zero_crit_ok = (len(crit_s) >= W and all(c == 0 for c in crit_s[-W:]))
     telem.update(gamma_all_settled=round(g_all, 4),
                  gamma_crit_settled=round(g_crit, 4),
@@ -21424,9 +21536,24 @@ def run_experiment(
             # F4/F6/conjunction hardened gate: settled-registry γ,
             # critical/structural conjunction, all-novelty γ as
             # diagnostic only. Legacy γ-alt is bypassed entirely.
+            #: ★ B77: the MEASURED live-seat count reaches the gate. 0 seats
+            #: recorded for this round means `live_seat_count` found none, and
+            #: `required_quiet_run` treats a measured 0 as the strictest case --
+            #: distinct from `None`, which means no counter was supplied.
+            _n_live_now = live_seat_count(round_idx, raw_counts_per_model) or None
             gamma_alt_converged, gamma_alt_reason, _hg_telem = (
-                _check_hardened_convergence(round_idx, registry, cfg)
+                _check_hardened_convergence(round_idx, registry, cfg,
+                                            n_live=_n_live_now)
             )
+            _hg_telem["n_live"] = _n_live_now
+            _hg_telem["n_declared"] = len(getattr(cfg, "models", []) or [])
+            #: THE VERDICT IS LABELLED DEGRADED rather than refused, which is his
+            #: requirement 8: a seat dropping off "should not block an
+            #: experimental run until completion, or convergence".
+            if (_n_live_now is not None
+                    and _n_live_now < _hg_telem["n_declared"]):
+                _hg_telem["roster"] = "DEGRADED"
+                gamma_alt_reason = f"{gamma_alt_reason} [roster DEGRADED: {_n_live_now} of {_hg_telem['n_declared']} seats answered]"
             _log(f"  hardened-gate telemetry: {_hg_telem}")
             # PERSISTED, NOT ONLY LOGGED, added 2026-10-08. Until now this
             # telemetry reached the log file and nothing else, so NO archived
@@ -21444,6 +21571,7 @@ def run_experiment(
             gamma_alt_converged, gamma_alt_reason = (
                 _check_gamma_alt_convergence(
                     round_idx, gamma, novel_critical_history, cfg,
+                    n_live=(live_seat_count(round_idx, raw_counts_per_model) or None),
                     unresolved_critical=_unresolved_crit,
                     contested=registry.contested_count(round_idx, subcritical_exclusion=bool(getattr(cfg, 'falsifier_gate_enabled', False))),
                     rho_churn=rho_churn,

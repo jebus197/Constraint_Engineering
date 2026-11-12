@@ -176,18 +176,36 @@ class TestADomainThatMatchesNothingIsLoud:
     IT WARNS AND DOES NOT REFUSE. Refusing would break 16 of 47 shipped
     references at once, and whether those 6 names should acquire directories or
     be renamed is the founder's call.
+
+    ★ HE MADE THAT CALL ON 2026-11-12 AND THIS CLASS WAS OUTGROWN, NOT BROKEN.
+    The 6 names now resolve: `bench/cdsfl_registry/domain_manifest.toml` declares
+    one vocabulary of 10 top-level domains with 4 subdomains each, and the 5
+    config domains that had no encoding directory acquired one. So `statistics`
+    -- the instance this class used -- is no longer an unmatched domain, and the
+    assertion below would have failed for the BEST possible reason: the defect
+    it was written to pin is fixed.
+
+    THE PROPERTY IS UNCHANGED AND IS WHAT THIS CLASS IS FOR: a domain that
+    matches nothing must be LOUD rather than silently composing no layer. Only
+    the INSTANCE moved, to a name that is genuinely undeclared and will stay so.
+    Pinning the old instance would have made this guard punish the repair, which
+    is the shape this project records as a guard accusing correct code.
     """
+
+    #: A name no manifest entry, alias or subdomain alias claims. Chosen so the
+    #: property stays testable however many real domains are added later.
+    UNDECLARED = "no_such_domain_exists_here"
 
     def test_an_unmatched_domain_warns_and_returns_none(self):
         import warnings
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            got = C._load_domain_directive("statistics", None)
+            got = C._load_domain_directive(self.UNDECLARED, None)
         assert got is None
         msgs = [str(w.message) for w in caught
                 if "NO DOMAIN LAYER" in str(w.message)]
         assert msgs, "an unmatched domain is still silent"
-        assert "statistics" in msgs[0] and "mathematics" in msgs[0], (
+        assert self.UNDECLARED in msgs[0] and "mathematics" in msgs[0], (
             f"the warning does not name the domain and the shipped list: {msgs[0]}")
 
     def test_a_matched_domain_is_silent(self):

@@ -880,6 +880,60 @@ def _load_domain_directive(
     """
     domain_dir = DIRECTIVES_DIR / domain
 
+    #: ★ THE DECLARED DEFAULT, TRIED BEFORE ANYTHING ELSE -- 2026-11-12, and the
+    #: ORDER HERE IS THE WHOLE REPAIR. This block answers the question this
+    #: function's own docstring parks for the founder: the 6 names that matched
+    #: nothing -- biology, cs_software, engineering, information_science,
+    #: physics, statistics -- now resolve, because
+    #: `bench/cdsfl_registry/domain_manifest.toml` declares one vocabulary and
+    #: maps a subdomain LABEL to an encoding PATH, so a label need not match a
+    #: directory name and nothing was renamed.
+    #:
+    #: WHY IT RUNS BEFORE `domain_dir.exists()`: the manifest's families do not
+    #: all share a name with the domain. `cross_domain` lives in
+    #: `cross-domain/`, and `biology`'s subdomains point into `biomedical/`.
+    #: Checking the directory first returned NO LAYER for both.
+    #:
+    #: WHY IT WALKS THE SUBDOMAINS: the declared default may be an encoding
+    #: that is OWED and not yet written -- 8 are. A first version took the
+    #: declared default unconditionally and REMOVED a working layer from
+    #: chemistry, mathematics and cross_domain, which had at least been getting
+    #: the alphabetical pick. A remedy that destroys working behaviour to
+    #: satisfy a declaration is worse than the defect, so the default is used
+    #: only if its file EXISTS, then the remaining declared subdomains in
+    #: order, and only then the old path.
+    #:
+    #: IT IS PURELY ADDITIVE. An undeclared domain, an explicit variant, and an
+    #: unreadable manifest all fall through to exactly the previous behaviour,
+    #: including the warning below.
+    if not variant:
+        try:
+            from . import domain_vocabulary as _dv
+            #: `resolve_pair` is what makes an OLD DIRECTORY NAME route into the
+            #: new vocabulary: `structural` returns ("engineering",
+            #: "structural") so it reaches a structural box, while
+            #: `engineering` returns ("engineering", None) meaning "use the
+            #: declared default". Resolving it as a plain domain alias is what
+            #: made a structural task load `hardware_embedded`.
+            _dom, _named = _dv.resolve_pair(domain)
+            if _dv.is_known(_dom):
+                domain = _dom
+                labels = [_named] if _named else [_dv.default_subdomain(domain)]
+                labels += [x for x in _dv.subdomains(domain) if x not in labels]
+                for _label in labels:
+                    cand = _dv.encoding_path(domain, _label)
+                    if cand.is_file():
+                        return DirectivePacket(
+                            layer="domain",
+                            name=cand.stem,
+                            text=cand.read_text(encoding="utf-8"),
+                            constraint_class="SOFT",
+                            domain=_dv.resolve(domain),
+                            tags={_dv.resolve(domain), _label},
+                        )
+        except Exception:                                    # noqa: BLE001
+            pass          # an unreadable manifest must never break a run
+
     def _nothing(reason: str) -> None:
         available = sorted(
             d.name for d in DIRECTIVES_DIR.iterdir()

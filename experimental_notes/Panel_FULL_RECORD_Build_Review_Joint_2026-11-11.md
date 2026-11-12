@@ -389,7 +389,7 @@ That declaration is honest and is worth more than a false claim of having attack
 
 ### 3. What the launcher removal breaks that nobody has checked
 
-Removing the default is right: the faked constant `0.9454545454545454` is gone and `_run_effect_regression` abstains cleanly (`bench/reference_runner_v3.py:15447`), with weights renormalised at `:16186-16191`. **But `test_cmd` is not only the e2 gate's input — it is the gate on fold-fixes-back.** `_apply_back_gate` returns at `bench/reference_runner_v3.py:13201-13202`:
+Removing the default is right: the faked constant `0.9454545454545454` is gone and `_run_effect_regression` abstains cleanly (`bench/reference_runner_v3.py:15554`), with weights renormalised at `:16186-16191`. **But `test_cmd` is not only the e2 gate's input — it is the gate on fold-fixes-back.** `_apply_back_gate` returns at `bench/reference_runner_v3.py:13201-13202`:
 
 ```
 test_cmd=None                     promotes=False   'no test_cmd configured (cannot gate)'

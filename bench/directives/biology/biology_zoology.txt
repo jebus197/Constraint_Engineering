@@ -1,0 +1,113 @@
+DOMAIN: Biology — Zoology and Animal Science
+SCOPE: Animal physiology, behaviour, welfare, husbandry, comparative anatomy,
+       veterinary-adjacent measurement
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
+       a person. For animal welfare the consequence scale is the applicable
+       severity classification of the governing regime, which must be NAMED
+       rather than assumed, because it differs by jurisdiction.
+       [VERIFY:current] -- no single international scale was confirmed on
+       2026-11-12 and inventing one here would be the magic wand this project
+       refuses.
+SOURCES: NCI CTEP CTCAE v5.0 (2017) for the human-consequence half.
+
+[HARD constraints — non-negotiable]
+
+Allometric scaling: physiological rates scale with body mass to a non-unit
+  power, so a per-kilogram dose or rate extrapolated across a large mass
+  difference is wrong by a factor that grows with the ratio. Linear
+  per-kilogram scaling across species is the standard error.
+
+Species differences are not quantitative adjustments. A pathway present in one
+  species may be absent in another, and extrapolation requires the pathway to
+  be established, not assumed.
+
+Welfare constraints are HARD where a regime governs the work, and the regime
+  must be named. Treating an unnamed regime as absent is not a neutral
+  default.
+
+Behavioural observation requires a stated protocol: the sampling rule, the
+  observation window and the operational definition of each behaviour. Without
+  them, 2 observers measure different things.
+
+Observer effects are real. The presence of an observer changes behaviour, and
+  a design that does not account for it measures the observation.
+
+Individual identification must be reliable before any repeated-measures claim.
+  Misidentification turns a within-individual comparison into a between-
+  individual one silently.
+
+Sample independence: littermates, cage-mates and animals sharing an enclosure
+  are not independent, and this is the dominant source of overstated
+  confidence in the field.
+
+[SOFT constraints — negotiable]
+
+Prefer reporting both the absolute and the mass-specific quantity.
+Prefer blind scoring of behaviour where the hypothesis is known to the scorer.
+State the housing, diet and light cycle; most physiological measures depend on
+  all 3.
+Prefer non-invasive measurement where it answers the question.
+Prefer reporting individual trajectories alongside group means.
+
+[Verification procedures]
+
+pint for every dose, rate and concentration, and an explicit allometric
+  exponent rather than an implicit linear scale.
+scipy.stats and statsmodels for the analysis, with the clustering unit stated
+  and the interval computed on the effective sample size.
+Inter-observer agreement computed and reported for any behavioural measure,
+  because a behavioural metric is bounded by its own reliability.
+Check every physiological value against a species-specific range by execution.
+For repeated measures, verify identification by execution against the
+  identification record, not by assumption.
+
+[Diagnostic heuristics]
+
+If a cross-species dose scales linearly with mass, it is probably wrong; check
+  the allometric exponent.
+If inter-observer agreement is unreported, the behavioural result has an
+  unknown ceiling.
+If variance between cages exceeds variance within them, the cage is the unit.
+If a behaviour appears only when observed, the observation is the treatment.
+If a physiological value matches the human range closely, check whether a
+  human reference range was used by default.
+
+[Known failure modes]
+
+Linear per-kilogram cross-species extrapolation.
+Pseudoreplication at the cage, litter or enclosure level.
+Unblinded behavioural scoring.
+Applying a human or model-species reference range to another species.
+Ignoring circadian and seasonal effects on physiological measures.
+Treating a welfare regime as absent because it was not named.
+Misidentifying individuals in a repeated-measures design.
+
+[Exception catalogue]
+
+Hibernation, torpor, diapause and diving produce physiological values far
+  outside the active range, and a plausibility check calibrated on active
+  animals will refuse correct data.
+Some species have no established reference ranges, and the honest report is
+  that none exists.
+Social species housed singly are stressed by the housing, so a single-housed
+  control is not a neutral baseline.
+Neonates and juveniles differ qualitatively, not merely in scale.
+
+[Tool limitations]
+
+Statistical libraries will analyse pseudoreplicated data without complaint.
+pint cannot catch a wrong allometric exponent, because the expression remains
+  dimensionally consistent.
+Automated behaviour-tracking software has systematic failure modes by species
+  and lighting, and its error rate must be measured rather than assumed.
+No tool can adjudicate a welfare judgement.
+
+[Limitations]
+
+Does not cover veterinary clinical practice.
+Does not cover molecular genetics; see the genetics encoding.
+Does not cover ecology at the population or community scale; see the
+  natural-world encoding.
+Does not cover regulatory submission in any jurisdiction.

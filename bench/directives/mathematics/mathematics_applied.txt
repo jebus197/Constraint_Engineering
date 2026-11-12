@@ -1,0 +1,125 @@
+DOMAIN: Mathematics — Applied and Modelling
+SCOPE: Model formulation, dimensional analysis, asymptotics and scaling,
+       optimisation, differential-equation modelling, sensitivity
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own. Applied mathematics INHERITS the consequence
+       scale of the domain it is applied in, and that inheritance is the whole
+       point: the same model error is epistemic in one setting and lethal in
+       another. Where the application is engineering, FMEA severity applies
+       with critical at 7; where clinical, CTCAE with critical at Grade 3.
+SOURCES: SI Brochure 9th edition (BIPM, 2019) for units.
+
+[HARD constraints — non-negotiable]
+
+Dimensional homogeneity on every equation, checked with pint rather than by
+  eye. Homogeneity is necessary and NOT sufficient -- a missing factor of 2
+  survives it -- so a pass is the absence of one disproof, not evidence.
+
+Every modelling assumption must be stated and its violation consequence named.
+  An unstated assumption is indistinguishable from an error when the model
+  disagrees with reality.
+
+The regime of validity must be declared: linear, small-amplitude, continuum,
+  quasi-static, dilute. A result used outside its regime is not approximate, it
+  is inapplicable.
+
+Boundary and initial conditions must be sufficient and consistent. An
+  underdetermined problem has many solutions and a solver will return one of
+  them without complaint; an overdetermined one has none and the solver will
+  return the least-squares answer as though it were a solution.
+
+Conservation and positivity must be checked on the OUTPUT, not assumed from
+  the formulation. A discretised conservation law can fail to conserve, and a
+  concentration can go negative, without any step looking wrong.
+
+A fitted parameter is not a measured one. Reporting a fit coefficient without
+  its uncertainty and without the fit's residual structure overstates what was
+  learned.
+
+Sensitivity must be reported where the conclusion depends on an estimated
+  input. If the answer moves materially within the input's plausible range,
+  the answer is the range.
+
+[SOFT constraints — negotiable]
+
+Prefer non-dimensionalisation before solving; it reveals which groups matter
+  and reduces the parameter count.
+Prefer the simplest model that reproduces the behaviour of interest, and state
+  what it omits.
+Prefer an asymptotic result with a stated regime over a numerical one without.
+State the direction of any approximation: does it over- or under-estimate?
+Prefer a scaling argument as a cross-check on any detailed computation.
+
+[Verification procedures]
+
+pint on every expression; astropy.units where astronomical.
+SymPy for the symbolic reduction and the asymptotic expansion.
+scipy for the numerical solution, with a second method as the cross-check --
+  2 integrators, or an integrator against a closed form.
+Limiting cases by substitution, executed: each limit should reduce to a known
+  result, and the ones that do not localise the error.
+Sensitivity by execution: perturb each input across its plausible range and
+  report the output range, rather than asserting robustness.
+Conservation check on the computed solution, reported as a residual.
+
+[Diagnostic heuristics]
+
+If the model is insensitive to a parameter it should depend on, a term was
+  dropped or the regime makes it negligible -- determine which.
+If a dimensionless group is far from 1, a simplification is available and
+  probably intended.
+If the numerical and asymptotic answers disagree, check the regime before
+  checking the arithmetic.
+If a fit is excellent and the residuals are structured, the model is wrong in
+  a way the fit statistic cannot see.
+An optimisation that lands exactly on a bound is reporting the bound, not an
+  optimum.
+
+[Known failure modes]
+
+Carrying an approximation past its regime without flagging it.
+Fitting more parameters than the data can identify, which produces a confident
+  answer with no information in it.
+Treating a correlation in the fit as a relationship in the system.
+Omitting a boundary condition and accepting whichever solution the solver
+  returns.
+Reporting a point optimum where the objective is flat, so any nearby point is
+  equally good and the precision is fictitious.
+Using a steady-state model for a transient.
+Reporting a trend rather than the level, since a trend claim is a claim about
+  the next measurement.
+
+[Exception catalogue]
+
+Deliberately crude models are legitimate for order-of-magnitude work, and
+  demanding precision from one is a category error.
+Chaotic systems have bounded predictability by construction; a forecast
+  diverging is the physics, not the method.
+Stiff systems need implicit methods and an explicit one will appear unstable
+  rather than wrong.
+Inverse problems are often ill-posed, so regularisation is required and the
+  regularisation choice is part of the result.
+Where no formal conversion exists between 2 quantities, they must be reported
+  SEPARATELY in their own scales rather than combined -- a sum of 1 inch and
+  1 centimetre composes because the conversion is defined, and a sum of 2
+  unrelated indices does not.
+
+[Tool limitations]
+
+A solver returns an answer for an ill-posed problem without indicating that it
+  is ill-posed.
+Automatic differentiation is exact for the code written, which may not be the
+  model intended.
+pint cannot catch an error in a dimensionless group, nor refuse a sum of 2
+  dimensionless quantities.
+An optimiser reports a local optimum and calls it a solution; global claims
+  need their own argument.
+
+[Limitations]
+
+Does not cover proof; see the proof encoding.
+Does not cover floating-point stability; see the numerical encoding.
+Does not cover any specific physical domain's constitutive laws.
+Does not cover statistical inference on the fitted parameters; see the
+  statistics encodings.

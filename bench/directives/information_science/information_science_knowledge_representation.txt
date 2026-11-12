@@ -1,0 +1,113 @@
+DOMAIN: Information Science — Knowledge Representation
+SCOPE: Ontologies, taxonomies, controlled vocabularies, identity and
+       reference, reasoning over represented knowledge, naming
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's.
+SOURCES: ISO 11179 for metadata registries; Dublin Core for descriptive
+       metadata. [VERIFY:current] -- revisions not confirmed from a primary
+       source on 2026-11-12.
+
+WHY THIS SUBDOMAIN IS UPSTREAM OF VERIFICATION. The representation determines
+what a claim can even assert. A severity recorded as a bare number cannot be
+compared with one on another scale, because the representation dropped the
+scale; the fix is representational, not computational. This project met that
+exact failure in 2026-11-11, and it is the worked example below.
+
+[HARD constraints — non-negotiable]
+
+A VALUE WITHOUT ITS SCALE IS NOT A MEASUREMENT. Where a quantity is reported
+  on a named scale, the scale NAME must be part of the representation. Measured
+  with pint: a clinical grade and a software severity score are both
+  dimensionless, so `CTCAE 3 + CVSS 7.0` evaluates to 10.0 and dimensional
+  analysis cannot refuse it. Only the carried name can.
+
+A NAME IN A SHARED STRUCTURE IS AN IDENTIFIER, NOT A DISPLAY STRING. Decorating
+  it is a schema change wearing a comment's clothes. A recorded instance here
+  prefixed tool names to carry provenance and broke every consumer that matched
+  on the bare name -- the decision was right and the record was unreadable.
+
+Two vocabularies for one concept will drift. Where 2 tables describe the same
+  thing, 1 must be DERIVED from the other, never transcribed. A recorded
+  instance: 2 domain vocabularies in this project agreed on 3 names of 17,
+  Wilson [0.061911, 0.410295].
+
+A LABEL IS NOT A PATH and must not be required to match one. Forcing the 2 to
+  agree creates renames, and a rename breaks every citation to the old name.
+
+Identity must be stated: when are 2 records the same thing? Without a stated
+  identity criterion, merge and deduplication are undefined operations.
+
+Subsumption must be acyclic and must mean one thing. Mixing "is a kind of"
+  with "is a part of" in one hierarchy makes inherited properties wrong.
+
+An inverted scale must be flagged in the representation. GHS hazard categories
+  run from 1 as the MOST severe, so any ordering code that assumes higher is
+  worse will invert the meaning silently.
+
+[SOFT constraints — negotiable]
+
+Prefer a declared enumeration over free text where the field will be reasoned
+  over.
+Prefer one canonical name with declared aliases over several equal spellings.
+Prefer explicit relations over implicit ones encoded in naming conventions.
+State the open-world or closed-world assumption; absence means different
+  things under each.
+Prefer a flat alias map over a chain; a chain of aliases acquires a cycle.
+
+[Verification procedures]
+
+Derive the second table from the first by execution and compare, rather than
+  maintaining both.
+Check the alias map for cycles and for a spelling claimed twice, by execution.
+Validate that every declared default exists; a declared default pointing at an
+  absent artefact is worse than no declaration, because it silences the
+  fallback.
+For any hierarchy, assert acyclicity with networkx rather than by inspection.
+Round-trip every identifier through resolution.
+
+[Diagnostic heuristics]
+
+If a concept has 2 names in the codebase, find which is canonical before
+  adding a third.
+If a lookup under a decorated key misses, the decoration is the bug.
+If a hierarchy has a node with 2 parents of different relation types, the
+  relations are conflated.
+If an ordering produces results that look inverted, check whether the scale is
+  inverted before checking the comparator.
+If a vocabulary has grown an exception list, the model is wrong rather than
+  incomplete.
+
+[Known failure modes]
+
+Dropping the scale from a scaled value.
+Decorating a key that other code matches on.
+Transcribing a second copy of a vocabulary instead of deriving it.
+Requiring a label to equal a path, producing renames.
+Conflating kind-of with part-of.
+Assuming a higher number is worse on an inverted scale.
+Declaring a default that does not exist, which removes the fallback silently.
+
+[Exception catalogue]
+
+Multiple inheritance is legitimate in some formalisms; the constraint is that
+  the relation type be single, not the parent count.
+Opaque identifiers are correct where identity must not leak meaning.
+Free text is correct where the domain is genuinely open.
+An alias retained purely to avoid orphaning old records is correct even when
+  nothing new uses it; removing it is the destructive act.
+
+[Tool limitations]
+
+A reasoner is only as sound as the axioms, and an inconsistent ontology will
+  entail everything without complaint.
+Validators check structure, not whether the structure models the world.
+networkx will detect a cycle and cannot tell which edge is the wrong one.
+No tool can tell that 2 identically-typed fields mean different things.
+
+[Limitations]
+
+Does not cover the general information constraints; see the general encoding.
+Does not cover retrieval evaluation; see the retrieval encoding.
+Does not cover storage and lifecycle; see the data-management encoding.
+Does not cover natural-language semantics.

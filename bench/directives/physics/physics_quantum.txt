@@ -1,0 +1,137 @@
+DOMAIN: Physics — Quantum Mechanics and Foundations
+SCOPE: Non-relativistic quantum mechanics, measurement, entanglement, Bell-type
+       arguments, interpretational and foundational questions
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's. Foundational work
+       is epistemic and its consequence is a property of what is built on it,
+       which is the same position the project holds for pure mathematics.
+SOURCES: SI Brochure 9th edition (BIPM, 2019); the Planck constant is exact at
+       6.626 070 15e-34 J s by definition since 2019, so hbar is exact too and
+       carries no uncertainty.
+
+WHY THIS ENCODING EXISTS. The one physics task in the project's frontier set is
+a superdeterminism and quantum-mechanics question, and the March 2026 analysis
+recorded that it "gets nothing at all. There is no physics directory." It
+received no constraint box of any kind. This is the box.
+
+[HARD constraints — non-negotiable]
+
+Normalisation: a state vector must have unit norm, and a density matrix must
+  have unit trace and be positive semi-definite. A density matrix with a
+  negative eigenvalue is not a state, and the negative eigenvalue locates the
+  error.
+
+Hermiticity: an observable is a Hermitian operator. A non-Hermitian operator
+  presented as an observable has complex eigenvalues and so no measurement
+  outcomes. Anti-Hermitian and non-normal operators have uses, but not as
+  observables.
+
+Unitarity: time evolution of a closed system preserves the norm. An evolution
+  operator that is not unitary describes an open system, and the environment
+  must then be stated rather than ignored.
+
+Commutators determine what is jointly measurable. Asserting simultaneous
+  definite values for non-commuting observables is not an approximation, it is
+  a contradiction of the formalism.
+
+The uncertainty relation is a theorem about state preparation, NOT a statement
+  about instrument disturbance. Conflating the two is the most common
+  conceptual error in the domain and it survives every algebraic check.
+
+No-signalling: no local operation on one part of an entangled system changes
+  the marginal statistics of the other. Any protocol that appears to send
+  information faster than light has an error, and the error is almost always a
+  dropped normalisation or a post-selection treated as a marginal.
+
+A Bell inequality violation refutes LOCAL HIDDEN VARIABLES under its own
+  stated assumptions. Which assumption is given up -- locality, measurement
+  independence, outcome definiteness -- is an interpretational choice and the
+  experiment does not make it. A claim that the experiment settles it is
+  overreach, and stating the assumption set is mandatory.
+
+[SOFT constraints — negotiable]
+
+Prefer the density-matrix formalism wherever the system may be mixed or open;
+  state vectors silently assume purity.
+State the basis. A statement about superposition is basis-relative and means
+  nothing without one.
+Prefer natural units with hbar = 1 for the algebra and restore SI once, at the
+  end, where a numerical answer is wanted.
+Distinguish interpretational claims from formal ones explicitly. Both are
+  legitimate; conflating them is not.
+
+[Verification procedures]
+
+SymPy for the operator algebra, with commutators computed rather than recalled.
+NumPy for explicit finite-dimensional cases: build the matrices, check
+  Hermiticity, unitarity and the trace numerically. A 2-level or 4-level
+  explicit case refutes most algebra errors in seconds.
+scipy.constants for hbar and any physical constant.
+Eigenvalue check: a Hermitian operator must return real eigenvalues
+  numerically. If it does not, it is not Hermitian whatever the algebra said.
+No-signalling check by execution: compute the reduced density matrix before
+  and after the remote operation and compare. They must be identical.
+
+[Diagnostic heuristics]
+
+A probability above 1 or below 0 means a normalisation was dropped, nearly
+  always at a partial trace or a basis change.
+A result that depends on the ORDER of 2 commuting operations has an algebra
+  error; one that depends on the order of non-commuting operations is correct
+  and expected.
+If an entanglement measure comes out non-zero for a product state, the partial
+  trace was taken over the wrong subsystem.
+A Bell parameter above 2*sqrt(2) exceeds the Tsirelson bound and is refuted by
+  quantum mechanics itself, not merely by experiment.
+
+[Known failure modes]
+
+Treating the uncertainty relation as a disturbance claim.
+Taking a partial trace over the wrong factor, which produces a valid-looking
+  density matrix with the wrong physics.
+Confusing a mixed state with a superposition; they have identical diagonals in
+  one basis and different off-diagonals, so a check that reads only
+  probabilities cannot tell them apart.
+Post-selecting a subensemble and reporting its statistics as unconditional,
+  which manufactures apparent signalling.
+Assuming the collapse postulate is dynamical and then asking when it occurs,
+  which is an interpretational question presented as a physical one.
+Using a tensor-product ordering convention inconsistently between operators
+  and states.
+
+[Exception catalogue]
+
+Weak values can lie outside the eigenvalue spectrum of their observable. A
+  guard that refuses an out-of-spectrum value will refuse correct weak-value
+  work.
+Non-Hermitian Hamiltonians are legitimate for open and PT-symmetric systems,
+  where the norm is not conserved by design, so a unitarity check will flag
+  correct work.
+Superdeterminism and retrocausal accounts deny measurement independence rather
+  than locality, so a Bell argument stated as "locality is refuted" does not
+  address them. This is precisely the frontier task's subject and the
+  distinction must be preserved rather than flattened.
+Relational and QBist accounts make outcome definiteness observer-relative, so
+  a check that assumes a single global outcome set will mislabel them.
+
+[Tool limitations]
+
+A numerical eigensolver returns eigenvalues with a small imaginary part for a
+  Hermitian matrix purely from floating-point error. The threshold must be
+  stated, not eyeballed, and it is of order the machine epsilon times the
+  matrix norm.
+Symbolic operator algebra will not enforce domain questions for unbounded
+  operators; position and momentum are unbounded and the formal manipulation
+  is silent about where it fails.
+No tool available here can adjudicate an interpretational claim, and the
+  honest response to one is to state the assumption set rather than to score
+  it. Marking such a claim as verified would be the project's own
+  flattering-measure failure.
+
+[Limitations]
+
+Does not cover quantum field theory or relativistic quantum mechanics.
+Does not cover quantum computing circuit practice or error correction.
+Does not cover many-body or condensed-matter methods.
+Does not adjudicate between interpretations, by design.

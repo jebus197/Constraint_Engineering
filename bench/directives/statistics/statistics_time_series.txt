@@ -1,0 +1,121 @@
+DOMAIN: Statistics — Time Series and Dependent Data
+SCOPE: Autocorrelation, stationarity, trend and seasonality, unit roots,
+       forecasting, change-point detection, state-space models
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's.
+SOURCES: ASA statement on p-values (2016) for the inferential constraints that
+       carry over.
+
+WHY THIS IS A SEPARATE SUBDOMAIN. Autocorrelation and non-stationarity
+invalidate the independence assumption every constraint in the inference box
+rests on. A result computed with inference-box methods on dependent data is not
+less precise, it is wrong in a direction that flatters it: intervals come out
+too narrow and significance too easy.
+
+[HARD constraints — non-negotiable]
+
+Dependence must be tested, not assumed absent. An interval computed on n
+  dependent observations is too narrow by a factor depending on the
+  autocorrelation, and the direction is always toward false confidence.
+
+Stationarity must be established before any method that assumes it. A unit
+  root makes ordinary regression between 2 series produce significant
+  relationships between independent random walks -- spurious regression -- at
+  rates far above nominal.
+
+Differencing changes the quantity being modelled. A model of the differences
+  is not a model of the levels, and forecasts must be integrated back with
+  their uncertainty propagated, not merely their point values.
+
+The effective sample size, not n, governs precision. Reporting an interval on
+  n for autocorrelated data is the same class of error as reporting a
+  proportion on the wrong denominator.
+
+A forecast interval must widen with horizon. One that does not has a variance
+  term missing, and the missing term is usually the accumulated innovation.
+
+Look-ahead bias is disqualifying. Any feature computed using information not
+  available at the forecast origin invalidates the evaluation entirely, and
+  the resulting performance is not an overestimate, it is meaningless.
+
+A change-point found by searching is not a change-point tested at that date.
+  The search must be accounted for, exactly as multiplicity is in the
+  inference box. This project has a recorded instance: a change-point analysis
+  that cut at the first failure found an isolated blip, and cutting at a
+  hand-picked date launders it as a derived one.
+
+[SOFT constraints — negotiable]
+
+Prefer an explicit model of the dependence over a correction to an
+  independence-based statistic.
+Prefer out-of-sample evaluation with a rolling origin over in-sample fit.
+Prefer reporting the autocorrelation function over a single lag-1 coefficient.
+State the sampling frequency and whether the series is aggregated; aggregation
+  changes the dependence structure.
+
+[Verification procedures]
+
+statsmodels for the unit-root tests, the autocorrelation function and the
+  model fitting; scipy and NumPy for the computation.
+Test for a unit root BEFORE regressing 2 series on one another, and report the
+  test rather than the conclusion.
+Simulate the spurious-regression rate: generate 2 independent random walks,
+  regress them, and count significant results. The realised rate is the
+  evidence that the test was needed.
+Rolling-origin backtest rather than a single split, with the number of origins
+  stated.
+Residual diagnostics by execution: if the residuals are still autocorrelated,
+  the model has not captured the dependence whatever the fit statistic says.
+
+[Diagnostic heuristics]
+
+An R-squared above 0.9 between 2 economic or physical level series is usually
+  a shared trend, not a relationship. Difference both and look again.
+A significant coefficient that becomes insignificant after differencing was a
+  trend artefact.
+Residual autocorrelation at exactly the seasonal lag means the seasonality is
+  unmodelled, not that the model is poor.
+A forecast that reverts to the mean immediately has an overdifferenced or
+  misspecified model.
+If a change-point moves when 1 observation is added, it was not a change-point.
+
+[Known failure modes]
+
+Regressing levels on levels without a unit-root test.
+Reporting an interval on n rather than the effective sample size.
+Look-ahead bias through a feature computed on the full sample, which is easy
+  to introduce by normalising before splitting.
+Overfitting a model order on in-sample fit and reporting it as predictive.
+Treating a structural break as noise, or noise as a break.
+Using a single train/test split and reporting the result as the performance.
+
+[Exception catalogue]
+
+A deterministic trend and a stochastic trend both produce non-stationarity but
+  need different treatments, and a unit-root test alone does not distinguish
+  them reliably at short lengths.
+Cointegrated series may legitimately be regressed in levels, and differencing
+  them discards the long-run relationship that was the point.
+Seasonal unit roots exist and ordinary differencing does not remove them.
+Very short series cannot support any dependence estimate; below roughly 30
+  observations the autocorrelation estimates are too noisy to act on, and
+  saying so is the honest result.
+
+[Tool limitations]
+
+Unit-root tests have low power against near-unit-root alternatives, so failing
+  to reject is weak evidence of stationarity rather than evidence of it.
+Automatic model-order selection optimises an in-sample criterion and will
+  happily select an order that forecasts worse.
+A rolling backtest with overlapping windows produces dependent performance
+  estimates, so the interval on the performance itself is too narrow.
+No tool detects look-ahead bias; it is a property of how the features were
+  built and must be reasoned about.
+
+[Limitations]
+
+Does not cover estimation on independent data; see the inference encoding.
+Does not cover design and power; see the experimental-design encoding.
+Does not cover spatial or network dependence.
+Does not cover high-frequency or irregularly-spaced series in detail.

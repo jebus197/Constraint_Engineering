@@ -1,0 +1,127 @@
+DOMAIN: Statistics — General
+SCOPE: Descriptive statistics, data quality, measurement scales, visualisation,
+       aggregation; the constraints that apply before any inferential or design
+       question arises
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's.
+SOURCES: ISO 3534 for vocabulary. Stevens' levels of measurement for the
+       admissibility constraints below.
+
+[HARD constraints — non-negotiable]
+
+THE MEASUREMENT SCALE DETERMINES WHICH STATISTICS ARE ADMISSIBLE, and this is
+  the constraint this project learned the hard way. On a NOMINAL scale only
+  counts and modes are meaningful. On an ORDINAL scale, order statistics --
+  selected values such as a minimum, a maximum, or a median at odd n -- are
+  admissible; SUMS and MEANS are NOT, because they assume the gaps between
+  levels carry magnitude.
+  ★ THE INTERPOLATED MEDIAN AT EVEN n IS NOT ADMISSIBLE ON AN ORDINAL SCALE,
+  because averaging the 2 middle values is an arithmetic operation on labels.
+  Selecting one of them is admissible; averaging them is not.
+
+A CUT NAMED BY A FIXED VALUE IS NOT INVARIANT ON AN ORDINAL SCALE. A strictly
+  increasing re-scaling preserves every pairwise order and can still change how
+  many items sit above a fixed number. A cut must name a DISTINGUISHED LEVEL of
+  the scale and travel with it. Measured on this project's own archive: an
+  order-preserving affine re-scaling destroyed 1,416 of 1,416 critical calls --
+  1.000000, Wilson [0.997294, 1.000000] -- with a rank correlation of exactly 1.
+
+THE SCALE NAME TRAVELS WITH THE NUMBER. Two ordinal scales are both
+  dimensionless, so dimensional analysis cannot refuse their sum: measured with
+  pint, a clinical grade 3 plus a software score 7.0 evaluates to 10.0. The
+  refusal has to be on the scale name, which means the name must be carried.
+
+A DECIMAL LITERAL IS NOT THE REAL NUMBER IT SPELLS. The binary64 nearest to
+  0.7 is 0.6999999999999999555910790149937383830547332763671875, strictly
+  BELOW the real 7/10. A comparison at a boundary is therefore decided by the
+  representation. Measured on this project's archive: 174 of 1,416 critical
+  calls -- 0.122881, Wilson [0.106795, 0.141009] -- turn on a tie at exactly
+  that value. Comparing a decimal string against a float will report a spurious
+  mismatch at the 1e-17 level for the same reason.
+
+Aggregation must preserve the denominator. A proportion of proportions is not
+  a proportion, and a mean of means is not a mean unless the groups are equal
+  in size.
+
+Missing data must be reported, not dropped silently. The count of complete
+  cases and the count of records are different denominators and answer
+  different questions.
+
+[SOFT constraints — negotiable]
+
+Prefer the median and an interquartile range for skewed data, and say which.
+Prefer reporting the distribution over reporting a summary where n permits.
+State units and scale for every quantity; a number without both is not a
+  measurement.
+Prefer a count with its denominator over a bare percentage.
+Prefer showing the data to summarising it where the n is small enough.
+
+[Verification procedures]
+
+NumPy and pandas for the computation; mpmath where a boundary comparison or an
+  extreme value is involved, and exact rationals where a tie at a threshold
+  decides an outcome.
+Recompute every aggregate on 2 routes with different grouping order and
+  confirm agreement; set iteration order has made a measurement
+  non-deterministic in this project's own record.
+Check the denominator by execution: print it beside the numerator rather than
+  asserting it.
+For any threshold comparison, report how many observations lie exactly ON the
+  threshold. That count is the sensitivity of the result to the representation.
+
+[Diagnostic heuristics]
+
+If a percentage and its count disagree, the denominator moved between them.
+If an aggregate changes when the grouping order changes, a set is being
+  iterated and the result is not deterministic.
+If a mean and a median differ greatly, the mean is reporting the tail.
+If a figure is suspiciously round, check whether it was typed rather than
+  computed.
+If a proportion sits at exactly 0 or 1, the interval is one-sided and the
+  point estimate is not the finding.
+
+[Known failure modes]
+
+Averaging an ordinal scale, including the interpolated even-n median.
+Comparing values from 2 different scales, which no dimensional check refuses.
+A count ratio reported as coverage, which hides an equal number of misses and
+  spurious matches. This project has a recorded instance reporting 318 of 318
+  at 100 per cent while missing 18 items and duplicating 18 others, which is
+  why a SET must be pinned rather than a count.
+Quoting a measured figure with no script that produces it, which makes it a
+  claim about evidence rather than evidence.
+Comparing a decimal string against a binary float and reporting the 1e-17
+  difference as a disagreement.
+Reporting a trend in a figure rather than the figure, because a trend claim is
+  a claim about the next measurement and decays faster than the level.
+
+[Exception catalogue]
+
+A census has no sampling uncertainty and needs no interval.
+An ordinal scale with equally spaced, externally calibrated levels may support
+  interval operations, but the calibration is the evidence and must be cited.
+Ratio-scale data permits all the usual operations; the restriction is a
+  property of the scale, not of statistics.
+Where a scale is INVERTED -- GHS hazard categories run from 1 as the most
+  severe -- a higher number is less severe, so every ordering argument must
+  check the direction rather than assume it.
+
+[Tool limitations]
+
+pandas will happily take the mean of an ordinal column, and NumPy will take
+  the mean of anything numeric. Neither knows the scale, so admissibility is
+  never enforced by the tool.
+pint cannot refuse a sum of 2 dimensionless quantities, as above.
+Floating-point comparison at a boundary is representation-dependent, and no
+  library makes that go away; exact rationals or a stated tolerance are the
+  only answers.
+Set and dict iteration order can vary between runs for some constructions, and
+  an aggregate that depends on it is not reproducible.
+
+[Limitations]
+
+Does not cover inference, intervals or testing; see the inference encoding.
+Does not cover design or power; see the experimental-design encoding.
+Does not cover dependence over time; see the time-series encoding.
+Does not cover causal inference of any kind.

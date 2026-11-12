@@ -1,0 +1,119 @@
+DOMAIN: Physics — Thermodynamics and Statistical Mechanics
+SCOPE: Equilibrium thermodynamics, heat transfer, phase behaviour, kinetic
+       theory, statistical ensembles, entropy and the thermodynamic laws
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's. Process-safety
+       work inherits the chemistry scale (GHS health hazard category, critical
+       at Category 2); equipment work inherits the engineering scale.
+SOURCES: SI Brochure 9th edition (BIPM, 2019). The kelvin is defined by fixing
+       the Boltzmann constant at 1.380 649e-23 J/K exactly, which is why
+       temperature differences and absolute temperatures are not
+       interchangeable.
+
+[HARD constraints — non-negotiable]
+
+Absolute temperature only, in every expression where temperature is not a
+  difference. A ratio, a product or an exponent of Celsius temperatures is
+  meaningless. This is the most frequent single error in the domain and it
+  passes every dimensional check, because Celsius and kelvin share a dimension.
+
+The second law is not negotiable: entropy of an isolated system does not
+  decrease. A cycle whose efficiency exceeds the Carnot bound for its reservoir
+  temperatures has an error, and the Carnot bound is the cheapest available
+  falsifier for any heat-engine result.
+
+Sign conventions must be declared once and held. Work done BY the system and
+  work done ON the system differ by a sign that propagates through every
+  subsequent step; the first law is stated differently in physics and
+  engineering texts and mixing them inverts the answer.
+
+Closure: mass in equals mass out plus accumulation; energy likewise. An open
+  system treated as closed drops the enthalpy of the streams, which is
+  typically the largest term.
+
+Phase equilibrium requires equality of temperature, pressure AND chemical
+  potential of every component in every phase. Two of the three is not
+  equilibrium.
+
+Extensive and intensive quantities may not be added. Specific and total
+  quantities differ by a mass that is often implicit, and that omission
+  balances dimensionally when the mass is numerically near 1.
+
+[SOFT constraints — negotiable]
+
+Prefer enthalpy for flow processes and internal energy for closed rigid
+  systems; each removes a term that the other must carry.
+State the equation of state in use. Ideal-gas results carry an error that
+  grows with reduced pressure, and "approximately ideal" is a claim with a
+  number behind it.
+Prefer dimensionless groups -- Nusselt, Biot, Fourier -- for heat-transfer
+  scaling, and state which one is small.
+Report entropy generation rather than efficiency where the comparison is
+  between designs; efficiency hides where the loss occurs.
+
+[Verification procedures]
+
+pint for every energy, enthalpy, entropy and heat-capacity expression.
+scipy.constants for the gas constant and the Boltzmann and Avogadro constants
+  rather than typed literals.
+Carnot check on any cycle result: compute the reservoir-temperature bound and
+  compare. A result above it is refuted without further analysis.
+Closure check by execution: sum the inlet and outlet terms numerically and
+  report the residual rather than asserting balance.
+SymPy for the symbolic manipulation of the state relations, with the Maxwell
+  relations used as a consistency check on any derived partial derivative.
+
+[Diagnostic heuristics]
+
+An efficiency above 1 or above Carnot means a sign error or a temperature in
+  the wrong scale; check the scale first because it is more common.
+A negative entropy generation means the sign convention flipped mid-derivation.
+A heat-transfer coefficient 3 orders from the textbook range for the mechanism
+  indicates a wrong characteristic length in the dimensionless group.
+If a result is independent of pressure where it should not be, the ideal-gas
+  assumption has been applied past its regime.
+
+[Known failure modes]
+
+Celsius where kelvin is required, as above.
+Using the gas constant per mole where per unit mass is needed, or the reverse;
+  they differ by the molar mass and both are called R.
+Mixing higher and lower heating values in a combustion calculation, which
+  differ by the latent heat of the product water.
+Treating a throttling process as isentropic rather than isenthalpic.
+Applying a steady-state relation to a transient and vice versa.
+Neglecting the work of expansion against the atmosphere in an open vessel.
+
+[Exception catalogue]
+
+Negative absolute temperatures are physically real in bounded-energy spin
+  systems and are HOTTER than any positive temperature, so the usual ordering
+  argument inverts. A guard that refuses negative temperature will refuse
+  correct work in that narrow case.
+The third law makes heat capacity vanish as temperature approaches zero, so a
+  constant-heat-capacity model is qualitatively wrong at cryogenic conditions,
+  not merely inaccurate.
+Near a critical point, derivatives of state variables diverge and every
+  linearised relation fails; a result there needs its own treatment.
+Metastable states -- superheated liquid, supercooled vapour -- satisfy local
+  but not global equilibrium, so an equilibrium calculation will find the
+  wrong phase.
+
+[Tool limitations]
+
+pint cannot distinguish specific from molar quantities, because both reduce to
+  energy per amount in some unit system; the distinction is physical.
+Property libraries interpolate within their validity range and extrapolate
+  silently outside it. The range must be checked, not assumed.
+A symbolic Maxwell-relation check confirms internal consistency of the state
+  relations and says nothing about whether the equation of state fits the
+  substance.
+
+[Limitations]
+
+Does not cover combustion chemistry or reaction kinetics; see the chemistry
+  encodings.
+Does not cover computational fluid dynamics or turbulence closure.
+Does not cover non-equilibrium thermodynamics beyond entropy generation.
+Does not cover cryogenic or plasma regimes in detail.

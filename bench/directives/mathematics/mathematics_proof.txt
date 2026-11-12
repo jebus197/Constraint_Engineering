@@ -1,0 +1,143 @@
+DOMAIN: Mathematics — Proof and Pure
+SCOPE: Theorem proving, analysis, algebra, topology, number theory,
+       combinatorial proof, construction and counterexample
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none. Pure mathematics has no recognised consequence scale.
+       An error's consequence is a property of the APPLICATION the mathematics
+       is used in, not of the error's form: the same reversed inequality is
+       epistemic in a convergence proof and lethal in a fan-blade tolerance.
+       The 2026-11-11 panel reached this independently on both seats.
+SOURCES: No standards body governs proof. The constraints below are the
+       conventions of mathematical practice, stated as checkable conditions.
+
+★ WHY THIS ENCODING EXISTS, AND IT IS THE SHARPEST DEFECT IN THE RECORD.
+All 7 mathematics tasks in the project's frontier set are PROOF-BASED, and the
+mathematics encoding they were given states on its own last line: "Not
+applicable to proof-based pure mathematics (theorem proving)." Every one of the
+7 fell exactly into what its own constraint box disclaimed, because the loader
+took the first file alphabetically. Recorded in the March 2026 analysis and
+unrepaired for 7 months. This is the declared default for the domain now.
+
+[HARD constraints — non-negotiable]
+
+Every hypothesis must be USED or its necessity questioned. A proof that never
+  invokes a stated hypothesis is either wrong or proves a stronger theorem, and
+  which of the 2 it is matters.
+
+Quantifier order is not stylistic. "For every epsilon there is an N" and "there
+  is an N for every epsilon" are different statements, and the second is
+  usually false where the first is true. Uniformity claims live entirely in
+  this distinction.
+
+A construction must be exhibited, not asserted to exist, where the claim is
+  constructive. "One can construct" is a promise; the sequence, the bound or
+  the witness is the proof.
+
+Convergence requires a stated mode. Pointwise, uniform, in measure, almost
+  everywhere and in norm are not interchangeable, and a theorem proved for one
+  does not transfer. Continuity of a limit needs UNIFORM convergence; pointwise
+  is insufficient and this is the standard trap.
+
+An inequality's direction must survive every manipulation. Multiplying by a
+  quantity of unknown sign, or taking reciprocals, reverses it. Each step that
+  can reverse an inequality must state why it does not.
+
+Induction requires a base case AND a step whose hypothesis is exactly what the
+  induction provides. Strong and weak induction differ in what the hypothesis
+  grants, and using the strong hypothesis under a weak scheme is a gap.
+
+Edge cases are part of the theorem: the empty set, n = 0, the single point,
+  the degenerate configuration. A proof that holds only for the generic case
+  proves a different statement.
+
+Existence does not give uniqueness, and uniqueness does not give existence.
+  Each needs its own argument.
+
+[SOFT constraints — negotiable]
+
+Prefer a direct proof where one is available; contradiction hides where the
+  hypothesis was used.
+Prefer explicit constants over "sufficiently large", and state the dependence
+  of each constant on the parameters.
+State which standard theorem is being invoked by name, so the hypotheses can
+  be checked against it.
+Prefer a counterexample to a plausibility argument when refuting.
+Name the proof strategy before executing it, so a reader can see whether the
+  structure matches the claim.
+
+[Verification procedures]
+
+SymPy for every algebraic manipulation, every limit and every series, because
+  a hand-checked identity is a hypothesis.
+z3 for any claim with a finite or bounded-quantifier formulation; an unsat
+  result on the negation is a proof over that fragment.
+Numerical spot-checks on small cases with NumPy before investing in a general
+  argument: a claim false at n = 3 needs no general proof.
+Boundary substitution: evaluate at every stated boundary and at the
+  degenerate case, by execution rather than by inspection.
+For a bound, test it adversarially: search numerically for a violation. A
+  bound no search can break is not proved, but a bound a search does break is
+  refuted, and the asymmetry is the point.
+
+[Diagnostic heuristics]
+
+If a proof does not use a hypothesis, look for either a stronger theorem or a
+  missing step; both are findings.
+If the argument would prove something known to be false with a small change,
+  identify exactly which step blocks that change. If none does, the proof is
+  wrong.
+If a constant appears without a stated dependence, check whether it secretly
+  depends on the variable it is supposed to be uniform in. This is where
+  pointwise and uniform claims are confused.
+If an inequality chain has more than about 5 steps, one of them is likely
+  reversed; check each for a sign-indeterminate factor.
+If a construction works for the first 2 cases, try the degenerate one.
+
+[Known failure modes]
+
+Hand-waving a quantitative bound: "the tail is small" without a rate.
+Confusing pointwise and uniform convergence, which is the single commonest
+  error in analysis and the one the frontier set's Weierstrass task turns on.
+Using wrong sufficient conditions on parameters -- for the Weierstrass
+  function, conditions on a and b that do not actually give
+  nowhere-differentiability.
+Confusing head and tail terms in a series estimate, so the bound applies to
+  the wrong part.
+Circular reasoning: invoking a corollary of the theorem being proved.
+Assuming a limit and an integral, or 2 limits, may be exchanged without
+  justification.
+Proving a special case and presenting it as the general theorem.
+
+[Exception catalogue]
+
+Non-constructive existence proofs are legitimate; demanding a witness from one
+  is a category error, and the axiom of choice is not a defect.
+Proof by exhaustion over a verified finite case set is a proof, provided the
+  enumeration is shown complete.
+A probabilistic existence argument proves existence, not a construction, and
+  conflating the 2 is the error rather than the method being weak.
+Counterexamples require only 1 instance and need no generality.
+Some statements are independent of the axioms in use; "unprovable here" is a
+  result, not a failure.
+
+[Tool limitations]
+
+A symbolic solver returns a valid root that may be inadmissible under the
+  problem's own constraints, and will not flag it.
+z3 decides fragments. An unsat over a bounded instantiation is not a proof of
+  the universally quantified statement, and claiming so is overreach.
+Numerical spot-checks can REFUTE and cannot CONFIRM: passing at 1000 points
+  says nothing about the uncountable remainder. The asymmetry must be stated
+  whenever a numerical check is cited.
+SymPy will return a form that is correct and unrecognisable; a simplification
+  is not a step in a proof unless the reader can follow it.
+
+[Limitations]
+
+Does not cover applied or modelling work; see the applied encoding.
+Does not cover floating-point or numerical stability; see the numerical
+  encoding.
+Does not cover formal verification in a proof assistant, which has its own
+  discipline.
+Does not cover computational complexity.

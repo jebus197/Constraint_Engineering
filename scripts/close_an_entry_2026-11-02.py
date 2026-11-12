@@ -177,9 +177,18 @@ def close_entry(ident: str, *, evidence: str, resolution: str,
     rec["marker"] = {"was": m.group(0), "now": new_marker}
     rec["carried_through"] = [k for k, _v in fields if k not in _MANAGED]
 
+    from bench.ticket_store import tid_of as _tid_of
+
     st = TicketStore()
+    #: ★ A RECORD ALREADY REDIRECTED IS NOT RE-PROCESSED. The filter excluded
+    #: only CLOSED, so after the redirect branch below lands, a later close of
+    #: the same entry would pick the DUPLICATE record up again and try to
+    #: redirect what is already redirected. DUPLICATE and MERGED are terminal
+    #: for this tool's purposes: following either reaches the live ticket, which
+    #: is the whole point of the counting invariant.
+    _TERMINAL = {"CLOSED", "DUPLICATE", "MERGED"}
     tickets = [t for t in st.by_task_ref(ident)
-               if getattr(t, "status", "") != "CLOSED"]
+               if getattr(t, "status", "") not in _TERMINAL]
     rec["tickets"] = [getattr(t, "tid", "?") for t in tickets]
     rec["detail_removed"] = [k for k in (f"task:{ident}", ident)]
 
@@ -189,9 +198,50 @@ def close_entry(ident: str, *, evidence: str, resolution: str,
     # 1. the marker
     LIST.write_text(text[:m.start()] + new_marker + text[m.end():])
     # 2. the tickets
+    #
+    #: ★ AN OFF-IDENTITY RECORD IS REDIRECTED, NOT CLOSED -- 2026-11-12.
+    #: This loop used to close EVERY ticket carrying the reference, with no
+    #: check of which one sits at the canonical identity. A reference admits
+    #: exactly 1 identity per kind, so closing B22 on 2026-11-12 closed 2 `pf`
+    #: records against B22 and stranded the non-canonical one as CLOSED. That
+    #: breaks the register's counting invariant -- CLOSED must equal the task
+    #: list's DONE plus WITHDRAWN -- and
+    #: `bench/tests/test_a_ticket_identity_survives_a_reword_2026-10-17.py`
+    #: refused the commit for it, correctly.
+    #:
+    #: THE CHECK IS SELF-CONTAINED, which is why it is done here rather than by
+    #: importing the harvester: a ticket carries its own `kind`, `verbatim` and
+    #: `task_ref`, so `tid_of` recomputes the identity it SHOULD occupy from
+    #: what it already holds. Verified on the live case: the stranded record
+    #: recomputed to the canonical tid exactly, naming its own redirect target.
+    #:
+    #: FAIL TOWARDS CLOSING, DELIBERATELY. If the identity cannot be recomputed
+    #: -- no verbatim, an unknown kind, any error -- the ticket is CLOSED as
+    #: before. A redirect that cannot be justified must not be invented, and
+    #: today's behaviour is the safe fallback.
     for t in tickets:
-        st.close(getattr(t, "tid"), resolution=resolution,
-                 verification=verification)
+        _tid = getattr(t, "tid", None)
+        _canon = None
+        try:
+            _vb = getattr(t, "verbatim", None)
+            if _vb and getattr(t, "kind", None) and getattr(t, "task_ref", None):
+                _canon = _tid_of(t.kind, _vb, t.task_ref)
+        except Exception:                                    # noqa: BLE001
+            _canon = None
+        if _canon and _canon != _tid and st.get(_canon) is not None:
+            st.mark_duplicate(
+                _tid, of_tid=_canon, repair_identity=1.0,
+                verification=(
+                    f"Off-identity duplicate found while closing {ident}. A "
+                    f"reference admits 1 identity per kind and "
+                    f"tid_of({t.kind!r}, own verbatim, {t.task_ref!r}) = "
+                    f"{_canon}, so {_tid} cannot be canonical. Redirected "
+                    f"rather than closed, which keeps the register's CLOSED "
+                    f"count equal to the task list's DONE plus WITHDRAWN. "
+                    f"{verification}"))
+            rec.setdefault("redirected", []).append({_tid: _canon})
+        else:
+            st.close(_tid, resolution=resolution, verification=verification)
     # 3. the authored detail
     try:
         d = json.loads(DETAIL.read_text())

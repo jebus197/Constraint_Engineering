@@ -1,0 +1,114 @@
+DOMAIN: Information Science — Data Management
+SCOPE: Storage, lifecycle, schema evolution, versioning, backup and recovery,
+       data quality, retention, reproducibility of a stored record
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's. Where the data is
+       personal or regulated the consequence is legal rather than technical and
+       the applicable regime must be named, not assumed.
+SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO 11179 for
+       metadata registries. [VERIFY:current] -- revisions not confirmed from a
+       primary source on 2026-11-12.
+
+[HARD constraints — non-negotiable]
+
+AN APPEND-ONLY STORE HAS ROWS, NOT STATE. The current state is a REDUCTION
+  over the rows, and counting rows as states is a category error. This project
+  has a recorded instance where 95 items were closed that were never open,
+  because a row count was read as a state count.
+
+A SAFEGUARD MAY CORRUPT WHAT IT PROTECTS. Any write that is meant to preserve
+  must be verified by reading back, not assumed from the absence of an error.
+  A recorded instance here changed a measured figure from 84.3750 per cent to
+  88.0952 per cent through the mechanism intended to protect it.
+
+A RESTORE IS ITSELF A MUTATION. Restoring a prior version writes, and that
+  write becomes the latest state. A harness that restores must restore the
+  bytes it FOUND, not the bytes it expected, because writing an assumed
+  original is a mutation wearing a repair's name.
+
+Schema version must travel with every record. An unversioned record cannot be
+  interpreted once the schema moves, and schema movement is the normal case.
+
+Deletion and archival are different operations with different reversibility.
+  The least destructive option that does the job must be used, and a permanent
+  deletion must be confirmed rather than inferred from an instruction.
+
+A backup is not verified until it has been restored. An untested backup is a
+  belief about a file.
+
+Derived data must record its producer and its inputs. A number with no script
+  that reproduces it is a claim about evidence, not evidence.
+
+[SOFT constraints — negotiable]
+
+Prefer append-only for anything audited, with a separate projection for state.
+Prefer storing the raw input beside the derived value.
+Prefer a content hash over a timestamp for change detection; mtime lies after
+  a copy.
+Prefer explicit nulls over absent keys, so "unknown" is distinguishable from
+  "not applicable".
+Prefer a sidecar for provenance over embedding it, where the payload format
+  cannot carry it without distortion.
+
+[Verification procedures]
+
+Read back every write that matters and compare bytes, reporting the comparison
+  rather than asserting success.
+Hash before and after any migration and report the set of changed records, not
+  the count.
+Validate against the declared schema by execution.
+Restore a backup into a scratch location and diff it, periodically, as the
+  only evidence a backup works.
+For any deduplication or merge, report the clusters and the survivors.
+
+[Diagnostic heuristics]
+
+If a count of records and a count of entities differ, there are duplicates or
+  a one-to-many relation is being flattened.
+If a migration reports success and the record count changed, records were
+  dropped silently.
+If 2 copies of a file differ only in whitespace or line endings, a tool
+  rewrote it in passing.
+If mtime is newer than the content hash's last change, something touched the
+  file without changing it -- or the hash is stale.
+If a symlink is present, a recursive walk may count its target twice. This
+  project has a recorded instance where that double-counted 217 severities.
+
+[Known failure modes]
+
+Reading row counts as state.
+Trusting a write because no exception was raised.
+A recursive glob following a symlink and double-counting.
+Treating an extension as a content type.
+Overwriting the original during a restore.
+Losing provenance in a copy, so the copy cannot be audited.
+Silent truncation at a field-width limit, which produces valid-looking records.
+
+[Exception catalogue]
+
+Immutable stores legitimately cannot be corrected; the correction is a new row
+  that supersedes, and deleting the old one defeats the audit.
+Legal retention may REQUIRE deletion after a period, so retaining everything
+  is not the safe default in every regime.
+Some duplication is deliberate replication for durability and removing it
+  reduces safety.
+A symlink may be the only route to a resource that has moved, so removing it
+  can be the destructive act rather than the tidy one.
+
+[Tool limitations]
+
+A filesystem walk follows symlinks by default in many libraries and will
+  double-count; de-duplication must be by resolved path.
+Checksums detect change and not meaning; a semantically corrupt record hashes
+  consistently.
+A schema validator cannot detect that a field's meaning changed while its type
+  stayed the same.
+No tool verifies retention compliance; that requires the regime to be named.
+
+[Limitations]
+
+Does not cover the general information constraints; see the general encoding.
+Does not cover search and ranking; see the retrieval encoding.
+Does not cover ontology design; see the knowledge-representation encoding.
+Does not cover database performance engineering.

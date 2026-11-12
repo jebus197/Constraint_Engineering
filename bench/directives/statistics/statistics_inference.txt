@@ -1,0 +1,139 @@
+DOMAIN: Statistics — Inference and Estimation
+SCOPE: Point and interval estimation, hypothesis testing, likelihood, Bayesian
+       and frequentist inference, multiplicity, model selection
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none. Statistics has no recognised consequence scale of its
+       own: a wrong interval is epistemic until something acts on it, so the
+       consequence belongs to the application. Clinical work inherits CTCAE,
+       engineering work inherits FMEA.
+SOURCES: American Statistical Association, "Statement on p-Values: Context,
+       Process, and Purpose" (2016), 6 principles, not formally superseded --
+       the later ASA President's Task Force on statistical significance and
+       replicability gave broad pointers to practice rather than restating
+       them. ISO 3534 for vocabulary.
+
+WHY THIS IS THE DEFAULT SUBDOMAIN. Inference is this project's own most-used
+statistical mode: every proportion it reports carries a confidence interval by
+standing rule, and 2 independent routes must agree on it. The constraints below
+are therefore the ones the project applies to itself.
+
+[HARD constraints — non-negotiable]
+
+Every reported proportion carries an interval. A bare point estimate of a
+  proportion is not a measurement, because it does not say how much of the
+  value is sample size.
+
+The interval METHOD must be named. Wald, Wilson, Clopper-Pearson, Agresti-Coull
+  and Jeffreys disagree materially at small n and near 0 or 1, and Wald is
+  known to fail there -- it can produce a lower bound below 0. Naming the
+  method is what makes the number reproducible.
+
+A p-value is NOT the probability the hypothesis is true, NOT the probability
+  the data arose by chance, and says NOTHING about effect size. Those 3 are the
+  errors the 2016 ASA statement was written to address and they remain the
+  commonest in the literature.
+
+A threshold crossing is not a finding. "p < 0.05" licenses no claim on its own;
+  the ASA statement is explicit that treating it as a licence "leads to
+  considerable distortion of the scientific process".
+
+Multiplicity must be declared. k tests at level alpha do not hold level alpha
+  jointly, and an undeclared multiple-comparison correction is the difference
+  between a result and an artefact. State the number of tests performed, not
+  the number reported.
+
+The denominator must be stated and must be the right one. A proportion whose
+  denominator is a count of something else is not a weaker measurement, it
+  answers a different question.
+
+A census is not a sample: where every member of the population is examined
+  there is no sampling uncertainty and attaching an interval is an error, not
+  caution.
+
+[SOFT constraints — negotiable]
+
+Prefer an effect size with its interval over a test statistic with a p-value.
+Prefer exact methods at small n; asymptotic approximations are convenient
+  rather than correct.
+Prefer pre-registration of the analysis where the design permits it, and say
+  plainly when an analysis is exploratory.
+Report the interval to no more precision than the data support.
+Where 2 methods disagree, report both and name the disagreement rather than
+  choosing the more favourable.
+
+[Verification procedures]
+
+Compute every interval on 2 INDEPENDENT routes and report the agreement to
+  machine precision. statsmodels and scipy are NOT independent for this
+  purpose where both resolve to the same verifier; an independent second route
+  is a closed form in mpmath, or an exact binomial tail search.
+scipy.stats for the test statistic; statsmodels for the regression
+  diagnostics; NumPy for the computation; mpmath where precision matters near
+  0 or 1.
+Simulate the operating characteristic rather than asserting it: generate under
+  the null, count rejections, and confirm the realised level matches the
+  nominal one.
+For a power claim, simulate. The closed form is often optimistic, and this
+  project has a recorded instance where it read 35 against a simulated 0.6472.
+
+[Diagnostic heuristics]
+
+If an interval includes an impossible value -- a negative proportion, a
+  probability above 1 -- the method is Wald and the n is small.
+If a p-value is extraordinarily small, check the degrees of freedom before
+  believing it; a wrong df inflates significance in the convincing direction.
+If removing 1 observation changes the conclusion, the conclusion is about that
+  observation.
+If the result is sensitive to the interval method, n is too small for any
+  asymptotic claim.
+A correlation near 1 between 2 derived quantities usually means they share an
+  input, not that they are related.
+
+[Known failure modes]
+
+Wald intervals at small n or extreme p.
+Reporting a point estimate as the finding and the interval as a footnote.
+Treating a non-significant result as evidence of no effect.
+Fishing: trying several tests and reporting the one that crossed.
+Using a 1-sided test after seeing the direction of the data.
+Conflating a confidence interval with a credible interval; they answer
+  different questions and coincide only under specific priors.
+Pooling across groups where the groups differ, which can reverse the direction
+  of an association entirely.
+
+[Exception catalogue]
+
+A census has no sampling uncertainty, as above -- attaching an interval there
+  is the denominator error in a new costume.
+Bounded or restricted-range data makes a correlation attenuate toward 0 by
+  construction, so a weak correlation on a narrow window is uninformative
+  rather than negative. This project has a recorded instance: a kappa of
+  -0.0227 over a severity window 0.09 wide was read as "no better than
+  chance" when the window alone gave it power 0.1443.
+Zero events in n trials gives a one-sided interval; the point estimate of 0 is
+  not the finding, the upper bound is.
+Heavily dependent observations make the effective sample size far below n, so
+  an interval computed on n is too narrow by a factor that must be estimated
+  rather than ignored.
+
+[Tool limitations]
+
+statsmodels and scipy often share an implementation path, so agreement between
+  them can be 1 function called twice rather than 2 routes. Independence means
+  a different ROUTE to the quantity, not a different import.
+mpmath's incomplete beta can fail to converge at extreme parameters; where it
+  does, compute the exact binomial tails instead and say so.
+A simulated operating characteristic has its own Monte Carlo error, which must
+  be reported alongside the estimate it qualifies.
+No tool can tell a pre-registered analysis from a post-hoc one; that is a
+  record-keeping property, not a computable one.
+
+[Limitations]
+
+Does not cover experimental design, power or randomisation; see the
+  experimental-design encoding.
+Does not cover time-series dependence; see the time-series encoding.
+Does not cover causal identification, instrumental variables or
+  difference-in-differences.
+Does not cover machine-learning model evaluation beyond interval reporting.

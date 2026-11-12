@@ -1,0 +1,120 @@
+DOMAIN: Statistics — Experimental Design
+SCOPE: Power and sample size, randomisation, blinding, pre-registration,
+       blocking, factorial and crossover designs, stopping rules
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's. A clinical design
+       inherits CTCAE (critical at Grade 3); an engineering design inherits
+       FMEA severity (critical at 7).
+SOURCES: ASA statement on p-values (2016). CONSORT and PRISMA reporting
+       guidelines, cited without a version because the current edition could
+       not be confirmed from a primary source on 2026-11-12. [VERIFY:current]
+
+WHY THIS IS A SEPARATE SUBDOMAIN. Power, pre-registration and multiplicity are
+a different discipline from estimation, and they are directly load-bearing for
+this project's own experiments: the decision rule for a comparison must be
+written before the comparison is run, or the comparison cannot fail.
+
+[HARD constraints — non-negotiable]
+
+A power claim requires a stated effect size, a stated alpha, a stated test and
+  a stated n. A "powered study" without all 4 is not a claim.
+
+POWER MUST BE SIMULATED, not only derived. The closed form is frequently
+  optimistic; this project has a recorded instance where the closed form said
+  35 and the simulation of the same design returned 0.6472 against a target of
+  0.80, so the closed-form figure must not be quoted.
+
+The decision rule must be fixed BEFORE the data are seen. A threshold chosen
+  after looking at the result is not a test, and no amount of arithmetic
+  recovers it.
+
+Randomisation must be concealed as well as performed. Known allocation
+  defeats randomisation even where the sequence itself was random.
+
+A stopping rule changes the operating characteristic. Repeatedly testing as
+  data accumulate inflates the type-1 error far above nominal, and the
+  inflation must be accounted for by design rather than corrected afterwards.
+
+The analysis population must be defined before exclusions. Excluding after the
+  fact, for any reason correlated with outcome, breaks the comparison.
+
+Blocking and stratification factors must be declared and must be used in the
+  analysis. Blocking in the design and ignoring it in the analysis discards the
+  precision the blocking bought.
+
+[SOFT constraints — negotiable]
+
+Prefer a factorial design where several factors are of interest; it buys main
+  effects at the same n and reveals interactions a sequence of 1-factor
+  studies cannot see.
+Prefer a within-subject design where carryover can be bounded; it removes
+  between-subject variance.
+State the minimum effect of interest rather than the effect you expect.
+Prefer registering the analysis plan even where no external registry applies;
+  an internal dated record serves the same purpose.
+
+[Verification procedures]
+
+Simulate the design end to end: generate under the null, apply the planned
+  analysis, count rejections, and confirm the realised level matches nominal.
+  Then generate under the alternative and read the power off the same harness.
+scipy.stats and NumPy for the simulation; statsmodels for the planned model.
+Check the randomisation by execution: generate many allocations and confirm
+  the balance distribution matches what the scheme claims.
+For any sequential design, simulate the stopping rule rather than applying a
+  textbook correction, because the correction depends on the exact looks.
+
+[Diagnostic heuristics]
+
+If the required n is suspiciously small, the assumed effect is suspiciously
+  large; restate it as a proportion of the outcome's standard deviation and ask
+  whether it is plausible.
+If power is above 0.99 at a modest n, check whether the test is 1-sided and
+  whether that was justified before the data.
+If a design's power is flat in n, the variance assumption is wrong.
+A balanced design that came out unbalanced indicates either the randomisation
+  or the exclusions; check the exclusions first.
+
+[Known failure modes]
+
+Quoting a closed-form power without simulating it.
+Choosing alpha after seeing the p-value.
+Post-hoc power: computing power from the observed effect, which is a
+  restatement of the p-value and carries no information about the design.
+Treating a pilot study's effect estimate as the design effect, which is biased
+  upward by selection.
+Counting a power figure as a workload. This project has a recorded instance
+  where 63 was a power figure and was reported to the founder as 63 units of
+  his own adjudication time.
+Ignoring clustering, which inflates the effective alpha when the unit of
+  randomisation is not the unit of analysis.
+
+[Exception catalogue]
+
+Equivalence and non-inferiority designs invert the hypotheses, so a
+  non-significant result is the positive finding and the usual reading is
+  backwards.
+Adaptive designs legitimately change n or allocation mid-study, but only under
+  a pre-specified rule; the rule, not the adaptation, is what preserves the
+  level.
+A census needs no power calculation, because there is no sampling.
+Where the outcome is rare, the binomial approximation to normality fails and
+  the sample-size formula based on it understates n substantially.
+
+[Tool limitations]
+
+A power simulation is itself an estimate with Monte Carlo error, which must be
+  reported; 1000 replications give roughly 1.5 percentage points of standard
+  error near 0.5.
+Standard sample-size functions assume independence and will silently give an
+  answer for clustered data.
+No tool can verify that a decision rule was fixed in advance; only a dated
+  record can, which is why the record matters more than the arithmetic.
+
+[Limitations]
+
+Does not cover estimation or interval construction; see the inference encoding.
+Does not cover dependence structure over time; see the time-series encoding.
+Does not cover observational causal inference or quasi-experimental designs.
+Does not cover regulatory submission requirements for any jurisdiction.

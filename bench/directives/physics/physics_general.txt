@@ -1,0 +1,142 @@
+DOMAIN: Physics — General
+SCOPE: Measurement, units, dimensional analysis, conservation laws, orders of
+       magnitude, error propagation; the constraints common to every physics
+       subdiscipline before any specialisation applies
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none. Physics has no single recognised consequence scale across
+       its subdisciplines -- a nuclear result inherits INES, an optics result
+       may inherit nothing -- so a finding INHERITS the consequence scale of the
+       application the physics is being used in. Inventing a scale to fill this
+       field is the failure the project calls a magic wand; an honest absence is
+       the alternative.
+SOURCES: SI Brochure, 9th edition (BIPM, 2019), in force from 20 May 2019.
+       Defining-constant values cross-checked against scipy.constants on
+       2026-11-12: exact float equality on all 5 and uncertainty 0.0 for each,
+       confirming they are exact BY DEFINITION rather than measured.
+
+[HARD constraints — non-negotiable]
+
+Dimensional homogeneity: every additive term in an equation must carry the same
+  dimensions. A sum of unlike dimensions is not a wrong answer, it is not an
+  equation. Check with pint before trusting any derived expression.
+  ★ HOMOGENEITY IS NECESSARY AND NOT SUFFICIENT. An expression can balance
+  dimensionally and still be wrong -- a missing factor of 2, a sign error, a
+  wrong power of a dimensionless ratio all survive the check. A homogeneity
+  pass is therefore never evidence of correctness, only the absence of one
+  specific disproof.
+
+The 7 SI base quantities are second, metre, kilogram, ampere, kelvin, mole,
+  candela. Any other unit must reduce to these or be declared non-SI
+  explicitly with its conversion factor stated.
+
+The 2019 defining constants are EXACT, not measured. Treating any of them as
+  carrying uncertainty is a category error:
+    c   = 299 792 458 m/s                 (exact)
+    h   = 6.626 070 15e-34 J s            (exact, defines the kilogram)
+    e   = 1.602 176 634e-19 C             (exact, defines the ampere)
+    k   = 1.380 649e-23 J/K               (exact, defines the kelvin)
+    N_A = 6.022 140 76e23 /mol            (exact, defines the mole)
+  A result quoting an uncertainty on one of these has misunderstood the 2019
+  redefinition, in which the kilogram, ampere, kelvin and mole were all
+  redefined in terms of fixed constants.
+
+Conservation: energy, momentum, angular momentum, charge and baryon number are
+  conserved in every closed system. A derivation that violates one has an
+  error upstream of its conclusion, and the violation locates the error.
+
+Significant figures: a result may not carry more precision than its least
+  precise input. Stating 7 figures from 2-figure data is a false claim about
+  the measurement, not a rounding preference.
+
+Reference frames must be declared. A velocity, an energy or a time interval
+  without its frame is incomplete, and quantities from different frames may
+  not be combined without an explicit transformation.
+
+[SOFT constraints — negotiable]
+
+Prefer SI throughout; where a field convention differs (electronvolts in
+  particle physics, parsecs in astronomy) state the conversion once.
+Prefer an order-of-magnitude estimate BEFORE the detailed calculation, so a
+  result 3 orders out is caught by arithmetic rather than by review.
+Prefer exact symbolic manipulation while the algebra is tractable, and
+  substitute numbers once, at the end.
+State the regime of validity: non-relativistic, non-quantum, continuum,
+  linear-response. A result outside its regime is not approximately right.
+
+[Verification procedures]
+
+pint for every dimensional claim; astropy.units where astronomical units or
+  constants are involved. These are the primary route.
+scipy.constants for any physical constant, rather than a typed literal. A
+  typed constant is a transcription risk with no upside.
+SymPy for the symbolic derivation, with limiting cases checked by substitution
+  rather than by inspection.
+Limiting-case substitution: as a parameter goes to 0 or to infinity, does the
+  expression reduce to the known result? A formula that does not is wrong even
+  where no step looks wrong.
+uncertainties for error propagation, because hand-propagated errors understate
+  correlated terms by construction.
+
+[Diagnostic heuristics]
+
+Check the dimensions, then the order of magnitude, then the sign, then the
+  limiting cases, and only then the algebra. 3 of those 4 are cheap and catch
+  most errors; the algebra is expensive and catches the rest.
+A factor of exactly 2, 4 or pi in a discrepancy almost always indicates a
+  geometric or averaging convention, not an arithmetic slip -- look for a
+  radius against a diameter, an amplitude against an RMS, a solid angle
+  against a plane angle.
+A discrepancy of exactly 10^3 or 10^-3 is a prefix error, not a physics error.
+If a result is independent of a parameter it should depend on, a term has been
+  dropped. If it depends on one it should not, a term has been added.
+
+[Known failure modes]
+
+Degrees against radians in any trigonometric argument. Every numerical library
+  takes radians; most human statements are in degrees.
+Celsius against kelvin in any expression where temperature appears other than
+  as a difference. A ratio of Celsius temperatures is meaningless.
+Mixing a quantity with its per-unit-mass or per-unit-volume form, which
+  balances dimensionally only sometimes and so survives the homogeneity check
+  intermittently -- the worst case, because the check passes often enough to
+  be trusted.
+Treating a defining constant as measured, or quoting a pre-2019 value with an
+  uncertainty.
+Carrying a small-angle, non-relativistic or linear approximation past the
+  point where it holds, without stating that it was used.
+
+[Exception catalogue]
+
+Dimensionless groups -- Reynolds, Mach, Prandtl -- are dimensionless by
+  construction, so a homogeneity check on an expression containing them says
+  nothing about the physics. Verify the group's own definition instead.
+Logarithms and exponentials take dimensionless arguments only. An expression
+  with ln(length) has a normalising scale missing, not a units problem.
+Angles are dimensionless in SI but not interchangeable with pure numbers in
+  every context; a torque per angle and a torque per radian differ by the
+  convention, not by the algebra.
+Natural-unit systems set c or hbar to 1 deliberately; a dimensional check
+  against SI will flag correct natural-unit work as an error.
+
+[Tool limitations]
+
+pint cannot refuse a sum of 2 dimensionless quantities, so it cannot catch a
+  nonsensical combination of 2 unrelated dimensionless scales or indices.
+  Measured 2026-11-12: a clinical severity grade plus a software severity
+  score evaluates happily to a number.
+scipy.constants carries CODATA values; where a field uses a convention-fixed
+  value instead, they will differ in the last figures and neither is wrong.
+SymPy will simplify an expression into a form that is mathematically identical
+  and physically opaque; keep the physical grouping when reporting.
+A dimensional-analysis pass has nothing to say about a sign error, and sign
+  errors are the most common single class in this domain.
+
+[Limitations]
+
+Does not cover any specific subdiscipline's constitutive relations; see the
+  classical, thermodynamics and quantum encodings.
+Does not cover experimental design, instrument calibration or systematic-error
+  budgets.
+Does not cover numerical stability of physics simulations; see the numerical
+  mathematics encoding.

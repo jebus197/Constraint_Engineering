@@ -1,0 +1,126 @@
+DOMAIN: Chemistry — General
+SCOPE: Stoichiometry, thermochemistry, equilibrium, kinetics, solution
+       chemistry, electrochemistry; the constraints before analytical, process
+       or pharmaceutical specialisation
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: GHS health hazard category, critical at Category 2.
+       ★ THE SCALE IS INVERTED: Category 1 is the MOST severe, so a higher
+       number is LESS severe and any ordering code assuming otherwise inverts
+       the meaning. Declaring Category 2 makes Categories 1 and 2 critical.
+       Acute toxicity sorts into 5 categories, not 4.
+SOURCES: UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by
+       UNECE; PubChem lists a Rev. 11 (2025). [VERIFY:current] -- the Rev. 11
+       citation is secondary. Numeric LD50/LC50 cutoffs were not retrieved and
+       are deliberately not stated here rather than guessed.
+
+★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 3 chemistry
+tasks were given the ANALYTICAL chemistry box because it sorts first
+alphabetically, and none was analytical chemistry: one needed
+electrochemistry, one pharmaceutical crystallisation, one process
+distillation. This is the general box that was missing, and it is the declared
+default.
+
+[HARD constraints — non-negotiable]
+
+Mass balance: atoms are conserved. Every element must balance on both sides of
+  every equation, and an unbalanced equation is not an approximation.
+
+Charge balance: net charge is conserved in every reaction, including every
+  half-reaction. An electrochemical result with unbalanced charge has an error
+  upstream of its potential.
+
+Moles are not mass and not volume. Stoichiometry runs on moles, and a ratio
+  applied to masses without the molar masses is the commonest error in the
+  domain.
+
+Limiting reagent must be identified before any yield claim. A yield computed
+  against the wrong reagent exceeds 100 per cent or understates silently.
+
+Equilibrium constants are dimensionless by convention with a stated standard
+  state. Mixing concentration-based and pressure-based constants without
+  conversion is an error that survives a units check.
+
+Thermodynamic favourability is not kinetic accessibility. A negative free
+  energy says nothing about rate, and conflating the 2 predicts reactions that
+  do not occur on any useful timescale.
+
+Significant figures must reflect the least precise input, and a pH is a
+  logarithm so its significant figures live in the mantissa only.
+
+Temperature must be absolute wherever it appears other than as a difference,
+  for the same reason as in thermodynamics.
+
+[SOFT constraints — negotiable]
+
+Prefer explicit half-reactions for any redox process.
+State the solvent and the ionic strength; activity coefficients are not 1 in
+  real solutions and the deviation grows with concentration.
+Prefer reporting a reaction's conditions alongside its outcome.
+State whether a quantity is per mole of reaction or per mole of a named
+  species.
+Prefer standard enthalpies with their reference state named.
+
+[Verification procedures]
+
+rdkit for any structural claim, SMILES validity and molecular formula; never
+  count atoms by hand.
+Balance every equation by execution -- construct the element count on both
+  sides and compare -- rather than by inspection.
+pint for every concentration, rate and energy expression.
+scipy for equilibrium and kinetic solutions, with the mass balance checked on
+  the computed answer.
+Check a computed pH against the bounds 0 to 14 only as a sanity heuristic, not
+  a constraint, because concentrated solutions legitimately exceed them.
+
+[Diagnostic heuristics]
+
+If a yield exceeds 100 per cent, the limiting reagent or the molar mass is
+  wrong.
+If an equation balances for every element except hydrogen or oxygen, water or
+  protons are missing from an aqueous half-reaction.
+If an equilibrium calculation gives a negative concentration, the assumed
+  direction was wrong.
+If a rate constant has unexpected units, the reaction order is wrong.
+If a thermochemical result is out by a factor near 1000, a kilojoule and a
+  joule have been mixed.
+
+[Known failure modes]
+
+Applying a mole ratio to masses.
+Unbalanced charge in a half-reaction.
+Mixing concentration and pressure equilibrium constants.
+Assuming activity equals concentration at high ionic strength.
+Confusing thermodynamic and kinetic feasibility.
+Celsius where kelvin is required.
+Assuming a higher GHS category number means greater hazard.
+
+[Exception catalogue]
+
+pH below 0 and above 14 is real in concentrated acids and bases, so a
+  plausibility check on the 0 to 14 range will refuse correct work.
+Non-aqueous and molten-salt systems have different solvent constraints
+  entirely.
+Some reactions are legitimately unbalanced as written because they are net
+  equations summarising a sequence; the sequence must then be given.
+Catalytic cycles consume no catalyst overall, so a mass balance on the
+  catalyst correctly nets to zero.
+Isotopic labelling makes 2 chemically identical species distinguishable, and a
+  formula-based comparison will merge them.
+
+[Tool limitations]
+
+rdkit validates structure and not synthesisability or stability.
+pint cannot distinguish molar from specific quantities, nor energy from
+  torque, because each pair shares dimensions.
+Equilibrium solvers return a mathematical root that may be physically
+  inadmissible -- a negative concentration -- without flagging it.
+Thermochemical databases are method- and state-specific, and values from
+  different sources are not interchangeable in the last figures.
+
+[Limitations]
+
+Does not cover analytical method validation; see the analytical encoding.
+Does not cover process design and scale-up; see the process encoding.
+Does not cover pharmaceutical formulation; see the pharma encoding.
+Does not cover quantum chemistry or electronic structure methods.

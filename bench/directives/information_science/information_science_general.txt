@@ -1,0 +1,123 @@
+DOMAIN: Information Science — General
+SCOPE: Information organisation, provenance, identifiers, metadata quality,
+       record linkage, the constraints common to every information-science
+       subdiscipline
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none. No recognised consequence scale. Where the work is
+       security-bearing it inherits CVSS v4.0 from the software domain
+       (critical at High, 7.0); otherwise the consequence belongs to the
+       application.
+SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016) for data
+       stewardship. ISO 11179 for metadata registries. [VERIFY:current] --
+       current revision not confirmed from a primary source on 2026-11-12.
+
+[HARD constraints — non-negotiable]
+
+AN IDENTIFIER IS NOT A DESCRIPTION. A code, hash or key carries no meaning to
+  a reader who cannot resolve it. Any identifier presented to a human must
+  carry a short descriptor in the same sentence. Measured on this project's own
+  record: 8288 of 10496 entry codes were printed with no descriptor --
+  0.789634, Wilson [0.781732, 0.797325] -- and the founder asked for the
+  descriptor twice before it was supplied.
+
+A STORE KEY IS NOT AN IDENTIFIER. A key under which a record is filed and the
+  identity of the thing recorded are different, and conflating them makes a
+  lookup miss read as a finding. This project has a recorded instance where a
+  prefixed key caused 3 live items to be reported as settled.
+
+Provenance must be recorded, not inferred. Who or what produced a record, when,
+  and from what input. A result attributed to nobody is indistinguishable
+  downstream from a fabricated one.
+
+An extension is a claim about content, not a label. Treating a file as its
+  extension promises has produced 780 spurious rulings from a single image file
+  in this project's record. Content must be sniffed or validated.
+
+Record linkage without a stated match rule is not linkage. The rule, its
+  threshold and its false-match rate must be stated, because a match ratio
+  reported as coverage hides an equal number of misses and spurious matches.
+
+A COUNT RATIO IS NOT COVERAGE. Pin a SET, not a count: 318 of 318 at 100 per
+  cent can miss 18 items and duplicate 18 others, and only a set intersection
+  catches the swap.
+
+Character encoding must be declared. A byte sequence is not text until an
+  encoding is named, and a silent mis-decode corrupts quietly rather than
+  failing.
+
+[SOFT constraints — negotiable]
+
+Prefer a resolvable persistent identifier over a local key.
+Prefer a controlled vocabulary over free text where the field will be queried.
+Prefer recording the raw input beside the derived value, so a derivation can
+  be re-run rather than trusted.
+State the schema version with every record; schema evolution is the normal
+  case and an unversioned record cannot be interpreted later.
+Prefer append-only storage for anything audited; an append-only store has
+  ROWS, not state, and the current state is a reduction over them.
+
+[Verification procedures]
+
+Validate against the declared schema by execution, not by inspection.
+For any linkage, compute the set intersection and report items in each
+  difference, rather than reporting a ratio.
+Round-trip test every encode/decode path on content that includes the
+  troublesome cases: non-ASCII, embedded delimiters, empty fields.
+Check identifier resolution by resolving, not by pattern-matching the shape.
+For any deduplication, report the clusters, not the count removed.
+
+[Diagnostic heuristics]
+
+If 2 counts of the same thing differ, one of them has a different denominator;
+  find the denominator before reconciling the counts.
+If a record has no provenance, it cannot be audited and its age is unknown.
+If a figure appears only as prose and no script produces it, it is a claim
+  about evidence rather than evidence.
+If a date is missing, the record's position in a sequence is unknown and any
+  ordering claim about it is unsupported.
+If a lookup returns nothing, distinguish "absent" from "present and empty"
+  from "key wrong"; all 3 look identical at the call site.
+
+[Known failure modes]
+
+Printing a bare identifier to a human.
+Reading a grep over a format the grep cannot parse -- a binary-wearing-a-text-
+  extension file is invisible to it, and this project lost a founder
+  instruction for 6 days exactly that way.
+Treating an append-only log's row count as a state count, which closes items
+  that were never open.
+Silent encoding substitution, which replaces characters rather than failing.
+Reporting a derived figure without its producer.
+Letting a stored verdict outvote a live predicate, so a record disagrees with
+  the code that would compute it.
+
+[Exception catalogue]
+
+Opaque identifiers are correct where the identity must not leak information;
+  the requirement is resolvability, not readability.
+Free text is correct where the field is genuinely open; forcing a vocabulary
+  onto it discards information.
+Some duplicates are legitimate -- 2 observations of the same thing are not 1
+  observation -- and deduplicating them destroys data.
+A missing value and a zero are different, and a schema that cannot express the
+  difference is the defect.
+
+[Tool limitations]
+
+A text search cannot see a format it cannot decode, and returns silence rather
+  than an error.
+Schema validators check structure and not meaning; a record can be valid and
+  wrong.
+A hash proves integrity, not correctness, and proves nothing about provenance
+  unless the hash itself is attributed.
+No tool verifies that a provenance claim is true; it can only verify that one
+  is present.
+
+[Limitations]
+
+Does not cover search and ranking evaluation; see the retrieval encoding.
+Does not cover storage, lifecycle or schema evolution in depth; see the
+  data-management encoding.
+Does not cover ontology design; see the knowledge-representation encoding.
+Does not cover information security; that is the software security encoding.

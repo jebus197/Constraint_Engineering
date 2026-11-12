@@ -1,0 +1,130 @@
+DOMAIN: Mathematics — Numerical
+SCOPE: Floating-point arithmetic, conditioning and stability, iterative
+       methods, quadrature, linear solvers, convergence criteria
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none of its own; inherits the application's.
+SOURCES: IEEE 754-2019, published July 2019, the current edition; ISO/IEC
+       60559:2020 is identical in content. Figures below verified against the
+       running implementation on 2026-11-12 rather than quoted: mantissa 53
+       bits, exponent range -1022 to +1023, 15.954590 decimal digits by 2
+       routes agreeing exactly, default rounding roundTiesToEven.
+
+★ A DECIMAL LITERAL IS NOT THE REAL NUMBER IT SPELLS. This is the HARDEST
+constraint in this box, because it is invisible and it decides outcomes. The
+binary64 nearest to 0.7 is
+0.6999999999999999555910790149937383830547332763671875 -- strictly BELOW the
+real 7/10. Measured on this project's own archive: 174 of 1,416 critical
+decisions, 0.122881 with Wilson [0.106795, 0.141009], turn on a tie at exactly
+that value. The same artefact produced 4 spurious "mismatches" when 5 exact SI
+constants were compared as decimal strings against floats, differing at 1e-17.
+3 separate errors from 1 cause in a single night.
+
+[HARD constraints — non-negotiable]
+
+Never test floating-point values for exact equality unless both sides are
+  exactly representable -- integers within 2^53, and dyadic rationals. A
+  tolerance must be STATED and justified, absolute or relative, and the choice
+  matters near 0.
+
+A boundary comparison must report how many values lie exactly ON the boundary.
+  That count is the sensitivity of the result to the representation, and
+  omitting it hides the dependence entirely.
+
+Catastrophic cancellation: subtracting 2 nearly equal quantities loses
+  significance in proportion to their closeness. The quadratic formula is the
+  standard case and the stable form must be used, not the familiar one.
+
+Conditioning must be reported for any linear system. A residual is not an
+  error: a tiny residual with a large condition number permits a large error,
+  and reporting the residual alone is misleading in the flattering direction.
+
+A convergence criterion must bound the ERROR, not merely the step. Successive
+  iterates can be close while both are far from the root, and a step-based
+  criterion then terminates early and confidently.
+
+Summation order changes the result. For long sums a compensated or pairwise
+  scheme must be used, or the error grows with n and the growth is not random.
+
+NaN and infinity propagate silently through most arithmetic. Any pipeline must
+  check for them explicitly, because a NaN comparison is false and so passes
+  an "is it too large" test.
+
+[SOFT constraints — negotiable]
+
+Prefer exact rational arithmetic where the quantities are rational and the
+  sizes permit; it removes the entire class.
+Prefer arbitrary precision (mpmath) for any result near a decision boundary.
+Prefer a backward-error formulation, which is what a stable algorithm
+  guarantees, over a forward-error claim it does not.
+State the precision used and the units in the last place where a figure is
+  near the limit.
+Prefer a library implementation over a hand-rolled one for any standard
+  operation; the library has the stable form.
+
+[Verification procedures]
+
+mpmath at raised precision as the second route for any numerical claim, and
+  report the agreement rather than asserting it.
+Exact rationals (fractions.Fraction) where a threshold decides an outcome;
+  that is the only route that settles a tie.
+NumPy for the computation, scipy for the standard algorithms, and
+  numpy.linalg.cond for the conditioning of any system solved.
+Perturb the input at the level of the data uncertainty and re-run: if the
+  answer moves more than the claimed accuracy, the conditioning is the story.
+Compare 2 algorithms, not 2 runs of 1: agreement between different routes is
+  evidence, agreement between repetitions is not.
+
+[Diagnostic heuristics]
+
+A disagreement at 1e-16 relative is representation, not error. A disagreement
+  at 1e-8 relative is single precision somewhere. A disagreement at 1e-3 is a
+  bug.
+If a result changes with summation order, the sum is ill-conditioned.
+If an iteration converges and the residual is large, it converged to the wrong
+  thing.
+If an answer is exactly 0 or exactly 1 from a floating computation, suspect a
+  cancellation or an overflow to a special value.
+If a tolerance was chosen to make a test pass, it is not a tolerance.
+
+[Known failure modes]
+
+Exact equality on floats.
+Comparing a decimal string against a float and reporting the difference.
+The unstable quadratic formula where the roots differ greatly in magnitude.
+Reporting a residual as an error without the condition number.
+A step-based convergence criterion presented as an error bound.
+Naive summation over long series.
+Treating a NaN-poisoned result as a number because no exception was raised.
+Using single precision inadvertently through a library default and attributing
+  the loss to the algorithm.
+
+[Exception catalogue]
+
+Integers up to 2^53 ARE exact in binary64, so exact equality is correct there
+  and refusing it is over-caution.
+Dyadic rationals -- halves, quarters, eighths -- are exact, which is why 0.5
+  behaves and 0.1 does not.
+Deliberately ill-conditioned problems exist and a large condition number is
+  then the finding rather than a defect in the method.
+Interval arithmetic gives guaranteed enclosures and its wide intervals are
+  correct, not pessimistic failures.
+Fixed-point and decimal arithmetic have different, often exact, semantics;
+  financial work uses them for precisely this reason.
+
+[Tool limitations]
+
+mpmath at higher precision gives a better answer to the same question and
+  cannot fix an ill-posed one.
+A condition number is itself computed in floating point and is an estimate.
+NumPy silently upcasts and downcasts across dtypes, so a precision loss can
+  enter without any explicit conversion appearing in the code.
+No tool will tell you a tolerance is unjustified; that is a judgement and must
+  be written down with its reason.
+
+[Limitations]
+
+Does not cover proof; see the proof encoding.
+Does not cover modelling choices; see the applied encoding.
+Does not cover parallel or distributed numerical reproducibility.
+Does not cover symbolic-numeric hybrid methods in detail.

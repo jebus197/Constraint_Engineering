@@ -82,11 +82,55 @@ def _pairs(mr, authored):
 
 class TestTheTwoSourcesAgree:
     def test_there_is_something_to_compare(self, mr, authored):
-        """A ratchet on an empty set would be vacuous on its first run."""
+        """A ratchet on an empty set would be vacuous on its first run.
+
+        ★ THE FLOOR WAS A CONSTANT PINNED AGAINST A SHRINKING POPULATION, and it
+        is derived from the record from 2026-11-12. It read `>= 5`, measured when
+        8 authored rows carried a `ruled` date. CLOSING AN ENTRY REMOVES ITS
+        AUTHORED DETAIL -- `close_an_entry_2026-11-02.py` does that by design --
+        so every closure reduces the comparable set by 1. Closing B22, B88 and
+        B136 on 2026-11-11/12 took it to 4 and the guard went red, refusing a
+        commit for doing exactly what it was asked to do.
+
+        That is the same shape as the typed 1800 s board budget recorded in
+        B141: a number chosen against a quantity that moves. The repair is the
+        same -- derive it.
+
+        WHAT VACUITY ACTUALLY MEANS HERE, and it is COVERAGE, not count. The
+        guard compares authored `ruled` dates against marker `ruled` dates, so
+        the only rows it CAN compare are those carrying both. Measured
+        2026-11-12: 16 authored rows exist, 4 carry a `ruled` date, and all 4
+        have a marker date -- coverage 4 of 4 = 1.000000, Wilson [0.510109,
+        1.000000] on 2 routes agreeing to 1.607e-16. The guard is at FULL
+        coverage of what is comparable. A count floor calls that vacuous; a
+        coverage floor calls it complete, and the coverage reading is the true
+        one.
+
+        SO THIS IS STRICTER, NOT WEAKER, IN THE DIRECTION THAT MATTERS. An empty
+        set still fails. A row that carries an authored date whose entry has a
+        marker and is NOT compared now also fails -- which the old count floor
+        could not detect, because 5 compared rows satisfied it while a 6th went
+        unexamined.
+        """
         pairs = _pairs(mr, authored)
-        assert len(pairs) >= 5, (
-            f"only {len(pairs)} comparable rows; this guard would be nearly "
-            "vacuous. Check that authored rows still carry `ruled`.")
+        assert pairs, (
+            "0 comparable rows: this guard is vacuous. Either no authored row "
+            "carries a `ruled` date or no such entry has a marker date.")
+        #: Every authored row that COULD be compared must be. "Could" means it
+        #: carries a `ruled` date AND its task entry carries one too, which is
+        #: exactly the pair `_pairs` is supposed to yield.
+        marker_ruled = {
+            it.get("ident") for it in mr.task_items()
+            if (it.get("ruled") or "").strip()}
+        comparable_population = {
+            ident for ident, row in authored.items()
+            if (row.get("ruled") or "").strip() and ident in marker_ruled}
+        covered = {ident for ident, _a, _m in pairs}
+        uncovered = sorted(comparable_population - covered)
+        assert not uncovered, (
+            f"{len(uncovered)} authored row(s) carry a ruling date and have a "
+            f"marker date, and are NOT being compared: {uncovered}. A count "
+            f"floor would have passed while these went unexamined.")
 
     def test_no_authored_date_contradicts_its_marker(self, mr, authored):
         bad = [(i, a, m) for i, a, m in _pairs(mr, authored) if a != m]

@@ -1,0 +1,113 @@
+DOMAIN: Logistics — Warehousing and Inventory
+SCOPE: Storage, handling, inventory accuracy, picking, stock rotation, capacity
+       and throughput
+VERSION: 1.0
+TIER: DRAFT
+SEVERITY SCALE: none. No single recognised scale. Where the stored goods are
+       temperature-sensitive the cold-chain subdomain's excursion
+       classification applies; where pharmaceutical, the applicable
+       distribution-practice regime applies and must be NAMED.
+       [VERIFY:current] -- no international warehousing severity scale was
+       confirmed on 2026-11-12, and inventing one here is refused.
+SOURCES: None confirmed primary. This box states operational constraints
+       rather than citing a standard, and says so.
+
+[HARD constraints — non-negotiable]
+
+Conservation of stock: opening balance plus receipts minus issues minus losses
+  equals closing balance. A reconciliation that does not close has an error,
+  and the magnitude of the gap bounds it. Unexplained shrinkage is a finding,
+  not a rounding.
+
+Units of measure must be consistent across the whole chain: each, case, pallet,
+  layer. A quantity without its unit of measure is the dominant source of
+  inventory error, and the ratios between them are site-specific.
+
+Capacity constraints are physical: volume, floor loading, rack rating, aisle
+  clearance. A plan exceeding any of them is not optimistic, it is not
+  executable.
+
+Stock rotation discipline must be stated -- first-in-first-out, first-expired-
+  first-out -- and the 2 differ whenever receipt order and expiry order differ,
+  which is the normal case for anything dated.
+
+Lead time and demand variability both drive safety stock. A safety stock
+  computed from demand variability alone understates by the lead-time
+  contribution.
+
+A count is a measurement with an error rate. Inventory accuracy must be stated
+  as a measured figure with its method -- full count, cycle count, sample --
+  and not asserted.
+
+[SOFT constraints — negotiable]
+
+Prefer reporting accuracy by value and by line, since the 2 diverge sharply.
+Prefer cycle counting over annual full counts for anything moving.
+State whether a throughput figure is sustained or peak.
+Prefer slotting by velocity, and state the velocity window used.
+Report capacity utilisation with its denominator: usable, gross, or rated.
+
+[Verification procedures]
+
+Reconcile by execution: compute the balance identity and report the residual
+  rather than asserting closure.
+pint for any volume, mass or floor-loading expression, with the unit of
+  measure carried explicitly.
+Check every unit-of-measure conversion against the site's own table, by
+  execution, not by recall.
+For any accuracy claim, report the count method, the sample size and an
+  interval.
+Simulate the service level against demand and lead-time distributions rather
+  than applying a formula whose assumptions are unstated.
+
+[Diagnostic heuristics]
+
+If a reconciliation closes exactly, check whether an adjustment was posted to
+  make it close.
+If accuracy by line is high and by value is low, the errors are concentrated in
+  high-value items, which is the expensive direction.
+If utilisation exceeds 100 per cent, the denominator is rated rather than
+  usable.
+If a pick rate is far above the industry range, check whether travel time is
+  included.
+If demand looks stationary, check for seasonality before sizing stock.
+
+[Known failure modes]
+
+Mixing units of measure between systems.
+Treating an inventory count as exact.
+Posting adjustments to force a reconciliation, which destroys the evidence of
+  the discrepancy.
+Sizing safety stock from demand variability alone.
+Confusing first-in-first-out with first-expired-first-out for dated stock.
+Quoting peak throughput as sustained capacity.
+Ignoring floor loading because volume fits.
+
+[Exception catalogue]
+
+Consignment and bonded stock may be physically present and not owned, so a
+  physical count legitimately exceeds the balance sheet.
+Negative inventory is a system artefact and never physical; it indicates a
+  sequencing error in postings rather than a quantity.
+Some losses are expected and budgeted -- evaporation, breakage -- and reporting
+  them as shrinkage misattributes them.
+Kitted and assembled items exist in 2 states, and double-counting components
+  and kits is easy.
+
+[Tool limitations]
+
+An inventory system enforces its own unit-of-measure table and cannot detect
+  that the table is wrong.
+pint cannot catch a case-to-each conversion error, because both are
+  dimensionless counts.
+A simulation's service level depends entirely on the assumed demand
+  distribution, which is usually fitted to too little data.
+No tool detects an adjustment posted to force a reconciliation; only the audit
+  trail does.
+
+[Limitations]
+
+Does not cover cold chain; see the cold-chain encoding.
+Does not cover maritime or freight; see those encodings.
+Does not cover transport routing or network design.
+Does not cover any jurisdiction's distribution-practice requirements.

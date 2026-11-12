@@ -1,0 +1,445 @@
+# ============================================================================
+# THE ONE DOMAIN VOCABULARY.
+# ============================================================================
+# Founder instruction, 2026-11-11/12. Before this file there were TWO domain
+# vocabularies and they agreed on 3 names of 17 (Wilson [0.061911, 0.410295],
+# measured on 2 routes agreeing to 6.742e-17):
+#
+#   * registry configs  bench/cdsfl_registry/domains/*.toml  -- claim patterns,
+#     tool bindings, and (from today) the severity scale and critical level
+#   * expert encodings  bench/directives/<family>/*.txt       -- the constraint
+#     box: a field's HARD and SOFT constraints, its verification procedures and
+#     its known failure modes
+#
+# 7 config domains had no encoding directory; 7 encoding families had no config.
+# So a run could be routed to a domain that HAS a severity scale and NO expert
+# encoding, or the reverse, for 14 of the 17 names in use.
+#
+# ----------------------------------------------------------------------------
+# WHY A MANIFEST AND NOT A RENAME.
+# ----------------------------------------------------------------------------
+# 28 functions across 11 live modules take a `domain` parameter, measured by AST
+# rather than by grep. Renaming the configs or the encoding directories would
+# touch every one of them and break every citation in the notes to a directive
+# path. So this file maps a LABEL to a PATH and the two need not match. Nothing
+# is renamed and nothing moves.
+#
+# ----------------------------------------------------------------------------
+# WHAT IT REPLACES, AND THE DEFECT THAT MADE IT NECESSARY.
+# ----------------------------------------------------------------------------
+# `bench/cdsfl_registry/composer.py:_load_domain_directive` selected an encoding
+# with `sorted(domain_dir.glob("*.txt"))[0]` -- THE FIRST FILE ALPHABETICALLY --
+# whenever no explicit variant was passed. Measured: 9 of 10 families had their
+# default decided that way (Wilson [0.595850, 0.982124]) and 19 of 29 encodings
+# were unreachable without a hand-typed flag (Wilson [0.473451, 0.800593]), a
+# flag that 0 task files ever set. `bench/run_benchmark.py`'s own help text
+# admitted it: "If omitted, uses the first available variant alphabetically."
+#
+# The consequence was recorded 7 months earlier in
+# docs/experimental_notes/CE_Expert_Encodings_Analysis_2026-03-30.md: all 6
+# software tasks got the distributed-systems encoding "because it sorts first
+# alphabetically", all 3 chemistry tasks got analytical chemistry, and every
+# mathematics task got an encoding whose own last line disclaims proof-based
+# pure mathematics.
+#
+# EVERY DOMAIN HERE DECLARES ITS DEFAULT EXPLICITLY. Alphabetical order decides
+# nothing.
+#
+# ----------------------------------------------------------------------------
+# THE SEVERITY SCALE, AND WHY SOME ARE DELIBERATELY `none`.
+# ----------------------------------------------------------------------------
+# Measured 2026-11-11: the project's frozen critical cut is not a severity
+# measurement, because an order-preserving re-scaling of the archive's 3,170
+# severities destroys 1,416 of 1,416 CRITICAL calls -- 1.000000, Wilson
+# [0.997294, 1.000000] -- while reordering nothing (Spearman rho exactly 1).
+# z3 confirms a fixed-VALUE cut is breakable and a cut named by a DISTINGUISHED
+# ELEMENT of the ordering is not. So a cut must be a LEVEL on a named scale,
+# transported with that scale, and the scale is the domain's to supply.
+#
+# A SCALE IS DECLARED ONLY WHERE A RECOGNISED ONE EXISTS. Where none does,
+# `severity_scale = "none"` with `severity_scale_reason` saying why, and the
+# domain INHERITS the consequence scale of the application it is being used in
+# (`inherits_from_application = true`). Inventing a scale to fill a field is
+# the "magic wand" the founder named; an honest `none` is the alternative.
+#
+# THE SCALE NAME TRAVELS WITH THE NUMBER. Tested with pint 2026-11-12: a
+# clinical grade and a software score are both DIMENSIONLESS, so dimensional
+# analysis CANNOT refuse `CTCAE 3 + CVSS 7.0`, which evaluates to 10.0. The
+# refusal therefore has to be on the scale NAME, not on units -- which is why
+# `severity_scale` is a string carried beside every severity, and why
+# `composition` below is a rule rather than an arithmetic.
+#
+# ----------------------------------------------------------------------------
+# COMPOSITION ACROSS DOMAINS -- the founder's rule, 2026-11-12, verbatim:
+# ----------------------------------------------------------------------------
+#   "where two (or more) quantities across domains don't compose, the solution
+#   is straightforward enough, which is to instruct the models to quote both
+#   quantiles in their own specific context. Just as you said earlier today a
+#   sum written as 1 inch + 1 cm (or similar) is both nonsensical and they do
+#   not compose. We should not expect potentially more complex examples to
+#   compose in this case either. (The only exception being where a valid
+#   conversion between any two quantities may already formally exist.)"
+#
+# Verified with pint: 1 inch + 1 cm DOES compose to 3.540000 cm because the
+# conversion is formally defined (SymPy's exact 127/50 and pint agreeing to
+# 0.000e+00); 1 m + 1 s and 1 K + 1 V are refused outright. So the rule is:
+# REPORT BOTH IN THEIR OWN SCALE unless a formally defined conversion exists.
+#
+# ----------------------------------------------------------------------------
+# THE ENCODING TIER -- Gemini 3.1 Pro, 2026-04-09, and its caution stands.
+# ----------------------------------------------------------------------------
+# Its words: moving "from 'thin standards' to 'domain expertise'" requires
+# tacit heuristics and failure-mode catalogues; but synthetic enrichment of
+# domains resting on unpublished practitioner knowledge "will result in
+# consensus on 'textbook' knowledge rather than actual expertise, creating a
+# false sense of security", and CROSS-VERIFIED "is insufficient for domains
+# lacking deep mathematical or programmatic representation in the training
+# corpus", where VALIDATED (HIL) is a HARD constraint.
+#
+# 4 tiers, its own: DRAFT, CROSS_VERIFIED, VALIDATED, OPERATIONAL. Every
+# encoding carries one. A machine-generated encoding of published formal
+# standards reaches CROSS_VERIFIED and NEVER VALIDATED, because no human
+# validated it. The tier is what stops density being mistaken for authority,
+# and it makes the risk MEASURABLE rather than arguable.
+#
+# Measured 2026-11-11: 28 of the 29 encodings have never been touched since
+# that assessment -- 0.965517, Wilson [0.828245, 0.993887], Clopper-Pearson
+# [0.822356, 0.999127] -- mean depth 65.2 lines, median 59.
+#
+# ----------------------------------------------------------------------------
+# HOW TO READ AN ENTRY.
+# ----------------------------------------------------------------------------
+#   aliases          other spellings that RESOLVE here. `_DOMAIN_ALIAS` in
+#                    bench/immune_agents.py is DERIVED from these, never
+#                    copied, because that module's own comment records that 2
+#                    tables drift.
+#   config           the stem under bench/cdsfl_registry/domains/
+#   default_encoding the subdomain label loaded when the researcher names no
+#                    subdomain. EXPLICIT, never alphabetical.
+#   [<domain>.subdomains.<label>] path = the encoding file, relative to
+#                    bench/directives/. A LABEL IS NOT A PATH, which is what
+#                    lets the vocabulary unify without a single file moving.
+#   owed = true      the encoding does not exist yet and is owed. Declared
+#                    rather than silently absent, because a domain that can be
+#                    routed to with no encoding is the gap this file closes.
+# ============================================================================
+
+manifest_version = 1
+written = "2026-11-12"
+
+# `tiers` is the allowed set, in increasing strength. A tier outside it is a
+# parse error rather than a silent pass.
+tiers = ["DRAFT", "CROSS_VERIFIED", "VALIDATED", "OPERATIONAL"]
+
+# The composition rule, as data so a consumer reads it rather than restating it.
+[composition]
+rule = "report_both_in_their_own_scale"
+exception = "a formally defined conversion between the 2 scales already exists"
+arbiter = "pint for dimensional quantities; the declared scale NAME for ordinal scales, because pint cannot refuse a sum of 2 dimensionless grades"
+
+
+# ----------------------------------------------------------------------------
+# EXACTLY 4 SUBDOMAINS PER TOP-LEVEL DOMAIN -- the founder's design intent,
+# 2026-11-12, stated explicitly after a first version of this file declared 13
+# for engineering: "To be clear I authorised 4 sub level domains per top level
+# STEM domain, and that is the design intent you should stick to. If anything
+# needs writing, or rewriting to do it then that is fine."
+#
+# HIS CORRECTION ALSO REPAIRED A DEFECT, which is why it is recorded here and
+# not merely obeyed. The first version made `structural`, `hardware`,
+# `industrial` and `product_engineering` ALIASES of `engineering`. Engineering's
+# declared default was owed, so the composer walked its subdomains in order and
+# a STRUCTURAL task loaded `hardware_embedded` -- measured by execution. That is
+# the March 2026 defect in a new costume: a task given a constraint box from a
+# neighbouring discipline. Making those 4 SUBDOMAINS of engineering rather than
+# aliases of it resolves each to its own encoding.
+#
+# `variants` KEEPS NOTHING UNREACHABLE. A subdomain names 1 PRIMARY encoding --
+# the one the interface offers -- and may list deeper variants reachable by
+# explicit selection. Without that, collapsing 12 engineering encodings into 4
+# subdomains would have made 8 unreachable, recreating the exact defect this
+# file exists to close: 19 of 29 encodings were unreachable before it, Wilson
+# [0.473451, 0.800593].
+# ----------------------------------------------------------------------------
+
+# ---------------------------------------------------------------- software
+# `code` is a STRICT SUBSET of `cs_software`, measured 2026-11-12: 21 of 21
+# claim patterns shared, 0 unique to `code`, 6 unique to `cs_software`, plus 7
+# keys that are exactly the `verification_tools` its own header promises
+# ("Extends code.toml with full toolchain bindings for specialist
+# verification"). Jaccard 0.777778, Wilson [0.592431, 0.893928]. 1 domain at 2
+# tool depths, `code` the weaker copy -- a subset relation, not a judgement.
+# Collapsed onto the richer config: measured by execution, a run declaring
+# `software` moves from 21 claim patterns and 7 tool entries to 27 and 12.
+# Plus 6, plus 5, nothing lost.
+[software]
+title = "Software and computer science"
+aliases = ["code", "cs_software"]
+config = "cs_software"
+family = "software"
+default_encoding = "general"
+severity_scale = "CVSS v4.0 base score"
+severity_levels = ["None 0.0", "Low 0.1-3.9", "Medium 4.0-6.9", "High 7.0-8.9", "Critical 9.0-10.0"]
+critical_level = "High"
+severity_scale_source = "https://www.first.org/cvss/v4.0/specification-document Table 22, Qualitative Severity Rating Scale"
+critical_level_note = "CORRECTED 2026-11-12 from v3.1 to v4.0 after checking the standard rather than recalling it: CVSS v4.0 superseded v3.1 in November 2023, and first.org's own Table 22 was read directly for the bands. THE BANDS ARE UNCHANGED between the 2 versions, so the critical level is unaffected -- but the scale NAME was wrong and a researcher citing v3.1 today would be citing a superseded standard. CVSS remains the 1 of the 4 scales the panel carried the frozen constant into that lands on a RECOGNISED boundary: High begins at exactly 7.0, so here and only here the old cut is expressible as a rank."
+encoding_tier = "DRAFT"
+
+[software.subdomains.general]
+path = "software/software_general.txt"
+variants = ["software/software_python_sk.txt"]
+[software.subdomains.distributed]
+path = "software/software_distributed.txt"
+[software.subdomains.realtime]
+path = "software/software_realtime.txt"
+[software.subdomains.security]
+path = "software/software_security.txt"
+
+
+# ---------------------------------------------------------------- mathematics
+# The 2026-11-11 panel found pure mathematics has NO recognised consequence
+# scale of its own, and the founder's position is that a mathematical error
+# inherits the consequence of the APPLICATION: the same reversed inequality is
+# epistemic in a convergence proof and lethal in a fan-blade tolerance.
+[mathematics]
+title = "Mathematics"
+aliases = ["maths", "math"]
+config = "mathematics"
+family = "mathematics"
+default_encoding = "proof"
+severity_scale = "none"
+severity_scale_reason = "Pure mathematics has no recognised consequence scale. An error's consequence is a property of the application the mathematics is used in, not of the error's form."
+inherits_from_application = true
+encoding_tier = "DRAFT"
+
+[mathematics.subdomains.proof]
+path = "mathematics/mathematics_proof.txt"
+[mathematics.subdomains.applied]
+path = "mathematics/mathematics_applied.txt"
+[mathematics.subdomains.numerical]
+path = "mathematics/mathematics_numerical.txt"
+[mathematics.subdomains.general]
+path = "mathematics/mathematics_general.txt"
+
+
+# ---------------------------------------------------------------- chemistry
+[chemistry]
+title = "Chemistry"
+aliases = []
+config = "chemistry"
+family = "chemistry"
+default_encoding = "general"
+severity_scale = "GHS health hazard category (Rev. 11, 2025)"
+severity_levels = ["Category 5", "Category 4", "Category 3", "Category 2", "Category 1"]
+critical_level = "Category 2"
+severity_scale_source = "UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by UNECE; PubChem lists a Rev. 11 (2025) as current. [VERIFY:current] -- the Rev. 11 citation is secondary."
+critical_level_note = "CORRECTED 2026-11-12 on 2 counts after checking rather than recalling. (1) The level COUNT was wrong: acute toxicity sorts into 5 categories, not 4, so a 4-level declaration would have had no slot for the least severe class. (2) The revision was unstated and Rev. 11 (2025) appears to supersede Rev. 10 (2023). GHS runs INVERTED -- Category 1 is the MOST severe -- so a consumer must not assume a higher number is worse, which is exactly why the critical level is NAMED and not numbered. Declaring Category 2 makes Categories 1 and 2 critical. The numeric LD50/LC50 cutoffs were not retrieved and are deliberately not stated here."
+encoding_tier = "DRAFT"
+
+[chemistry.subdomains.general]
+path = "chemistry/chemistry_general.txt"
+[chemistry.subdomains.analytical]
+path = "chemistry/chemistry_analytical.txt"
+[chemistry.subdomains.pharma]
+path = "chemistry/chemistry_pharma.txt"
+[chemistry.subdomains.process]
+path = "chemistry/chemistry_process.txt"
+
+
+# ---------------------------------------------------------------- biology
+# The founder's own worked example of the 4-subdomain design, verbatim: "a user
+# clicking on biology in the UX would cause the biology category to expand to
+# for example, 'biology natural world' 'biomedical', 'zoology' genetics". These
+# are those 4.
+[biology]
+title = "Biology and life sciences"
+aliases = ["bio", "life_sciences"]
+config = "biology"
+family = "biology"
+default_encoding = "natural_world"
+severity_scale = "CTCAE v5.0 grade"
+severity_levels = ["Grade 1 mild", "Grade 2 moderate", "Grade 3 severe", "Grade 4 life-threatening", "Grade 5 death"]
+critical_level = "Grade 3"
+severity_scale_source = "NCI CTEP, Common Terminology Criteria for Adverse Events v5.0, published 2017-11-27 (ctep.cancer.gov)"
+critical_level_note = "CONFIRMED 2026-11-12 against the NCI source rather than recalled: v5.0 is still the version in use and Grade 3 is defined as severe or medically significant but not immediately life-threatening, with hospitalisation, disability or loss of self-care as its criteria. That is the recognised severity threshold, so the declared critical level stands. The panel carried the frozen constant into CTCAE and it landed on 3.8 -- BETWEEN grades, so not expressible as a rank."
+encoding_tier = "DRAFT"
+
+[biology.subdomains.natural_world]
+path = "biology/biology_natural_world.txt"
+[biology.subdomains.biomedical]
+path = "biomedical/biomedical_clinical.txt"
+variants = ["biomedical/biomedical_device.txt", "biomedical/biomedical_pharma.txt"]
+[biology.subdomains.genetics]
+path = "biology/biology_genetics.txt"
+[biology.subdomains.zoology]
+path = "biology/biology_zoology.txt"
+
+
+# ---------------------------------------------------------------- engineering
+# 4 encoding families had no config -- hardware, industrial,
+# product-engineering, structural -- and all 4 are engineering subdisciplines.
+# They are the 4 SUBDOMAINS, not aliases: see the note at the head of this file
+# for the structural-task-loads-hardware-encoding defect that distinction fixes.
+# Each keeps its siblings as variants, so none of the 12 becomes unreachable.
+[engineering]
+title = "Engineering"
+aliases = []
+config = "engineering"
+family = "engineering"
+default_encoding = "structural"
+severity_scale = "AIAG-VDA FMEA severity 1-10 (2019 handbook)"
+severity_levels = ["1 no effect", "2-3 very minor to minor", "4-6 moderate", "7-8 high", "9-10 safety or regulatory"]
+critical_level = "7"
+severity_scale_source = "AIAG-VDA FMEA Handbook, 1st edition 2019 (errata June 2020). SECONDARY sources only were reachable; the handbook is not open-access."
+critical_level_note = "★ THIS DECLARATION CARRIES A REAL CORRECTION AND A QUESTION FOR HIM. The note here first said 7 is \"the recognised threshold at which a failure mode is treated as high severity\". Checking the standard found 2 landmarks, not 1: the 7-8 band is labelled HIGH, while 9-10 is the SAFETY OR REGULATORY band -- what the superseded AIAG manual called the legal zone and treated as requiring action whatever the risk-priority number. The 2019 AIAG-VDA handbook also replaced the risk-priority number with an ACTION PRIORITY matrix that weights severity above occurrence and detection. SO 7 AND 9 ARE BOTH DEFENSIBLE CUTS AND THEY ADMIT DIFFERENT SETS. 7 is declared because it is the CONSERVATIVE reading -- it makes MORE findings critical, which is the tighter gate, and `p-pass-ambiguity-default` resolves an ambiguous constraint as HARD. Moving it to 9 would LOOSEN what the gate admits, and loosening a gate is his ruling, not a repair. [VERIFY:current] -- the handbook is not open-access and only secondary sources were reachable. The panel carried the frozen constant into FMEA and it landed on 7.3, between levels, so it is not expressible as a rank either way."
+encoding_tier = "DRAFT"
+
+[engineering.subdomains.structural]
+path = "structural/structural_building.txt"
+variants = ["structural/structural_bridge.txt", "structural/structural_temporary.txt"]
+[engineering.subdomains.electronics]
+path = "hardware/hardware_embedded.txt"
+variants = ["hardware/hardware_power.txt", "hardware/hardware_rf.txt"]
+[engineering.subdomains.manufacturing]
+path = "industrial/industrial_cnc.txt"
+variants = ["industrial/industrial_injection.txt", "industrial/industrial_welding.txt"]
+[engineering.subdomains.product]
+path = "product-engineering/product_industrial_eq.txt"
+variants = ["product-engineering/product_automotive.txt", "product-engineering/product_consumer.txt"]
+
+
+# ---------------------------------------------------------------- physics
+[physics]
+title = "Physics"
+aliases = []
+config = "physics"
+family = "physics"
+default_encoding = "general"
+severity_scale = "none"
+severity_scale_reason = "Physics has no single recognised consequence scale across its subdisciplines. A nuclear result inherits INES; an optics result may inherit nothing. The consequence is a property of the application, as with mathematics."
+inherits_from_application = true
+encoding_tier = "DRAFT"
+
+[physics.subdomains.general]
+path = "physics/physics_general.txt"
+[physics.subdomains.classical]
+path = "physics/physics_classical.txt"
+[physics.subdomains.thermodynamics]
+path = "physics/physics_thermodynamics.txt"
+[physics.subdomains.quantum]
+path = "physics/physics_quantum.txt"
+
+
+# ---------------------------------------------------------------- statistics
+[statistics]
+title = "Statistics"
+aliases = []
+config = "statistics"
+family = "statistics"
+default_encoding = "inference"
+severity_scale = "none"
+severity_scale_reason = "Statistics has no recognised consequence scale. A wrong interval is epistemic until something acts on it, so the consequence belongs to the application."
+inherits_from_application = true
+encoding_tier = "DRAFT"
+
+[statistics.subdomains.inference]
+path = "statistics/statistics_inference.txt"
+[statistics.subdomains.experimental_design]
+path = "statistics/statistics_experimental_design.txt"
+[statistics.subdomains.time_series]
+path = "statistics/statistics_time_series.txt"
+[statistics.subdomains.general]
+path = "statistics/statistics_general.txt"
+
+
+# ---------------------------------------------------- information science
+[information_science]
+title = "Information science"
+aliases = ["info_science"]
+config = "information_science"
+family = "information_science"
+default_encoding = "general"
+severity_scale = "none"
+severity_scale_reason = "No recognised consequence scale. Where the work is security-bearing it inherits CVSS from the software domain; otherwise the consequence belongs to the application."
+inherits_from_application = true
+encoding_tier = "DRAFT"
+
+[information_science.subdomains.general]
+path = "information_science/information_science_general.txt"
+[information_science.subdomains.retrieval]
+path = "information_science/information_science_retrieval.txt"
+[information_science.subdomains.data_management]
+path = "information_science/information_science_data_management.txt"
+[information_science.subdomains.knowledge_representation]
+path = "information_science/information_science_knowledge_representation.txt"
+
+
+# ---------------------------------------------------------------- logistics
+# An encoding family with no config. Its own top-level domain rather than folded
+# into engineering, because cold-chain and maritime constraints are regulatory
+# and operational rather than engineering constraints.
+[logistics]
+title = "Logistics and supply chain"
+aliases = ["supply_chain"]
+config = "logistics"
+config_owed = true
+family = "logistics"
+default_encoding = "supply_chain"
+severity_scale = "none"
+severity_scale_reason = "No single recognised scale. Cold-chain work has excursion classifications and maritime work has its own; neither generalises to the domain, so a scale is not invented here."
+inherits_from_application = true
+encoding_tier = "DRAFT"
+
+[logistics.subdomains.supply_chain]
+path = "logistics/logistics_supply_chain.txt"
+[logistics.subdomains.cold_chain]
+path = "logistics/logistics_cold_chain.txt"
+[logistics.subdomains.maritime]
+path = "logistics/logistics_maritime.txt"
+[logistics.subdomains.warehousing]
+path = "logistics/logistics_warehousing.txt"
+
+
+# ---------------------------------------------------------- cross-domain
+# The hyphenated directory and the underscored config are the SAME domain and
+# differed only in punctuation -- 1 of the 3 names that already agreed.
+[cross_domain]
+title = "Cross-domain"
+aliases = ["cross-domain"]
+config = "cross_domain"
+family = "cross-domain"
+default_encoding = "general"
+severity_scale = "composed"
+severity_scale_reason = "By construction a cross-domain finding carries 2 or more scales. The founder's rule governs: report each in its own scale, and compose only where a formally defined conversion between them exists."
+composes_from_selected = true
+encoding_tier = "DRAFT"
+
+[cross_domain.subdomains.general]
+path = "cross-domain/cross_general.txt"
+[cross_domain.subdomains.mechanical_electrical]
+path = "cross-domain/cross_mechanical_electrical.txt"
+[cross_domain.subdomains.software_hardware]
+path = "cross-domain/cross_software_hardware.txt"
+[cross_domain.subdomains.thermal_electrical]
+path = "cross-domain/cross_thermal_electrical.txt"
+
+# ----------------------------------------------------------------------------
+# SUBDOMAIN ALIASES -- an old spelling that names a SUBDOMAIN, not a domain.
+# ----------------------------------------------------------------------------
+# `hardware`, `industrial`, `product-engineering` and `structural` were encoding
+# DIRECTORIES with no config, and 4 of the 7 names that existed on only one side
+# of the 2 vocabularies. Making them domain aliases was the defect the founder
+# caught: engineering's default was owed, so a structural task walked the
+# subdomain list and loaded `hardware_embedded`. Making them nothing at all left
+# them bypassing the manifest entirely and falling through to the alphabetical
+# rule -- safe, but not unified.
+#
+# They are SUBDOMAIN aliases: a spelling that resolves to a (domain, subdomain)
+# PAIR. That is what unifies the vocabulary without either defect.
+[subdomain_aliases]
+structural = ["engineering", "structural"]
+hardware = ["engineering", "electronics"]
+industrial = ["engineering", "manufacturing"]
+"product-engineering" = ["engineering", "product"]
+product_engineering = ["engineering", "product"]
+biomedical = ["biology", "biomedical"]
