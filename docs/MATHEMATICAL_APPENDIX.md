@@ -1394,6 +1394,94 @@ with SymPy and independently with z3; producer
    Collecting the two missing inputs is
    therefore prior to choosing a bound, and is the open question of entry B87.
 
+### 7.7.1 The symbolic form: severity as a per-domain ordering, not a constant
+
+**ADDED 2026-11-12 on the founder's ruling** — *"On the Greek lettering fix, if
+it holds then you should implement it. But the models on the harness (and anyone
+reading our maths model, and the mathematical appendix) wil have to be instructed
+how to use it."* It holds. The seat-facing half of the instruction lives in
+`bench/directives/universal/cdsfl_core_formal.md`, which the composer carries to
+every seat by construction; this section is the reader-facing half.
+
+**THE PRIMITIVES ARE SUPPLIED BY THE DOMAIN, NOT BY THE MODEL.** For each domain
+d ∈ 𝔇:
+
+| symbol | what it is |
+|---|---|
+| `≽_d` | d's consequence ORDERING over findings — a total preorder |
+| `θ_d` | d's CRITICAL LEVEL: a **distinguished element of that ordering** |
+| `σ_d` | the NAME of the scale (CVSS v4.0, CTCAE v5.0, AIAG-VDA FMEA, GHS Rev. 11, …) |
+
+`σ_d` is part of the primitive and not decoration. A consequence value without
+its scale name cannot be compared with anything: measured with a units library, a
+clinical grade and a software score are both **dimensionless**, so
+`CTCAE 3 + CVSS 7.0` evaluates to `10.0` and dimensional analysis has nothing to
+refuse. The refusal has to be on `σ`. So **a consequence is reported as a
+(value, scale-name) pair**, never as a bare number.
+
+**WHAT THE MODEL ASSERTS, AND WHAT IT DOES NOT.** It asserts that for every
+domain the triple `(≽_d, θ_d, σ_d)` EXISTS. It asserts nothing about any
+particular numbering of `≽_d`. This is the founder's own framing — the maths
+model sits at a higher level of abstraction than the individual measures — and it
+is why the model does not become wrong when a domain revises its scale.
+
+**THE GATE.** `critical_d(f) ⇔ c_d(f) ≽_d θ_d`, where `c_d(f)` is f's consequence
+in d. Both sides live in the same domain, so the comparison is between a value
+and a LEVEL OF ITS OWN SCALE rather than between a value and a constant imported
+from elsewhere.
+
+**INVARIANCE, PROVEN rather than asserted (2026-11-12, 2 independent tools).**
+For every strictly increasing re-parameterisation φ of the scale, φ preserves
+`≽_d`, so `critical_d` is unchanged: a constraint solver returns **unsat** for a
+counterexample. The superseded form `V(f) ≥ θ_crit` returns **sat** — it is
+breakable by a re-labelling that preserves every pairwise order. That difference
+is the entire reason for this section.
+
+**ADMISSIBLE STATISTICS.** A statistic S is admissible on an ordinal scale iff it
+commutes with re-parameterisation, `S(φ ∘ c) = φ(S(c))` for every strictly
+increasing φ. Verified on a constraint solver and a symbolic algebra system:
+
+| statistic | admissible | evidence |
+|---|---|---|
+| max, min, any SELECTED order statistic | **yes** | solver: unsat — the maximum cannot fail to map to the maximum |
+| median at odd *n* (a selected value) | **yes** | same |
+| median at even *n*, INTERPOLATED | **no** | it *is* the mean of the 2 middle values |
+| sum | **no** | φ(a)+φ(b) = a²+b² against φ(a+b) = a²+2ab+b², unequal for all a,b>0 |
+| mean | **no** | the same identity |
+| count above a TRANSPORTED level | **yes** | solver: unsat |
+| count above a FIXED value | **no** | solver: sat |
+
+So the convergence term `ΔV(K) = Σ_{genuine_new(K)} V(f)` is **inadmissible** and
+becomes `Δ_d(K) = max_{f ∈ genuine_new(K)} c_d(f)`, an order statistic. The
+second conjunct of the convergence condition was already rank-safe and is
+unchanged. Note that the first conjunct is now a COMPARISON OF LEVELS,
+`Δ_d(K) ≺_d θ_d`, and not a magnitude being called "small" — "small" has no
+meaning on an ordinal scale.
+
+**WHERE A DOMAIN DECLARES NO SCALE.** `σ_d = none` ⇒ `(≽_d, θ_d)` is inherited
+from the APPLICATION domain, with the reason stated. 6 of the 10 declared domains
+are in this case. This is not an evasion: the same reversed inequality is
+epistemic in a convergence proof and lethal in a fan-blade tolerance, so the
+consequence is a property of the application and not of the error's form.
+
+**COMPOSITION ACROSS DOMAINS**, per the founder's rule of 2026-11-12: where a
+formally defined conversion `ψ : σ_{d₁} → σ_{d₂}` exists, compose through ψ and
+cite it; **otherwise report both consequences, each in its own scale**. Sharing
+the word "severity" is not a conversion.
+
+**WHAT §7.7's PRODUCT BECOMES.** `Sev(f) = W(class) · confidence · Ver(verification)`
+is a **credence** formula wearing a consequence name — a finding both seats of the
+2026-11-11 blind round reached independently. Its key property, that a disproved
+finding scores 0, is right for credence and wrong for consequence, because a
+disproved finding has NO consequence rather than a consequence of zero. So
+severity is an ORDERED PAIR:
+
+> **severity_d(f) = ( c_d(f) , credence(f) )**
+
+with `credence(f)` being today's §7.7 product under its own name. A product of a
+consequence and a belief is neither. **§7.7 is NOT removed**: it remains the
+definition of the credence factor, and the pair makes explicit which half it is.
+
 ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
 
 SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:

@@ -126,13 +126,59 @@ class TestTheRoutingFacts:
             "the domain argument no longer defaults to a single domain; that would be "
             f"an improvement and this guard must be updated to say so: {defaults}")
 
-    def test_no_domain_config_declares_a_scale_or_a_cut(self, M):
+    def test_the_manifest_declares_the_scale_and_the_per_domain_configs_do_not(self, M):
+        """★ INVERTED 2026-11-12 (B153), exactly as the old assertion's own message
+        instructed: "that is the recommended repair landing, and this guard must
+        invert". The repair HAD landed and this guard stayed green, because the
+        producer globbed a directory the manifest does not sit in. A green tripwire
+        over a landed repair is indistinguishable from one over a repair that never
+        came.
+
+        BOTH HALVES ARE ASSERTED AND THAT IS THE POINT. The manifest MUST declare,
+        and the 10 per-domain configs must still declare NOTHING -- so the 2 facts
+        stay separable and a reader can see which file carries the declaration.
+        EXPECTED COUNTS ARE NAMED so an empty parse fails rather than passing
+        vacuously: a manifest that parsed to {} would satisfy "declares something"
+        under a weaker assertion.
+        """
         rows = M.measure_declarations()
         assert rows, "no domain configuration files were found at all"
-        declaring = [r for r in rows if r[1]]
+        man = [r for r in rows if r[0].endswith("domain_manifest.toml")]
+        assert len(man) == 1, f"the manifest row is missing from the measurement: {rows}"
+        assert "severity_scale" in man[0][1], (
+            f"the manifest no longer declares a severity scale: {man[0]}")
+        assert "critical_level" in man[0][1], (
+            f"the manifest no longer declares a critical level: {man[0]}")
+
+        configs = [r for r in rows if not r[0].endswith("domain_manifest.toml")]
+        assert len(configs) >= 10, f"only {len(configs)} per-domain config(s) seen"
+        declaring = [r for r in configs if r[1]]
         assert declaring == [], (
-            "a domain config now declares a severity scale or a critical level. That is "
-            f"the recommended repair landing, and this guard must invert: {declaring}")
+            "a per-domain config now declares a scale or a cut as well. That is not "
+            "wrong, but it means the declaration lives in 2 places and this guard "
+            f"must say which is authoritative: {declaring}")
+
+    def test_the_manifest_declares_a_scale_for_every_domain(self, M):
+        """The counts, so a shrinking manifest cannot pass this file."""
+        import tomllib
+        man = tomllib.loads(
+            (REPO / "bench" / "cdsfl_registry" / "domain_manifest.toml")
+            .read_text(encoding="utf-8"))
+        doms = {k: v for k, v in man.items()
+                if isinstance(v, dict) and "subdomains" in v}
+        assert len(doms) == 10, f"10 top-level domains expected, found {len(doms)}"
+        scaled = [k for k, v in doms.items() if v.get("severity_scale")]
+        assert len(scaled) == 10, (
+            f"every domain must declare a severity scale, even as 'none' with a "
+            f"reason; {len(scaled)} of 10 do: {sorted(set(doms) - set(scaled))}")
+        levelled = [k for k, v in doms.items() if v.get("critical_level") is not None]
+        assert len(levelled) == 4, (
+            f"4 domains carry a real scale and therefore a critical level; "
+            f"{len(levelled)} do: {sorted(levelled)}")
+        for k, v in doms.items():
+            if v.get("severity_scale") == "none":
+                assert v.get("severity_scale_reason"), (
+                    f"{k} declares no scale and must say why")
 
 
 class TestItRunsAndItsHelpIsFree:

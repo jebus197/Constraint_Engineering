@@ -414,13 +414,80 @@ from degrading into premature closure:
 
 **Formal:**
 ```
-V(f) = materiality(f) = consequence if defect f ships (= severity).
-Guard 1:  critical(f) ⇔ V(f) ≥ θ_crit     (interest(f) does NOT enter).
+c_d(f) = consequence of defect f, ON DOMAIN d's OWN SCALE σ_d.
+≽_d    = d's consequence ORDERING.  θ_d = d's CRITICAL LEVEL, a distinguished
+         element OF that ordering -- not a number imported from elsewhere.
+
+Guard 1:  critical_d(f) ⇔ c_d(f) ≽_d θ_d        (interest(f) does NOT enter).
 Guard 2:  may_continue(K) ⇔ ∃ mechanism m: plausible(m) ∧ high_value(m)
                                           ∧ ¬adequately_examined(m, ≤K).
-Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND no
-material critical remains open (per §6 termination + the A4 fail-safe).
+Converge when Δ_d(K) = max_{f ∈ genuine_new(K)} c_d(f)  satisfies  Δ_d(K) ≺_d θ_d
+AND no material critical remains open (per §6 termination + the A4 fail-safe).
 ```
+
+**SUPERSEDED FORM, LEFT HERE DELIBERATELY SO A READER WHO REMEMBERS IT CAN SEE
+WHAT MOVED (2026-11-12).** It read:
+
+```
+Guard 1:  critical(f) ⇔ V(f) ≥ θ_crit
+Converge when marginal value ΔV(K)=Σ_{genuine_new(K)} V(f) is small AND ...
+```
+
+**BOTH of those are INADMISSIBLE on an ordinal quantity, and that is PROVEN
+rather than argued.** Severity is a consequence ORDER, not a magnitude, so any
+statement about it must survive re-labelling the scale by a strictly increasing
+map φ. Verified 2026-11-12 on 2 independent tools:
+
+* `V(f) ≥ θ_crit` compares a value to a FIXED REAL. A constraint solver finds a
+  φ that preserves every pairwise order and still changes which findings clear
+  the cut (**sat** = breakable). The replacement, `c_d(f) ≽_d θ_d`, compares a
+  value to a DISTINGUISHED ELEMENT of its own ordering, and the solver finds no
+  counterexample (**unsat** = admissible).
+* `Σ V(f)` is a SUM. Symbolic algebra: for φ(x) = x², φ(a)+φ(b) = a² + b² while
+  φ(a+b) = a² + 2ab + b², unequal for every a, b > 0. The replacement is `max`,
+  a SELECTED order statistic, which commutes with every φ.
+
+**WHICH STATISTICS ARE ADMISSIBLE, so a seat need not re-derive it.** A
+statistic S is admissible iff `S(φ ∘ c) = φ(S(c))` for every strictly increasing
+φ:
+
+| statistic | admissible | why |
+|---|---|---|
+| max, min, any SELECTED order statistic | YES | the maximum cannot fail to map to the maximum |
+| median at ODD n (a selected value) | YES | same |
+| median at EVEN n, INTERPOLATED | **NO** | it IS the mean of the 2 middle values |
+| sum | **NO** | the identity above |
+| mean | **NO** | the same identity |
+| count above a TRANSPORTED level | YES | the level moves with the scale |
+| count above a FIXED value | **NO** | the level does not move |
+
+**WHERE A DOMAIN DECLARES NO SCALE OF ITS OWN**, `σ_d = none`, it INHERITS the
+ordering and critical level of the APPLICATION domain, and must say so rather
+than supply a number. This is not an evasion: the same reversed inequality is
+epistemic in a convergence proof and lethal in a fan-blade tolerance, so the
+consequence belongs to the application and not to the form of the error. 6 of
+the 10 declared domains are in this case, each with a stated reason.
+
+**COMPOSING ACROSS DOMAINS.** For a finding spanning d₁ and d₂: if a formally
+defined conversion ψ : σ_{d₁} → σ_{d₂} exists, compose through ψ and CITE it;
+otherwise **report BOTH consequences, each with its own scale name**. Sharing
+the word "severity" is not a conversion. Verified with a units library: 1 inch
+plus 1 cm composes, because the conversion is defined; 1 metre plus 1 second is
+refused. A clinical grade and a software score are both DIMENSIONLESS, so
+nothing in the arithmetic refuses to add them -- only the scale NAME can.
+
+### WHAT THIS MEANS FOR YOU, AS A SEAT ON THIS HARNESS
+
+1. **Severity is ORDINAL.** The ordering and the critical level are the
+   DOMAIN's, and both arrive in your directive. Do not invent either.
+2. **Report a consequence as a (value, scale-name) pair**, never a bare number.
+   `CVSS v4.0: 7.0` is a report; `7.0` is not.
+3. **Never average, sum, or interpolate a consequence. SELECT.** If you need a
+   single figure for a set of findings, take the maximum.
+4. **Where 2 domains are in scope, report BOTH consequences** unless you can
+   cite a formal conversion between their scales.
+5. **Where your domain declares no scale, say so** and name the application
+   scale you are inheriting, rather than supplying a number of your own.
 
 ---
 

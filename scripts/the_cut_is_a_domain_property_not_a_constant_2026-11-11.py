@@ -163,8 +163,26 @@ def measure_declarations():
     except ModuleNotFoundError:  # pragma: no cover
         import tomli as tomllib  # type: ignore
 
+    #: ★ `critical_level` ADDED 2026-11-12 (B153). The set omitted the very key
+    #: the repair uses to name a domain's critical LEVEL, so even a config that
+    #: did declare one would not have been counted. Checked before adding it:
+    #: 0 of the 20 configuration files contain that string, so the directory
+    #: half cannot start reporting a declarer that is not one.
     SCALE_KEYS = {"severity_scale", "consequence_scale", "severity_levels",
-                  "scale", "severity_cut", "critical_cut", "cut", "theta_crit"}
+                  "scale", "severity_cut", "critical_cut", "cut", "theta_crit",
+                  "critical_level"}
+    #: ★ THE MANIFEST IS READ AS ITS OWN ROW, 2026-11-12 (B153), BECAUSE THE
+    #: GLOB BELOW CANNOT REACH IT. `DOMAINS.glob("*.toml")` walks
+    #: bench/cdsfl_registry/domains; the repair landed in
+    #: bench/cdsfl_registry/domain_manifest.toml, ONE LEVEL ABOVE it. So this
+    #: function reported 0 declaring a scale while the manifest declared one for
+    #: 10 of 10 domains, and the guard's tripwire -- whose own message says it
+    #: "must invert" when the repair lands -- stayed GREEN over a landed repair.
+    #: THE DIRECTORY GLOB IS KEPT EXACTLY AS IT WAS: the per-domain configs
+    #: genuinely declare nothing, that remains TRUE, and it is the reason the
+    #: manifest exists. Keeping both rows keeps the 2 facts separable, so a
+    #: reader can see WHICH file carries the declaration.
+    MANIFEST_ROW = REPO / "bench" / "cdsfl_registry" / "domain_manifest.toml"
     rows = []
     for fp in sorted(DOMAINS.glob("*.toml")) + sorted((DOMAINS / "immune").glob("*.toml")):
         try:
@@ -184,6 +202,25 @@ def measure_declarations():
 
         walk(data)
         rows.append((fp.relative_to(REPO).as_posix(), sorted(keys & SCALE_KEYS)))
+
+    #: Read DIRECTLY rather than globbed, so a manifest that has moved raises
+    #: here instead of silently contributing no row -- which is the failure mode
+    #: this whole repair exists to remove.
+    man = tomllib.loads(MANIFEST_ROW.read_text(encoding="utf-8"))
+    man_keys = set()
+
+    def walk_man(o):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                man_keys.add(k)
+                walk_man(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk_man(v)
+
+    walk_man(man)
+    rows.append((MANIFEST_ROW.relative_to(REPO).as_posix(),
+                 sorted(man_keys & SCALE_KEYS)))
     return rows
 
 

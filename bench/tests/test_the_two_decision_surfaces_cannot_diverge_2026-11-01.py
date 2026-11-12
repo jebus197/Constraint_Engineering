@@ -354,9 +354,41 @@ class TestTheInverseDirectionAlsoHolds:
     #: recorded on its marker. The entry itself stays OPEN because the BUILD is
     #: still owed; what is settled is the question, not the work. That distinction
     #: is the whole reason this pin exists separately from the entry state.
-    RENDERED_NOWHERE_BY_DESIGN: tuple[str, ...] = (
-        "C0001", "B122", "B107", "B123", "B128", "B20",
-        "B79", "B104", "B131", "B105", "B140", "B22", "B136", "B88", "B144")
+    #: ★ A DICT SINCE 2026-11-12, BECAUSE THE ASSERTION BELOW ASKS FOR A REASON
+    #: AND A BARE TUPLE CANNOT HOLD ONE. Its own message says "pin it WITH ITS
+    #: REASON", and for 15 pins there was nowhere to put one -- so the rule the
+    #: failure text states was unenforceable by the structure it pointed at.
+    #: Both tests below iterate this, and iterating a dict yields its keys, so
+    #: neither changes behaviour. Nothing is removed.
+    #:
+    #: THE 15 EXISTING PINS KEEP AN HONEST PLACEHOLDER rather than a reason
+    #: invented for them now: their reasons were not recorded when they were
+    #: pinned, and writing plausible ones today would be fabrication of exactly
+    #: the kind this file exists to catch. They are left to be filled in by
+    #: whoever can state them from the record.
+    _UNRECORDED = "pinned before reasons were recorded; reason not in the record"
+    RENDERED_NOWHERE_BY_DESIGN: dict[str, str] = {
+        "C0001": _UNRECORDED, "B122": _UNRECORDED, "B107": _UNRECORDED,
+        "B123": _UNRECORDED, "B128": _UNRECORDED, "B20": _UNRECORDED,
+        "B79": _UNRECORDED, "B104": _UNRECORDED, "B131": _UNRECORDED,
+        "B105": _UNRECORDED, "B140": _UNRECORDED, "B22": _UNRECORDED,
+        "B136": _UNRECORDED, "B88": _UNRECORDED, "B144": _UNRECORDED,
+        #: Added 2026-11-12. Each carries authored detail because the generator
+        #: owes him a REPORT on every live entry, and each is marked
+        #: `no_ruling_needed` because it asks him nothing -- so it is routed to
+        #: work and rendered as a decision nowhere. That is the intended state,
+        #: not a divergence. Giving any of them an ask the generator reads would
+        #: put a false decision in his queue, which is what he objected to on
+        #: 2026-10-19: "Why are you presenting it as a decision required from me
+        #: again?"
+        "B145": "work: dispatch the joint half of the severity round; free seats, brief drafted",
+        "B146": "work: write the per-domain severity form into the model and the seats' prompt",
+        "B147": "work: run the 4 steering simulations with the orchestrator as human in the loop",
+        "B148": "work: record the steering design in a user-experience resource",
+        "B149": "work: enrich the 28 older expert encodings to 4 categories",
+        "B150": "work: write the spoken report of the items awaiting him",
+        "B155": "work: stop the triage classifier writing to the tree while a board runs",
+    }
 
     @staticmethod
     def _authored() -> set[str]:
