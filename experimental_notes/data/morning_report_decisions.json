@@ -1258,5 +1258,41 @@
   "recommendation_standards": "additive: the superseded values are named rather than deleted, so a reader who remembers them sees which moved.",
   "no_ruling_needed": "Mine, and the correction strengthens his existing ruling rather than weakening it: an avoidable commit costs about 126 seconds more than the files claim.",
   "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading. A spoken heading on an item the generator does not render as a decision asserts he should be asked and he never is, which is what the inverse-direction guard caught on 2026-11-12 and caught again on 2026-11-13 for this entry. The reason is recorded here rather than the heading simply deleted, because the guard offers 3 remedies and which one was chosen is itself information."
+ },
+ "task:B180": {
+  "title": "B180 - whether the gate that enforces your 60-second monitoring directive should also watch a full-suite run",
+  "what": "`hooks/cy_monitor_gate.py` enforces your standing directive of 2026-05-18 to monitor a running experiment at about 60-second cadence. Its predicate is `pgrep -f \"run_simulated_experiment.py\"` and nothing else. Measured by execution while the B165 full-suite measurement was running: `cy.live_runs()` returned an empty pair while `pgrep -f \"pytest bench/tests\"` returned 1 pid. So through the 3 h 19 m 43 s run that ended 07:30:43 and the 3 h 07 m 58 s run that ended 12:40:10, the gate was silent. The monitoring happened because the directive is in the instruction files and was followed by hand; the gate itself was inert, which is the symmetric half of the additive standard.",
+  "why": "It is yours because widening it changes how often a gate interrupts you. A 200-minute pytest is plainly a running process and your directive says experiment or process, so I believe it should be seen. But that is a judgement about your own interruptions, not about correctness, and 2 full-suite runs a day would mean the gate prodding through both.",
+  "evidence_line": "Measured 2026-11-13 by execution against the live run: the gate's own `live_runs()` returned an empty pair while a 189-minute suite was running under pid 86187, which `cy_monitor_gate._is_shell` confirms is not a shell. The same blindness was found the same day in `scripts/blocker_triage.py`, where it let a write void a clean-tree measurement 2 minutes in.",
+  "options": [
+   "Widen it to see a full-suite run, which is the recommendation. The directive is then enforced by a mechanism rather than by my remembering it, at the cost of the gate prodding during every suite run.",
+   "Leave it scoped to simulated experiments. The status quo, and not neutral: the directive is then enforced only by my reading the instruction files each session, which is exactly the arrangement the additive standard calls an addition nothing reaches."
+  ],
+  "recommendation_standards": "additive: widening adds a case and removes none, and the existing seam `CDSFL_CY_NO_PGREP` already isolates the predicate for its own guard.",
+  "spoken_heading": "WHETHER THE MONITORING GATE SHOULD ALSO SEE A FULL-SUITE RUN, SINCE IT WAS SILENT THROUGH BOTH OF TODAY'S 3-HOUR MEASUREMENTS"
+ },
+ "task:B181": {
+  "title": "B181 - the parked reader was blind to every numerically-identified entry, and all 36 of them are closed",
+  "what": "The morning report showed 27 parked items, 4 of them from below the parked file's own heading that says they are not for your attention. `parked_items()` drops a heading only when it names an entry recorded DONE or WITHDRAWN, and it found the name with a pattern requiring capitals before the digits. 36 of 324 entries carry a purely numeric identifier such as 0.1, 1.2, 3.1a or 10.2 -- 0.111111, Wilson [0.081345, 0.149990] -- and all 36 are recorded DONE or WITHDRAWN. It could not notice this, because an unparseable identifier is indistinguishable from an absent one and absent means keep.",
+  "why": "Fixed, and the first repair was incomplete in a way worth recording: widening the constant changed nothing, because the drop logic carried its own inline copy of the same pattern. 2 declarations of 1 idea, with the consumer keeping the narrow one. Replacing the inline regex with the constant took the reader from 46 items to 44 and the report's parked section from 27 to 26.",
+  "evidence_line": "Measured 2026-11-13. The report now lints at 0 findings, where it carried 6 and had been unstaged from 2 commits. The bare-entry-code count over the live parked section fell from 7 to 0 under 2 composed repairs whose separate effects were measured: neither 7, drop the duplicate code 2, terminate each bullet 4, both 1, with the last 1 removed by this fix.",
+  "options": [
+   "No decision is needed: the repair is applied, measured and falsified."
+  ],
+  "recommendation_standards": "composability: the 2 lint repairs were measured separately and together, and the pair dominates either alone, which is what his 2026-10-02 definition requires before a composed fix may be recommended.",
+  "no_ruling_needed": "Mine. Applied, measured on 2 routes, and the report now lints clean.",
+  "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading. A spoken heading on an item the generator does not render as a decision asserts he should be asked and he never is, which the inverse-direction guard caught on 2026-11-12 and again on 2026-11-13."
+ },
+ "task:B179": {
+  "title": "B179 - the guard that stops the triage writing during a commit board could not see a clean-suite run, and it voided one",
+  "what": "At 09:30:52 on 2026-11-13, 2 minutes into the B165 clean-tree run, the Stop gate advised `scripts/blocker_triage.py` as the remedy for a stall. It appended 6 lines to a tracked file and the measurement was no longer clean-tree. A guard against exactly this was built on 2026-11-12 as B155, after the same script damaged 3 commit boards in 1 night by taking a heading count from 72 to 73 mid-board. Its predicate matched `cdsfl_sv.py --commit` and a full-suite measurement is not a commit board, so it was invisible.",
+  "why": "Fixed. The predicate now runs over a tuple of patterns and reuses the existing shell exclusion rather than writing a second matcher, which the file's own comment is emphatic about after a raw pgrep returned 4 pids of which 3 were shells. The old name `_BOARD_PATTERN` is retained as the tuple's first element so nothing importing it breaks.",
+  "evidence_line": "Measured by execution against the live run before the change: the old predicate returned the empty string while `pgrep -f \"pytest bench/tests\"` returned pid 86187, and the widened one returned that pid. Falsified after the change in 3 states: empty with nothing running, `forced-by-seam` with B155's own seam forcing a board, and empty with the seam forcing none.",
+  "options": [
+   "No decision is needed: applied and falsified in both directions."
+  ],
+  "recommendation_standards": "simplicity-default: a tuple and a loop, reusing the shell exclusion that already exists, rather than a second detector.",
+  "no_ruling_needed": "Mine. The write that exposed it was mine too, and the run was restarted.",
+  "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading, per the inverse-direction guard of 2026-11-12."
  }
 }

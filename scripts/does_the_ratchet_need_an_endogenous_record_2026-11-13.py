@@ -33,8 +33,22 @@ THE DECISION RULE IS STATED BEFORE THE RUN so it can come out either way:
 """
 from __future__ import annotations
 
+import pathlib
 import sys
 
+# ★ LOCATE `_cli_help` RATHER THAN ASSUME sys.path, 2026-11-13. The import was
+# added without this preamble and the script stopped IMPORTING, which
+# `test_operational_scripts.py` caught in the B165 clean run. It worked when the
+# file was RUN, because sys.path[0] is then the script's own directory, and
+# failed under `spec_from_file_location`, which sets no such entry. The caller
+# this import was copied from carries the identical preamble and its comment
+# records the same failure taking out 13 scripts on 2026-09-24 -- so this is a
+# known defect reproduced by copying the line and not the mechanism.
+for _cand in (pathlib.Path(__file__).resolve().parent,
+              *pathlib.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
 from _cli_help import answer_help  # noqa: E402
 
 import numpy as np

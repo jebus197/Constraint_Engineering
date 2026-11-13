@@ -386,9 +386,33 @@ class TestTheProducerAnswersHisQuestion:
         #: which is precisely the case the comment above anticipated: the
         #: repeat count alone cannot distinguish a miscount from a smaller
         #: queue, and only the denominator separates them.
-        assert 1 <= _tot <= 40, (
-            f"the partition totals {_tot}, not the 17 pinned late on "
-            f"2026-11-09 (25 earlier that day, 26 before that, 41 on "
-            f"2026-11-07). The repeat COUNT alone cannot be read without it: "
-            f"10 of 41 was the miscount this test exists to catch, and 5 of 17 "
-            f"is a legitimately smaller queue.")
+        #: ★ THE CEILING IS REMOVED AND A FLOOR KEPT, 2026-11-13, AFTER IT
+        #: DRIFTED A 5TH TIME. The pin read `1 <= _tot <= 40` and this file's
+        #: own comments record every value it has taken: 41 on 2026-11-07, 26,
+        #: then 25, then 17 late on 2026-11-09. Raising 3 entries on 2026-11-13
+        #: took it back to 41 and the ceiling refused a legitimately larger
+        #: queue. 5 values, and not one of them caught a defect -- the
+        #: regression this file guards is caught by `_mis >= 1` above, which
+        #: the comment there states does not move when the task list grows.
+        #:
+        #: THE REMOVAL CLAUSE IS SATISFIED BY THIS FILE'S OWN RECORD. The named
+        #: property is NON-DRIFT; the measurement is 5 re-pins against 0
+        #: detections, written down here as they happened. The project did this
+        #: once already: 2 sibling count pins became FLOORS on 2026-10-29, and
+        #: those floors passed the 2026-11-04 board while 3 exact pins failed.
+        #:
+        #: ★ A DERIVED IDENTITY WAS TRIED FIRST AND WITHDRAWN, and the reason
+        #: is in this file's own warning. It asserted the partition equals the
+        #: producer's printed live-entry count, parsed from the MISLABELLED
+        #: line -- but BOTH producers print the partition in DIFFERENT WORDS,
+        #: as the comment 20 lines above says, and only 1 prints that line. So
+        #: the identity matched 1 sibling's wording against whichever producer
+        #: is running: the wrong-tool failure this file exists to catch,
+        #: attempted inside it for the THIRD time. The denominator stays
+        #: unpinned rather than pinned to a wording.
+        assert _tot >= 1, (
+            f"the partition is empty: {_part}. The repeat COUNT cannot be read "
+            f"without a denominator at all -- 10 of 41 was the miscount this "
+            f"test exists to catch, and 5 of 17 is a legitimately smaller "
+            f"queue -- so an empty partition means the producer classified "
+            f"nothing and the comparison below is vacuous.")

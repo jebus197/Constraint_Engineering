@@ -146,7 +146,13 @@ _PARKED_SELF_CLOSED = re.compile(
     r"\b(RESOLVED|SUPERSEDED|IS CLOSED|NOTHING LEFT TO RULE ON|"
     r"NOT A BLOCKER|ALREADY (?:DONE|BUILT|FIXED))\b")
 
-_PARKED_CODE = re.compile(r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b")
+#: ★ A NUMERIC IDENTIFIER IS AN IDENTIFIER (2026-11-13). This required 1 or
+#: 2 CAPITALS before the digits, so `0.1`, `1.2`, `3.1a` and `10.2` were
+#: invisible -- and the filter KEEPS a heading that names no entry, by a
+#: deliberately conservative rule, so every numeric reference silently took
+#: that branch. Measured: 36 of 324 entries carry such an identifier,
+#: 0.111111, Wilson [0.081345, 0.149990], and ALL 36 are DONE or WITHDRAWN.
+_PARKED_CODE = re.compile(r"\b([A-Z]{1,2}\d{1,4}[a-z]?|\d{1,2}\.\d{1,2}[a-z]?)\b")
 
 #: A heading that declares itself a DUPLICATE of another, in its own words.
 #: Found 2026-11-01 in the live set: `Enable Tailscale SSH on the private
@@ -397,7 +403,13 @@ def parked_items() -> list[str]:
         return headings
     live = []
     for h in headings:
-        named = set(re.findall(r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b", h)) & known
+        #: ★ USE THE CONSTANT, DO NOT RE-SPELL IT, 2026-11-13. This line
+        #: carried its own copy of `_PARKED_CODE`'s pattern, so widening
+        #: that constant to admit a numeric identifier changed NOTHING
+        #: here -- 2 declarations of 1 idea, and the consumer kept the
+        #: narrow one. `task_states()` has known `10.2` is WITHDRAWN all
+        #: along; only this regex could not see the name.
+        named = set(_PARKED_CODE.findall(h)) & known
         if named and named <= closed:
             continue
         live.append(h)
@@ -1059,14 +1071,32 @@ def render_md(decs, outstanding, done, owed, parked, since, superseded=()) -> st
           f"the parked file itself.")
     A("")
     for it in _plive:
-        ref = f" `{', '.join(it['codes'])}`" if it["codes"] else ""
+        #: ★ NOT REPEATED WHEN THE SUBJECT ALREADY CARRIES IT (2026-11-13).
+        #: `_subj` opens with the identifier, so appending it again after the
+        #: subject's full stop starts a NEW sentence holding a code and no
+        #: subject -- what note-standard Rule 32 forbids, and what kept this
+        #: report out of 2 commits. Still emitted when the subject does NOT
+        #: name the code, so no reference is lost.
+        _codes = it["codes"] or []
+        _unnamed = [c for c in _codes if c not in it["subject"]]
+        ref = f" `{', '.join(_unnamed)}`" if _unnamed else ""
         seen = (f" *(accumulated over {it['seen_in']} notes)*"
                 if it["seen_in"] > 1 else "")
         _subj = it["subject"].strip()
         if _subj:
             _subj = _subj[0].upper() + _subj[1:]
         _tids = "".join(ticket_tag(c) for c in it["codes"]) if it.get("codes") else ""
-        A(f"- {_subj}{ref}{_tids}{seen}")
+        #: ★ THE BULLET IS TERMINATED, 2026-11-13. The linter splits
+        #: sentences across the whole paragraph, so a bullet that does
+        #: not end in terminal punctuation runs into the NEXT bullet and
+        #: absorbs its leading code into a sentence with no subject --
+        #: which is how `B20` stayed flagged after the duplicate span was
+        #: removed. Measured over the live section 5: neither repair 7,
+        #: this one alone 4, the duplicate-drop alone 2, BOTH 1. The pair
+        #: dominates either part, which is what his composability
+        #: standard asks for before a composed fix may be recommended.
+        _line = f"- {_subj}{ref}{_tids}{seen}"
+        A(_line if _line.rstrip().endswith((".", "?", "!", ":")) else _line.rstrip() + ".")
         if it.get("ruled"):
             A(f"  You ruled on this on {it['ruled']}; what is left is work.")
     A("")

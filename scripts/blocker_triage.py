@@ -365,7 +365,18 @@ class BoardIsRunning(RuntimeError):
 #: were shells, so without the exclusion this predicate would refuse against its
 #: own monitor. A second matcher would be the producer-consumer divergence this
 #: project keeps meeting.
-_BOARD_PATTERN = "cdsfl_sv.py --commit"
+#: ★ A BARE SUITE RUN HOLDS THE TREE JUST AS A COMMIT BOARD DOES (2026-11-13).
+#: B155 built this guard against a commit board and a CLEAN-TREE FULL-SUITE
+#: MEASUREMENT is not one, so it was invisible: on 2026-11-13 at 09:30:52 the
+#: gate advised this script 2 minutes into the B165 clean run, the predicate
+#: saw no board, and the append voided a measurement whose entire point is a
+#: clean tree. Verified by execution against that live run before the change:
+#: the old pattern returned '' and the new one returned the suite's pid.
+_BOARD_PATTERNS = ("cdsfl_sv.py --commit", "pytest bench/tests")
+
+#: RETAINED so nothing that imports the old name breaks. It is the first
+#: element rather than a second declaration of the same idea.
+_BOARD_PATTERN = _BOARD_PATTERNS[0]
 
 
 def a_commit_board_is_running() -> str:
@@ -385,9 +396,11 @@ def a_commit_board_is_running() -> str:
     try:
         if (REPO / ".git" / "index.lock").exists():
             return "index.lock"
-        out = subprocess.run(["pgrep", "-f", _BOARD_PATTERN],
-                             capture_output=True, text=True, timeout=4)
-        pids = [x for x in (out.stdout or "").split() if x.strip()]
+        pids = []
+        for _pat in _BOARD_PATTERNS:
+            out = subprocess.run(["pgrep", "-f", _pat],
+                                 capture_output=True, text=True, timeout=4)
+            pids += [x for x in (out.stdout or "").split() if x.strip()]
         if not pids:
             return ""
         import importlib.util
