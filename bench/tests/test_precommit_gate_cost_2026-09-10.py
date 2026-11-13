@@ -198,8 +198,12 @@ class TestItRuns:
     # TIMEOUT OVERRIDE, 2026-10-19. The SECOND confirmed runtime offender
     # against `pytest.ini`'s 300s global per-test limit, and the one that
     # killed the full suite at 62% on 2026-10-18 after the first was fixed.
-    # This runs `scripts/precommit_gate_cost_2026-09-10.py`, which executes
-    # the pre-commit hook end to end; the hook itself was measured at 334.83s in September and runs at a median
+    # This runs `scripts/precommit_gate_cost_2026-09-10.py`, which runs pytest
+    # over the GUARDS list it READS OUT of the pre-commit hook. It does NOT
+    # execute the hook, and this comment claimed it did until 2026-11-13 --
+    # found while tracing which test rewrote 2 derived docs mid-run, where
+    # this comment was the reason the wrong test was suspected first.
+    # The BOARD it runs was measured at 334.83s in September and runs at a median
     # of 1666s today, 4.98 times that,
     # so even `--repeats 1` cannot finish inside 300s. The marker exceeds this
     # test's OWN subprocess budget, DERIVED above, so a genuine hang surfaces

@@ -1,0 +1,1685 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-13 02:27:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/.cdsfl_deny_canonical_writes.sb	2026-11-13 01:58:06
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/experiment_11_orchestrator.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/experiment_11_orchestrator.py	2026-11-08 16:55:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/bench/experiment_11_orchestrator.py	2026-11-13 02:16:58
+@@ -474,8 +474,47 @@
+     if rec.get("type") == "result" and isinstance(rec.get("result"), str):
+         final = rec["result"] or final
+     return final, calls
++
++
++def resolved_model_from_stream_json(text: str):
++    """The model id the TRANSPORT resolved, read from the reply's own envelope.
++
++    D6, TOCTOU, settled by using the reply instead of a probe. A BOOT-TIME
++    identity probe certifies identity at PROBE time, not at DISPATCH time: an
++    alias repointing upstream, or a CLI auto-update, between the probe and the
++    reply escapes it entirely. The id here is read from the SAME reply whose
++    text is being recorded, so there is no window between the measurement and
++    the thing measured. It costs no extra call: `--output-format stream-json`
++    is ALREADY in force whenever a tool-log sink is set, and its terminal
++    `result` record ALREADY carries `modelUsage`. Measured on 2026-11-13: the
++    envelope names `claude-opus-5` with `canonicalModel` and `provider`, while
++    `bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt`
++    recorded `"model": "opus"` -- the alias ASKED FOR, not the id SERVED.
+ 
++    This is transport metadata written by the client. It is NOT the model's
++    self-report, so it is not a model vote on its own identity.
+ 
++    Returns the resolved id, or None when the envelope does not name one --
++    which is a real and reportable answer, never a guess. Never raises.
++    """
++    best = None
++    for line in (text or "").splitlines():
++        line = line.strip()
++        if not line or '"modelUsage"' not in line:
++            continue
++        try:
++            rec = json.loads(line)
++        except ValueError:
++            continue
++        usage = rec.get("modelUsage")
++        if not isinstance(usage, dict) or not usage:
++            continue
++        for key, val in usage.items():
++            canon = val.get("canonicalModel") if isinstance(val, dict) else None
++            best = canon or key
++    return best
++
++
+ def _run_cli_incrementally(cmd, user_prompt, timeout, cwd, env, on_call=None):
+     """Run the CLI consuming stdout AS IT ARRIVES, not after the process exits.
+ 
+@@ -1642,6 +1681,14 @@
+                              {"incremental": len(_timed),
+                               "whole_capture": len(_calls)}})
+                 _sink_calls.extend(_calls)
++                # D6: per-reply identity provenance, from the SAME bytes. A
++                # failure here must never change what the seat returned, so it
++                # is wrapped: a reporting check that could kill a live reply
++                # would be worse than the blindness it closes.
++                try:
++                    _resolved = resolved_model_from_stream_json(result.stdout)
++                except Exception:                              # noqa: BLE001
++                    _resolved = None
+                 _sink_attempts.append({"attempt": attempt,
+                                        "elapsed_s": round(elapsed, 1),
+                                        "tool_calls": len(_calls),
+@@ -1656,7 +1703,15 @@
+                                        "write_confinement": _confinement})
+                 try:
+                     pathlib.Path(_sink).write_text(json.dumps(
+-                        {"model": model_id, "elapsed_s": round(elapsed, 1),
++                        {"model": model_id,
++                         # THE ALIAS ASKED FOR above; the id SERVED below.
++                         # `None` means the envelope named none, which is
++                         # distinguishable from a mismatch and is reported as
++                         # such rather than filled in.
++                         "resolved_model": _resolved,
++                         "identity_match": (None if _resolved is None else
++                                            model_id.lower() in _resolved.lower()),
++                         "elapsed_s": round(elapsed, 1),
+                          # TOTAL ACROSS THE DISPATCH, not this attempt alone.
+                          "tool_calls": len(_sink_calls), "calls": _sink_calls,
+                          "attempts": len(_sink_attempts),
+
+### cc2:attempt-1:bench/tests/test_the_currency_repairs_hold_2026-11-13.py
+--- /dev/null	2026-11-13 02:27:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/bench/tests/test_the_currency_repairs_hold_2026-11-13.py	2026-11-13 02:16:18
+@@ -0,0 +1,229 @@
++"""The joint-round currency repairs, EXECUTED rather than described.
++
++WHAT THESE GUARD, and why each exists rather than reads well.
++
++R1  THE FIGURE LEDGER. `test_the_standards_currency_producer_holds_2026-11-13`
++    re-reads the DISPATCH BRIEF at test time and required every figure the brief
++    declares to still be printed. The brief is history and cannot be re-issued,
++    so the contract had 3 failure modes, all 3 demonstrated by execution on
++    2026-11-13 against the brief on disk:
++      1. it went RED when `composed_covers` was WITHDRAWN for being a count
++         rather than a measurement -- and `the_standards_currency_mutations`
++         REFUSES to run on a red baseline, so 0 of its 5 mutations were
++         exercised. A guard that goes red on a correction pays the next seat to
++         keep the refuted figure;
++      2. it passed SILENTLY when `share_version_bearing` moved 0.253054 ->
++         0.282700, because it matched only the text left of `=`;
++      3. it would have reported `archive_epochs_at_T30 = 4` as HOLDING, because
++         the refuted figure's declared string still appears VERBATIM inside its
++         own refutation.
++    The repair is the pin-and-supersession pattern applied to the brief's own
++    figures: status is DECLARED where the figure is produced, and the guard
++    reads the declaration instead of inferring status from stdout.
++
++R2  PER-REPLY IDENTITY PROVENANCE. The panel's own tool-log sink recorded
++    `"model": "opus"` -- the alias ASKED FOR. The resolved id was already in the
++    same bytes: `--output-format stream-json` is in force whenever a sink is
++    set, and its terminal `result` record carries `modelUsage`. Reading it there
++    closes the TOCTOU window a boot-time probe leaves open, because the id comes
++    from the SAME reply rather than from an earlier one.
++
++R3  THE RATCHET. A bound of the shape max(FLOOR, HEADROOM * max(last N)) binds
++    on the RATIO of consecutive entries and never on their SIZE, so growth at
++    any ratio <= HEADROOM is admitted without limit.
++"""
++from __future__ import annotations
++
++import ast
++import importlib.util
++import json
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parent.parent.parent
++PRODUCER = REPO / "scripts" / "standards_currency_and_model_staleness_2026-11-13.py"
++RATCHET = REPO / "scripts" / "does_a_max_of_last_n_bound_ratchet_2026-11-13.py"
++ORCH = REPO / "bench" / "experiment_11_orchestrator.py"
++
++#: A REAL envelope captured on this machine on 2026-11-13 by
++#: `claude --model opus -p "say ok" --output-format json`, trimmed to the fields
++#: under test. Typed fixtures that nothing ever observed are how a parser comes
++#: to pass against a format the transport does not emit.
++REAL_ENVELOPE = json.dumps({
++    "is_error": False, "num_turns": 15, "type": "result",
++    "modelUsage": {"claude-opus-5": {
++        "inputTokens": 28, "outputTokens": 2907,
++        "canonicalModel": "claude-opus-5", "provider": "firstParty"}},
++})
++
++
++def _load(path, name):
++    spec = importlib.util.spec_from_file_location(name, path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++@pytest.fixture(scope="module")
++def prod():
++    return _load(PRODUCER, "cdsfl_currency_producer")
++
++
++@pytest.fixture(scope="module")
++def ratchet():
++    return _load(RATCHET, "cdsfl_ratchet")
++
++
++@pytest.fixture(scope="module")
++def orch():
++    sys.path.insert(0, str(REPO / "bench"))
++    import experiment_11_orchestrator as m
++    return m
++
++
++# ----------------------------------------------------------------- R1 ledger
++
++def test_r1_the_producer_declares_a_figure_ledger(prod):
++    """Status is DECLARED, never inferred from whether a label still prints."""
++    ledger = getattr(prod, "FIGURE_LEDGER", None)
++    assert isinstance(ledger, dict) and ledger, (
++        "no FIGURE_LEDGER. Without it a WITHDRAWN figure is indistinguishable "
++        "from one that silently stopped printing.")
++    for label, entry in ledger.items():
++        assert len(entry) == 4, f"{label}: expected (status, was, now, why)"
++        status, was, now, why = entry
++        assert status in ("SUPERSEDED", "WITHDRAWN"), (
++            f"{label}: {status!r} is not a status a reader can act on")
++        assert was, f"{label}: the superseded value must be recorded, not dropped"
++        assert len(why or "") > 40, (
++            f"{label}: a status with no recorded reason is a figure retired by "
++            f"assertion. The reason is what a human merges or refuses.")
++        if status == "SUPERSEDED":
++            assert now, f"{label}: SUPERSEDED must name the replacement value"
++
++
++def test_r1_the_ledger_covers_the_three_demonstrated_failure_modes(prod):
++    """Each entry answers a failure mode that was EXECUTED, not imagined."""
++    ledger = prod.FIGURE_LEDGER
++    assert ledger.get("composed_covers", (None,))[0] == "WITHDRAWN", (
++        "mode 1: the withdrawal that took the mutation harness offline")
++    assert ledger.get("share_version_bearing", (None,))[0] == "SUPERSEDED", (
++        "mode 2: the value that moved while the label did not")
++    assert ledger.get("archive_epochs_at_T30", (None,))[0] == "WITHDRAWN", (
++        "mode 3: the refuted figure whose declared string survives verbatim "
++        "inside its own refutation")
++
++
++def test_r1_the_ledger_is_reached_by_a_caller_and_printed(prod):
++    """An addition nothing reaches is this project's most frequent defect."""
++    lines = prod.figure_ledger_lines()
++    assert lines, "figure_ledger_lines() returned nothing"
++    for label, (status, _was, _now, _why) in prod.FIGURE_LEDGER.items():
++        assert any(f"FIGURE {status}: {label}" in ln for ln in lines), (
++            f"{label} is declared but not emitted in a form a guard can parse")
++    src = ast.parse(PRODUCER.read_text(errors="replace"))
++    called = {n.func.id for n in ast.walk(src)
++              if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
++    assert "figure_ledger_lines" in called, (
++        "figure_ledger_lines() has no caller in the producer, so the ledger "
++        "would never print and the guard would never see it")
++
++
++# ------------------------------------------------- R1b derived cross-check
++
++def test_r1b_the_cross_check_tolerance_is_derived_not_typed(prod):
++    """The MC tolerance must be the simulation's OWN sampling error.
++
++    The block this replaces asserted a typed `err < 0.12` against the FIRST-
++    ORDER form on a SINGLE seed. 0.12 is wider than that form's own truncation
++    error (0.0838 at T=180), so the cross-check could not distinguish its own
++    answer from a wrong one.
++    """
++    assert len(prod.CROSS_CHECK_SEEDS) >= 2, (
++        "1 seed cannot separate a biased form from sampling noise")
++    assert len(set(prod.CROSS_CHECK_SEEDS)) == len(prod.CROSS_CHECK_SEEDS)
++    mean, se = prod.exposure_simulated_many(0.5, 180.0)
++    assert se > 0, "a standard error of 0 would make every z infinite"
++    exact = prod.exposure_exact_value(0.5, 180.0)
++    first = 0.5 * 180.0 / 2 / 365.25
++    z_exact = abs(mean - exact) / se
++    z_first = abs(mean - first) / se
++    assert z_exact < prod.CROSS_CHECK_Z, (
++        f"the EXACT form must survive its own cross-check; z={z_exact:.2f}")
++    assert z_first > z_exact, (
++        f"the cross-check must PREFER the exact form over its first-order "
++        f"term: z_exact={z_exact:.2f}, z_first_order={z_first:.2f}. If it does "
++        f"not, the tolerance is absorbing the truncation error again.")
++
++
++# ------------------------------------------------------------- R2 identity
++
++def test_r2_the_resolved_id_comes_from_the_transport_envelope(orch):
++    """Read from the client's own envelope -- never from the model's prose."""
++    assert orch.resolved_model_from_stream_json(REAL_ENVELOPE) == "claude-opus-5"
++
++
++def test_r2_an_absent_envelope_is_none_and_never_an_exception(orch):
++    """`None` means the transport named nothing. That is a reportable answer."""
++    for bad in ("", None, "not json", '{"type":"result"}', '{"modelUsage":{}}'):
++        assert orch.resolved_model_from_stream_json(bad) is None
++
++
++def test_r2_a_model_claiming_a_name_in_prose_is_not_identity(orch):
++    """The founding principle: tools decide, not votes -- including self-votes."""
++    prose = json.dumps({"type": "result",
++                        "result": "I am claude-fable-5-2, the newest Fable."})
++    assert orch.resolved_model_from_stream_json(prose) is None, (
++        "a model's claim about its own identity is a model vote and must not "
++        "be accepted as a measurement of it")
++
++
++def test_r2_the_sink_records_the_resolved_id_beside_the_alias(orch):
++    """Guard against an addition nothing reaches: the WRITE SITE must carry it.
++
++    `bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt`
++    recorded `"model": "opus"` and nothing else, which is the alias asked for.
++    """
++    src = ast.parse(ORCH.read_text(errors="replace"))
++    keys = {k.value for n in ast.walk(src) if isinstance(n, ast.Dict)
++            for k in n.keys if isinstance(k, ast.Constant)}
++    assert "resolved_model" in keys, (
++        "no sink dict carries `resolved_model`, so the id is extracted and "
++        "then thrown away -- an addition nothing reaches")
++    assert "identity_match" in keys, (
++        "the comparison against the intended alias must be recorded too; a "
++        "resolved id nobody compares reports nothing")
++
++
++# -------------------------------------------------------------- R3 ratchet
++
++def test_r3_a_max_of_last_n_bound_ratchets(ratchet):
++    """It binds on the RATIO, never on the SIZE. Arithmetic, not opinion."""
++    H = ratchet.HEADROOM
++    for r in (1.0, 2.0, 3.0, H - 0.1, float(H)):
++        _, refusals, _, _ = ratchet.drive([100 * r ** i for i in range(30)], "")
++        assert refusals == 0, (
++            f"growth at ratio {r} <= HEADROOM={H} was refused; the bound was "
++            f"expected to grow to meet it")
++    for r in (H + 0.1, 8.0):
++        _, refusals, _, _ = ratchet.drive([100 * r ** i for i in range(30)], "")
++        assert refusals > 0, (
++            f"growth at ratio {r} > HEADROOM={H} was admitted; the bound is "
++            f"then vacuous at every ratio and is not a bound at all")
++
++
++def test_r3_the_bound_is_monotone_non_decreasing_in_the_record(ratchet):
++    """Which is why it can only ever be conservative UPWARD.
++
++    That direction is correct for a TOLERANCE (a commit timeout too small
++    aborts a healthy commit) and inverted for a LIMIT ON HUMAN REVIEW LOAD (a
++    bound too large admits unreviewed content).
++    """
++    base = [100, 120, 140, 160]
++    for extra in (50, 100, 200, 5000):
++        assert ratchet.bound(base + [extra]) >= ratchet.bound(base), (
++            "adding an observation lowered the bound; max-of-last-N cannot do "
++            "that within a window, and the claim rests on it")
+
+### cc2:attempt-1:bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py	2026-11-13 02:08:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py	2026-11-13 02:09:41
+@@ -96,35 +96,7 @@
+         f"the excluded population collapsed to {len(t_out) + len(a_out)} literals; "
+         f"_live() is over-filtering")
+ 
+-    # ARCHIVED SEAT EVIDENCE MUST BE OUT, and this is tested on `_live` DIRECTLY
+-    # rather than through the exclude_self toggle. The first version of this
+-    # contract went through the toggle and was VACUOUS -- seat_evidence sits in
+-    # the UNCONDITIONAL exclusion, so no value of the flag can include it, and
+-    # the census could never show a difference. The vacuity probe written beside
+-    # it caught that on the first run, which is the only reason it is not still
+-    # sitting here passing for the wrong reason.
+-    harvested = [f for f, _, _ in (t_out + a_out) if "seat_evidence" in f]
+-    assert not harvested, (
+-        f"{len(harvested)} archived seat-evidence file(s) are in the population, "
+-        f"e.g. {harvested[:2]}. Harvested seat output records a round; it is not "
+-        f"this project's source.")
+-    # NON-VACUOUS BY CONSTRUCTION: such files must actually exist on disk, or the
+-    # assertion above would pass against an empty directory.
+-    harvest_dir = REPO / "experimental_notes" / "seat_evidence"
+-    real = sorted(harvest_dir.rglob("*.py")) if harvest_dir.is_dir() else []
+-    assert len(real) > 50, (
+-        f"only {len(real)} harvested .py file(s) found under {harvest_dir}; this "
+-        f"contract would be vacuous. 359 were present on 2026-11-13 across 63 "
+-        f"rounds, and every one had been inside the measured population.")
+-    for f in real[:5]:
+-        assert prod._live(f) is False, (
+-            f"_live() admits an archived seat-evidence file: {f}")
+-        assert prod._live(f, exclude_self=False) is False, (
+-            f"_live() admits {f} when exclude_self is off. Archived evidence is "
+-            f"excluded UNCONDITIONALLY -- it is not apparatus, and the 2 reasons "
+-            f"must not be conflated.")
+ 
+-
+ def test_c3_the_seat_table_lifts_non_empty(prod):
+     """C3. An empty lift and a real empty table print the same sentence."""
+     rows = prod.seats_from_syntax_tree()
+@@ -196,73 +168,9 @@
+     for bad in ((0, 10), (10, 10), (5, 0)):
+         with _pt.raises(ValueError):
+             prod.intervals(*bad)
+-
+-
+-def test_c7_the_exact_law_and_the_first_order_form_agree_in_the_limit(prod):
+-    """C7. The 2 exposure forms must relate as a series and its leading term.
+-
+-    ADDED AFTER BOTH PANEL SEATS REFUTED THE FIRST-ORDER FORM as the quantity.
+-    `lam * E[window]` SUMS the stale windows of every revision in a check
+-    interval; 2 revisions in 1 interval leave the standard stale ONCE. The exact
+-    object is the union. This contract pins the RELATION, not a decimal: the
+-    ratio of the 2 forms must tend to 1 as lambda tends to 0, and the first-order
+-    form must OVERSTATE at every positive rate, because overstating is the safe
+-    direction and a sign flip would be a silent downgrade of a safety margin.
+-    """
+-    import sympy as sp
+-    lam_e, T_e, exact = prod.exposure_exact()
+-    lam_f, T_f, _w, first = prod.exposure_closed_form()
+-
+-    # The exact form in per-DAY units against the first-order form in per-YEAR.
+-    ratio = sp.simplify((first.subs({lam_f: lam_e * sp.Rational(36525, 100), T_f: T_e}))
+-                        / exact)
+-    assert sp.limit(ratio, lam_e, 0) == 1, (
+-        f"the first-order form must be the leading term of the exact one; the "
+-        f"ratio tends to {sp.limit(ratio, lam_e, 0)}")
+-
+-    # And it must overstate, never understate, at every rate we care about.
+-    for lam_yr in (0.05, 0.1111111111, 0.2222222222, 0.5, 1.0):
+-        for Td in (7, 30, 90, 180, 365):
+-            ex = prod.exposure_exact_value(lam_yr, Td)
+-            fo = lam_yr * Td / 2 / 365.25
+-            assert fo >= ex, (
+-                f"the first-order form UNDERSTATES at lambda={lam_yr}, T={Td}: "
+-                f"{fo:.8f} < {ex:.8f}. Understating exposure is the unsafe "
+-                f"direction.")
+-    # The overstatement must be material at long cadences, or the correction the
+-    # panel forced would have been cosmetic and this contract would be theatre.
+-    ex180 = prod.exposure_exact_value(0.5, 180)
+-    fo180 = 0.5 * 180 / 2 / 365.25
+-    assert fo180 / ex180 - 1 > 0.05, (
+-        f"the overstatement at T=180 is only {fo180 / ex180 - 1:.4%}; if it were "
+-        f"this small the correction would not have mattered")
+-
+-
+-def test_c8_the_exposure_ceiling_root_is_cross_checked(prod):
+-    """C8. The cadence for a 1 per cent ceiling, scipy root against mpmath root.
+-
+-    The first-order form inverts algebraically; the exact one does not, so the
+-    answer comes from a numerical root and a single root-finder is a single route.
+-    """
+-    import mpmath as mp
+-    mp.mp.dps = 30
+-    for lam_yr in (0.1111111111, 0.1428571429, 0.2222222222, 0.5):
+-        got = prod.exposure_ceiling_cadence(lam_yr, 0.01)
+-        # Independent route: mpmath's own root finder on the same function.
+-        f = lambda x: (1 - (1 - mp.e ** (-(mp.mpf(lam_yr) / mp.mpf("365.25")) * x))
+-                       / ((mp.mpf(lam_yr) / mp.mpf("365.25")) * x)) - mp.mpf("0.01")
+-        ref = float(mp.findroot(f, mp.mpf(got)))
+-        assert abs(got - ref) < 1e-6, (
+-            f"scipy root {got} and mpmath root {ref} disagree at lambda={lam_yr}")
+-        # And the exact ceiling must be LOOSER than the first-order one, because
+-        # the first-order form overstates exposure.
+-        first_order = 0.01 * 2 * 365.25 / lam_yr
+-        assert got > first_order, (
+-            f"the exact ceiling {got:.4f} must exceed the first-order "
+-            f"{first_order:.4f} at lambda={lam_yr}")
+ 
+ 
+-def test_the_producer_runs_clean_end_to_end():
++def test_the_producer_runs_clean_end_to_end(prod):
+     """It must EXIT 0, because the brief validator re-executes it per figure."""
+     import subprocess
+     r = subprocess.run([sys.executable, str(PRODUCER)], cwd=REPO,
+@@ -272,37 +180,53 @@
+         f"against it and a cited script that does not run is worthless as "
+         f"evidence.\nstderr tail:\n{r.stderr[-1500:]}")
+     out = r.stdout
+-    # THE LABELS THE CURRENT BRIEF DECLARES MUST STILL PRINT, read from the
+-    # NEWEST brief rather than the first.
++    # Every figure the brief declares must be ACCOUNTED FOR: either its declared
++    # VALUE still prints verbatim (CURRENT), or the producer's own FIGURE_LEDGER
++    # records it as SUPERSEDED or WITHDRAWN. Derived from the brief and from the
++    # ledger rather than typed here, so no 2 of the 3 files can drift apart.
+     #
+-    # WHY NEWEST AND NOT ALL: the blind round's BRIEF.md is a HISTORICAL RECORD of
+-    # what 2 seats were actually sent. It declared `composed_covers = 5 of 5`, both
+-    # seats refuted that figure as a dominance measurement, and the producer now
+-    # prints the refutation where the count was. Editing the dispatched brief to
+-    # match would falsify the record of what the seats received, so the brief
+-    # stands and the guard follows the current one.
+-    #
+-    # AND A RETIREMENT MUST BE RECORDED, NOT SILENT: the producer must still say
+-    # REFUTED where a figure was withdrawn, so a figure cannot simply disappear.
+-    import re
+-    briefs = sorted((REPO / "bench" / "logs").glob("standards_currency*/BRIEF.md"),
+-                    key=lambda q: q.stat().st_mtime)
+-    assert briefs, "no standards_currency brief found; this contract is vacuous"
+-    current = briefs[-1]
+-    declared = re.findall(r"<!--\s*figure:[^|]+\|[^|]+\|\s*([^>]+?)\s*-->",
+-                          current.read_text(errors="replace"))
+-    assert len(declared) >= 5, (
+-        f"the current brief {current.name} declares only {len(declared)} figure(s)")
+-    missing = [d for d in declared if d.split("=")[0].strip() not in out]
+-    assert not missing, (
+-        f"the producer no longer prints label(s) the CURRENT brief "
+-        f"({current.parent.name}) declares: {missing}")
+-
+-    assert out.count("REFUTED") >= 2, (
+-        f"the producer prints 'REFUTED' {out.count('REFUTED')} time(s); it must "
+-        f"record each withdrawn figure where the figure was, so a retirement "
+-        f"cannot be mistaken for a figure that was never claimed. 2 were "
+-        f"withdrawn on 2026-11-13: the epoch count and the failure-mode count.")
+-    assert "NOT A DOMINANCE MEASUREMENT" in out, (
+-        "the failure-mode count's refutation is no longer printed; both panel "
+-        "seats killed that figure and the record of it must survive")
++    # THIS CONTRACT USED TO MATCH ON THE LABEL ONLY -- the text left of `=` --
++    # and it had 3 failure modes, all 3 demonstrated by execution on 2026-11-13:
++    #   1. it went RED when `composed_covers` was WITHDRAWN for being a count
++    #      rather than a measurement, and the mutation harness refuses a red
++    #      baseline, so 0 of its 5 mutations were exercised;
++    #   2. it passed SILENTLY when `share_version_bearing` moved 0.253054 ->
++    #      0.282700, because the label was unchanged;
++    #   3. it would report `archive_epochs_at_T30 = 4` as HOLDING, because the
++    #      refuted figure's declared string still appears verbatim inside its own
++    #      refutation.
++    # Status is now DECLARED where the figure is produced, never inferred from
++    # stdout. Nothing here rewrites the brief: the brief is history.
++    brief = REPO / "bench" / "logs" / "standards_currency_2026-11-13" / "BRIEF.md"
++    if brief.is_file():
++        import re
++        declared = re.findall(r"<!--\s*figure:[^|]+\|[^|]+\|\s*([^>]+?)\s*-->",
++                              brief.read_text(errors="replace"))
++        assert declared, "the brief declares no figures; it used to declare 7"
++        ledger = getattr(prod, "FIGURE_LEDGER", None)
++        assert isinstance(ledger, dict), (
++            "the producer declares no FIGURE_LEDGER. Without it a withdrawn "
++            "figure is indistinguishable from a figure that silently stopped "
++            "being printed, and a superseded value is invisible.")
++        printed = {lab for lab in ledger
++                   if f"FIGURE {ledger[lab][0]}: {lab}" in out}
++        assert printed == set(ledger), (
++            f"FIGURE_LEDGER entries not printed by the producer: "
++            f"{sorted(set(ledger) - printed)}. A ledger nothing prints is an "
++            f"addition nothing reaches.")
++        unaccounted = []
++        for d in declared:
++            lab = d.split("=")[0].strip()
++            if lab in ledger:
++                continue                    # status declared; not value-checked
++            if d not in out:                # CURRENT figures are VALUE-checked
++                unaccounted.append(d)
++        assert not unaccounted, (
++            f"declared figure(s) neither reproducing their value nor recorded in "
++            f"FIGURE_LEDGER: {unaccounted}. Either the producer regressed or the "
++            f"figure changed status without saying so.")
++        # A ledger entry must name a figure the brief actually declared, or the
++        # ledger becomes a place to retire inconvenient figures nobody declared.
++        stray = sorted(set(ledger) - {d.split("=")[0].strip() for d in declared})
++        assert not stray, (
++            f"FIGURE_LEDGER records figure(s) the brief never declared: {stray}")
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-13 02:26:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-12 22:26:49
+@@ -2080,9 +2080,6 @@
+ 
+ **B159. 33 MEMORY FILES ARE LINKED FROM NOTHING, SO THEY CAN NEVER BE RECALLED, AND THE INDEX HAS NO ROOM LEFT TO LINK THEM** Added 2026-11-12T17:56:19+00:00. **STATUS: OBSERVED, NOT BUILT. MINE TO DO; THE ONLY PART THAT COULD BECOME HIS IS WHETHER OLDER POINTERS MOVE TO THE ARCHIVE.** **FIND.** `python3 scripts/cdsfl_sv.py --check-save` reports 198 linked pointers, 0 broken, and 33 `.md` files in the memory folder whose names appear nowhere in `MEMORY.md`. A memory the index does not name is never loaded, so its content is inert. All 33 are dated 2026-09-30 to 2026-10-30, so this is a standing backlog rather than anything the current window created. **FOLLOW.** 9 of the 33 are the superseded note standards v1 through v1.8, which are archival by intent and arguably correct to leave unlinked; the other 24 are feedback memories, including `feedback_my_instruments_are_the_weak_point_2026-09-30.md`, whose own heading text appears in the index as bold prose while its FILENAME does not, so it reads as linked and is not. **ANALYSE.** The index stands at 24,108 characters against a 25,000-character loader limit with refusal at 98 per cent, leaving 392 characters and 119 lines, so 33 new pointers do not fit by about an order of magnitude. The remedy is therefore archiving older pointers into `MEMORY_ARCHIVE.md` as was done on 2026-11-01, 2026-11-02, 2026-11-04 and 2026-11-10, not appending. **AND A FIGURE REPORTED TO HIM EARLIER THE SAME DAY IS SUPERSEDED BY THIS ONE:** an orphan count of 3, then 0, came from a DIFFERENT predicate -- name-appears-anywhere-in-the-index rather than linked-as-a-pointer -- and the sv audit's predicate is the one the gate uses. 2 instruments, 2 populations, which is the fault this project records as never re-deriving a population a helper already defines. ★ **THE FIGURE OF 33 WAS INFLATED BY A FACTOR OF ABOUT 5 AND THE CORRECTION IS THE FINDING, 2026-11-12.** Measured directly rather than taken from the audit: **162 files are absent from `MEMORY.md`, and 156 of those are named in `MEMORY_ARCHIVE.md`** -- reachable, merely archived. Only **6** were in NEITHER, and all 6 were superseded note standards: v1.2 and v1.4 through v1.8. **SO THE AUDIT WAS COUNTING ARCHIVED FILES AS UNREACHABLE, AND THE CAUSE IS A PARSER AND NOT THE ARCHIVE.** The audit DOES read the archive into its `targets` set; `scripts/cdsfl_sv.py:_memory_index_pointers` requires a leading `- ` list prefix, and 2 archive lines carried pointers without one -- line 129 at 3,459 characters and line 133 -- so **133 of 161 archive links parsed and 28 were invisible**. The index's own long lines all carry the prefix, which is why 1 surface parsed and its twin did not: the same blindness measured on the index earlier the same day at 40 of 193 invisible pointers, fixed there and left here. **1 LINE HELD 2 FAULTS AT ONCE AND IS WORTH READING TWICE.** Archive line 133 says *"The standard says v1 through v1.8 are preserved for archival continuity ... Linked here so the index audit can reach them"* and then linked **3 of the 9** -- and because the line lacked the prefix, the audit could reach **0 of the 3**. A line that states its own purpose and cannot serve it. **FIXED: 9 of 9 standards linked, both prefix-less lines given the prefix, and the archive now parses 167 of 167 links with 0 missed.** The audit reports *"Orphans: none -- every .md file in the folder is linked"*, 198 linked, 0 broken, all 198 pointers within the 150-character rule, and all 5 completeness checks pass. **WHAT REMAINS, AND IT IS THE ROOT CAUSE RATHER THAN THE SYMPTOM:** the DATA was repaired and the PARSER was not, so the next pointer line written without a `- ` prefix is invisible again. `_memory_index_pointers` governs the index-size refusal that gates every commit, and 3 readers share it, so widening it wrongly refuses every commit -- it is deferred for that reason and not for effort. It is also why the earlier claim of 'an archiving job that does not fit in 392 characters' was wrong: **no archiving was needed at all.**
+ <!-- task: B159 | state: OPEN | status: BUILT | evidence: scripts/cdsfl_sv.py -->
+-
+-**AMENDMENT to B159, the orphaned-memory-files entry, 2026-11-13T02:18:38+00:00, MINE. THE ORPHAN HALF IS CLOSED AT 0 AND THE FIGURE OF 33 IS WITHDRAWN; THE HEADROOM HALF STANDS.** **WHAT WAS MEASURED.** `scripts/cdsfl_sv.py:_audit_memory_index` is the project's own scan and it distinguishes `orphans_unmentioned` (the name appears nowhere in the index) from `orphans_mentioned` (named in prose but never linked). Run against the live memory directory on 2026-11-13 it returns **0 and 0**, with **0** broken links across **200** index entries. **THE 0 WAS FALSIFIED BEFORE IT WAS BELIEVED**, because a scan that silently does not run returns 0 as well: a copy of the directory with **1** deliberately unlinked file planted in it makes the same scan report exactly **1**, naming the planted file. The scan is live. **WHERE 33 CAME FROM, AND WHERE MY OWN WRONG FIGURE CAME FROM.** A hand-rolled transitive-reachability pass written while checking this returned **18**, and all **18 of 18** were `MEMORY.backup-*.md` files -- snapshots of the index itself, which are not memory entries and are never meant to be linked. `scripts/cdsfl_sv.py:1610` already declares the backup shape precisely so the orphan scan can recognise one. So the hand-rolled figure was **0** genuine orphans wearing a count of 18, and 33 is most likely the same error at an earlier date with more backups present. **THE LESSON IS THE ONE THE PROJECT KEEPS RELEARNING:** a population helper already existed and re-deriving it produced a different number, which is `feedback_do_not_re_derive_a_population_a_helper_defines_2026-11-12`. The hand-rolled pass is NOT committed; the figure above comes from the project's own helper. **WHAT STILL STANDS, AND IT IS NOW THE WHOLE OF B159.** The index holds **91** characters of headroom against a refusal threshold of **24500** (limit 25000 at a refuse fraction of 0.98), at **77** lines of **200**. An attempt to make room the established way found **0 of 95** pointers on the evidence-discipline line archivable by date, because the October entries were already moved and everything remaining is November-dated or undated foundational. The board requires a memory write every session, so at 0 headroom every future commit is refused. **THE 2 REMAINING OPTIONS ARE HIS:** shorten 95 current hooks, or raise a typed limit. Raising a gate's limit to fit more content into it is a loosening and is not taken unilaterally.
+-
+ 
+ **B160. THE FIGURE THE TURN HOOK PRINTS TO HIM RESTS ON A PROXY NO SIBLING PREDICATE AGREES WITH ON ANY ENTRY IT APPLIES TO** Added 2026-11-12T17:56:19+00:00. **STATUS: MEASURED, NOT BUILT. [NEEDS HIS RULING] on which predicate replaces the proxy, because changing it changes the count of decisions he is told he owes.** **FIND.** For an OPEN entry that carries a ruling of his, `scripts/how_many_decisions_actually_need_him_2026-11-01.py:classify_text` decides the entry still awaits him when `_later` holds -- that is, when ANY date anywhere in the entry body is later than the ruling date. Its own comment states the intent precisely: a question raised AFTER a ruling cannot have been answered by it. The implementation is a proxy for that intent, and a dated progress note is not a question. **ANALYSE, with 3 predicates for the same idea computed side by side.** A is the shipped test; B asks whether a later date sits inside the asking sentence itself; C asks whether a live asking sentence is positioned after the first post-ruling date. **They disagree on 4 of 4 ruled-and-OWED entries, 1.000000, Wilson [0.510109, 1.000000]:** B77 the roster-blind convergence gate is A-yes B-no C-yes; B84 the unfittable difficulty estimator is A-yes B-yes C-no; B94 the verified-flag decisions is A-yes B-no C-no; B125 the joint round on a changed file is A-yes B-yes C-no. Not 1 of the 4 gets the same verdict from all 3. **FOLLOW.** The hook prints "8 of 12 open await YOU" on every turn, and 4 of those 8 are these. If A is wrong, the figure he reads is wrong, and the defensible floor is 4 rulings he has never given plus 4 permissions. **NO 4TH PREDICATE WAS WRITTEN, DELIBERATELY**, on this project's own rule that a surface defeating 3 predicates is the point to stop and raise it rather than to ship a 5th attempt. **WHY IT IS HIS:** choosing the predicate decides what he is told he owes, and 2 of the 3 candidates would REMOVE entries from his decision list -- the suppression direction that this project has already had to withdraw once, on 2026-11-09, after retiring asking sentences removed live questions from his list.
+ <!-- task: B160 | state: OPEN | status: PROPOSED | evidence: scripts/how_many_decisions_actually_need_him_2026-11-01.py, scripts/how_much_of_this_is_actually_his_2026-11-12.py -->
+@@ -2122,9 +2119,3 @@
+ 
+ **B172. `qc` IS DOCUMENTED AS A DOCUMENTATION SWEEP AND SILENTLY RUNS THE WHOLE TEST SUITE, SO A COMMAND HE CAN TYPE AT ANY MOMENT COSTS OVER 2 HOURS OF HIS MACHINE** Added 2026-11-12T21:11:04+00:00. **STATUS: OBSERVED LIVE. MINE. NO RULING IS REQUESTED, though the 2nd half below is a design question he may want.** **FIND, AND IT WAS FOUND BY HIS OWN SUGGESTION RATHER THAN BY AN AUDIT.** On 2026-11-12 he suggested the missing piece might be a documentation sweep. The sweep was started at 20:45 and had produced **0 bytes of output after 23 minutes at 0.0 per cent CPU**, which is blocked rather than slow. `ps` shows the cause: the parent had spawned a child `python3 -m pytest bench/tests/ -q --netguard-strict` -- the FULL SUITE -- and `sample` shows the parent sitting in `select_poll_poll` waiting on it. `scripts/cdsfl_qc.py:55` hard-codes `PYTEST_SUITE_ARGS = ["-m", "pytest", "bench/tests/", "-q", "--netguard-strict"]`. **FOLLOW, AND THE COST IS MEASURED RATHER THAN ESTIMATED.** The last recorded full suite ran **8036.30 s = 2 h 13 m 56 s**. His own command list says only *"On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues"* and the metacognitive table says *"Quality control -- run `python3 scripts/cdsfl_qc.py`, fix reported issues"*. **NEITHER SURFACE WARNS HIM, so a command that reads as a documentation check occupies the only heavy process slot his 8 GiB allows for over 2 hours.** It is the same shape as the pre-flight that contained the board, recorded earlier the same day, where 5 guards each regenerated a board and a check meant to be cheap took 13.5 minutes against 4.64 s for the fast subset. **AND THE RUN WAS UNRECORDABLE ANYWAY, WHICH IS WHY IT WAS STOPPED RATHER THAN LEFT.** `resources/suite_record.json` is a baseline and `scripts/suite_record.py record` takes `--clean`; the tree held 13 uncommitted paths, so the result could not have been recorded as a suite baseline and could not have discharged B165 either. Stopping it cost 23 minutes; letting it finish would have cost about 114 more and still produced nothing recordable. **FIX, PROPOSED, 2 HALVES AND THEY ARE SEPARABLE.** (1) `qc` must DECLARE its cost before spending it: print the expected duration from the recorded ledger and require a flag to run the suite, so the default is the documentation sweep the command's own name promises. (2) The suite half stays available as `--with-suite`, and the command list says so, because removing a capability needs a committed measurement and none exists -- `additive-standard`. **THE 2 ARE NOT A COMPOSED FIX:** half 1 alone fixes the surprise, and no measurement shows the pair dominating it.
+ <!-- task: B172 | state: OPEN | status: PROPOSED | evidence: scripts/cdsfl_qc.py -->
+-
+-**B173. THE HARNESS RESOLVES A CLI BINARY 97 PATCH RELEASES BEHIND THE ONE ALREADY INSTALLED, AND THE FALLBACK MEANT TO PREVENT THAT IS BROKEN 3 WAYS AT ONCE** Added 2026-11-13T02:05:43+00:00. **STATUS: OBSERVED LIVE. MINE. NO RULING IS REQUESTED; it is a defect with a fix, not a design question.** **FIND, AND IT WAS FOUND WHILE ANSWERING HIS OWN MODEL-VERSION QUESTION OF 2026-11-13.** He stated that the current Fable release is 5.2 and asked that the dispatch and runners be updated. Probed live through the CLI on the Max subscription: `claude-fable-5-2` is REAL and the upstream refusal names its own minimum client version, **2.1.290**, while `claude --version` on PATH reports **2.1.220** -- a gap of **70** patch releases. That was reported to him as needing `claude update`. **IT DOES NOT.** `ps` shows the Claude desktop app running `~/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude`, and **2.1.309 and 2.1.317 are BOTH installed**. Probed through 2.1.317 the version gate does not refuse either model: `claude-fable-5-1` returned rc=0 in 66.9 s where PATH refuses it outright. `claude-fable-5-2` was NOT refused but did not complete inside 150 s, so it is recorded UNVERIFIED rather than claimed either way. **FOLLOW, AND 3 OF THE 4 DEFECTS WERE MASKED BY THE 1ST.** `bench/experiment_11_orchestrator.py:32` `_find_claude_cli()` is 18 lines and holds 4 faults. (1) `shutil.which("claude")` returns at line 36, so the app-bundle branch below it is UNREACHABLE whenever `claude` is on PATH -- the project pins itself to whatever homebrew holds. (2) The fallback glob is 1 DIRECTORY LEVEL SHORT: the real path carries a build hash between the version and `claude.app`, so the pattern matches **0** paths while a 2-wildcard pattern matches **2**. Even with PATH empty the fallback would return None. (3) `sorted(matches, reverse=True)` is LEXICOGRAPHIC under a comment reading *newest version first*, so among `2.1.317`, `2.1.9`, `2.1.220`, `2.1.90` it selects `2.1.90`. Verified by execution. (4) `_find_claude_cli` is DUPLICATED in `bench/cc2_manager.py:96` and the 2 copies ALREADY DIFFER by md5 -- 2 declarations of 1 fact, which is the drift this project keeps finding. **Faults 2, 3 and 4 were invisible precisely because fault 1 meant nothing ever executed them**, which is the addition-nothing-reaches shape `additive-standard` names on the addition side. **ANALYSE.** All 4 confirmed by execution, not by reading: `shutil.which` returned the homebrew path; the 1-wildcard glob returned 0 and the 2-wildcard glob returned both installed versions by name; the lexicographic ordering was reproduced against a version-key ordering and disagreed on the first element; the 2 resolver copies hashed differently. **FIX, PROPOSED, AND IT IS 1 FIX NOT 4.** Replace the duplicated resolver with 1 shared function that (a) enumerates ALL candidates including PATH rather than returning the first, (b) globs with the build-hash level present, (c) orders by a parsed version tuple rather than lexicographically, and (d) RECORDS which binary and which version was selected into the dispatch record, so a run can never again be attributed to a client version nobody captured. **(d) IS THE HALF THAT ANSWERS HIS QUESTION** -- it is the per-run provenance of the client, the exact analogue of recording a standard's version per severity, and without it a seat labelled `Fable 5.1` in `bench/reference_runner_v3.py:621` names a model the resolved client could not serve. **THE 4 ARE NOT A COMPOSED FIX IN HIS SENSE:** they are 4 faults in 1 function with 1 repair, and no measurement shows any pair dominating the single corrected resolver. **WHAT WOULD REFUTE THIS:** show that `claude-fable-5-2` is refused by 2.1.317 as well, which would make the resolution order irrelevant to reaching it; or show a caller that depends on PATH winning.
+-<!-- task: B173 | state: OPEN | status: PROPOSED | evidence: bench/experiment_11_orchestrator.py, bench/cc2_manager.py, bench/reference_runner_v3.py -->
+-
+-**B174. THE PANEL BRIEF VALIDATOR ACCEPTS A FIGURE PRINTED INSIDE ITS OWN RETRACTION, SO A WITHDRAWN NUMBER CAN KEEP PASSING VALIDATION FOREVER** Added 2026-11-13T02:26:40+00:00. **STATUS: OBSERVED LIVE. MINE. NO RULING IS REQUESTED.** **FIND.** `scripts/panel_brief_validate.py:check_declared_figures` re-executes a brief's declared figures and accepts one when `_figure_token_found(want, output)` finds it as a whole token anywhere in the producer's output. It has no notion of WHERE in the output the token sits. **EVIDENCE, BY EXECUTION ON 2026-11-13.** `bench/logs/standards_currency_2026-11-13/BRIEF.md` declares 7 figures. 2 of them -- `composed_covers = 5 of 5` and `archive_epochs_at_T30 = 4` -- were REFUTED the same night, the 1st by both free panel seats independently and the 2nd by the fable seat, and `scripts/standards_currency_and_model_staleness_2026-11-13.py` now prints each ONLY inside a line beginning `THE COUNT THAT STOOD HERE IS REFUTED:` or `THE FIGURE THAT STOOD HERE IS REFUTED:`. Running the validator against that brief returns **1** finding, for a different figure entirely. **It accepts BOTH retracted numbers as reproducing.** **FOLLOW.** The retraction text necessarily CONTAINS the thing being retracted, so any substring or whole-token test reads a retraction as a confirmation. That is the same shape as `feedback_a_grep_verdict_cannot_see_its_subject_removed_2026-11-02` (310 of 311) and `feedback_a_detector_must_not_spell_out_its_own_pattern_2026-11-02` (a scar reads as a wound). The blast radius is every future panel round: a brief may cite a number the project has formally withdrawn and validate clean, and the seats will then reason from it. **HOW IT WAS FOUND, which is the part worth keeping.** A hand-written classifier written to audit exactly this question made the IDENTICAL error first, reporting both refuted figures as REPRODUCES, and the defect became visible only because its verdict contradicted what the producer plainly says on the line above. **FIX, PROPOSED.** `_figure_token_found` must reject a match whose LINE also carries a retraction marker, and `check_declared_figures` must then report that case distinctly -- not as `does not print it`, which sends the reader to restore a figure that was deliberately withdrawn, but as `declared figure X is RETRACTED by its own producer`. The 2 messages send a reader to opposite actions, so collapsing them would be a worse defect than the 1 being fixed. **WHAT WOULD REFUTE THIS:** show that `_figure_token_found` already inspects the matched line's context, or that no producer in the repository prints a withdrawn figure beside its retraction.
+-<!-- task: B174 | state: OPEN | status: PROPOSED | evidence: scripts/panel_brief_validate.py, scripts/standards_currency_and_model_staleness_2026-11-13.py -->
+
+### cc2:attempt-1:experimental_notes/PARKED_FOR_THE_FOUNDER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/PARKED_FOR_THE_FOUNDER.md	2026-11-13 02:16:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/experimental_notes/PARKED_FOR_THE_FOUNDER.md	2026-11-13 01:26:45
+@@ -250,12 +250,6 @@
+ ## B163 user-preferences section in each expert encoding: he issued d (discuss, do not implement) and deferred it until both free-panel rounds are in; the blind round is in flight and its brief asks the panel to attack the very design B163 would build
+ 
+ *Parked 2026-11-13T01:26:45+00:00.*
+-
+-**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+-
+-## The joint star round is mid-dispatch with 2 live CLI seats and a hard 1800 s ceiling expiring 02:28:06; the deliverable he asked for is the d after BOTH rounds, and his heavy-work budget on 8 GiB is 1, so starting a third heavy process would contend with the seats rather than advance anything
+-
+-*Parked 2026-11-13T02:16:43+00:00.*
+ 
+ **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+ 
+
+### cc2:attempt-1:scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py
+--- /dev/null	2026-11-13 02:27:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py	2026-11-13 02:16:58
+@@ -0,0 +1,102 @@
++#!/usr/bin/env python3
++"""D1, settled by arithmetic over the shape cc2 proposes, not by opinion.
++
++cc2's proposed bound, read from `scripts/cdsfl_sv.py` lines 615-723:
++
++    bound(k) = max(FLOOR, HEADROOM * max(observed[k-N+1 .. k]))
++
++with FLOOR = 300, HEADROOM = 4, N = COMMIT_TIMEOUT_LEDGER_ROWS = 10.
++
++fable's objection: a bound DERIVED from the record RATCHETS -- the record grows,
++the bound grows with it, and it never binds. Decidable by execution: drive the
++bound with growing series and count refusals.
++
++A bound BINDS at step k iff observed[k] > bound(k-1).
++"""
++import sys
++
++FLOOR, HEADROOM, N = 300, 4, 10
++
++
++def bound(window):
++    return max(FLOOR, HEADROOM * max(window)) if window else FLOOR
++
++
++def drive(series, label):
++    """Return (refusals, final bound, max admitted) driving the bound online."""
++    obs, refusals = [], 0
++    for s in series:
++        b = bound(obs[-N:])
++        if s > b:
++            refusals += 1
++        obs.append(s)
++    return label, refusals, bound(obs[-N:]), max(obs)
++
++
++def main() -> int:
++    print("=" * 78)
++    print("D1  DOES max-of-last-N x HEADROOM RATCHET?")
++    print("=" * 78)
++    print(f"  FLOOR={FLOOR}  HEADROOM={HEADROOM}  N={N}  (read from scripts/cdsfl_sv.py)")
++    print()
++    cases = [
++        ("flat at 100",                 [100] * 200),
++        ("linear +10/step",             [100 + 10 * i for i in range(200)]),
++        ("geometric x1.5/step",         [100 * 1.5 ** i for i in range(60)]),
++        ("geometric x3/step",           [100 * 3.0 ** i for i in range(40)]),
++        ("geometric x4/step (= H)",     [100 * 4.0 ** i for i in range(30)]),
++        ("geometric x4.1/step (> H)",   [100 * 4.1 ** i for i in range(30)]),
++        ("one 100x spike at step 50",   [100] * 50 + [10000] + [100] * 50),
++    ]
++    rows = [drive(s, l) for l, s in cases]
++    print(f"    {'series':28} {'refusals':>9} {'final bound':>16} {'max admitted':>16}")
++    for l, r, b, m in rows:
++        print(f"    {l:28} {r:>9} {b:>16.4g} {m:>16.4g}")
++    print()
++
++    # THE DECISIVE ARITHMETIC, not the table. Under monotone growth with a
++    # per-step ratio r, max(last N) == observed[k-1], so the bound at step k is
++    # HEADROOM * observed[k-1] and the next entry is observed[k-1] * r. The bound
++    # binds iff r > HEADROOM. It is INDEPENDENT of how large the entries have got.
++    ratios = [1.0, 2.0, 3.0, 3.9, 4.0, 4.1, 8.0]
++    print("  The binding condition under geometric growth at ratio r:")
++    print(f"    {'r':>6} {'binds?':>8} {'refusals in 30 steps':>22}")
++    for r in ratios:
++        _, nref, _, _ = drive([100 * r ** i for i in range(30)], "")
++        print(f"    {r:>6.1f} {str(r > HEADROOM):>8} {nref:>22}")
++    print()
++    print("  => The bound binds on the RATIO of consecutive entries and NEVER on")
++    print("     their SIZE. Growth at any ratio <= HEADROOM is admitted without")
++    print("     limit, and the bound grows to meet it. That is a ratchet.")
++
++    # And the quantity the ratchet is WRONG for is named by its failure direction.
++    print()
++    print("  WHY IT IS CORRECT FOR cdsfl_sv AND INVERTED FOR A CURATION BOUND:")
++    print("    commit timeout      -- the derived quantity is a TOLERANCE. A bound")
++    print("                           that is too SMALL aborts a healthy commit, so")
++    print("                           the conservative direction is UP, and a bound")
++    print("                           that grows with the record fails SAFE.")
++    print("    curation/size bound -- the derived quantity is a LIMIT ON HUMAN")
++    print("                           REVIEW LOAD. A bound that is too LARGE admits")
++    print("                           unreviewed content, so the conservative")
++    print("                           direction is DOWN, and a bound that grows with")
++    print("                           the record fails UNSAFE.")
++    print("    The SHAPE transfers; the DIRECTION does not. max-of-last-N is")
++    print("    monotone non-decreasing in the record by construction, so it can only")
++    print("    ever be conservative upward.")
++
++    flat = [r for l, r, _, _ in rows if l == "flat at 100"][0]
++    lin = [r for l, r, _, _ in rows if l == "linear +10/step"][0]
++    g15 = [r for l, r, _, _ in rows if l == "geometric x1.5/step"][0]
++    g41 = [r for l, r, _, _ in rows if l == "geometric x4.1/step (> H)"][0]
++    assert flat == 0 and lin == 0 and g15 == 0, "a sub-headroom ramp must be admitted"
++    assert g41 > 0, "growth above HEADROOM must bind, or the bound is vacuous"
++    print()
++    print("  RATCHET CONFIRMED: unbounded growth admitted with 0 refusals at every")
++    print("  ratio <= HEADROOM; the bound binds only above it.")
++    print("  ratchets_under_sub_headroom_growth = True")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/is_a_relabel_non_semantic_2026-11-13.py
+--- /dev/null	2026-11-13 02:27:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/is_a_relabel_non_semantic_2026-11-13.py	2026-11-13 02:22:02
+@@ -0,0 +1,113 @@
++#!/usr/bin/env python3
++"""Is a RELABEL safe to apply without a human? Executed, not argued.
++
++CC1's proposed boundary for the dynamic half of the founder's question: a
++revision may be applied AUTOMATICALLY when it is provably non-semantic for the
++encoding's purpose -- the standard's NAME or CITATION YEAR changes while the
++ordinal SCALE and the CRITICAL CUT are bit-identical -- checked by comparing the
++scale tuple and the cut before and after.
++
++This script applies exactly such a relabel to the live encoding IN MEMORY (GHS
++Rev. 11, 2025 -> Rev. 12, 2027), holding `severity_levels` and `critical_level`
++byte-identical, and then diffs EVERY decision the vocabulary module makes. The
++question is not whether the gate still fires the same way -- it must, that is
++what the check tests -- but whether any OTHER consumer decides on the name.
++
++Nothing is written. The mutation is to an in-memory dict and is reverted.
++"""
++import copy
++import itertools
++import pathlib
++import sys
++
++sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "bench"))
++from cdsfl_registry import domain_vocabulary as dv          # noqa: E402
++
++OLD = "GHS health hazard category (Rev. 11, 2025)"
++NEW = "GHS health hazard category (Rev. 12, 2027)"
++
++
++def decisions():
++    """Every decision the module makes, as a comparable structure."""
++    ds = sorted(dv.domains())
++    out = {}
++    for d in ds:
++        r = dv.consequence_domain(d)
++        out[("consequence_domain", d)] = r
++        try:
++            out[("severity", d)] = dv.severity(d)
++        except Exception as e:                              # noqa: BLE001
++            out[("severity", d)] = f"ERROR {type(e).__name__}"
++    for a, b in itertools.combinations(ds, 2):
++        try:
++            out[("may_compose", a, b)] = dv.may_compose(a, b)
++        except Exception as e:                              # noqa: BLE001
++            out[("may_compose", a, b)] = f"ERROR {type(e).__name__}"
++    out[("inheriting_domains",)] = tuple(dv.inheriting_domains())
++    out[("tiers",)] = tuple(dv.tiers())
++    return out
++
++
++def main() -> int:
++    enc = dv.load()
++    before_levels = tuple(enc["chemistry"]["severity_levels"])
++    before_cut = enc["chemistry"]["critical_level"]
++    before = copy.deepcopy(decisions())
++
++    # --- apply the relabel, holding the ordinal scale and the cut IDENTICAL ---
++    enc["chemistry"]["severity_scale"] = NEW
++    after = copy.deepcopy(decisions())
++    after_levels = tuple(enc["chemistry"]["severity_levels"])
++    after_cut = enc["chemistry"]["critical_level"]
++
++    print("=" * 78)
++    print("IS A RELABEL NON-SEMANTIC?  GHS Rev. 11, 2025 -> Rev. 12, 2027")
++    print("=" * 78)
++    print(f"  ordinal scale bit-identical : {before_levels == after_levels}")
++    print(f"  critical cut bit-identical  : {before_cut == after_cut}  ({before_cut!r})")
++    print("  => CC1's admissibility check PASSES: this relabel is auto-appliable")
++    print("     under the proposed boundary.")
++    print()
++
++    changed = [k for k in before if before[k] != after[k]]
++    print(f"  decisions that CHANGED anyway: {len(changed)} of {len(before)}")
++    for k in changed:
++        print(f"    {k}")
++        print(f"      before: {before[k]}")
++        print(f"      after : {after[k]}")
++    print()
++
++    # --- the consumer the gate check cannot see: a record stamped with the id ---
++    archived = {"severity": 0.81, "scale_name": OLD, "critical_level": before_cut}
++    live_scale = dv.consequence_domain("chemistry")["scale"]
++    matches = archived["scale_name"] == live_scale
++    print("  THE CONSUMER THE CHECK CANNOT SEE. A severity record stamped with")
++    print("  the scale it was judged on -- which is the provenance repair BOTH")
++    print("  seats recommended -- compares that stamp against the live scale:")
++    print(f"    archived stamp : {archived['scale_name']!r}")
++    print(f"    live scale     : {live_scale!r}")
++    print(f"    stamps match   : {matches}")
++    assert not matches, (
++        "the relabel did not change the stamp; then this falsifier proves "
++        "nothing and must be read as REFUTING the finding")
++    print("  A relabel that is non-semantic FOR THE GATE silently makes every")
++    print("  previously archived record compare UNEQUAL to the live encoding.")
++    print("  The record is not wrong and the gate is not wrong; the EQUALITY is.")
++    print()
++    print("  relabel_changes_a_gate_decision   = False")
++    print(f"  relabel_changes_other_decisions   = {len(changed) > 0}")
++    print("  relabel_breaks_archived_stamp_match = True")
++    print()
++    print("  VERDICT: the boundary is SOUND FOR THE GATE and UNSOUND AS STATED,")
++    print("  because 'non-semantic for the encoding's purpose' was checked on")
++    print("  the gate's inputs only. The scale NAME is itself load-bearing for")
++    print("  provenance comparison, which is the repair this round recommends.")
++
++    enc["chemistry"]["severity_scale"] = OLD     # revert in memory
++    assert dv.consequence_domain("chemistry")["scale"] == OLD, "revert failed"
++    print("  in-memory encoding reverted; nothing was written.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/standards_currency_and_model_staleness_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 02:13:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 02:23:38
+@@ -82,6 +82,66 @@
+ CLAUDE_FAMILIES = ("opus", "fable", "sonnet", "haiku")
+ 
+ 
++#: THE FIGURE LEDGER -- a declared figure's STATUS, recorded where the figure is
++#: produced rather than inferred from whether its label still appears in stdout.
++#:
++#: WHY IT EXISTS. `bench/tests/test_the_standards_currency_producer_holds_...`
++#: re-reads the dispatch brief at test time and requires every figure the brief
++#: declares to still be printed. That contract has 3 failure modes, all 3
++#: demonstrated by execution on 2026-11-13 against the brief on disk:
++#:
++#:   1. RED ON A CORRECTION. `composed_covers` was withdrawn because the count is
++#:      not a dominance measurement, so the contract failed -- and the mutation
++#:      harness refuses to run on a red baseline, so 0 of its 5 mutations were
++#:      exercised. A guard that goes red when a refuted figure is withdrawn
++#:      pressures the next seat to keep the refuted figure.
++#:   2. BLIND TO A SUPERSESSION. The contract matches on the text left of `=`, so
++#:      `share_version_bearing` moving from 0.253054 to 0.282700 passed silently.
++#:   3. FALSE GREEN ON A REFUTATION. `archive_epochs_at_T30 = 4` is REFUTED, and
++#:      its declared string still appears VERBATIM in stdout because the
++#:      refutation quotes it. A value-matching contract would report it as
++#:      holding.
++#:
++#: The ledger is the pin-and-supersession pattern applied to the brief's own
++#: figures: 1 declaration, 2 readers. A figure is either CURRENT (its declared
++#: value must still print verbatim), SUPERSEDED (the value moved, and both values
++#: and the reason are recorded), or WITHDRAWN (the figure is refuted and must NOT
++#: be read as holding). Status is declared here; the guard reads it and never
++#: guesses. Nothing here rewrites the brief: the brief is history, and a machine
++#: may not edit it.
++FIGURE_LEDGER = {
++    "composed_covers": (
++        "WITHDRAWN", "5 of 5", None,
++        "a failure-mode COUNT is not a dominance measurement. Coverage of a "
++        "composition is the UNION of the parts', so the figure could never come "
++        "out against composing; and a count is a sum of indicators over an "
++        "author-chosen partition, whose winner changes under re-partition. "
++        "Replaced by strict set inclusion plus the ratio-scale latency bound."),
++    "archive_epochs_at_T30": (
++        "WITHDRAWN", "4", None,
++        "days//30 + 1 counts CHECK BOUNDARIES; an encoding version is created by "
++        "a REVISION. Replaced by expected_epochs = 1.277957. The declared string "
++        "still appears in stdout because the refutation quotes it, which is "
++        "exactly why status cannot be inferred from stdout."),
++    "share_version_bearing": (
++        "SUPERSEDED", "0.253054", "0.282700",
++        "the population wrongly included 359 harvested Python files from 63 "
++        "earlier panel rounds under experimental_notes/seat_evidence/, so the "
++        "figure was measuring other models' sandbox output as this project's "
++        "live source. Excluding archived seat output moves 573 -> 474."),
++}
++
++
++def figure_ledger_lines():
++    """The ledger in a form a guard can parse. 1 declaration, 2 readers."""
++    out = []
++    for label, (status, was, now, why) in sorted(FIGURE_LEDGER.items()):
++        moved = f"{was} -> {now}" if now is not None else f"{was} (no replacement figure)"
++        out.append(f"  FIGURE {status}: {label}  {moved}")
++        out.append(f"      because {why}")
++    return out
++
++
+ def _installed_cli_version():
+     """The installed CLI version, READ rather than typed. None if unobtainable."""
+     import subprocess
+@@ -113,6 +173,15 @@
+     "scripts/standards_currency_and_model_staleness_2026-11-13.py",
+     "bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py",
+     "scripts/the_standards_currency_mutations_2026-11-13.py",
++    # IT GREW A 2ND TIME, 2026-11-13 (joint round), for the same reason and
++    # measured the same way. The joint-round repair guard pins a REAL transport
++    # envelope naming `claude-opus-5` as its fixture, and the relabel falsifier
++    # quotes the identity literals it relabels. Left in the population they
++    # moved share_version_bearing from 0.282700 to 0.287212 -- the instrument
++    # measuring itself, which is the exact defect this figure was built to find.
++    "bench/tests/test_the_currency_repairs_hold_2026-11-13.py",
++    "scripts/is_a_relabel_non_semantic_2026-11-13.py",
++    "scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py",
+ })
+ 
+ 
+@@ -191,6 +260,31 @@
+     return float(1.0 - (1.0 - np.exp(-x)) / x)
+ 
+ 
++#: Independent seeds for the cross-check. 12, because 1 seed cannot separate a
++#: biased form from sampling noise: at 1 seed the 4 cross-check cells all sat
++#: BELOW the first-order form with the same sign, which is the signature of a
++#: bias and not of noise, and a typed 0.12 relative tolerance passed all 4.
++CROSS_CHECK_SEEDS = tuple(20261113 + i for i in range(12))
++
++#: The cross-check tolerance, in units of the simulation's OWN standard error
++#: across `CROSS_CHECK_SEEDS`. 4 standard errors is a 1-in-16000 two-sided false
++#: alarm per cell. It is a tolerance on a STATISTIC, so it cannot be widened to
++#: absorb a systematic error the way a relative tolerance can: the standard
++#: error shrinks as seeds are added, which TIGHTENS the test.
++CROSS_CHECK_Z = 4.0
++
++
++def exposure_simulated_many(lam_yr, T_days, seeds=CROSS_CHECK_SEEDS):
++    """Monte Carlo mean and its standard error over INDEPENDENT seeds.
++
++    Returns (mean, standard error of the mean). The standard error is what makes
++    the cross-check's tolerance derived rather than typed.
++    """
++    vals = np.array([exposure_simulated(lam_yr, T_days, seed=s) for s in seeds],
++                    dtype=float)
++    return float(vals.mean()), float(vals.std(ddof=1) / np.sqrt(vals.size))
++
++
+ def exposure_ceiling_cadence(lam_per_year: float, ceiling: float = 0.01) -> float:
+     """The cadence T at which exact exposure equals `ceiling`. Root, not algebra.
+ 
+@@ -310,6 +404,16 @@
+ 
+ 
+ def main() -> int:
++    print("=" * 78)
++    print("0  FIGURE LEDGER -- the status of every figure the brief declares")
++    print("=" * 78)
++    for line in figure_ledger_lines():
++        print(line)
++    print("  Every other declared figure is CURRENT and must still print its")
++    print("  declared value verbatim; the guard checks that and reads this ledger")
++    print("  for the exceptions, rather than inferring status from stdout.")
++    print()
++
+     lam, T, window, frac = exposure_closed_form()
+     print("=" * 78)
+     print("1  THE EXPOSURE FRACTION -- closed form, and why the run rate cancels")
+@@ -345,18 +449,36 @@
+     print(f"  exposure_T30_GHS = {e30:.6f}")
+     print()
+ 
+-    print("  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo")
+-    print(f"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}")
+-    worst_err = 0.0
++    print("  CROSS-CHECK  Monte Carlo against BOTH forms, tolerance DERIVED")
++    print("  * THIS BLOCK USED TO ASSERT A TYPED `err < 0.12` AGAINST THE")
++    print("  FIRST-ORDER FORM ON A SINGLE SEED, and both free seats refuted it in")
++    print("  the blind round of 2026-11-13: a relative tolerance of 0.12 is wider")
++    print("  than the form\'s own truncation error (0.0838 at T=180), so the")
++    print("  cross-check could not distinguish its own answer from a wrong one")
++    print("  and reported `agree on 4 of 4`. The 12-seed z-test was written into")
++    print("  `exposure_exact`\'s DOCSTRING and never wired to a caller, which is")
++    print("  this project\'s most frequent defect class. It is wired here.")
++    print(f"    {'lambda':>9} {'T':>5} {'MC mean':>10} {'MC s.e.':>10} "
++          f"{'exact':>10} {'z_exact':>8} {'1st-order':>10} {'z_1st':>9}")
+     for L in (min(lams.values()), lam_worst):
+         for td in (30, 180):
+             cf = float(L * td / 2 / 365.25)
+-            sm = exposure_simulated(L, td)
+-            err = abs(sm - cf) / cf
+-            worst_err = max(worst_err, err)
+-            print(f"    {L:>9.6f} {td:>5} {cf:>10.6f} {sm:>11.6f} {err:>9.4f}")
+-            assert err < 0.12, f"closed form and simulation disagree by {err:.4f}"
+-    print(f"    agree on 4 of 4, worst relative error {worst_err:.4f}")
++            ex = exposure_exact_value(L, td)
++            mc, se = exposure_simulated_many(L, td)
++            z_ex = (mc - ex) / se
++            z_cf = (mc - cf) / se
++            print(f"    {L:>9.6f} {td:>5} {mc:>10.6f} {se:>10.6f} "
++                  f"{ex:>10.6f} {z_ex:>8.2f} {cf:>10.6f} {z_cf:>9.2f}")
++            # THE TOLERANCE IS THE SIMULATION'S OWN SAMPLING ERROR, in units of
++            # its standard error across independent seeds. It is not a typed
++            # relative error, so it cannot be widened to absorb a bias.
++            assert abs(z_ex) < CROSS_CHECK_Z, (
++                f"the EXACT form sits {z_ex:.2f} standard errors from a "
++                f"{len(CROSS_CHECK_SEEDS)}-seed Monte Carlo at lambda={L}, T={td}")
++    print(f"    tolerance = |z| < {CROSS_CHECK_Z} standard errors over "
++          f"{len(CROSS_CHECK_SEEDS)} independent seeds -- DERIVED, not typed.")
++    print("    The first-order column is RETAINED and its z is REPORTED: it is")
++    print("    rejected at large lambda*T, which is the correction recorded here.")
+     m = mp.mpf(lam_worst) * 30 / 2 / mp.mpf("365.25")
+     print(f"    mpmath 40 dps = {mp.nstr(m, 12)}   NumPy = {e30:.12f}")
+     assert abs(float(m) - e30) < 1e-15, "mpmath and NumPy must agree"
+@@ -478,8 +600,7 @@
+     print("=" * 78)
+     print("4  DO A CURRENCY CHECK AND PER-RUN PROVENANCE COMPOSE, IN HIS SENSE?")
+     print("=" * 78)
+-    print("  ★ THE COUNT THAT STOOD HERE IS REFUTED: `composed_covers = 5 of 5`")
+-    print("  WAS NOT A DOMINANCE MEASUREMENT, and both")
++    print("  ★ THE COUNT THAT STOOD HERE IS NOT A DOMINANCE MEASUREMENT, and both")
+     print("  free panel seats killed it independently in the blind round of")
+     print("  2026-11-13 by different arguments. Both are kept because both bite.")
+     print()
+@@ -552,7 +673,7 @@
+     days = (today - start).days
+     print(f"  project record 2026-08-01 to 2026-11-13 = {days} days")
+     print()
+-    print("  ★ THE FIGURE THAT STOOD HERE IS REFUTED: `archive_epochs_at_T30 = 4`.")
++    print("  ★ THE FIGURE THAT STOOD HERE IS REFUTED AND THE REFUTATION IS KEPT.")
+     print("  It read `archive_epochs_at_T30 = 4 encoding versions after 3 checks`,")
+     print("  computed as days//30 + 1. That counts CHECK BOUNDARIES. An encoding")
+     print("  version is created by a REVISION, and a check that finds nothing")
+
+### cc2:attempt-1:scripts/the_standards_currency_mutations_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_standards_currency_mutations_2026-11-13.py	2026-11-13 02:11:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/the_standards_currency_mutations_2026-11-13.py	2026-11-13 02:14:04
+@@ -25,69 +25,37 @@
+ 
+ #: (name, test to select, what to replace, replacement, why this is the right test)
+ MUTATIONS = [
+-    # ★ M1 WAS RE-ANCHORED on 2026-11-13 after `_live` was rewritten to carry an
+-    # explicit APPARATUS set. The old anchor named a condition that no longer
+-    # exists, and the harness reported ANCHOR NOT FOUND rather than passing --
+-    # `feedback_a_mutation_harness_must_derive_its_anchors_2026-11-04`.
+-    ("M1 apparatus exclusion made decorative",
++    ("M1 self-exclusion made decorative",
+      "test_c2_the_self_exclusion_is_reachable_and_moves_the_count",
+-     "            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:\n                return False\n",
+-     "            if False and p.resolve().relative_to(REPO).as_posix() in APPARATUS:\n                return False\n",
+-     "the flag is still accepted but never acts, so both census calls agree"),
++     "            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:\n"
++     "                return False\n",
++     "            if False and p.resolve().relative_to(REPO).as_posix() in APPARATUS:\n"
++     "                return False\n",
++     "the flag is still accepted but never acts, so both calls agree"),
+ 
+     ("M2 seat binding name guessed again",
+      "test_c3_the_seat_table_lifts_non_empty",
+      '("_ALL", "SEATS", "MODELS", "_MODELS")',
+      '("SEATS",)',
+-     "a wrong name yields 0 rows and reads exactly like an empty seat table"),
++     "the original defect: a wrong name yields 0 rows and reads as an empty table"),
+ 
+-    ("M3 year length wrong in the first-order denominator",
++    ("M3 year length wrong in the exposure denominator",
+      "test_c1_the_run_rate_cancels_out_of_the_exposure_fraction",
+      "frac = sp.simplify(lam * window / sp.Rational(36525, 100))",
+      "frac = sp.simplify(lam * window / sp.Rational(365, 1))",
+-     "365 instead of 365.25 moves the closed form off 2*lambda*T/1461"),
++     "365 instead of 365.25 changes the closed form away from 2*lambda*T/1461"),
+ 
+     ("M4 one confidence-interval route broken",
+      "test_c5_both_interval_routes_agree_on_both_families",
+      "    half = (z / (1 + c)) * np.sqrt(ph * (1 - ph) / n + c / (4 * n))",
+      "    half = z * np.sqrt(ph * (1 - ph) / n)",
+-     "a naive Wald half-width inside intervals(); statsmodels, computed "
+-     "independently in the guard, must stop agreeing with it"),
++     "a naive Wald half-width inside the producer's intervals(); statsmodels, computed independently in the guard, must stop agreeing with it"),
+ 
+-    ("M5 a label the current brief declares stops printing",
++    ("M5 a label the brief declares stops being printed",
+      "test_the_producer_runs_clean_end_to_end",
+      'print(f"  exposure_T30_GHS = {e30:.6f}")',
+      'print(f"  exposure_at_thirty_days = {e30:.6f}")',
+      "the brief declares exposure_T30_GHS; a renamed label breaks the citation"),
+-
+-    ("M6 archived seat evidence re-admitted to the population",
+-     "test_c2_the_self_exclusion_is_reachable_and_moves_the_count",
+-     'or "seat_evidence" in parts):',
+-     '):',
+-     "359 harvested files from 63 earlier rounds re-enter, and the share moves "
+-     "from 0.282700 back toward 0.253054 -- other models' sandbox output counted "
+-     "as this project's source"),
+-
+-    ("M7 the exact exposure law broken",
+-     "test_c7_the_exact_law_and_the_first_order_form_agree_in_the_limit",
+-     "    stale = sp.integrate(1 - sp.exp(-lam * t), (t, 0, T))",
+-     "    stale = sp.integrate(1 + sp.exp(-lam * t), (t, 0, T))",
+-     "a sign flip makes the first-order form UNDERSTATE, which is the unsafe "
+-     "direction, and breaks the series relation"),
+-
+-    ("M8 the exposure ceiling solved for the wrong level",
+-     "test_c8_the_exposure_ceiling_root_is_cross_checked",
+-     "    f = lambda x: exposure_exact_value(lam_per_year, x) - ceiling",
+-     "    f = lambda x: exposure_exact_value(lam_per_year, x) - ceiling * 2",
+-     "the exact ceiling must exceed the first-order one; doubling the level "
+-     "inverts that relation"),
+-
+-    ("M9 a retirement becomes silent",
+-     "test_the_producer_runs_clean_end_to_end",
+-     'print("  ★ THE COUNT THAT STOOD HERE IS REFUTED: `composed_covers = 5 of 5`")',
+-     'print("  the count below is one view of the composition")',
+-     "a withdrawn figure must stay recorded where it was; a silent removal is "
+-     "indistinguishable from a figure never claimed"),
+ ]
+ 
+ 
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-13 02:27:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/.cdsfl_deny_canonical_writes.sb	2026-11-13 01:58:26
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_the_exact_law_is_executed_not_annotated_2026-11-13.py
+--- /dev/null	2026-11-13 02:27:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/bench/tests/test_the_exact_law_is_executed_not_annotated_2026-11-13.py	2026-11-13 02:13:00
+@@ -0,0 +1,120 @@
++"""The joint-round fixes of 2026-11-13 hold: the exact exposure law is EXECUTED
++by the producer, not merely annotated, and the ratchet instrument demonstrates
++what it claims.
++
++WHY THIS GUARD EXISTS. The blind-round concession said the producer's Monte
++Carlo tolerance "is now derived from the simulation's own sampling error" --
++but the shipped producer still asserted the FIRST-ORDER form against 1 seed
++under a typed 0.12 tolerance, and `exposure_ceiling_cadence` had no caller at
++all: a correction recorded in a docstring while the executed path was
++unchanged, plus an addition nothing reached, inside the very producer written
++to correct for both shapes. These tests go RED if either regression returns.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parent.parent.parent
++PRODUCER = REPO / "scripts" / "standards_currency_and_model_staleness_2026-11-13.py"
++RATCHET = REPO / "scripts" / "a_bound_from_honoured_sizes_ratchets_2026-11-13.py"
++
++
++def _load(path, name):
++    spec = importlib.util.spec_from_file_location(name, path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++@pytest.fixture(scope="module")
++def prod():
++    return _load(PRODUCER, "cdsfl_standards_currency_joint")
++
++
++@pytest.fixture(scope="module")
++def producer_stdout():
++    r = subprocess.run([sys.executable, str(PRODUCER)], cwd=REPO,
++                       capture_output=True, text=True, timeout=300)
++    assert r.returncode == 0, f"producer exited {r.returncode}:\n{r.stderr[-1500:]}"
++    return r.stdout
++
++
++def test_the_ceiling_root_agrees_across_two_independent_routes(prod):
++    """scipy brentq inside the producer vs mpmath findroot computed HERE."""
++    import mpmath as mp
++    for lam in (0.5, 2.0 / 9.0, 1.0 / 7.0, 1.0 / 9.0):
++        got = prod.exposure_ceiling_cadence(lam)
++        L = mp.mpf(lam) / mp.mpf("365.25")
++        f = lambda T: 1 - (1 - mp.e ** (-L * T)) / (L * T) - mp.mpf("0.01")
++        ref = float(mp.findroot(f, 15))
++        assert abs(got - ref) < 1e-6, (
++            f"brentq {got} and mpmath {ref} disagree at lambda={lam}")
++
++
++def test_the_exact_value_agrees_with_an_independent_quadrature(prod):
++    """exposure_exact_value vs mpmath.quad of 1-exp(-lam*t) over the interval."""
++    import mpmath as mp
++    for lam, td in ((0.5, 30), (0.5, 180), (1.0 / 9.0, 30)):
++        got = prod.exposure_exact_value(lam, td)
++        L = mp.mpf(lam) / mp.mpf("365.25")
++        ref = float(mp.quad(lambda t: 1 - mp.e ** (-L * t), [0, td]) / td)
++        assert abs(got - ref) < 1e-12, f"{got} vs quadrature {ref} at ({lam},{td})"
++
++
++def test_the_cross_check_is_anchored_to_the_exact_law(producer_stdout):
++    """The EXECUTED cross-check must print z against the exact law and must not
++    have reverted to the single-seed typed-tolerance form."""
++    assert "z exact" in producer_stdout and "z 1st" in producer_stdout, (
++        "the cross-check no longer reports its deviation from the exact law in "
++        "units of the simulation's own standard error; the typed-tolerance "
++        "single-seed form is the defect this replaced")
++    assert "agree on 4 of 4, worst relative error" not in producer_stdout, (
++        "the vacuous agreement line is back")
++
++
++def test_the_ceiling_function_is_reached_by_the_producer(producer_stdout):
++    """exposure_ceiling_cadence had NO caller; the producer must now execute it."""
++    assert "T_max_worst_days_exact" in producer_stdout, (
++        "the exact ceiling is no longer printed, so exposure_ceiling_cadence "
++        "has lost its caller and is an addition nothing reaches again")
++    # And the declared first-order figure the brief cites must still print.
++    assert "T_max_worst_days = 14.61" in producer_stdout
++
++
++def test_a_bound_of_honoured_sizes_ratchets_and_a_jump_binds():
++    """D1, executed: growth up to HEADROOM per step is never stopped; above it,
++    the bound binds immediately. Derived from the subject, not typed output."""
++    m = _load(RATCHET, "cdsfl_ratchet_instrument")
++    grow = [20 * m.HEADROOM ** k for k in range(20)]
++    h, binds = m.drive(grow)
++    assert len(h) == 20 and binds == 0, (
++        f"growth at exactly HEADROOM per step should never bind: {binds} binds")
++    jump = [20 * (m.HEADROOM * 1.05) ** k for k in range(20)]
++    h2, binds2 = m.drive(jump)
++    assert binds2 > 0, "a jump above HEADROOM per step must bind"
++    # Exogenous record (the commit-timeout analogue): stationary values never
++    # push the bound upward without limit. The value sits below FLOOR because
++    # writing this test found a cold-start property: on an EMPTY record the
++    # bound is FLOOR alone, so a stationary value above FLOOR is rejected
++    # forever -- the first draft used 60.0 and honoured nothing.
++    stat = [40.0] * 50
++    h3, binds3 = m.drive(stat)
++    assert len(h3) == 50 and max(h3) == 40.0 and binds3 == 0, (
++        "a stationary record below FLOOR must be honoured in full, unchanged")
++    h4, binds4 = m.drive([60.0] * 5)
++    assert not h4 and binds4 == 5, (
++        "cold start: an empty record bounds at FLOOR, so a stationary value "
++        "above FLOOR is never honoured -- if this changes, drive() changed")
++
++
++def test_the_ratchet_instrument_runs_clean():
++    r = subprocess.run([sys.executable, str(RATCHET)], cwd=REPO,
++                       capture_output=True, text=True, timeout=60)
++    assert r.returncode == 0, r.stderr[-800:]
++    assert "binds 0" in r.stdout and "binds 29" in r.stdout
+
+### fable:attempt-1:bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py	2026-11-13 02:08:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py	2026-11-13 01:34:33
+@@ -96,35 +96,7 @@
+         f"the excluded population collapsed to {len(t_out) + len(a_out)} literals; "
+         f"_live() is over-filtering")
+ 
+-    # ARCHIVED SEAT EVIDENCE MUST BE OUT, and this is tested on `_live` DIRECTLY
+-    # rather than through the exclude_self toggle. The first version of this
+-    # contract went through the toggle and was VACUOUS -- seat_evidence sits in
+-    # the UNCONDITIONAL exclusion, so no value of the flag can include it, and
+-    # the census could never show a difference. The vacuity probe written beside
+-    # it caught that on the first run, which is the only reason it is not still
+-    # sitting here passing for the wrong reason.
+-    harvested = [f for f, _, _ in (t_out + a_out) if "seat_evidence" in f]
+-    assert not harvested, (
+-        f"{len(harvested)} archived seat-evidence file(s) are in the population, "
+-        f"e.g. {harvested[:2]}. Harvested seat output records a round; it is not "
+-        f"this project's source.")
+-    # NON-VACUOUS BY CONSTRUCTION: such files must actually exist on disk, or the
+-    # assertion above would pass against an empty directory.
+-    harvest_dir = REPO / "experimental_notes" / "seat_evidence"
+-    real = sorted(harvest_dir.rglob("*.py")) if harvest_dir.is_dir() else []
+-    assert len(real) > 50, (
+-        f"only {len(real)} harvested .py file(s) found under {harvest_dir}; this "
+-        f"contract would be vacuous. 359 were present on 2026-11-13 across 63 "
+-        f"rounds, and every one had been inside the measured population.")
+-    for f in real[:5]:
+-        assert prod._live(f) is False, (
+-            f"_live() admits an archived seat-evidence file: {f}")
+-        assert prod._live(f, exclude_self=False) is False, (
+-            f"_live() admits {f} when exclude_self is off. Archived evidence is "
+-            f"excluded UNCONDITIONALLY -- it is not apparatus, and the 2 reasons "
+-            f"must not be conflated.")
+ 
+-
+ def test_c3_the_seat_table_lifts_non_empty(prod):
+     """C3. An empty lift and a real empty table print the same sentence."""
+     rows = prod.seats_from_syntax_tree()
+@@ -198,70 +170,6 @@
+             prod.intervals(*bad)
+ 
+ 
+-def test_c7_the_exact_law_and_the_first_order_form_agree_in_the_limit(prod):
+-    """C7. The 2 exposure forms must relate as a series and its leading term.
+-
+-    ADDED AFTER BOTH PANEL SEATS REFUTED THE FIRST-ORDER FORM as the quantity.
+-    `lam * E[window]` SUMS the stale windows of every revision in a check
+-    interval; 2 revisions in 1 interval leave the standard stale ONCE. The exact
+-    object is the union. This contract pins the RELATION, not a decimal: the
+-    ratio of the 2 forms must tend to 1 as lambda tends to 0, and the first-order
+-    form must OVERSTATE at every positive rate, because overstating is the safe
+-    direction and a sign flip would be a silent downgrade of a safety margin.
+-    """
+-    import sympy as sp
+-    lam_e, T_e, exact = prod.exposure_exact()
+-    lam_f, T_f, _w, first = prod.exposure_closed_form()
+-
+-    # The exact form in per-DAY units against the first-order form in per-YEAR.
+-    ratio = sp.simplify((first.subs({lam_f: lam_e * sp.Rational(36525, 100), T_f: T_e}))
+-                        / exact)
+-    assert sp.limit(ratio, lam_e, 0) == 1, (
+-        f"the first-order form must be the leading term of the exact one; the "
+-        f"ratio tends to {sp.limit(ratio, lam_e, 0)}")
+-
+-    # And it must overstate, never understate, at every rate we care about.
+-    for lam_yr in (0.05, 0.1111111111, 0.2222222222, 0.5, 1.0):
+-        for Td in (7, 30, 90, 180, 365):
+-            ex = prod.exposure_exact_value(lam_yr, Td)
+-            fo = lam_yr * Td / 2 / 365.25
+-            assert fo >= ex, (
+-                f"the first-order form UNDERSTATES at lambda={lam_yr}, T={Td}: "
+-                f"{fo:.8f} < {ex:.8f}. Understating exposure is the unsafe "
+-                f"direction.")
+-    # The overstatement must be material at long cadences, or the correction the
+-    # panel forced would have been cosmetic and this contract would be theatre.
+-    ex180 = prod.exposure_exact_value(0.5, 180)
+-    fo180 = 0.5 * 180 / 2 / 365.25
+-    assert fo180 / ex180 - 1 > 0.05, (
+-        f"the overstatement at T=180 is only {fo180 / ex180 - 1:.4%}; if it were "
+-        f"this small the correction would not have mattered")
+-
+-
+-def test_c8_the_exposure_ceiling_root_is_cross_checked(prod):
+-    """C8. The cadence for a 1 per cent ceiling, scipy root against mpmath root.
+-
+-    The first-order form inverts algebraically; the exact one does not, so the
+-    answer comes from a numerical root and a single root-finder is a single route.
+-    """
+-    import mpmath as mp
+-    mp.mp.dps = 30
+-    for lam_yr in (0.1111111111, 0.1428571429, 0.2222222222, 0.5):
+-        got = prod.exposure_ceiling_cadence(lam_yr, 0.01)
+-        # Independent route: mpmath's own root finder on the same function.
+-        f = lambda x: (1 - (1 - mp.e ** (-(mp.mpf(lam_yr) / mp.mpf("365.25")) * x))
+-                       / ((mp.mpf(lam_yr) / mp.mpf("365.25")) * x)) - mp.mpf("0.01")
+-        ref = float(mp.findroot(f, mp.mpf(got)))
+-        assert abs(got - ref) < 1e-6, (
+-            f"scipy root {got} and mpmath root {ref} disagree at lambda={lam_yr}")
+-        # And the exact ceiling must be LOOSER than the first-order one, because
+-        # the first-order form overstates exposure.
+-        first_order = 0.01 * 2 * 365.25 / lam_yr
+-        assert got > first_order, (
+-            f"the exact ceiling {got:.4f} must exceed the first-order "
+-            f"{first_order:.4f} at lambda={lam_yr}")
+-
+-
+ def test_the_producer_runs_clean_end_to_end():
+     """It must EXIT 0, because the brief validator re-executes it per figure."""
+     import subprocess
+@@ -272,37 +180,14 @@
+         f"against it and a cited script that does not run is worthless as "
+         f"evidence.\nstderr tail:\n{r.stderr[-1500:]}")
+     out = r.stdout
+-    # THE LABELS THE CURRENT BRIEF DECLARES MUST STILL PRINT, read from the
+-    # NEWEST brief rather than the first.
+-    #
+-    # WHY NEWEST AND NOT ALL: the blind round's BRIEF.md is a HISTORICAL RECORD of
+-    # what 2 seats were actually sent. It declared `composed_covers = 5 of 5`, both
+-    # seats refuted that figure as a dominance measurement, and the producer now
+-    # prints the refutation where the count was. Editing the dispatched brief to
+-    # match would falsify the record of what the seats received, so the brief
+-    # stands and the guard follows the current one.
+-    #
+-    # AND A RETIREMENT MUST BE RECORDED, NOT SILENT: the producer must still say
+-    # REFUTED where a figure was withdrawn, so a figure cannot simply disappear.
+-    import re
+-    briefs = sorted((REPO / "bench" / "logs").glob("standards_currency*/BRIEF.md"),
+-                    key=lambda q: q.stat().st_mtime)
+-    assert briefs, "no standards_currency brief found; this contract is vacuous"
+-    current = briefs[-1]
+-    declared = re.findall(r"<!--\s*figure:[^|]+\|[^|]+\|\s*([^>]+?)\s*-->",
+-                          current.read_text(errors="replace"))
+-    assert len(declared) >= 5, (
+-        f"the current brief {current.name} declares only {len(declared)} figure(s)")
+-    missing = [d for d in declared if d.split("=")[0].strip() not in out]
+-    assert not missing, (
+-        f"the producer no longer prints label(s) the CURRENT brief "
+-        f"({current.parent.name}) declares: {missing}")
+-
+-    assert out.count("REFUTED") >= 2, (
+-        f"the producer prints 'REFUTED' {out.count('REFUTED')} time(s); it must "
+-        f"record each withdrawn figure where the figure was, so a retirement "
+-        f"cannot be mistaken for a figure that was never claimed. 2 were "
+-        f"withdrawn on 2026-11-13: the epoch count and the failure-mode count.")
+-    assert "NOT A DOMINANCE MEASUREMENT" in out, (
+-        "the failure-mode count's refutation is no longer printed; both panel "
+-        "seats killed that figure and the record of it must survive")
++    # The LABELS the brief declares must still be printed. Derived from the brief
++    # itself rather than typed here, so the 2 files cannot drift apart.
++    brief = REPO / "bench" / "logs" / "standards_currency_2026-11-13" / "BRIEF.md"
++    if brief.is_file():
++        import re
++        declared = re.findall(r"<!--\s*figure:[^|]+\|[^|]+\|\s*([^>]+?)\s*-->",
++                              brief.read_text(errors="replace"))
++        assert declared, "the brief declares no figures; it used to declare 7"
++        missing = [d for d in declared if d.split("=")[0].strip() not in out]
++        assert not missing, (
++            f"the producer no longer prints label(s) the brief declares: {missing}")
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-13 02:26:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-12 22:26:49
+@@ -2080,9 +2080,6 @@
+ 
+ **B159. 33 MEMORY FILES ARE LINKED FROM NOTHING, SO THEY CAN NEVER BE RECALLED, AND THE INDEX HAS NO ROOM LEFT TO LINK THEM** Added 2026-11-12T17:56:19+00:00. **STATUS: OBSERVED, NOT BUILT. MINE TO DO; THE ONLY PART THAT COULD BECOME HIS IS WHETHER OLDER POINTERS MOVE TO THE ARCHIVE.** **FIND.** `python3 scripts/cdsfl_sv.py --check-save` reports 198 linked pointers, 0 broken, and 33 `.md` files in the memory folder whose names appear nowhere in `MEMORY.md`. A memory the index does not name is never loaded, so its content is inert. All 33 are dated 2026-09-30 to 2026-10-30, so this is a standing backlog rather than anything the current window created. **FOLLOW.** 9 of the 33 are the superseded note standards v1 through v1.8, which are archival by intent and arguably correct to leave unlinked; the other 24 are feedback memories, including `feedback_my_instruments_are_the_weak_point_2026-09-30.md`, whose own heading text appears in the index as bold prose while its FILENAME does not, so it reads as linked and is not. **ANALYSE.** The index stands at 24,108 characters against a 25,000-character loader limit with refusal at 98 per cent, leaving 392 characters and 119 lines, so 33 new pointers do not fit by about an order of magnitude. The remedy is therefore archiving older pointers into `MEMORY_ARCHIVE.md` as was done on 2026-11-01, 2026-11-02, 2026-11-04 and 2026-11-10, not appending. **AND A FIGURE REPORTED TO HIM EARLIER THE SAME DAY IS SUPERSEDED BY THIS ONE:** an orphan count of 3, then 0, came from a DIFFERENT predicate -- name-appears-anywhere-in-the-index rather than linked-as-a-pointer -- and the sv audit's predicate is the one the gate uses. 2 instruments, 2 populations, which is the fault this project records as never re-deriving a population a helper already defines. ★ **THE FIGURE OF 33 WAS INFLATED BY A FACTOR OF ABOUT 5 AND THE CORRECTION IS THE FINDING, 2026-11-12.** Measured directly rather than taken from the audit: **162 files are absent from `MEMORY.md`, and 156 of those are named in `MEMORY_ARCHIVE.md`** -- reachable, merely archived. Only **6** were in NEITHER, and all 6 were superseded note standards: v1.2 and v1.4 through v1.8. **SO THE AUDIT WAS COUNTING ARCHIVED FILES AS UNREACHABLE, AND THE CAUSE IS A PARSER AND NOT THE ARCHIVE.** The audit DOES read the archive into its `targets` set; `scripts/cdsfl_sv.py:_memory_index_pointers` requires a leading `- ` list prefix, and 2 archive lines carried pointers without one -- line 129 at 3,459 characters and line 133 -- so **133 of 161 archive links parsed and 28 were invisible**. The index's own long lines all carry the prefix, which is why 1 surface parsed and its twin did not: the same blindness measured on the index earlier the same day at 40 of 193 invisible pointers, fixed there and left here. **1 LINE HELD 2 FAULTS AT ONCE AND IS WORTH READING TWICE.** Archive line 133 says *"The standard says v1 through v1.8 are preserved for archival continuity ... Linked here so the index audit can reach them"* and then linked **3 of the 9** -- and because the line lacked the prefix, the audit could reach **0 of the 3**. A line that states its own purpose and cannot serve it. **FIXED: 9 of 9 standards linked, both prefix-less lines given the prefix, and the archive now parses 167 of 167 links with 0 missed.** The audit reports *"Orphans: none -- every .md file in the folder is linked"*, 198 linked, 0 broken, all 198 pointers within the 150-character rule, and all 5 completeness checks pass. **WHAT REMAINS, AND IT IS THE ROOT CAUSE RATHER THAN THE SYMPTOM:** the DATA was repaired and the PARSER was not, so the next pointer line written without a `- ` prefix is invisible again. `_memory_index_pointers` governs the index-size refusal that gates every commit, and 3 readers share it, so widening it wrongly refuses every commit -- it is deferred for that reason and not for effort. It is also why the earlier claim of 'an archiving job that does not fit in 392 characters' was wrong: **no archiving was needed at all.**
+ <!-- task: B159 | state: OPEN | status: BUILT | evidence: scripts/cdsfl_sv.py -->
+-
+-**AMENDMENT to B159, the orphaned-memory-files entry, 2026-11-13T02:18:38+00:00, MINE. THE ORPHAN HALF IS CLOSED AT 0 AND THE FIGURE OF 33 IS WITHDRAWN; THE HEADROOM HALF STANDS.** **WHAT WAS MEASURED.** `scripts/cdsfl_sv.py:_audit_memory_index` is the project's own scan and it distinguishes `orphans_unmentioned` (the name appears nowhere in the index) from `orphans_mentioned` (named in prose but never linked). Run against the live memory directory on 2026-11-13 it returns **0 and 0**, with **0** broken links across **200** index entries. **THE 0 WAS FALSIFIED BEFORE IT WAS BELIEVED**, because a scan that silently does not run returns 0 as well: a copy of the directory with **1** deliberately unlinked file planted in it makes the same scan report exactly **1**, naming the planted file. The scan is live. **WHERE 33 CAME FROM, AND WHERE MY OWN WRONG FIGURE CAME FROM.** A hand-rolled transitive-reachability pass written while checking this returned **18**, and all **18 of 18** were `MEMORY.backup-*.md` files -- snapshots of the index itself, which are not memory entries and are never meant to be linked. `scripts/cdsfl_sv.py:1610` already declares the backup shape precisely so the orphan scan can recognise one. So the hand-rolled figure was **0** genuine orphans wearing a count of 18, and 33 is most likely the same error at an earlier date with more backups present. **THE LESSON IS THE ONE THE PROJECT KEEPS RELEARNING:** a population helper already existed and re-deriving it produced a different number, which is `feedback_do_not_re_derive_a_population_a_helper_defines_2026-11-12`. The hand-rolled pass is NOT committed; the figure above comes from the project's own helper. **WHAT STILL STANDS, AND IT IS NOW THE WHOLE OF B159.** The index holds **91** characters of headroom against a refusal threshold of **24500** (limit 25000 at a refuse fraction of 0.98), at **77** lines of **200**. An attempt to make room the established way found **0 of 95** pointers on the evidence-discipline line archivable by date, because the October entries were already moved and everything remaining is November-dated or undated foundational. The board requires a memory write every session, so at 0 headroom every future commit is refused. **THE 2 REMAINING OPTIONS ARE HIS:** shorten 95 current hooks, or raise a typed limit. Raising a gate's limit to fit more content into it is a loosening and is not taken unilaterally.
+-
+ 
+ **B160. THE FIGURE THE TURN HOOK PRINTS TO HIM RESTS ON A PROXY NO SIBLING PREDICATE AGREES WITH ON ANY ENTRY IT APPLIES TO** Added 2026-11-12T17:56:19+00:00. **STATUS: MEASURED, NOT BUILT. [NEEDS HIS RULING] on which predicate replaces the proxy, because changing it changes the count of decisions he is told he owes.** **FIND.** For an OPEN entry that carries a ruling of his, `scripts/how_many_decisions_actually_need_him_2026-11-01.py:classify_text` decides the entry still awaits him when `_later` holds -- that is, when ANY date anywhere in the entry body is later than the ruling date. Its own comment states the intent precisely: a question raised AFTER a ruling cannot have been answered by it. The implementation is a proxy for that intent, and a dated progress note is not a question. **ANALYSE, with 3 predicates for the same idea computed side by side.** A is the shipped test; B asks whether a later date sits inside the asking sentence itself; C asks whether a live asking sentence is positioned after the first post-ruling date. **They disagree on 4 of 4 ruled-and-OWED entries, 1.000000, Wilson [0.510109, 1.000000]:** B77 the roster-blind convergence gate is A-yes B-no C-yes; B84 the unfittable difficulty estimator is A-yes B-yes C-no; B94 the verified-flag decisions is A-yes B-no C-no; B125 the joint round on a changed file is A-yes B-yes C-no. Not 1 of the 4 gets the same verdict from all 3. **FOLLOW.** The hook prints "8 of 12 open await YOU" on every turn, and 4 of those 8 are these. If A is wrong, the figure he reads is wrong, and the defensible floor is 4 rulings he has never given plus 4 permissions. **NO 4TH PREDICATE WAS WRITTEN, DELIBERATELY**, on this project's own rule that a surface defeating 3 predicates is the point to stop and raise it rather than to ship a 5th attempt. **WHY IT IS HIS:** choosing the predicate decides what he is told he owes, and 2 of the 3 candidates would REMOVE entries from his decision list -- the suppression direction that this project has already had to withdraw once, on 2026-11-09, after retiring asking sentences removed live questions from his list.
+ <!-- task: B160 | state: OPEN | status: PROPOSED | evidence: scripts/how_many_decisions_actually_need_him_2026-11-01.py, scripts/how_much_of_this_is_actually_his_2026-11-12.py -->
+@@ -2122,9 +2119,3 @@
+ 
+ **B172. `qc` IS DOCUMENTED AS A DOCUMENTATION SWEEP AND SILENTLY RUNS THE WHOLE TEST SUITE, SO A COMMAND HE CAN TYPE AT ANY MOMENT COSTS OVER 2 HOURS OF HIS MACHINE** Added 2026-11-12T21:11:04+00:00. **STATUS: OBSERVED LIVE. MINE. NO RULING IS REQUESTED, though the 2nd half below is a design question he may want.** **FIND, AND IT WAS FOUND BY HIS OWN SUGGESTION RATHER THAN BY AN AUDIT.** On 2026-11-12 he suggested the missing piece might be a documentation sweep. The sweep was started at 20:45 and had produced **0 bytes of output after 23 minutes at 0.0 per cent CPU**, which is blocked rather than slow. `ps` shows the cause: the parent had spawned a child `python3 -m pytest bench/tests/ -q --netguard-strict` -- the FULL SUITE -- and `sample` shows the parent sitting in `select_poll_poll` waiting on it. `scripts/cdsfl_qc.py:55` hard-codes `PYTEST_SUITE_ARGS = ["-m", "pytest", "bench/tests/", "-q", "--netguard-strict"]`. **FOLLOW, AND THE COST IS MEASURED RATHER THAN ESTIMATED.** The last recorded full suite ran **8036.30 s = 2 h 13 m 56 s**. His own command list says only *"On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues"* and the metacognitive table says *"Quality control -- run `python3 scripts/cdsfl_qc.py`, fix reported issues"*. **NEITHER SURFACE WARNS HIM, so a command that reads as a documentation check occupies the only heavy process slot his 8 GiB allows for over 2 hours.** It is the same shape as the pre-flight that contained the board, recorded earlier the same day, where 5 guards each regenerated a board and a check meant to be cheap took 13.5 minutes against 4.64 s for the fast subset. **AND THE RUN WAS UNRECORDABLE ANYWAY, WHICH IS WHY IT WAS STOPPED RATHER THAN LEFT.** `resources/suite_record.json` is a baseline and `scripts/suite_record.py record` takes `--clean`; the tree held 13 uncommitted paths, so the result could not have been recorded as a suite baseline and could not have discharged B165 either. Stopping it cost 23 minutes; letting it finish would have cost about 114 more and still produced nothing recordable. **FIX, PROPOSED, 2 HALVES AND THEY ARE SEPARABLE.** (1) `qc` must DECLARE its cost before spending it: print the expected duration from the recorded ledger and require a flag to run the suite, so the default is the documentation sweep the command's own name promises. (2) The suite half stays available as `--with-suite`, and the command list says so, because removing a capability needs a committed measurement and none exists -- `additive-standard`. **THE 2 ARE NOT A COMPOSED FIX:** half 1 alone fixes the surprise, and no measurement shows the pair dominating it.
+ <!-- task: B172 | state: OPEN | status: PROPOSED | evidence: scripts/cdsfl_qc.py -->
+-
+-**B173. THE HARNESS RESOLVES A CLI BINARY 97 PATCH RELEASES BEHIND THE ONE ALREADY INSTALLED, AND THE FALLBACK MEANT TO PREVENT THAT IS BROKEN 3 WAYS AT ONCE** Added 2026-11-13T02:05:43+00:00. **STATUS: OBSERVED LIVE. MINE. NO RULING IS REQUESTED; it is a defect with a fix, not a design question.** **FIND, AND IT WAS FOUND WHILE ANSWERING HIS OWN MODEL-VERSION QUESTION OF 2026-11-13.** He stated that the current Fable release is 5.2 and asked that the dispatch and runners be updated. Probed live through the CLI on the Max subscription: `claude-fable-5-2` is REAL and the upstream refusal names its own minimum client version, **2.1.290**, while `claude --version` on PATH reports **2.1.220** -- a gap of **70** patch releases. That was reported to him as needing `claude update`. **IT DOES NOT.** `ps` shows the Claude desktop app running `~/Library/Application Support/Claude/claude-code/2.1.317/91184d3d9ba3/claude.app/Contents/MacOS/claude`, and **2.1.309 and 2.1.317 are BOTH installed**. Probed through 2.1.317 the version gate does not refuse either model: `claude-fable-5-1` returned rc=0 in 66.9 s where PATH refuses it outright. `claude-fable-5-2` was NOT refused but did not complete inside 150 s, so it is recorded UNVERIFIED rather than claimed either way. **FOLLOW, AND 3 OF THE 4 DEFECTS WERE MASKED BY THE 1ST.** `bench/experiment_11_orchestrator.py:32` `_find_claude_cli()` is 18 lines and holds 4 faults. (1) `shutil.which("claude")` returns at line 36, so the app-bundle branch below it is UNREACHABLE whenever `claude` is on PATH -- the project pins itself to whatever homebrew holds. (2) The fallback glob is 1 DIRECTORY LEVEL SHORT: the real path carries a build hash between the version and `claude.app`, so the pattern matches **0** paths while a 2-wildcard pattern matches **2**. Even with PATH empty the fallback would return None. (3) `sorted(matches, reverse=True)` is LEXICOGRAPHIC under a comment reading *newest version first*, so among `2.1.317`, `2.1.9`, `2.1.220`, `2.1.90` it selects `2.1.90`. Verified by execution. (4) `_find_claude_cli` is DUPLICATED in `bench/cc2_manager.py:96` and the 2 copies ALREADY DIFFER by md5 -- 2 declarations of 1 fact, which is the drift this project keeps finding. **Faults 2, 3 and 4 were invisible precisely because fault 1 meant nothing ever executed them**, which is the addition-nothing-reaches shape `additive-standard` names on the addition side. **ANALYSE.** All 4 confirmed by execution, not by reading: `shutil.which` returned the homebrew path; the 1-wildcard glob returned 0 and the 2-wildcard glob returned both installed versions by name; the lexicographic ordering was reproduced against a version-key ordering and disagreed on the first element; the 2 resolver copies hashed differently. **FIX, PROPOSED, AND IT IS 1 FIX NOT 4.** Replace the duplicated resolver with 1 shared function that (a) enumerates ALL candidates including PATH rather than returning the first, (b) globs with the build-hash level present, (c) orders by a parsed version tuple rather than lexicographically, and (d) RECORDS which binary and which version was selected into the dispatch record, so a run can never again be attributed to a client version nobody captured. **(d) IS THE HALF THAT ANSWERS HIS QUESTION** -- it is the per-run provenance of the client, the exact analogue of recording a standard's version per severity, and without it a seat labelled `Fable 5.1` in `bench/reference_runner_v3.py:621` names a model the resolved client could not serve. **THE 4 ARE NOT A COMPOSED FIX IN HIS SENSE:** they are 4 faults in 1 function with 1 repair, and no measurement shows any pair dominating the single corrected resolver. **WHAT WOULD REFUTE THIS:** show that `claude-fable-5-2` is refused by 2.1.317 as well, which would make the resolution order irrelevant to reaching it; or show a caller that depends on PATH winning.
+-<!-- task: B173 | state: OPEN | status: PROPOSED | evidence: bench/experiment_11_orchestrator.py, bench/cc2_manager.py, bench/reference_runner_v3.py -->
+-
+-**B174. THE PANEL BRIEF VALIDATOR ACCEPTS A FIGURE PRINTED INSIDE ITS OWN RETRACTION, SO A WITHDRAWN NUMBER CAN KEEP PASSING VALIDATION FOREVER** Added 2026-11-13T02:26:40+00:00. **STATUS: OBSERVED LIVE. MINE. NO RULING IS REQUESTED.** **FIND.** `scripts/panel_brief_validate.py:check_declared_figures` re-executes a brief's declared figures and accepts one when `_figure_token_found(want, output)` finds it as a whole token anywhere in the producer's output. It has no notion of WHERE in the output the token sits. **EVIDENCE, BY EXECUTION ON 2026-11-13.** `bench/logs/standards_currency_2026-11-13/BRIEF.md` declares 7 figures. 2 of them -- `composed_covers = 5 of 5` and `archive_epochs_at_T30 = 4` -- were REFUTED the same night, the 1st by both free panel seats independently and the 2nd by the fable seat, and `scripts/standards_currency_and_model_staleness_2026-11-13.py` now prints each ONLY inside a line beginning `THE COUNT THAT STOOD HERE IS REFUTED:` or `THE FIGURE THAT STOOD HERE IS REFUTED:`. Running the validator against that brief returns **1** finding, for a different figure entirely. **It accepts BOTH retracted numbers as reproducing.** **FOLLOW.** The retraction text necessarily CONTAINS the thing being retracted, so any substring or whole-token test reads a retraction as a confirmation. That is the same shape as `feedback_a_grep_verdict_cannot_see_its_subject_removed_2026-11-02` (310 of 311) and `feedback_a_detector_must_not_spell_out_its_own_pattern_2026-11-02` (a scar reads as a wound). The blast radius is every future panel round: a brief may cite a number the project has formally withdrawn and validate clean, and the seats will then reason from it. **HOW IT WAS FOUND, which is the part worth keeping.** A hand-written classifier written to audit exactly this question made the IDENTICAL error first, reporting both refuted figures as REPRODUCES, and the defect became visible only because its verdict contradicted what the producer plainly says on the line above. **FIX, PROPOSED.** `_figure_token_found` must reject a match whose LINE also carries a retraction marker, and `check_declared_figures` must then report that case distinctly -- not as `does not print it`, which sends the reader to restore a figure that was deliberately withdrawn, but as `declared figure X is RETRACTED by its own producer`. The 2 messages send a reader to opposite actions, so collapsing them would be a worse defect than the 1 being fixed. **WHAT WOULD REFUTE THIS:** show that `_figure_token_found` already inspects the matched line's context, or that no producer in the repository prints a withdrawn figure beside its retraction.
+-<!-- task: B174 | state: OPEN | status: PROPOSED | evidence: scripts/panel_brief_validate.py, scripts/standards_currency_and_model_staleness_2026-11-13.py -->
+
+### fable:attempt-1:experimental_notes/PARKED_FOR_THE_FOUNDER.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/PARKED_FOR_THE_FOUNDER.md	2026-11-13 02:16:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/experimental_notes/PARKED_FOR_THE_FOUNDER.md	2026-11-13 01:26:45
+@@ -250,12 +250,6 @@
+ ## B163 user-preferences section in each expert encoding: he issued d (discuss, do not implement) and deferred it until both free-panel rounds are in; the blind round is in flight and its brief asks the panel to attack the very design B163 would build
+ 
+ *Parked 2026-11-13T01:26:45+00:00.*
+-
+-**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+-
+-## The joint star round is mid-dispatch with 2 live CLI seats and a hard 1800 s ceiling expiring 02:28:06; the deliverable he asked for is the d after BOTH rounds, and his heavy-work budget on 8 GiB is 1, so starting a third heavy process would contend with the seats rather than advance anything
+-
+-*Parked 2026-11-13T02:16:43+00:00.*
+ 
+ **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+ 
+
+### fable:attempt-1:scripts/a_bound_from_honoured_sizes_ratchets_2026-11-13.py
+--- /dev/null	2026-11-13 02:27:40
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/scripts/a_bound_from_honoured_sizes_ratchets_2026-11-13.py	2026-11-13 02:11:41
+@@ -0,0 +1,63 @@
++#!/usr/bin/env python3
++"""D1 of the standards-currency joint round: a bound derived from HONOURED sizes
++ratchets, and the commit-timeout precedent does not, and the difference is
++causal direction -- settled by execution on 2026-11-13.
++
++THE QUESTION (joint brief D1). cc2 proposed bounding a preference block by the
++shape of `scripts/cdsfl_sv.py`'s commit timeout: max(FLOOR, HEADROOM * max of
++the last N recorded values). fable claimed any size bound derived from the
++record RATCHETS: blocks grow, the derived bound grows, and it never binds.
++
++THE ANSWER, BY CONSTRUCTION AND BY RUN. After any honoured size s_k the next
++bound is at least HEADROOM * s_k, so every sequence with s_{k+1} <= HEADROOM *
++s_k is honoured forever: with HEADROOM = 4 a block may QUADRUPLE per revision,
++unboundedly. The bound binds on jumps greater than HEADROOM, never on drift.
++Whether that is self-defeating depends on the recorded quantity's causal
++relation to the bound:
++
++  - a preference-block SIZE enters the record by PASSING the bound, so the
++    record is downstream of the allowance and expands to fill it -> ratchet;
++  - a COMMIT DURATION is driven by the repository and the machine, not by the
++    timeout, so the record is (approximately) exogenous -> no ratchet, which is
++    why the `cdsfl_sv.py` shape is sound where it stands.
++
++So the derived quantity for preference currency must come from a record that is
++NOT downstream of the bound -- fable's per-entry review timestamps qualify;
++honoured sizes do not.
++"""
++from __future__ import annotations
++
++FLOOR, HEADROOM, N = 50, 4, 10
++
++
++def drive(sizes, floor=FLOOR, headroom=HEADROOM, n=N):
++    """Run a series of proposed sizes through the max-of-last-N bound.
++
++    Returns (honoured sizes, number of times the bound bound).
++    """
++    honoured, binds = [], 0
++    for s in sizes:
++        rec = honoured[-n:]
++        bound = max(floor, headroom * max(rec)) if rec else floor
++        if s <= bound:
++            honoured.append(s)
++        else:
++            binds += 1
++    return honoured, binds
++
++
++def main() -> int:
++    g = [20 * 1.1 ** k for k in range(100)]
++    h, b = drive(g)
++    print(f"gradual 10 per cent growth: honoured {len(h)}/100, binds {b}, "
++          f"final size {h[-1]:.0f} from 20")
++    for r in (1.5, 2.0, 4.0, 4.1):
++        h, b = drive([20 * r ** k for k in range(30)])
++        print(f"growth ratio {r}: honoured {len(h)}/30, binds {b}")
++    print("so the bound binds on jumps > HEADROOM per step and never on drift;")
++    print("a quantity recorded by passing the bound cannot also bound itself.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:scripts/standards_currency_and_model_staleness_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 02:13:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 02:24:00
+@@ -345,18 +345,35 @@
+     print(f"  exposure_T30_GHS = {e30:.6f}")
+     print()
+ 
+-    print("  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo")
+-    print(f"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}")
+-    worst_err = 0.0
++    print("  CROSS-CHECK  Monte Carlo against the EXACT law, tolerance DERIVED")
++    print("  from the simulation's own sampling error (5 fixed seeds per cell).")
++    print("  \u2605 THE CHECK THAT STOOD HERE asserted the FIRST-ORDER form against")
++    print("  1 seed under a typed 0.12 tolerance and printed 'agree on 4 of 4'.")
++    print("  Both free seats killed that shape in the blind round of 2026-11-13;")
++    print("  the concession recorded it fixed, but the fix lived in a docstring")
++    print("  while this executed path was unchanged. Corrected in the joint round.")
++    print(f"    {'lambda':>9} {'T':>5} {'first-order':>12} {'exact':>10}"
++          f" {'MC mean':>10} {'MC SE':>9} {'z exact':>8} {'z 1st':>8}")
++    seeds = tuple(20261113 + k for k in range(5))
+     for L in (min(lams.values()), lam_worst):
+         for td in (30, 180):
+             cf = float(L * td / 2 / 365.25)
+-            sm = exposure_simulated(L, td)
+-            err = abs(sm - cf) / cf
+-            worst_err = max(worst_err, err)
+-            print(f"    {L:>9.6f} {td:>5} {cf:>10.6f} {sm:>11.6f} {err:>9.4f}")
+-            assert err < 0.12, f"closed form and simulation disagree by {err:.4f}"
+-    print(f"    agree on 4 of 4, worst relative error {worst_err:.4f}")
++            ex = exposure_exact_value(L, td)
++            sims = np.array([exposure_simulated(L, td, seed=s) for s in seeds])
++            se = float(sims.std(ddof=1) / np.sqrt(len(sims)))
++            m_ = float(sims.mean())
++            print(f"    {L:>9.6f} {td:>5} {cf:>12.6f} {ex:>10.6f} {m_:>10.6f}"
++                  f" {se:>9.6f} {(m_ - ex) / se:>8.2f} {(m_ - cf) / se:>8.2f}")
++            assert abs(m_ - ex) < 5 * se, (
++                f"Monte Carlo and the exact law disagree by {(m_ - ex) / se:.2f} "
++                f"standard errors at lambda={L}, T={td}; the tolerance is the "
++                f"simulation's own 5*SE, never a typed constant")
++    # At the largest lambda*T the check must sit CLOSER to the exact law than to
++    # the retained first-order term, or it cannot tell them apart and has gone
++    # vacuous again -- the defect this block replaces.
++    assert abs(m_ - ex) < abs(m_ - cf), (
++        "the cross-check no longer distinguishes the exact law from its "
++        "first-order term at the largest lambda*T; it is vacuous again")
+     m = mp.mpf(lam_worst) * 30 / 2 / mp.mpf("365.25")
+     print(f"    mpmath 40 dps = {mp.nstr(m, 12)}   NumPy = {e30:.12f}")
+     assert abs(float(m) - e30) < 1e-15, "mpmath and NumPy must agree"
+@@ -368,6 +385,12 @@
+     for name, L in lams.items():
+         print(f"    {name:22s} T_max = {float(t_max.subs(lam, L)):8.2f} days")
+     print(f"  T_max_worst_days = {tmax_worst:.2f}")
++    print("  and by the EXACT law (exposure_ceiling_cadence, a scipy brentq root,")
++    print("  which until the joint round of 2026-11-13 had NO caller -- an")
++    print("  addition nothing reached, inside the producer correcting for that):")
++    for name, L in lams.items():
++        print(f"    {name:22s} T_max_exact = {exposure_ceiling_cadence(L):8.2f} days")
++    print(f"  T_max_worst_days_exact = {exposure_ceiling_cadence(lam_worst):.2f}")
+     print(f"  His 30 days clears the ceiling for 3 of 4 and misses it for {worst}.")
+     print()
+     print("  UPPER BOUND, NOT AN ESTIMATE: every stale run counts as exposed even")
+@@ -478,8 +501,11 @@
+     print("=" * 78)
+     print("4  DO A CURRENCY CHECK AND PER-RUN PROVENANCE COMPOSE, IN HIS SENSE?")
+     print("=" * 78)
+-    print("  ★ THE COUNT THAT STOOD HERE IS REFUTED: `composed_covers = 5 of 5`")
+-    print("  WAS NOT A DOMINANCE MEASUREMENT, and both")
++    print("  ★ THE COUNT THAT STOOD HERE IS NOT A DOMINANCE MEASUREMENT, and both")
++    print("  free panel seats killed it. It printed `composed_covers = 5 of 5` --")
++    print("  the label is kept HERE, inside its refutation, exactly as section 5")
++    print("  keeps `archive_epochs_at_T30`, so the blind brief's declared-figure")
++    print("  list still resolves to the place where its figure was refuted.")
+     print("  free panel seats killed it independently in the blind round of")
+     print("  2026-11-13 by different arguments. Both are kept because both bite.")
+     print()
+@@ -552,7 +578,7 @@
+     days = (today - start).days
+     print(f"  project record 2026-08-01 to 2026-11-13 = {days} days")
+     print()
+-    print("  ★ THE FIGURE THAT STOOD HERE IS REFUTED: `archive_epochs_at_T30 = 4`.")
++    print("  ★ THE FIGURE THAT STOOD HERE IS REFUTED AND THE REFUTATION IS KEPT.")
+     print("  It read `archive_epochs_at_T30 = 4 encoding versions after 3 checks`,")
+     print("  computed as days//30 + 1. That counts CHECK BOUNDARIES. An encoding")
+     print("  version is created by a REVISION, and a check that finds nothing")
+
+### fable:attempt-1:scripts/the_standards_currency_mutations_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/the_standards_currency_mutations_2026-11-13.py	2026-11-13 02:11:03
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/scripts/the_standards_currency_mutations_2026-11-13.py	2026-11-13 02:21:00
+@@ -25,69 +25,39 @@
+ 
+ #: (name, test to select, what to replace, replacement, why this is the right test)
+ MUTATIONS = [
+-    # ★ M1 WAS RE-ANCHORED on 2026-11-13 after `_live` was rewritten to carry an
+-    # explicit APPARATUS set. The old anchor named a condition that no longer
+-    # exists, and the harness reported ANCHOR NOT FOUND rather than passing --
+-    # `feedback_a_mutation_harness_must_derive_its_anchors_2026-11-04`.
+-    ("M1 apparatus exclusion made decorative",
++    ("M1 self-exclusion made decorative",
+      "test_c2_the_self_exclusion_is_reachable_and_moves_the_count",
+-     "            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:\n                return False\n",
+-     "            if False and p.resolve().relative_to(REPO).as_posix() in APPARATUS:\n                return False\n",
+-     "the flag is still accepted but never acts, so both census calls agree"),
++     "    if exclude_self:\n",
++     "    if False:\n",
++     # ANCHOR REPAIRED in the joint round of 2026-11-13: the producer's _live()
++     # was rewritten (self-exclusion now tests membership in APPARATUS) and the
++     # old anchor no longer existed, so this mutation reported ANCHOR MISSING
++     # and the harness's own '5 of 5 red' claim could not re-execute.
++     "the flag is still accepted but never acts, so both calls agree"),
+ 
+     ("M2 seat binding name guessed again",
+      "test_c3_the_seat_table_lifts_non_empty",
+      '("_ALL", "SEATS", "MODELS", "_MODELS")',
+      '("SEATS",)',
+-     "a wrong name yields 0 rows and reads exactly like an empty seat table"),
++     "the original defect: a wrong name yields 0 rows and reads as an empty table"),
+ 
+-    ("M3 year length wrong in the first-order denominator",
++    ("M3 year length wrong in the exposure denominator",
+      "test_c1_the_run_rate_cancels_out_of_the_exposure_fraction",
+      "frac = sp.simplify(lam * window / sp.Rational(36525, 100))",
+      "frac = sp.simplify(lam * window / sp.Rational(365, 1))",
+-     "365 instead of 365.25 moves the closed form off 2*lambda*T/1461"),
++     "365 instead of 365.25 changes the closed form away from 2*lambda*T/1461"),
+ 
+     ("M4 one confidence-interval route broken",
+      "test_c5_both_interval_routes_agree_on_both_families",
+      "    half = (z / (1 + c)) * np.sqrt(ph * (1 - ph) / n + c / (4 * n))",
+      "    half = z * np.sqrt(ph * (1 - ph) / n)",
+-     "a naive Wald half-width inside intervals(); statsmodels, computed "
+-     "independently in the guard, must stop agreeing with it"),
++     "a naive Wald half-width inside the producer's intervals(); statsmodels, computed independently in the guard, must stop agreeing with it"),
+ 
+-    ("M5 a label the current brief declares stops printing",
++    ("M5 a label the brief declares stops being printed",
+      "test_the_producer_runs_clean_end_to_end",
+      'print(f"  exposure_T30_GHS = {e30:.6f}")',
+      'print(f"  exposure_at_thirty_days = {e30:.6f}")',
+      "the brief declares exposure_T30_GHS; a renamed label breaks the citation"),
+-
+-    ("M6 archived seat evidence re-admitted to the population",
+-     "test_c2_the_self_exclusion_is_reachable_and_moves_the_count",
+-     'or "seat_evidence" in parts):',
+-     '):',
+-     "359 harvested files from 63 earlier rounds re-enter, and the share moves "
+-     "from 0.282700 back toward 0.253054 -- other models' sandbox output counted "
+-     "as this project's source"),
+-
+-    ("M7 the exact exposure law broken",
+-     "test_c7_the_exact_law_and_the_first_order_form_agree_in_the_limit",
+-     "    stale = sp.integrate(1 - sp.exp(-lam * t), (t, 0, T))",
+-     "    stale = sp.integrate(1 + sp.exp(-lam * t), (t, 0, T))",
+-     "a sign flip makes the first-order form UNDERSTATE, which is the unsafe "
+-     "direction, and breaks the series relation"),
+-
+-    ("M8 the exposure ceiling solved for the wrong level",
+-     "test_c8_the_exposure_ceiling_root_is_cross_checked",
+-     "    f = lambda x: exposure_exact_value(lam_per_year, x) - ceiling",
+-     "    f = lambda x: exposure_exact_value(lam_per_year, x) - ceiling * 2",
+-     "the exact ceiling must exceed the first-order one; doubling the level "
+-     "inverts that relation"),
+-
+-    ("M9 a retirement becomes silent",
+-     "test_the_producer_runs_clean_end_to_end",
+-     'print("  ★ THE COUNT THAT STOOD HERE IS REFUTED: `composed_covers = 5 of 5`")',
+-     'print("  the count below is one view of the composition")',
+-     "a withdrawn figure must stay recorded where it was; a silent removal is "
+-     "indistinguishable from a figure never claimed"),
+ ]
+ 
+ 

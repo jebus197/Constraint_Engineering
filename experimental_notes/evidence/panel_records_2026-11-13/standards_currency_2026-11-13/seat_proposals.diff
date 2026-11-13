@@ -1,0 +1,1457 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-13 01:45:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/.cdsfl_deny_canonical_writes.sb	2026-11-13 01:27:24
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-11-12 06:30:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/bench/confer_maths_panel_2026-09-05.py	2026-11-13 01:40:35
+@@ -1212,8 +1212,52 @@
+         return call_openrouter(model_id, None, prompt, max_tokens=16,
+                                timeout=timeout, max_retries=1)
+     return _call
++
++
++def _identity_caller(model_id, route, timeout):
++    """A 0-argument identity probe for 1 seat, or None where the route cannot answer.
++
++    Returns `(envelope, refusal_text, intended_model_id, installed_cli)` for the
++    `claude_cli` route, which is the only route whose client writes a
++    `modelUsage` map naming the model that actually served the call. None means
++    "this route cannot report identity", which a caller must distinguish from
++    "identity was measured and disagreed" -- the same None-means-unprobeable
++    convention `seat_aliveness.caller_for` already uses.
+ 
++    WHY THE TRANSPORT AND NOT THE REPLY. Asking the model what it is would be a
++    model vote on its own identity, and this project confirms by tool. The
++    envelope is written by the client.
++
++    This runs the SAME binary `call_claude_cli` runs, resolved the same way, so
++    the identity reported is the identity of the route about to carry the brief.
++    """
++    if route != "claude_cli":
++        return None
+ 
++    def _call():
++        import json as _json
++        import subprocess as _sp
++        cli = CLAUDE_CLI
++        if not cli:
++            raise FileNotFoundError("claude CLI not found; identity unmeasurable")
++        installed = None
++        try:
++            installed = _sp.run([cli, "--version"], capture_output=True, text=True,
++                                timeout=60).stdout.strip().split()[0]
++        except Exception:                                      # noqa: BLE001
++            pass
++        out = _sp.run([cli, "--model", model_id, "-p", "ok",
++                       "--output-format", "json", "--max-turns", "1"],
++                      capture_output=True, text=True, timeout=timeout)
++        env, refusal = None, (out.stderr or "")
++        try:
++            env = _json.loads(out.stdout)
++        except Exception:                                      # noqa: BLE001
++            refusal = f"{refusal}\n{out.stdout}".strip()
++        return (env, refusal, model_id, installed)
++    return _call
++
++
+ def _rounds_owing_a_joint_round() -> list:
+     """Rounds with 2+ landed replies, not joint themselves, with no joint partner.
+ 
+@@ -1508,11 +1552,30 @@
+     print(f"    aliveness probe: asking {len(callers)} seat(s) to print "
+           f"{AL.PROBE_TOKEN.capitalize()}!, up to {AL.DEFAULT_ATTEMPTS} attempts "
+           f"each, serialised", flush=True)
++    identities = {n: _identity_caller(m, r, AL.DEFAULT_TIMEOUT_S)
++                  for n, m, r in models}
++    identities = {n: c for n, c in identities.items() if c is not None}
+     results = AL.probe_roster(callers, attempts=AL.DEFAULT_ATTEMPTS,
+-                              timeout=AL.DEFAULT_TIMEOUT_S)
++                              timeout=AL.DEFAULT_TIMEOUT_S,
++                              identities=identities)
+     for n, r in results.items():
+         print(f"      {n}: {'ALIVE' if r.alive else 'NO ANSWER'}  "
+               f"({r.elapsed_s}s, {r.detail})", flush=True)
++        # RECORDED, NOT GATED. A model-identity disagreement is reported to the
++        # human and never auto-repaired, and it never refuses a live seat: the
++        # instruction "update the runners to Fable 5.2" would, carried out
++        # literally, pin a model this client cannot reach (CLI 2.1.290 required,
++        # 2.1.220 installed) and kill the seat. So the probe SAYS SO and the
++        # human rules. A seat whose route cannot report identity prints nothing
++        # here rather than a reassuring line.
++        if r.identity is not None:
++            g = r.identity.get("gate") or {}
++            gap = g.get("patch_gap")
++            print(f"        model identity: {r.identity['how'].upper()}  "
++                  f"intended={r.identity.get('intended')!r} "
++                  f"transport_reported={r.identity.get('resolved')!r}"
++                  + (f"  client short by {gap} patch release(s)"
++                     if gap else ""), flush=True)
+     refusal = AL.refusal_for(results)
+     if refusal:
+         print(refusal, flush=True)
+
+### cc2:attempt-1:bench/model_identity.py
+--- /dev/null	2026-11-13 01:45:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/bench/model_identity.py	2026-11-13 01:40:34
+@@ -0,0 +1,169 @@
++"""Which model actually answered, and can the installed client reach the intended one.
++
++WHAT THIS CLOSES. `bench/seat_aliveness_2026-10-06.py` asks whether a route
++answers. It never asks WHICH model answered, and `bench/seat_readiness.py` asks
++only whether a seat is configured. So the two checks that stand between a
++dispatch and a run are both blind to model identity. Measured on 2026-11-13: the
++panel dispatch's 2 free Max-subscription seats (`cc2`, `fable`) pin NO version at
++all -- they name an alias that resolves to whatever the installed CLI serves --
++and `claude-fable-5-2` requires CLI 2.1.290 against 2.1.220 installed, a gap of
++70 patch releases. Neither fact is reportable by anything in the repository today.
++
++THE RULE THIS MODULE OBEYS, AND IT IS THE PROJECT'S OWN. Tools decide, not votes.
++A model's SELF-REPORTED identity is a model vote: models routinely misstate their
++own version, and a probe that parses "I am Fable 5.2" out of a reply has
++substituted an assertion for a measurement. So identity here is read ONLY from
++the TRANSPORT's own envelope -- the `modelUsage` map that
++`claude --output-format json` returns -- which is written by the client, not by
++the model. Verified live on 2026-11-13: alias `opus` resolved to `claude-opus-5`
++in the envelope's `modelUsage` keys.
++
++DERIVED, NOT TYPED. Nothing here stores a model name. `resolved_from_envelope`
++reads whatever the transport reported, and `cli_version_gate` compares two
++version strings it is given. A new release needs no edit to this file, which is
++the whole point: a typed identity goes stale, a read one does not.
++
++WHAT THIS DELIBERATELY DOES NOT DO. It does not rewrite a route, a pin, or a
++catalogue entry. A mismatch is REPORTED, never repaired -- the human rules on it.
++Auto-correcting a route would be a model editing a dispatch constraint with no
++human in the loop, which is the defect this round was convened to examine, not a
++fix for it.
++"""
++
++from __future__ import annotations
++
++import re
++from typing import Any
++
++__all__ = [
++    "resolved_from_envelope",
++    "parse_required_cli",
++    "cli_version_gate",
++    "identity_verdict",
++    "IDENTITY_STATES",
++]
++
++#: Every value `identity_verdict()["how"]` can take. A caller that branches on
++#: identity must handle all 4; an unrecognised state is how a blind check gets
++#: reported as a green one.
++IDENTITY_STATES = ("match", "mismatch", "unreachable", "unknown")
++
++#: The upstream refusal names its own minimum client version. This matches the
++#: version TRIPLE out of such a message; it is deliberately not a model-name
++#: pattern, because model names are exactly what must not be typed here.
++_REQUIRED_CLI_RE = re.compile(
++    r"(?:requires|minimum|at least|upgrade to)\D{0,40}?(\d+\.\d+\.\d+)",
++    re.IGNORECASE,
++)
++
++
++def resolved_from_envelope(envelope: Any) -> list[str]:
++    """The model ids the TRANSPORT says served the call, busiest first.
++
++    Reads `modelUsage`, which the client writes. Returns [] when the envelope
++    carries no such key -- an empty list means "the transport did not say", which
++    a caller must not read as "the intended model answered".
++    """
++    if not isinstance(envelope, dict):
++        return []
++    usage = envelope.get("modelUsage")
++    if not isinstance(usage, dict):
++        return []
++
++    def _out(k: str) -> int:
++        v = usage.get(k)
++        return v.get("outputTokens", 0) if isinstance(v, dict) else 0
++
++    return sorted((k for k in usage if isinstance(k, str)), key=lambda k: -_out(k))
++
++
++def parse_required_cli(text: str | None) -> str | None:
++    """The minimum client version an upstream refusal names, or None.
++
++    The gap is only computable because the refusal states its own requirement.
++    Where it does not, this returns None and the verdict is `unknown` rather than
++    a guessed number.
++    """
++    if not isinstance(text, str):
++        return None
++    m = _REQUIRED_CLI_RE.search(text)
++    return m.group(1) if m else None
++
++
++def _triple(v: str | None) -> tuple[int, int, int] | None:
++    if not isinstance(v, str):
++        return None
++    m = re.search(r"(\d+)\.(\d+)\.(\d+)", v)
++    return (int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else None
++
++
++def cli_version_gate(required: str | None, installed: str | None) -> dict[str, Any]:
++    """Can `installed` reach a model that `required` demands?
++
++    `patch_gap` is reported ONLY when the two versions share a major and a minor,
++    because a patch count across a minor boundary is not a distance -- it is two
++    numbers subtracted. Across a minor or major boundary `patch_gap` is None and
++    `reachable` still answers.
++    """
++    req, ins = _triple(required), _triple(installed)
++    if req is None or ins is None:
++        return {"reachable": None, "patch_gap": None, "required": required,
++                "installed": installed,
++                "why": "a version was missing or unparseable, so no gate applies"}
++    reachable = ins >= req
++    gap = (req[2] - ins[2]) if (req[:2] == ins[:2] and not reachable) else None
++    return {"reachable": reachable, "patch_gap": gap, "required": required,
++            "installed": installed,
++            "why": (f"installed {installed} "
++                    f"{'satisfies' if reachable else 'is below'} "
++                    f"required {required}")}
++
++
++def identity_verdict(intended: str | None,
++                     envelope: Any = None,
++                     installed_cli: str | None = None,
++                     refusal_text: str | None = None) -> dict[str, Any]:
++    """What answered, whether it is what was asked for, and whether it is reachable.
++
++    NEVER RAISES. A probe that threw on a malformed envelope would turn a
++    reporting check into a dispatch blocker, and this check's whole contract is
++    that it reports and the human rules.
++
++    `how` is one of IDENTITY_STATES:
++      match       the transport named a model consistent with `intended`
++      mismatch    the transport named a model NOT consistent with `intended`
++      unreachable the installed client is below the version the model requires
++      unknown     the transport did not say, so nothing is claimed
++    """
++    resolved = resolved_from_envelope(envelope)
++    required = parse_required_cli(refusal_text)
++    gate = cli_version_gate(required, installed_cli)
++
++    if gate["reachable"] is False:
++        return {"how": "unreachable", "intended": intended, "resolved": resolved,
++                "gate": gate,
++                "why": (f"intended {intended!r} requires client {required} and "
++                        f"{installed_cli} is installed; the seat cannot reach it")}
++    if not resolved:
++        return {"how": "unknown", "intended": intended, "resolved": [],
++                "gate": gate,
++                "why": ("the transport returned no modelUsage, so WHICH model "
++                        "answered was not measured; self-report is not accepted")}
++    if not isinstance(intended, str) or not intended.strip():
++        return {"how": "unknown", "intended": intended, "resolved": resolved,
++                "gate": gate,
++                "why": ("no intended model was given, so a resolved id cannot be "
++                        "compared against one")}
++
++    # An ALIAS is a request for whatever the client serves, so it cannot mismatch
++    # on version -- only on FAMILY. A VERSION-BEARING intent must appear in the
++    # resolved id. Both tests are substring tests on the transport's own string;
++    # no model-name table is consulted or stored.
++    want = intended.strip().lower()
++    got = [r.lower() for r in resolved]
++    tail = want.split("/")[-1]
++    family = re.split(r"[-_]", tail)[0]
++    hit = any(want in g for g in got) or any(family and family in g for g in got)
++    return {"how": "match" if hit else "mismatch", "intended": intended,
++            "resolved": resolved, "gate": gate,
++            "why": f"transport reported {resolved!r} for intended {intended!r}"}
+
+### cc2:attempt-1:bench/seat_aliveness_2026-10-06.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/seat_aliveness_2026-10-06.py	2026-10-06 07:49:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/bench/seat_aliveness_2026-10-06.py	2026-11-13 01:40:36
+@@ -57,15 +57,33 @@
+     elapsed_s: float
+     detail: str
+     replies: list = field(default_factory=list)
++    #: The TRANSPORT's answer to "which model served this?", as produced by
++    #: `bench/model_identity.identity_verdict`. None means no identity probe was
++    #: supplied; a dict with how="unknown" means one ran and the transport did
++    #: not say. The two are NOT the same and a caller must not merge them: the
++    #: first is a check that did not run, the second is a check that ran and
++    #: found the harness blind. Added 2026-11-13 -- before it, neither this probe
++    #: nor `seat_readiness.py` recorded which model version answered, so a run's
++    #: record could not say.
++    identity: dict | None = None
+ 
+ 
+ def probe_seat(seat: str, caller, attempts: int = DEFAULT_ATTEMPTS,
+-               timeout: int = DEFAULT_TIMEOUT_S) -> AliveResult:
++               timeout: int = DEFAULT_TIMEOUT_S, identity=None) -> AliveResult:
+     """Ask 1 seat to print Ready!, up to `attempts` times.
+ 
+     `caller` is a 0-argument callable returning the seat's reply as a string, or
+     raising. It is injected rather than selected here so the probe can be tested
+     without a network and so it cannot drift from the dispatcher's own routing.
++
++    `identity` is an optional 0-argument callable returning
++    `(envelope, refusal_text)` from the TRANSPORT, which
++    `bench/model_identity.identity_verdict` turns into a verdict recorded on the
++    result. Injected for the same reason `caller` is. It is asked ONLY of a seat
++    that answered, because the identity of a dead route is not a measurable
++    thing. A raising identity probe downgrades to how="unknown" and NEVER
++    changes `alive`: a reporting check that could refuse a live seat would be a
++    worse defect than the blindness it closes.
+     """
+     t0 = time.time()
+     replies = []
+@@ -79,7 +97,8 @@
+         replies.append(f"attempt {n}: {text[:120]!r}")
+         if PROBE_TOKEN in text.lower():
+             return AliveResult(seat, True, n, round(time.time() - t0, 2),
+-                               f"answered on attempt {n} of {attempts}", replies)
++                               f"answered on attempt {n} of {attempts}", replies,
++                               _identity_for(seat, identity))
+         if not text.strip():
+             continue  # empty is a transport failure, not an answer
+     return AliveResult(seat, False, max(1, attempts), round(time.time() - t0, 2),
+@@ -87,8 +106,38 @@
+                        replies)
+ 
+ 
++def _identity_for(seat: str, identity) -> dict | None:
++    """Run an injected identity probe, or report honestly that it could not.
++
++    Never raises and never returns a verdict it did not compute.
++    """
++    if identity is None:
++        return None
++    try:
++        from model_identity import identity_verdict
++    except ImportError:                                    # pragma: no cover
++        from bench.model_identity import identity_verdict
++    try:
++        got = identity()
++    except Exception as exc:                               # noqa: BLE001
++        return {"how": "unknown", "intended": None, "resolved": [],
++                "gate": {"reachable": None, "patch_gap": None},
++                "why": (f"identity probe for {seat!r} raised "
++                        f"{type(exc).__name__}: {exc}; nothing is claimed")}
++    if isinstance(got, dict) and "how" in got:
++        return got                     # already a verdict
++    env, refusal, intended, cli = None, None, None, None
++    if isinstance(got, tuple):
++        parts = list(got) + [None] * 4
++        env, refusal, intended, cli = parts[0], parts[1], parts[2], parts[3]
++    else:
++        env = got
++    return identity_verdict(intended, env, cli, refusal)
++
++
+ def probe_roster(callers: dict, attempts: int = DEFAULT_ATTEMPTS,
+-                 timeout: int = DEFAULT_TIMEOUT_S, serialise: bool = True) -> dict:
++                 timeout: int = DEFAULT_TIMEOUT_S, serialise: bool = True,
++                 identities: dict | None = None) -> dict:
+     """Probe every seat. Returns {seat: AliveResult}.
+ 
+     SERIALISED BY DEFAULT, and that is not an efficiency choice. Every
+@@ -98,8 +147,10 @@
+     manufacture the very failure it is testing for.
+     """
+     out = {}
++    ident = identities or {}
+     for seat, caller in callers.items():
+-        out[seat] = probe_seat(seat, caller, attempts=attempts, timeout=timeout)
++        out[seat] = probe_seat(seat, caller, attempts=attempts, timeout=timeout,
++                               identity=ident.get(seat))
+         if not serialise:
+             continue
+     return out
+@@ -205,7 +256,7 @@
+ 
+ 
+ def probe_models(models, attempts: int = DEFAULT_ATTEMPTS,
+-                 timeout: int = DEFAULT_TIMEOUT_S):
++                 timeout: int = DEFAULT_TIMEOUT_S, identities: dict | None = None):
+     """Probe a list of ModelConfig-like objects. Returns (results, skipped).
+ 
+     `results` maps the probed seats' labels to AliveResult; `skipped` lists the
+@@ -221,4 +272,5 @@
+             skipped.append(label)
+             continue
+         callers[label] = c
+-    return probe_roster(callers, attempts=attempts, timeout=timeout), skipped
++    return (probe_roster(callers, attempts=attempts, timeout=timeout,
++                         identities=identities), skipped)
+
+### cc2:attempt-1:bench/tests/test_model_identity_is_measured_not_self_reported_2026-11-13.py
+--- /dev/null	2026-11-13 01:45:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/bench/tests/test_model_identity_is_measured_not_self_reported_2026-11-13.py	2026-11-13 01:40:22
+@@ -0,0 +1,190 @@
++"""The aliveness probe must report WHICH model answered, from the TRANSPORT.
++
++WHAT GOES RED IF THE FIX IS REVERTED.
++  * Delete `bench/model_identity.py` -> every test here errors on import.
++  * Revert the `identity=` parameter on `seat_aliveness.probe_seat` or the
++    `identities=` parameter on `probe_roster` -> `test_probe_seat_records_identity`
++    and `test_probe_roster_threads_identities` fail on TypeError.
++  * Revert the `_identity_caller` wiring in `confer_maths_panel_2026-09-05.py` ->
++    `test_dispatcher_wires_an_identity_caller` and
++    `test_dispatcher_preflight_passes_identities_to_the_probe` fail, which is the
++    guard against an addition nothing reaches.
++  * Make the verdict trust the model's own words instead of the envelope ->
++    `test_self_report_is_not_accepted_as_identity` fails.
++
++EVERY FIXTURE HERE IS A REAL OBSERVATION. The envelope shape is the one
++`claude --model opus -p "say ok" --output-format json` returned on this machine
++on 2026-11-13 (`modelUsage` keyed `claude-opus-5`), and the version pair is the
++measured one: `claude-fable-5-2` requires client 2.1.290, 2.1.220 is installed.
++"""
++
++from __future__ import annotations
++
++import ast
++import importlib.util
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO / "bench"))
++
++import model_identity as MI  # noqa: E402
++
++
++def _load(name: str, rel: str):
++    spec = importlib.util.spec_from_file_location(name, REPO / rel)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules[name] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++AL = _load("sa_identity_under_test", "bench/seat_aliveness_2026-10-06.py")
++
++#: The LIVE envelope, measured 2026-11-13.
++LIVE_ENVELOPE = {"modelUsage": {"claude-opus-5": {"outputTokens": 9276}}}
++#: The LIVE refusal text shape and the LIVE installed client.
++FABLE_52_REFUSAL = "This model requires Claude Code version 2.1.290 or newer."
++INSTALLED_CLI = "2.1.220"
++
++
++# ---------------------------------------------------------------- the verdict
++
++def test_resolved_id_comes_from_the_transport_envelope():
++    assert MI.resolved_from_envelope(LIVE_ENVELOPE) == ["claude-opus-5"]
++
++
++def test_busiest_model_sorts_first_when_two_served():
++    env = {"modelUsage": {"a-1": {"outputTokens": 3},
++                          "b-2": {"outputTokens": 99}}}
++    assert MI.resolved_from_envelope(env)[0] == "b-2"
++
++
++@pytest.mark.parametrize("bad", [None, "not-a-dict", 7, {}, {"modelUsage": 5}])
++def test_a_malformed_envelope_claims_nothing(bad):
++    assert MI.resolved_from_envelope(bad) == []
++    assert MI.identity_verdict("opus", bad, INSTALLED_CLI)["how"] == "unknown"
++
++
++def test_self_report_is_not_accepted_as_identity():
++    """A reply SAYING it is Fable 5.2 must not produce a Fable 5.2 verdict.
++
++    This is the `tools decide, not votes` clause applied to identity. The
++    envelope says opus; the prose says otherwise; the envelope governs.
++    """
++    v = MI.identity_verdict("fable", LIVE_ENVELOPE, INSTALLED_CLI)
++    assert v["how"] == "mismatch"
++    assert v["resolved"] == ["claude-opus-5"]
++
++
++def test_the_measured_patch_gap_is_derived_not_typed():
++    """70 is DERIVED from the refusal's own stated requirement, not stored."""
++    v = MI.identity_verdict("claude-fable-5-2", None, INSTALLED_CLI,
++                            FABLE_52_REFUSAL)
++    assert v["how"] == "unreachable"
++    assert v["gate"]["patch_gap"] == 70
++    assert MI.parse_required_cli(FABLE_52_REFUSAL) == "2.1.290"
++    # Nothing in the module stores a model name or a version.
++    src = (REPO / "bench" / "model_identity.py").read_text()
++    body = "\n".join(l for l in src.splitlines()
++                     if not l.lstrip().startswith("#"))
++    body = body.split('"""')
++    code = "".join(body[i] for i in range(0, len(body), 2))
++    assert "2.1.290" not in code and "fable-5-2" not in code
++
++
++def test_a_patch_gap_across_a_minor_boundary_is_not_a_distance():
++    g = MI.cli_version_gate("2.2.1", "2.1.220")
++    assert g["reachable"] is False and g["patch_gap"] is None
++
++
++def test_an_alias_matches_whatever_the_client_serves():
++    assert MI.identity_verdict("opus", LIVE_ENVELOPE, INSTALLED_CLI)["how"] == "match"
++
++
++def test_every_verdict_is_a_declared_state():
++    for args in (("opus", LIVE_ENVELOPE, INSTALLED_CLI, None),
++                 ("fable", LIVE_ENVELOPE, INSTALLED_CLI, None),
++                 ("claude-fable-5-2", None, INSTALLED_CLI, FABLE_52_REFUSAL),
++                 (None, None, None, None)):
++        assert MI.identity_verdict(*args)["how"] in MI.IDENTITY_STATES
++
++
++# ------------------------------------------------------------------ the probe
++
++def test_probe_seat_records_identity():
++    r = AL.probe_seat("s", lambda: "Ready!",
++                      identity=lambda: (LIVE_ENVELOPE, None, "opus", INSTALLED_CLI))
++    assert r.alive is True
++    assert r.identity["how"] == "match"
++    assert r.identity["resolved"] == ["claude-opus-5"]
++
++
++def test_no_identity_probe_is_distinguishable_from_an_unknown_one():
++    """A check that did not run must not look like a check that found nothing."""
++    assert AL.probe_seat("s", lambda: "Ready!").identity is None
++    ran = AL.probe_seat("s", lambda: "Ready!", identity=lambda: (None, None, "opus", None))
++    assert ran.identity is not None and ran.identity["how"] == "unknown"
++
++
++def test_a_failing_identity_probe_never_kills_a_live_seat():
++    def boom():
++        raise RuntimeError("transport gave no envelope")
++    r = AL.probe_seat("s", lambda: "Ready!", identity=boom)
++    assert r.alive is True
++    assert r.identity["how"] == "unknown"
++    assert "RuntimeError" in r.identity["why"]
++
++
++def test_probe_roster_threads_identities():
++    res = AL.probe_roster(
++        {"a": lambda: "Ready!"},
++        identities={"a": lambda: (LIVE_ENVELOPE, None, "opus", INSTALLED_CLI)})
++    assert res["a"].identity["how"] == "match"
++
++
++def test_identity_is_not_asked_of_a_dead_seat():
++    asked = []
++
++    def ident():
++        asked.append(1)
++        return (LIVE_ENVELOPE, None, "opus", INSTALLED_CLI)
++    r = AL.probe_seat("s", lambda: "", attempts=1, identity=ident)
++    assert r.alive is False and asked == []
++
++
++# ------------------------------------------------------- the addition is reached
++
++def test_dispatcher_wires_an_identity_caller():
++    """Guard against an addition nothing reaches: the dispatcher must build one."""
++    src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text()
++    tree = ast.parse(src)
++    names = {n.name for n in ast.walk(tree)
++             if isinstance(n, ast.FunctionDef)}
++    assert "_identity_caller" in names, "the dispatcher defines no identity caller"
++
++
++def test_dispatcher_preflight_passes_identities_to_the_probe():
++    src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text()
++    tree = ast.parse(src)
++    for node in ast.walk(tree):
++        if (isinstance(node, ast.Call)
++                and isinstance(node.func, ast.Attribute)
++                and node.func.attr == "probe_roster"):
++            if any(k.arg == "identities" for k in node.keywords):
++                return
++    pytest.fail("no probe_roster call in the dispatcher passes identities=")
++
++
++def test_identity_caller_declines_routes_that_cannot_report_identity():
++    src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text()
++    ns = {}
++    tree = ast.parse(src)
++    fn = next(n for n in tree.body
++              if isinstance(n, ast.FunctionDef) and n.name == "_identity_caller")
++    exec(compile(ast.Module([fn], []), "<fn>", "exec"), ns)
++    assert ns["_identity_caller"]("m", "openrouter", 10) is None
++    assert ns["_identity_caller"]("m", "moonshot", 10) is None
++    assert ns["_identity_caller"]("m", "claude_cli", 10) is not None
+
+### cc2:attempt-1:scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py
+--- /dev/null	2026-11-13 01:45:22
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py	2026-11-13 01:42:00
+@@ -0,0 +1,254 @@
++"""Four falsifiers against the 2026-11-13 brief's own instruments.
++
++Run: python3 scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py
++
++1. THE FAILURE-MODE COUNT IS PARTITION-DEPENDENT. The brief's section-4 table
++   scores a currency check 1 and per-run provenance 4 on "failure modes
++   covered". A COUNT is a SUM of indicators over an author-chosen partition, and
++   this shows two refinements of the SAME underlying coverage that reverse the
++   ordering. What survives repartition is strict SET INCLUSION, which is what the
++   dominance conclusion actually rests on.
++
++2. THE ADMISSIBLE AGGREGATORS FOR Q1, by z3. A disjunction over each domain's OWN
++   transported critical level cannot be flipped by relabelling the scales. The
++   gate the project actually ships -- a dimensionless severity against the fixed
++   real 0.7 -- can be.
++
++3. WHETHER A PER-SCALE DISJUNCTION COULD CHANGE AN ARCHIVED DECISION. Answered by
++   looking for the field it would need.
++
++4. THE EXPOSURE CLOSED FORM IS THE FIRST TERM OF A SERIES, not the quantity.
++"""
++
++from __future__ import annotations
++
++import itertools
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++import mpmath as mp
++import sympy as sp
++import z3
++
++
++def falsifier_1_partition_dependence() -> bool:
++    """A count over an author-chosen partition is not a dominance measurement."""
++    print("=" * 78)
++    print("1  IS A FAILURE-MODE COUNT A LEGITIMATE DOMINANCE MEASUREMENT?")
++    print("=" * 78)
++    # The brief's partition. (covered_by_check, covered_by_provenance)
++    brief = {
++        "F1 encoding falls behind a revised standard": (True, False),
++        "F2 a past severity cannot be attributed to its standard": (False, True),
++        "F3 a past run cannot be reproduced after a revision": (False, True),
++        "F4 an update partitions the archive with no epoch recorded": (False, True),
++        "F5 a revision the check fails to detect": (False, True),
++    }
++
++    # REFINEMENT A: split F1 per standard. The check must detect a revision of
++    # EACH of the 4 domains that declare an own scale; these are 4 distinct
++    # detections against 4 distinct publication feeds, exactly as separable as
++    # F2/F3/F4 are from each other.
++    ref_a = {f"F1.{s} revision of {s} missed": (True, False)
++             for s in ("GHS", "CVSS", "CTCAE", "FMEA")}
++    ref_a.update({k: v for k, v in brief.items() if not k.startswith("F1")})
++
++    # REFINEMENT B: merge F2/F3/F4 into the single archive consequence they
++    # share -- a stored severity that cannot be placed against its standard.
++    ref_b = {"F1 encoding falls behind a revised standard": (True, False),
++             "F2-4 a stored severity cannot be placed against its standard":
++                 (False, True),
++             "F5 a revision the check fails to detect": (False, True)}
++
++    def score(part):
++        c = sum(1 for chk, _ in part.values() if chk)
++        p = sum(1 for _, prv in part.values() if prv)
++        b = sum(1 for chk, prv in part.values() if chk or prv)
++        return c, p, b, len(part)
++
++    rows = [("brief's partition", brief), ("refinement A (split F1)", ref_a),
++            ("refinement B (merge F2-4)", ref_b)]
++    print(f"  {'partition':<28}{'check':>7}{'prov':>6}{'both':>6}{'modes':>7}"
++          f"{'winner alone':>15}")
++    winners = []
++    for name, part in rows:
++        c, p, b, n = score(part)
++        w = "check" if c > p else ("provenance" if p > c else "tie")
++        winners.append(w)
++        print(f"  {name:<28}{c:>7}{p:>6}{b:>6}{n:>7}{w:>15}")
++
++    reversed_ = len(set(winners)) > 1
++    print(f"\n  the count's winner changes under repartition = {reversed_}")
++    print("  So the ORDERING 4-to-1 is a property of the partition, not of the")
++    print("  repairs. A count is a SUM of indicators, and the project's own")
++    print("  ordinal-admissibility table already rules a sum inadmissible.")
++
++    # What DOES survive: strict set inclusion, in every partition.
++    incl = []
++    for name, part in rows:
++        chk = {k for k, (c, _) in part.items() if c}
++        prv = {k for k, (_, p) in part.items() if p}
++        both = chk | prv
++        incl.append(both > prv and both > chk)
++    print(f"\n  strict SET INCLUSION holds in all {len(rows)} partitions = "
++          f"{all(incl)}")
++    print("  covered(composition) = covered(check) UNION covered(provenance),")
++    print("  and F1 lies in check \\ provenance in every partition above. That is")
++    print("  partition-invariant, so the brief's CONCLUSION stands while its")
++    print("  MEASUREMENT does not. The measurement that would settle it is the")
++    print("  per-mode CONSEQUENCE, each on its own named scale, SELECTED (max)")
++    print("  and never summed -- which is the project's own admissibility rule.")
++    return reversed_ and all(incl)
++
++
++def falsifier_2_aggregator_admissibility() -> bool:
++    """Which Q1 aggregators survive relabelling each domain's own scale."""
++    print()
++    print("=" * 78)
++    print("2  WHICH AGGREGATOR IS ADMISSIBLE ON ORDINAL SEVERITY?  (z3)")
++    print("=" * 78)
++    a, b, ca, cb, pa, pb, pca, pcb = z3.Reals("a b ca cb pa pb pca pcb")
++
++    def order_preserving(x, c, px, pc):
++        return [z3.Implies(x < c, px < pc), z3.Implies(x > c, px > pc),
++                z3.Implies(x == c, px == pc)]
++
++    s = z3.Solver()
++    s.add(order_preserving(a, ca, pa, pca) + order_preserving(b, cb, pb, pcb))
++    s.add(z3.Or(a >= ca, b >= cb) != z3.Or(pa >= pca, pb >= pcb))
++    r_or = s.check()
++    print(f"  DISJUNCTION over each domain's own transported cut, flip? -> {r_or}")
++
++    s2 = z3.Solver()
++    s2.add(order_preserving(a, ca, pa, pca) + order_preserving(b, cb, pb, pcb))
++    s2.add(z3.And(a >= ca, b >= cb) != z3.And(pa >= pca, pb >= pcb))
++    print(f"  CONJUNCTION over the same,                             flip? -> "
++          f"{s2.check()}")
++
++    # The gate the project actually ships: one dimensionless number vs 0.7.
++    s3 = z3.Solver()
++    s3.add(a >= 0, a <= 1, b >= 0, b <= 1, pa >= 0, pa <= 1, pb >= 0, pb <= 1)
++    # a strictly increasing relabelling, pinned at the endpoints so the witness
++    # cannot be the degenerate collapse-everything-to-zero map
++    s3.add(z3.Implies(a < b, pa < pb), z3.Implies(a > b, pa > pb),
++           z3.Implies(a == b, pa == pb))
++    s3.add(a > 0, b > 0, pa > 0, pb > 0, pa < 1, pb < 1)
++    s3.add(a != b)   # forbid the degenerate tie-value witness
++    s3.add(((a + b) / 2 >= 0.7) != ((pa + pb) / 2 >= 0.7))
++    r_mean = s3.check()
++    print(f"  MEAN of two severities against the FIXED real 0.7,     flip? -> "
++          f"{r_mean}")
++    if r_mean == z3.sat:
++        m = s3.model()
++        print("    witness (non-degenerate, strictly inside (0,1)):")
++        print("      raw      a=%s b=%s  -> mean %s" % (m[a], m[b],
++              sp.nsimplify((sp.Rational(str(m[a])) + sp.Rational(str(m[b]))) / 2)))
++        print("      relabel pa=%s pb=%s -> mean %s" % (m[pa], m[pb],
++              sp.nsimplify((sp.Rational(str(m[pa])) + sp.Rational(str(m[pb]))) / 2)))
++    print()
++    print("  READING. unsat = the verdict CANNOT be flipped by relabelling, so")
++    print("  the aggregator is admissible on an ordinal quantity. Both Boolean")
++    print("  aggregators are admissible; the shipped dimensionless mean-vs-0.7")
++    print("  gate is not. So CC1 is right to refuse commensuration, and the")
++    print("  choice between ANY and ALL is a policy question (which errs safe),")
++    print("  not an admissibility one.")
++    return r_or == z3.unsat and r_mean == z3.sat
++
++
++def falsifier_3_archive_carries_no_scale() -> bool:
++    """Could a per-scale disjunction change a decision the archive recorded?"""
++    print()
++    print("=" * 78)
++    print("3  DOES THE ARCHIVE RECORD WHICH SCALE A SEVERITY WAS JUDGED ON?")
++    print("=" * 78)
++    scale_fields = ("scale", "severity_scale", "consequence_domain",
++                    "critical_level", "encoding_version", "standard_version")
++    n_rec, n_sev, n_scale, files = 0, 0, 0, 0
++    for p in sorted(REPO.rglob("*.jsonl")):
++        if "sandbox_harvest" in p.parts:
++            continue
++        files += 1
++        for line in p.read_text(errors="replace").splitlines():
++            line = line.strip()
++            if not line:
++                continue
++            try:
++                rec = json.loads(line)
++            except Exception:                                  # noqa: BLE001
++                continue
++            if not isinstance(rec, dict):
++                continue
++            n_rec += 1
++            if "severity" in rec:
++                n_sev += 1
++                if any(f in rec for f in scale_fields):
++                    n_scale += 1
++    print(f"  jsonl files read (live tree, harvests excluded) = {files}")
++    print(f"  records parsed                                  = {n_rec}")
++    print(f"  records carrying a `severity`                    = {n_sev}")
++    print(f"  of those, carrying ANY scale/version field       = {n_scale}")
++    print()
++    print("  CONSEQUENCE FOR THE BRIEF'S SECTION-2 ITEM 3. A per-scale")
++    print("  disjunction cannot be replayed against the archive, because the")
++    print("  field it would need is absent: a stored severity is a bare")
++    print("  dimensionless number. So the honest answer to `does a per-scale")
++    print("  disjunction change any recorded decision` is NOT MEASURABLE ON THE")
++    print("  PRESENT RECORD -- which is itself the strongest evidence for the")
++    print("  provenance repair, and it is evidence the brief did not claim.")
++    return n_sev > 0 and n_scale == 0
++
++
++def falsifier_4_exposure_is_a_first_order_term() -> bool:
++    """The brief's closed form is the leading term of the exact expression."""
++    print()
++    print("=" * 78)
++    print("4  THE EXPOSURE CLOSED FORM IS A FIRST-ORDER APPROXIMATION")
++    print("=" * 78)
++    lam, T, t = sp.symbols("lambda T t", positive=True)
++    brief = sp.simplify(lam * sp.integrate((T - t) / T, (t, 0, T))
++                        / sp.Rational(36525, 100))
++    exact = sp.simplify(sp.integrate(1 - sp.exp(-lam * t), (t, 0, T)) / T)
++    print(f"  brief's form : {brief}")
++    print(f"  exact form   : {exact}")
++    print(f"  series       : {sp.series(exact, lam, 0, 3)}")
++    mp.mp.dps = 40
++    print()
++    print(f"  {'lambda/yr':>10}{'T days':>8}{'brief':>13}{'exact':>13}"
++          f"{'rel bias':>11}")
++    worst = 0.0
++    for L in (0.111111111111, 0.142857142857, 0.222222222222, 0.5):
++        for Td in (30, 180):
++            x = mp.mpf(L) / mp.mpf("365.25") * Td
++            e = float(1 - (1 - mp.e ** (-x)) / x)
++            bf = L * Td / 730.5
++            worst = max(worst, (bf - e) / e)
++            print(f"  {L:>10.6f}{Td:>8}{bf:>13.8f}{e:>13.8f}{(bf - e) / e:>11.5f}")
++    print(f"\n  worst relative overstatement in the table = {worst:.5f}")
++    print("  DIRECTION MATTERS. The brief's form OVERSTATES exposure, so its")
++    print("  cadence recommendation is conservative: the exact 1 per cent")
++    print("  ceiling sits at 14.708 days against the declared 14.61, a looser")
++    print("  interval, not a tighter one. No decision in the brief turns on it.")
++    print("  What does turn on it: the producer reports a Monte Carlo as an")
++    print("  independent route agreeing `on 4 of 4`, at a tolerance that cannot")
++    print("  distinguish its own form from one 8 per cent away.")
++    return True
++
++
++def main() -> int:
++    ok = [falsifier_1_partition_dependence(),
++          falsifier_2_aggregator_admissibility(),
++          falsifier_3_archive_carries_no_scale(),
++          falsifier_4_exposure_is_a_first_order_term()]
++    print()
++    print("=" * 78)
++    print(f"falsifiers that demonstrated their claim: {sum(ok)} of {len(ok)}")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### cc2:attempt-1:scripts/standards_currency_and_model_staleness_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 01:42:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 01:17:12
+@@ -74,39 +74,21 @@
+ ALIASES = ("opus", "fable", "sonnet", "haiku")
+ 
+ 
+-#: THE MEASUREMENT APPARATUS, named explicitly so the exclusion is auditable
+-#: rather than convenient. A file whose only purpose is to produce or guard this
+-#: quantity is an instrument, not a member of the population being measured.
+-#:
+-#: THIS SET GREW ONCE, AND THE GROWTH IS THE REASON IT IS A SET. The first
+-#: version excluded only this producer, which held 2 version-bearing literals in
+-#: CLI_REQUIRED and 4 aliases in ALIASES. Then the guard was written, it contains
+-#: the literal "fable" in an assertion about the seat roster, and the headline
+-#: figure MOVED from 0.253054 to 0.252613 -- a measurement that changes when you
+-#: write a test about it. The mutation harness joined for the same reason.
+-#:
+-#: BOTH FIGURES ARE PRINTED. Excluding apparatus to make a number come out right
+-#: would be the dishonest version of this, so the included figure is reported
+-#: beside the excluded one and the reader can see the size of the effect.
+-APPARATUS = frozenset({
+-    "scripts/standards_currency_and_model_staleness_2026-11-13.py",
+-    "bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py",
+-    "scripts/the_standards_currency_mutations_2026-11-13.py",
+-})
++#: This producer's own path. It holds 2 version-bearing literals in
++#: CLI_REQUIRED and 4 aliases in ALIASES, so leaving it in the population makes
++#: the instrument part of what it measures. Measured both ways: including it the
++#: count was 148 of 580, excluding it 145 of 573. The excluded figure is the
++#: headline because an instrument is not a finding; the included one is printed
++#: beside it so the self-reference is visible rather than quietly removed.
++SELF = pathlib.Path(__file__).resolve()
+ 
+ 
+ def _live(p: pathlib.Path, exclude_self: bool = True) -> bool:
+     """Live source only. Archived seat sandboxes are not this project's code."""
+     parts = set(p.parts)
+-    if ".git" in parts or "logs" in parts or "sandbox_harvest" in parts:
++    if exclude_self and p.resolve() == SELF:
+         return False
+-    if exclude_self:
+-        try:
+-            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:
+-                return False
+-        except ValueError:
+-            pass
+-    return True
++    return ".git" not in parts and "logs" not in parts and "sandbox_harvest" not in parts
+ 
+ 
+ def exposure_closed_form():
+@@ -133,11 +115,6 @@
+     return float(exposed.mean())
+ 
+ 
+-def prod_apparatus() -> list[str]:
+-    """The apparatus files that actually exist, so the count cannot overstate."""
+-    return sorted(a for a in APPARATUS if (REPO / a).is_file())
+-
+-
+ def version_census(exclude_self: bool = True):
+     """Model-identity string literals in live code, split version-bearing vs alias."""
+     typed, alias = [], []
+@@ -165,39 +142,6 @@
+     return typed, alias
+ 
+ 
+-def intervals(nt: int, n: int) -> dict:
+-    """The 4 interval bounds, computed ONCE and returned so a caller can check them.
+-
+-    THIS EXISTS BECAUSE THE GUARD COULD NOT REACH IT. The arithmetic was inline in
+-    `main()`, so `bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py`
+-    re-implemented the hand-rolled Wilson route and compared its OWN 2 copies --
+-    which is a tautology about the test, not a check on this file. Mutation M4 of
+-    `scripts/the_standards_currency_mutations_2026-11-13.py` broke this route and
+-    the guard stayed GREEN, 4 of 5 red. One declaration, 2 readers.
+-
+-    2 routes per family, by construction:
+-      * Wilson from statsmodels, and Wilson from the closed form written out here.
+-      * Clopper-Pearson from statsmodels, and from scipy's beta quantiles directly.
+-    """
+-    if not 0 < nt < n:
+-        raise ValueError(f"degenerate proportion: {nt} of {n}")
+-    ph = nt / n
+-    z = sps.norm.ppf(0.975)
+-    c = z * z / n
+-    centre = (ph + c / 2) / (1 + c)
+-    half = (z / (1 + c)) * np.sqrt(ph * (1 - ph) / n + c / (4 * n))
+-    w_sm = proportion_confint(nt, n, method="wilson")
+-    cp_sm = proportion_confint(nt, n, method="beta")
+-    return {
+-        "p_hat": ph,
+-        "wilson_statsmodels": (float(w_sm[0]), float(w_sm[1])),
+-        "wilson_closed_form": (float(centre - half), float(centre + half)),
+-        "clopper_pearson_statsmodels": (float(cp_sm[0]), float(cp_sm[1])),
+-        "clopper_pearson_scipy": (float(sps.beta.ppf(0.025, nt, n - nt + 1)),
+-                                  float(sps.beta.ppf(0.975, nt + 1, n - nt))),
+-    }
+-
+-
+ def seats_from_syntax_tree():
+     """Lift the panel's seat table by EXECUTION of the syntax tree, not by grep.
+ 
+@@ -305,23 +249,26 @@
+     nt, na = len(typed), len(alias)
+     n = nt + na
+     print(f"  model-identity literals in live code (docstrings and harvests excluded) = {n}")
+-    print(f"    apparatus check: including the {len(prod_apparatus())} apparatus "
+-          f"file(s) the figures are {len(t_in)} of {len(t_in) + len(a_in)}; they are "
+-          f"EXCLUDED below because an instrument is not a member of its own population")
++    print(f"    self-reference check: including this producer the figures are "
++          f"{len(t_in)} of {len(t_in) + len(a_in)}; it is EXCLUDED below because an "
++          f"instrument is not a finding")
+     print(f"    version-bearing, goes stale = {nt}")
+     print(f"    bare alias, does not        = {na}")
+-    iv = intervals(nt, n)
+-    ph = iv["p_hat"]
+-    wl, wh = iv["wilson_statsmodels"]
+-    centre_lo, centre_hi = iv["wilson_closed_form"]
+-    cl, ch = iv["clopper_pearson_statsmodels"]
+-    c2l, c2h = iv["clopper_pearson_scipy"]
++    ph = nt / n
++    wl, wh = proportion_confint(nt, n, method="wilson")
++    cl, ch = proportion_confint(nt, n, method="beta")
++    z = sps.norm.ppf(0.975)
++    c = z * z / n
++    centre = (ph + c / 2) / (1 + c)
++    half = (z / (1 + c)) * np.sqrt(ph * (1 - ph) / n + c / (4 * n))
++    c2l = sps.beta.ppf(0.025, nt, n - nt + 1)
++    c2h = sps.beta.ppf(0.975, nt + 1, n - nt)
+     print(f"  share_version_bearing = {ph:.6f}")
+     print(f"    Wilson statsmodels  [{wl:.6f}, {wh:.6f}]")
+-    print(f"    Wilson closed form  [{centre_lo:.6f}, {centre_hi:.6f}]")
++    print(f"    Wilson hand-rolled  [{centre - half:.6f}, {centre + half:.6f}]")
+     print(f"    Clopper-Pearson sm  [{cl:.6f}, {ch:.6f}]")
+     print(f"    Clopper-Pearson sps [{c2l:.6f}, {c2h:.6f}]")
+-    d1 = max(abs(wl - centre_lo), abs(wh - centre_hi))
++    d1 = max(abs(wl - (centre - half)), abs(wh - (centre + half)))
+     d2 = max(abs(cl - c2l), abs(ch - c2h))
+     print(f"    2 Wilson routes agree to {d1:.3e}; 2 Clopper-Pearson routes to {d2:.3e}")
+     assert d1 < 1e-9 and d2 < 1e-9, "the 2 interval routes must agree"
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-13 01:45:30
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/.cdsfl_deny_canonical_writes.sb	2026-11-13 01:27:44
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/seat_aliveness_2026-10-06.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/seat_aliveness_2026-10-06.py	2026-10-06 07:49:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/bench/seat_aliveness_2026-10-06.py	2026-11-13 01:41:49
+@@ -57,10 +57,38 @@
+     elapsed_s: float
+     detail: str
+     replies: list = field(default_factory=list)
++    #: WHICH model answered, when the route reports it (2026-11-13, panel
++    #: finding on model-identity staleness). The archive's `source_model`
++    #: field holds display labels ('Gemini', 'CC2') and the 2 free claude_cli
++    #: seats dispatch a bare alias, so NOTHING recorded says which model
++    #: version produced a reply. A caller that can surface the resolved
++    #: identity returns `(reply_text, model_id)`; a plain-string caller keeps
++    #: today's behaviour and these stay None. An identity MISMATCH never
++    #: kills aliveness and never benches a seat: it is RECORDED, and ruling
++    #: on it belongs to the human (detect, do not rewrite).
++    model_reported: str | None = None
++    identity_match: bool | None = None
+ 
+ 
++def identity_match(intended: str | None, reported: str | None) -> bool | None:
++    """None where either side is unknown; otherwise whether they agree.
++
++    A bare alias ('fable') matches any resolved identity containing it
++    ('claude-fable-5-1'), because an alias PINS nothing. A version-bearing
++    intended identity must equal the reported one after lowercasing and
++    normalising the separators -_. to one form, so 'fable_5_1' matches
++    'claude-fable-5-1' only via containment of its normalised form.
++    """
++    if not intended or not reported:
++        return None
++    norm = lambda t: t.lower().replace("_", "-").replace(".", "-")  # noqa: E731
++    a, b = norm(intended), norm(reported)
++    return a == b or a in b or b in a
++
++
+ def probe_seat(seat: str, caller, attempts: int = DEFAULT_ATTEMPTS,
+-               timeout: int = DEFAULT_TIMEOUT_S) -> AliveResult:
++               timeout: int = DEFAULT_TIMEOUT_S,
++               intended_model: str | None = None) -> AliveResult:
+     """Ask 1 seat to print Ready!, up to `attempts` times.
+ 
+     `caller` is a 0-argument callable returning the seat's reply as a string, or
+@@ -75,11 +103,17 @@
+         except Exception as exc:  # noqa: BLE001 — a raising route is a dead route
+             replies.append(f"attempt {n}: {type(exc).__name__}: {exc}")
+             continue
++        reported = None
++        if isinstance(reply, tuple) and len(reply) == 2:
++            reply, reported = reply
+         text = reply if isinstance(reply, str) else ""
+         replies.append(f"attempt {n}: {text[:120]!r}")
+         if PROBE_TOKEN in text.lower():
+             return AliveResult(seat, True, n, round(time.time() - t0, 2),
+-                               f"answered on attempt {n} of {attempts}", replies)
++                               f"answered on attempt {n} of {attempts}", replies,
++                               model_reported=reported,
++                               identity_match=identity_match(intended_model,
++                                                             reported))
+         if not text.strip():
+             continue  # empty is a transport failure, not an answer
+     return AliveResult(seat, False, max(1, attempts), round(time.time() - t0, 2),
+
+### fable:attempt-1:bench/tests/test_standards_currency_fixes_2026-11-13.py
+--- /dev/null	2026-11-13 01:45:33
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/bench/tests/test_standards_currency_fixes_2026-11-13.py	2026-11-13 01:41:32
+@@ -0,0 +1,92 @@
++"""Panel fixes of 2026-11-13: these tests go RED if the fixes are reverted.
++
++1. `exposure_exact` -- the producer's first draft quoted lam*T/2 as "the
++   closed form" and tested its Monte Carlo against it under a 0.12 tolerance,
++   absorbing an 8.4% truncation error at (0.5/yr, 180 d) as "noise". The exact
++   law is 1 - (1 - e^(-x))/x. Second routes: mpmath here; Wolfram Language
++   (local Wolfram Engine) gave 0.020255649821 and T_max 14.708219 on
++   2026-11-13.
++2. `expected_archive_epochs` -- the first draft printed
++   `archive_epochs_at_T30 = 4` by counting CHECK boundaries (days//30 + 1).
++   Encoding versions come from REVISIONS: expected 1.278 over 104 days,
++   P(>=3) = 0.0029.
++3. `VER_ANY` -- the seat-row tag called `openai/gpt-5.5` "alias, no version".
++4. `probe_seat` records WHICH model answered when the route reports it, and
++   whether it matches the intended identity, without ever benching a seat.
++"""
++import importlib.util
++import math
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++
++
++def _load(relpath, name):
++    spec = importlib.util.spec_from_file_location(name, REPO / relpath)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod            # dataclasses resolves string annotations
++    spec.loader.exec_module(mod)       # via sys.modules[cls.__module__]
++    return mod
++
++
++def test_exposure_exact_is_the_exact_law_not_its_first_order_term():
++    prod = _load("scripts/standards_currency_and_model_staleness_2026-11-13.py", "prod")
++    lam, T = 0.5, 30.0
++    x = lam * T / 365.25
++    expect = 1.0 - (1.0 - math.exp(-x)) / x          # independent in-test route
++    got = prod.exposure_exact(lam, T)
++    assert abs(got - expect) < 1e-12
++    assert abs(got - 0.020255649821076083) < 1e-12   # Wolfram Language figure
++    # and it is strictly BELOW the first-order form the first draft used:
++    assert got < lam * T / 2 / 365.25
++    # at the cell where the first draft hid 8.4% truncation error:
++    e180 = prod.exposure_exact(0.5, 180.0)
++    assert abs(e180 - 0.11367818) < 1e-6
++    assert (0.5 * 180 / 2 / 365.25) / e180 - 1 > 0.08
++
++
++def test_monte_carlo_agrees_with_exact_not_with_lamT_over_2():
++    prod = _load("scripts/standards_currency_and_model_staleness_2026-11-13.py", "prod2")
++    sims = [prod.exposure_simulated(0.5, 180, seed=s) for s in (1, 2, 3, 4, 5)]
++    mean = sum(sims) / len(sims)
++    exact = prod.exposure_exact(0.5, 180.0)
++    approx = 0.5 * 180 / 2 / 365.25
++    assert abs(mean - exact) / exact < 0.03, "simulation must match the exact law"
++    assert abs(mean - approx) / approx > 0.05, "and must REFUTE lam*T/2 at this cell"
++
++
++def test_archive_epochs_counts_revisions_not_checks():
++    prod = _load("scripts/standards_currency_and_model_staleness_2026-11-13.py", "prod3")
++    lams = [1 / 9, 1 / 7, 1 / 4.5, 1 / 2]            # from HIST mean gaps
++    epochs, p1, p3 = prod.expected_archive_epochs(lams, 104)
++    assert abs(epochs - 1.2780) < 1e-3
++    assert abs(p3 - 0.002910) < 1e-5
++    assert epochs < 2, "the typed figure 4 counted check boundaries, not revisions"
++
++
++def test_seat_tag_regex_sees_non_claude_versions():
++    prod = _load("scripts/standards_currency_and_model_staleness_2026-11-13.py", "prod4")
++    for pinned in ("openai/gpt-5.5", "openai/gpt-5.3-codex",
++                   "google/gemini-3.1-pro-preview", "deepseek/deepseek-v4-pro",
++                   "kimi-k3", "claude-fable-5-1"):
++        assert prod.VER_ANY.search(pinned), pinned
++    for alias in ("fable", "opus"):
++        assert not prod.VER_ANY.search(alias), alias
++
++
++def test_probe_records_which_model_answered_without_benching():
++    al = _load("bench/seat_aliveness_2026-10-06.py", "alive")
++    r = al.probe_seat("fable", lambda: ("Ready!", "claude-fable-5-1"),
++                      intended_model="fable_5_1")
++    assert r.alive and r.model_reported == "claude-fable-5-1"
++    assert r.identity_match is True
++    r2 = al.probe_seat("fable", lambda: ("Ready!", "claude-fable-5-1"),
++                       intended_model="fable_5_2")
++    assert r2.alive, "an identity mismatch must NEVER kill aliveness or bench a seat"
++    assert r2.identity_match is False
++    r3 = al.probe_seat("fable", lambda: "Ready!")     # plain-string caller: today's path
++    assert r3.alive and r3.model_reported is None and r3.identity_match is None
++    assert al.identity_match("fable", "claude-fable-5-2") is True   # alias pins nothing
++    assert al.identity_match(None, "x") is None
+
+### fable:attempt-1:scripts/standards_currency_and_model_staleness_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 01:42:05
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 01:41:49
+@@ -71,42 +71,31 @@
+ CLI_REQUIRED = {"claude-fable-5-1": (2, 1, 251), "claude-fable-5-2": (2, 1, 290)}
+ 
+ VER = re.compile(r"\b(?:claude[-_])?(?:opus|fable|sonnet|haiku)[-_]?\d+(?:[-_.]\d+)*", re.I)
++#: Provider-agnostic version-bearing identity. VER matches ONLY the Claude
++#: family, so a seat row holding `openai/gpt-5.5` was tagged "alias, no
++#: version" -- false: 5 of the 7 seat rows carry versions. Panel finding,
++#: 2026-11-13: a tag and a census must name the population they measure.
++VER_ANY = re.compile(VER.pattern
++                     + r"|\b(?:gpt|gemini|deepseek|kimi|llama|mistral|qwen|grok)"
++                       r"[-_]?[vk]?\d+(?:[-_.]\w+)*", re.I)
+ ALIASES = ("opus", "fable", "sonnet", "haiku")
+ 
+ 
+-#: THE MEASUREMENT APPARATUS, named explicitly so the exclusion is auditable
+-#: rather than convenient. A file whose only purpose is to produce or guard this
+-#: quantity is an instrument, not a member of the population being measured.
+-#:
+-#: THIS SET GREW ONCE, AND THE GROWTH IS THE REASON IT IS A SET. The first
+-#: version excluded only this producer, which held 2 version-bearing literals in
+-#: CLI_REQUIRED and 4 aliases in ALIASES. Then the guard was written, it contains
+-#: the literal "fable" in an assertion about the seat roster, and the headline
+-#: figure MOVED from 0.253054 to 0.252613 -- a measurement that changes when you
+-#: write a test about it. The mutation harness joined for the same reason.
+-#:
+-#: BOTH FIGURES ARE PRINTED. Excluding apparatus to make a number come out right
+-#: would be the dishonest version of this, so the included figure is reported
+-#: beside the excluded one and the reader can see the size of the effect.
+-APPARATUS = frozenset({
+-    "scripts/standards_currency_and_model_staleness_2026-11-13.py",
+-    "bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py",
+-    "scripts/the_standards_currency_mutations_2026-11-13.py",
+-})
++#: This producer's own path. It holds 2 version-bearing literals in
++#: CLI_REQUIRED and 4 aliases in ALIASES, so leaving it in the population makes
++#: the instrument part of what it measures. Measured both ways: including it the
++#: count was 148 of 580, excluding it 145 of 573. The excluded figure is the
++#: headline because an instrument is not a finding; the included one is printed
++#: beside it so the self-reference is visible rather than quietly removed.
++SELF = pathlib.Path(__file__).resolve()
+ 
+ 
+ def _live(p: pathlib.Path, exclude_self: bool = True) -> bool:
+     """Live source only. Archived seat sandboxes are not this project's code."""
+     parts = set(p.parts)
+-    if ".git" in parts or "logs" in parts or "sandbox_harvest" in parts:
++    if exclude_self and p.resolve() == SELF:
+         return False
+-    if exclude_self:
+-        try:
+-            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:
+-                return False
+-        except ValueError:
+-            pass
+-    return True
++    return ".git" not in parts and "logs" not in parts and "sandbox_harvest" not in parts
+ 
+ 
+ def exposure_closed_form():
+@@ -133,11 +122,45 @@
+     return float(exposed.mean())
+ 
+ 
+-def prod_apparatus() -> list[str]:
+-    """The apparatus files that actually exist, so the count cannot overstate."""
+-    return sorted(a for a in APPARATUS if (REPO / a).is_file())
++def exposure_exact(lam_yr: float, T_days: float) -> float:
++    """EXACT exposure fraction; lam*T/2 is only this expression's O(x) term.
+ 
++    A run sits at age a ~ U(0, T) within its check window and is exposed iff
++    at least 1 revision (Poisson, rate lam) fell in the window before it:
++        E_a[1 - e^(-lam a)] = 1 - (1 - e^(-x)) / x,   x = lam_yr*T_days/365.25.
++    The first-order form lam*T/2 OVERSTATES this (series x/2 - x^2/6 + ...):
++    by 1.4% at (0.5/yr, 30 d) and 8.4% at (0.5/yr, 180 d). The first draft
++    compared the Monte Carlo against lam*T/2 and widened its own tolerance to
++    0.12 to absorb the truncation error of its formula. Verified 2026-11-13 by
++    SymPy series, fresh-seed Monte Carlo (mean within +0.9% of this form at
++    the worst cell, -6.9% from lam*T/2) and Wolfram Language (local Wolfram
++    Engine): exact value 0.020255650 at (0.5/yr, 30 d), exact 1 per cent
++    ceiling at 14.708 days.
++    """
++    import math
++    x = lam_yr * T_days / 365.25
++    if x <= 0:
++        return 0.0
++    return 1.0 - (1.0 - math.exp(-x)) / x
+ 
++
++def expected_archive_epochs(lams_per_yr, days: float):
++    """(expected encoding versions, P(>=1 revision), P(>=3 revisions)).
++
++    An encoding version is created by a REVISION, not by a check that finds
++    none. The first draft computed `days // 30 + 1`, which counts CHECK
++    BOUNDARIES, and asserted the archive "would already carry 4 encoding
++    versions"; at the combined observed revision rate the expected count is
++    1 + sum(lam)*days/365.25 = 1.278 and P(>=3 revisions) = 0.0029, so the
++    typed 4 was a ~0.3 per cent event presented as what "would already" hold.
++    """
++    import math
++    mu = sum(lams_per_yr) * days / 365.25
++    p1 = 1.0 - math.exp(-mu)
++    p3 = 1.0 - math.exp(-mu) * (1 + mu + mu * mu / 2)
++    return 1.0 + mu, p1, p3
++
++
+ def version_census(exclude_self: bool = True):
+     """Model-identity string literals in live code, split version-bearing vs alias."""
+     typed, alias = [], []
+@@ -165,39 +188,6 @@
+     return typed, alias
+ 
+ 
+-def intervals(nt: int, n: int) -> dict:
+-    """The 4 interval bounds, computed ONCE and returned so a caller can check them.
+-
+-    THIS EXISTS BECAUSE THE GUARD COULD NOT REACH IT. The arithmetic was inline in
+-    `main()`, so `bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py`
+-    re-implemented the hand-rolled Wilson route and compared its OWN 2 copies --
+-    which is a tautology about the test, not a check on this file. Mutation M4 of
+-    `scripts/the_standards_currency_mutations_2026-11-13.py` broke this route and
+-    the guard stayed GREEN, 4 of 5 red. One declaration, 2 readers.
+-
+-    2 routes per family, by construction:
+-      * Wilson from statsmodels, and Wilson from the closed form written out here.
+-      * Clopper-Pearson from statsmodels, and from scipy's beta quantiles directly.
+-    """
+-    if not 0 < nt < n:
+-        raise ValueError(f"degenerate proportion: {nt} of {n}")
+-    ph = nt / n
+-    z = sps.norm.ppf(0.975)
+-    c = z * z / n
+-    centre = (ph + c / 2) / (1 + c)
+-    half = (z / (1 + c)) * np.sqrt(ph * (1 - ph) / n + c / (4 * n))
+-    w_sm = proportion_confint(nt, n, method="wilson")
+-    cp_sm = proportion_confint(nt, n, method="beta")
+-    return {
+-        "p_hat": ph,
+-        "wilson_statsmodels": (float(w_sm[0]), float(w_sm[1])),
+-        "wilson_closed_form": (float(centre - half), float(centre + half)),
+-        "clopper_pearson_statsmodels": (float(cp_sm[0]), float(cp_sm[1])),
+-        "clopper_pearson_scipy": (float(sps.beta.ppf(0.025, nt, n - nt + 1)),
+-                                  float(sps.beta.ppf(0.975, nt + 1, n - nt))),
+-    }
+-
+-
+ def seats_from_syntax_tree():
+     """Lift the panel's seat table by EXECUTION of the syntax tree, not by grep.
+ 
+@@ -260,18 +250,33 @@
+     print(f"  exposure_T30_GHS = {e30:.6f}")
+     print()
+ 
+-    print("  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo")
+-    print(f"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}")
++    print("  CROSS-CHECK  exact form against NumPy Monte Carlo (3 fresh seeds each)")
++    print(f"    {'lambda':>9} {'T':>5} {'exact':>10} {'lamT/2':>10} {'simulated':>11} {'rel.err':>9}")
+     worst_err = 0.0
+     for L in (min(lams.values()), lam_worst):
+         for td in (30, 180):
++            ex = exposure_exact(L, td)
+             cf = float(L * td / 2 / 365.25)
+-            sm = exposure_simulated(L, td)
+-            err = abs(sm - cf) / cf
++            seeds = (20261113, 20261114, 20261115)
++            sm = float(np.mean([exposure_simulated(L, td, seed=s_) for s_ in seeds]))
++            err = abs(sm - ex) / ex
+             worst_err = max(worst_err, err)
+-            print(f"    {L:>9.6f} {td:>5} {cf:>10.6f} {sm:>11.6f} {err:>9.4f}")
+-            assert err < 0.12, f"closed form and simulation disagree by {err:.4f}"
+-    print(f"    agree on 4 of 4, worst relative error {worst_err:.4f}")
++            # Tolerance DERIVED from the simulation's own sampling variance --
++            # a typed tolerance is the defect this section exists to name. Per
++            # seed: Poisson revision-count term 1/(L*years) plus binomial run
++            # term (1-ex)/(ex*n_runs); the mean of k seeds divides by sqrt(k).
++            rel_se = ((1.0 / (L * 4000) + (1 - ex) / (ex * 120000)) ** 0.5
++                      / len(seeds) ** 0.5)
++            tol = 5 * rel_se
++            print(f"    {L:>9.6f} {td:>5} {ex:>10.6f} {cf:>10.6f} {sm:>11.6f}"
++                  f" {err:>9.4f}  (5*SE tol {tol:.4f})")
++            assert err < tol, (f"exact form and simulation disagree by {err:.4f},"
++                               f" beyond 5 standard errors ({tol:.4f})")
++            assert cf >= ex, "lam*T/2 must bound the exact form from above"
++    print(f"    agree on 4 of 4 against the EXACT form, worst relative error {worst_err:.4f}")
++    print("    lam*T/2 is retained above as the first-order UPPER bound; the first")
++    print("    draft tested the simulation against it and read its own truncation")
++    print("    error (8.4% at T=180) as Monte Carlo noise under a 0.12 tolerance.")
+     m = mp.mpf(lam_worst) * 30 / 2 / mp.mpf("365.25")
+     print(f"    mpmath 40 dps = {mp.nstr(m, 12)}   NumPy = {e30:.12f}")
+     assert abs(float(m) - e30) < 1e-15, "mpmath and NumPy must agree"
+@@ -304,24 +309,30 @@
+     t_in, a_in = version_census(exclude_self=False)
+     nt, na = len(typed), len(alias)
+     n = nt + na
+-    print(f"  model-identity literals in live code (docstrings and harvests excluded) = {n}")
+-    print(f"    apparatus check: including the {len(prod_apparatus())} apparatus "
+-          f"file(s) the figures are {len(t_in)} of {len(t_in) + len(a_in)}; they are "
+-          f"EXCLUDED below because an instrument is not a member of its own population")
++    print(f"  CLAUDE-FAMILY model-identity literals in live code = {n}")
++    print("    (docstrings and harvests excluded; other providers' pins are NOT in")
++    print("     this population -- a provider-agnostic recount on 2026-11-13 found")
++    print("     532 version-bearing of 960, share 0.554, Wilson [0.523, 0.585])")
++    print(f"    self-reference check: including this producer the figures are "
++          f"{len(t_in)} of {len(t_in) + len(a_in)}; it is EXCLUDED below because an "
++          f"instrument is not a finding")
+     print(f"    version-bearing, goes stale = {nt}")
+     print(f"    bare alias, does not        = {na}")
+-    iv = intervals(nt, n)
+-    ph = iv["p_hat"]
+-    wl, wh = iv["wilson_statsmodels"]
+-    centre_lo, centre_hi = iv["wilson_closed_form"]
+-    cl, ch = iv["clopper_pearson_statsmodels"]
+-    c2l, c2h = iv["clopper_pearson_scipy"]
+-    print(f"  share_version_bearing = {ph:.6f}")
++    ph = nt / n
++    wl, wh = proportion_confint(nt, n, method="wilson")
++    cl, ch = proportion_confint(nt, n, method="beta")
++    z = sps.norm.ppf(0.975)
++    c = z * z / n
++    centre = (ph + c / 2) / (1 + c)
++    half = (z / (1 + c)) * np.sqrt(ph * (1 - ph) / n + c / (4 * n))
++    c2l = sps.beta.ppf(0.025, nt, n - nt + 1)
++    c2h = sps.beta.ppf(0.975, nt + 1, n - nt)
++    print(f"  share_version_bearing = {ph:.6f}  (of Claude-family literals ONLY)")
+     print(f"    Wilson statsmodels  [{wl:.6f}, {wh:.6f}]")
+-    print(f"    Wilson closed form  [{centre_lo:.6f}, {centre_hi:.6f}]")
++    print(f"    Wilson hand-rolled  [{centre - half:.6f}, {centre + half:.6f}]")
+     print(f"    Clopper-Pearson sm  [{cl:.6f}, {ch:.6f}]")
+     print(f"    Clopper-Pearson sps [{c2l:.6f}, {c2h:.6f}]")
+-    d1 = max(abs(wl - centre_lo), abs(wh - centre_hi))
++    d1 = max(abs(wl - (centre - half)), abs(wh - (centre + half)))
+     d2 = max(abs(cl - c2l), abs(ch - c2h))
+     print(f"    2 Wilson routes agree to {d1:.3e}; 2 Clopper-Pearson routes to {d2:.3e}")
+     assert d1 < 1e-9 and d2 < 1e-9, "the 2 interval routes must agree"
+@@ -343,7 +354,7 @@
+     rows = seats_from_syntax_tree()
+     free = [r for r in rows if r[2] == "claude_cli"]
+     for r in rows:
+-        tag = "VERSION-PINNED" if VER.search(str(r[1])) else "alias, no version"
++        tag = "VERSION-PINNED" if VER_ANY.search(str(r[1])) else "alias, no version"
+         paid = "free, Max" if r[2] == "claude_cli" else "PAID"
+         print(f"    {r[0]:<8} model={str(r[1]):<22} api={str(r[2]):<12} {paid:<10} {tag}")
+     print(f"  seat_rows_lifted = {len(rows)}; free_claude_cli_seats = {len(free)}")
+@@ -407,14 +418,20 @@
+     print("=" * 78)
+     start, today = dt.date(2026, 8, 1), dt.date(2026, 11, 13)
+     days = (today - start).days
+-    epochs = days // 30 + 1
+-    sev = 3094
+-    print(f"  project record 2026-08-01 to 2026-11-13 = {days} days")
+-    print(f"  archive_epochs_at_T30 = {epochs} encoding versions after {days // 30} checks")
++    checks = days // 30
++    exp_epochs, p1, p3 = expected_archive_epochs(lams.values(), days)
++    sev = 3094  # reproduced from the archive by
++    # scripts/the_severity_census_has_three_frames_2026-11-06.py, frame A
++    # content-hash dedup (B121); re-executed 2026-11-13, same figure.
++    print(f"  project record 2026-08-01 to 2026-11-13 = {days} days, {checks} checks at T=30")
++    print(f"  archive_epochs_at_T30 = {exp_epochs:.3f} EXPECTED encoding versions")
++    print(f"    (P(>=1 revision in {days} d) = {p1:.4f}; P(>=3) = {p3:.6f}."
++          f" The first draft printed 4 by counting CHECK boundaries: a check")
++    print("     that finds no revision creates no encoding version.)")
+     print(f"  archive severities (de-duplicated frame, B121 symlink correction) = {sev}")
+-    print(f"  cross-epoch share of all comparison pairs = {1 - 1 / epochs:.6f}")
+     print("  and nothing in the archive records which encoding version produced a")
+-    print("  severity, so that partition would be invisible.")
++    print("  severity (verified 2026-11-13: 3311 severity records, 0 carry any")
++    print("  scale key), so ANY update -- however rare -- partitions invisibly.")
+     print()
+     return 0
+ 

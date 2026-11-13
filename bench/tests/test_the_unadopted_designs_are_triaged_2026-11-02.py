@@ -75,9 +75,37 @@ class TestEveryArtefactCarriesAVerdict:
             assert r.get("seat"), r
 
     def test_no_path_is_triaged_twice(self, rec):
-        keys = [(r["seat"], r["path"]) for r in rec["rows"]]
+        """★ THE KEY INCLUDES THE ROUND, 2026-11-13, AND THAT IS A WIDENING OF
+        THE IDENTITY RATHER THAN A WEAKENING OF THE CHECK.
+
+        (seat, path) was unambiguous until a seat proposed the same path in 2
+        different rounds. cc2 did: `bench/model_identity.py` in
+        `rung_promotion_and_model_ids_2026-10-08` at 5,744 bytes and again in
+        `standards_currency_2026-11-13` at 8,373 bytes, with different digests.
+        Those are 2 DISTINCT designs for 1 target, and the first repair tried
+        here -- deduplicating on (seat, path) -- silently discarded one of them,
+        which is the opposite of what this file exists to prevent.
+
+        The underlying fault is an information loss upstream: the store KNOWS
+        the round and does not print it in M3, so 2 artefacts arrived here
+        indistinguishable. The triage now recovers the round from
+        `experimental_notes/seat_evidence/` and records it, so this key can name
+        an ARTEFACT rather than a target path.
+        """
+        rows = rec["rows"]
+        keys = [(r["seat"], r["path"], r.get("round", "")) for r in rows]
         dupes = [k for k, n in collections.Counter(keys).items() if n > 1]
         assert not dupes, f"triaged twice: {dupes}"
+        # NON-VACUOUS: the round must actually be recorded, or this key degrades
+        # to the old one with an empty third element and stops discriminating.
+        pairs = collections.Counter((r["seat"], r["path"]) for r in rows)
+        repeated = {k for k, n in pairs.items() if n > 1}
+        for r in rows:
+            if (r["seat"], r["path"]) in repeated:
+                assert r.get("round"), (
+                    f"{r['seat']} proposed {r['path']} more than once and this "
+                    f"row records no round, so the 2 designs are "
+                    f"indistinguishable in the record")
 
 
 class TestTheVerdictsDiscriminate:

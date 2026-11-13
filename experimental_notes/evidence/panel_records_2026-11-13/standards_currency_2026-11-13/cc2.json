@@ -1,0 +1,262 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 28405,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && git log --oneline -3 2>/dev/null | head -5\", \"description\": \"Orient in repo\"}",
+      "t_offset_s": 4.822
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la scripts/standards_currency_and_model_staleness_2026-11-13.py bench/cdsfl_registry/domain_vocabulary.py bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md 2>&1\", \"description\": \"Check artefacts exist\"}",
+      "t_offset_s": 6.633
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum scripts/standards_currency_and_model_staleness_2026-11-13.py bench/cdsfl_registry/domain_vocabulary.py bench/confer_maths_panel_2026-09-05.py bench/seat_aliveness_2026-10-06.py bench/seat_readiness.py bench/model_catalogue.py bench/cdsfl_registry/composer.py bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md scripts/cdsfl_sv.py bench/ticket_store.py 2>&1 | cut -c1",
+      "t_offset_s": 11.341
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -250\", \"description\": \"Run the producer script\"}",
+      "t_offset_s": 12.536
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -300\", \"description\": \"Run the producer script\"}",
+      "t_offset_s": 15.436
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"monte\\\\|Monte\\\\|simulated\\\\|rng\\\\|random\\\\|1461\\\\|730\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py | head -40\", \"description\": \"Find Monte Carlo code in producer\"}",
+      "t_offset_s": 66.546
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def consequence_domain\\\\|^DOMAIN\\\\|^_DOMAIN\\\\|scale\\\\|own\\\\|inherit\\\" bench/cdsfl_registry/domain_vocabulary.py | head -60\", \"description\": \"Inspect domain_vocabulary structure\"}",
+      "t_offset_s": 68.168
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '80,130p' scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"description\": \"Read exposure closed form and MC\"}",
+      "t_offset_s": 70.88
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '355,420p' bench/cdsfl_registry/domain_vocabulary.py\", \"description\": \"Read consequence_domain body\"}",
+      "t_offset_s": 71.805
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sympy as sp, mpmath as mp\\nlam, T, t = sp.symbols('lambda T t', positive=True)\\n# producer's route: E[window]=T/2, first order\\napprox = sp.simplify(lam*sp.integrate((T-t)/T,(t,0,T))/sp.Rational(36525,100))\\nprint('producer closed form        :', approx)\\n# EXACT: stale at time t into interval iff >=1 revision in [0,t]; Poisson\\nexact = sp.simplify(sp.integrate(1",
+      "t_offset_s": 133.02
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry import domain_vocabulary as dv\\ndoms=dv.domains()\\nprint('domains known =',len(doms))\\nown=[];inh=[];comp=[];unres=[]\\nfor d in doms:\\n    s=dv.severity(d)\\n    r=dv.consequence_domain(d)\\n    r2=dv.consequence_domain(d, application='software')\\n    print(f'{d:14s} scale={str(s[\\\\\\\"scale\\\\\\\"]):28s} crit={str(",
+      "t_offset_s": 137.841
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'scripts')\\nimport importlib.util, numpy as np, mpmath as mp\\nspec=importlib.util.spec_from_file_location('prod','scripts/standards_currency_and_model_staleness_2026-11-13.py')\\nm=importlib.util.module_from_spec(spec)\\nimport builtins\\n# import without running __main__\\nsrc=open('scripts/standards_currency_and_model_staleness_2026-11-13.py'",
+      "t_offset_s": 156.446
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport mpmath as mp, scipy.optimize as so, numpy as np\\nmp.mp.dps=40\\ndef exact_T(L,ceil=0.01):\\n    f=lambda Td: float(1-(1-mp.e**(-mp.mpf(L)/mp.mpf('365.25')*Td))/(mp.mpf(L)/mp.mpf('365.25')*Td))-ceil\\n    return so.brentq(f,1e-6,100000,xtol=1e-12)\\nnames={0.111111111111:'FMEA',0.142857142857:'CTCAE',0.222222222222:'CVSS',0.5:'GHS'}\\nprint(f\\\\\\\"{'std':>7}{'lambda':>10",
+      "t_offset_s": 200.065
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'x=.; s=Series[1-(1-Exp[-x])/x,{x,0,3}]; Print[Normal[s]]; lam=1/2/36525*100; T=30; Print[N[1-(1-Exp[-lam*T])/(lam*T),12)]' 2>&1 | head -20\", \"description\": \"Wolfram check of series and value\"}",
+      "t_offset_s": 202.164
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Print[Normal[Series[1-(1-Exp[-x])/x,{x,0,3}]]]; lam=N[1/2/365.25,30]; Print[N[1-(1-Exp[-lam*30])/(lam*30),15)]' 2>&1 | head -5; echo \\\"---retry2---\\\"; wolframscript -code 'Print[Normal[Series[1-(1-Exp[-x])/x,{x,0,3}]]]; lam=1/(2*36525/100); Print[N[1-(1-Exp[-lam*30])/(lam*30),15]]; Print[T/.FindRoot[1-(1-Exp[-lam*T])/(lam*T)==1/100,{T,15},WorkingPrecision->20]]' 2",
+      "t_offset_s": 215.907
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md\", \"description\": \"Read pre-registered critical definition\"}",
+      "t_offset_s": 216.631
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"CRITICAL_SEVERITY_THRESHOLD\\\" --include=*.py . | grep -v logs/ | grep -v sandbox_harvest | head -20\", \"description\": \"Locate the severity gate constant\"}",
+      "t_offset_s": 236.547
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity\\\" bench/cdsfl_registry/composer.py | grep -in \\\"0.7\\\\|threshold\\\\|critical\\\" | head -20; echo \\\"=== ticket_store severity ===\\\"; grep -n \\\"severity\\\\|scale\\\" bench/ticket_store.py | head -30\", \"description\": \"Find severity gate in composer and ticket_store\"}",
+      "t_offset_s": 238.096
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CRITICAL_SEVERITY_THRESHOLD|severity >= 0\\\\.7|severity>=0\\\\.7|0\\\\.7.*critical|critical.*0\\\\.7\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"head_limit\": 30}",
+      "t_offset_s": 241.083
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def (add|create|open)_ticket|class .*Ticket|def .*ticket\", \"path\": \"bench/ticket_store.py\", \"output_mode\": \"content\", \"head_limit\": 40}",
+      "t_offset_s": 242.358
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '/^def archive_severities\\\\|archive_sever\\\\|B121\\\\|symlink/p' scripts/standards_currency_and_model_staleness_2026-11-13.py | head; echo \\\"=== func ===\\\"; python3 - <<'EOF'\\nimport ast,sys\\nsrc=open('scripts/standards_currency_and_model_staleness_2026-11-13.py').read()\\nt=ast.parse(src)\\nfor n in t.body:\\n    if isinstance(n,(ast.FunctionDef,)):\\n        print(n.name, n.lineno)\\",
+      "t_offset_s": 251.288
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"3094\\\\|severit\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py | sed -n '1,40p'\", \"description\": \"Find archive severity loading in producer\"}",
+      "t_offset_s": 253.663
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs 2>/dev/null | head -20; echo \\\"=== registries ===\\\"; find . -name \\\"*registry*.json*\\\" -not -path \\\"./.git/*\\\" 2>/dev/null | head -10\", \"description\": \"Locate archive registries\"}",
+      "t_offset_s": 254.815
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '340,370p' scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"description\": \"Read producer section 5\"}",
+      "t_offset_s": 262.741
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls logs/_archive | head -20; echo \\\"--- count of run dirs ---\\\"; ls logs/_archive | wc -l; echo \\\"--- jsonl/json under logs ---\\\"; find logs -name \\\"*.json\\\" -o -name \\\"*.jsonl\\\" 2>/dev/null | wc -l\", \"description\": \"Inspect archive layout\"}",
+      "t_offset_s": 264.118
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== archive present? ===\\\"; find . -path ./.git -prune -o -name \\\"*.jsonl\\\" -print 2>/dev/null | head; echo \\\"n_json_total:\\\"; find . -path ./.git -prune -o \\\\( -name \\\"*.json\\\" -o -name \\\"*.jsonl\\\" \\\\) -print 2>/dev/null | wc -l; echo \\\"=== cdsfl_sv derived timeout ===\\\"; grep -n \\\"last 10\\\\|ledger\\\\[-10\\\\|\\\\[-10:\\\\]\\\\|derive.*timeout\\\\|timeout.*deriv\\\" scripts/cdsfl_sv.py | h",
+      "t_offset_s": 309.115
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def \\\\|model\\\\|version\\\" bench/seat_aliveness_2026-10-06.py | head -40\", \"description\": \"Read aliveness probe structure\"}",
+      "t_offset_s": 309.91
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --version 2>&1 | head -2; echo \\\"=== resolved-id via transport metadata ===\\\"; claude --model opus -p \\\"say ok\\\" --output-format json 2>&1 | head -c 1200\", \"description\": \"Test CLI resolved model id metadata\", \"timeout\": 180000}",
+      "t_offset_s": 318.777
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport z3\\n# Q1: is a per-scale DISJUNCTION invariant under independent monotone relabelling\\n# of each domain's own scale, where a normalised-mean gate is not?\\n# Two domains, scales A and B. 3 ordered levels each. phi_A, phi_B strictly incr.\\ns=z3.Solver()\\na,b=z3.Reals('a b')                    # raw severities, domain A and B\\nca,cb=z3.Reals('ca cb')                ",
+      "t_offset_s": 328.779
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '55,110p;126,160p' bench/seat_aliveness_2026-10-06.py\", \"description\": \"Read probe_seat and claude_cli_caller\"}",
+      "t_offset_s": 517.292
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def call_claude_cli\\\" -A 40 bench/*.py bench/**/*.py 2>/dev/null | grep -n \\\"output-format\\\\|json\\\\|def call_claude_cli\\\\|cmd\\\\|subprocess\\\" | head -20; echo \\\"=== file ===\\\"; grep -rln \\\"def call_claude_cli\\\" bench/ | head\", \"description\": \"Find call_claude_cli implementation\"}",
+      "t_offset_s": 518.893
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"probe_roster\\\\|probe_seat\\\\|seat_aliveness\\\" --include=\\\"*.py\\\" bench scripts 2>/dev/null | grep -v \\\"logs/\\\\|sandbox_harvest\\\" | head -20\", \"description\": \"Find callers of probe_roster\"}",
+      "t_offset_s": 555.581
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1415,1470p' bench/experiment_11_orchestrator.py; echo \\\"=== tail of aliveness ===\\\"; sed -n '200,260p' bench/seat_aliveness_2026-10-06.py\", \"description\": \"Read call_claude_cli cmd and aliveness tail\"}",
+      "t_offset_s": 556.858
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo/bench/model_identity.py\", \"content\": \"\\\"\\\"\\\"Which model actually answered, and can the installed client reach the intended one.\\n\\nWHAT THIS CLOSES. `bench/seat_aliveness_2026-10-06.py` asks whether a route\\nanswers. It never asks WHICH model answered, and `bench/seat_readiness.py` asks\\nonly whether ",
+      "t_offset_s": 621.685
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch bench/_wtest_$$ 2>&1 && echo WRITABLE && rm -f bench/_wtest_$$ || echo \\\"NOT WRITABLE\\\"; ls -ld . bench bench/tests 2>&1\", \"description\": \"Test sandbox writability\"}",
+      "t_offset_s": 625.662
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/model_identity.py <<'PYEOF'\\n\\\"\\\"\\\"Which model actually answered, and can the installed client reach the intended one.\\n\\nWHAT THIS CLOSES. `bench/seat_aliveness_2026-10-06.py` asks whether a route\\nanswers. It never asks WHICH model answered, and `bench/seat_readiness.py` asks\\nonly whether a seat is configured. So the two checks that stand between a\\ndispatch and a run a",
+      "t_offset_s": 658.007
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1180,1240p' bench/confer_maths_panel_2026-09-05.py\", \"description\": \"Read dispatcher aliveness integration\"}",
+      "t_offset_s": 671.125
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport re,io\\np='bench/seat_aliveness_2026-10-06.py'\\ns=open(p).read()\\norig=s\\n\\n# 1. AliveResult gains an identity field\\ns=s.replace(\\\"\\\"\\\"    detail: str\\n    replies: list = field(default_factory=list)\\\"\\\"\\\",\\n\\\"\\\"\\\"    detail: str\\n    replies: list = field(default_factory=list)\\n    #: The TRANSPORT's answer to \\\"which model served this?\\\", as produced by\\n",
+      "t_offset_s": 714.903
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_probe_caller\\\\|probe_roster\\\\|probe_models\\\\|_load_aliveness()\\\" bench/confer_maths_panel_2026-09-05.py | head -20\", \"description\": \"Find dispatcher probe call site\"}",
+      "t_offset_s": 720.269
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1495,1535p' bench/confer_maths_panel_2026-09-05.py\", \"description\": \"Read dispatcher preflight block\"}",
+      "t_offset_s": 722.225
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\np='bench/confer_maths_panel_2026-09-05.py'\\ns=open(p).read(); orig=s\\n\\nIDENT = '''\\n\\ndef _identity_caller(model_id, route, timeout):\\n    \\\"\\\"\\\"A 0-argument identity probe for 1 seat, or None where the route cannot answer.\\n\\n    Returns `(envelope, refusal_text, intended_model_id, installed_cli)` for the\\n    `claude_cli` route, which is the only route whose cl",
+      "t_offset_s": 742.655
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_model_identity_is_measured_not_self_reported_2026-11-13.py <<'PYEOF'\\n\\\"\\\"\\\"The aliveness probe must report WHICH model answered, from the TRANSPORT.\\n\\nWHAT GOES RED IF THE FIX IS REVERTED.\\n  * Delete `bench/model_identity.py` -> every test here errors on import.\\n  * Revert the `identity=` parameter on `seat_aliveness.probe_seat` or the\\n    `identities=` par",
+      "t_offset_s": 777.887
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py -q 2>&1 | tail -6\", \"description\": \"Regression check on existing aliveness test\"}",
+      "t_offset_s": 782.734
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp bench/model_identity.py /tmp/mi.bak; cp bench/seat_aliveness_2026-10-06.py /tmp/sa.bak; cp bench/confer_maths_panel_2026-09-05.py /tmp/cp.bak\\necho \\\"=== REVERT 1: remove model_identity.py ===\\\"\\nrm bench/model_identity.py\\npython3 -m pytest bench/tests/test_model_identity_is_measured_not_self_reported_2026-11-13.py -q 2>&1 | tail -4\\ncp /tmp/mi.bak bench/model_identity.py\\necho \\\"",
+      "t_offset_s": 789.732
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py <<'PYEOF'\\n\\\"\\\"\\\"Four falsifiers against the 2026-11-13 brief's own instruments.\\n\\nRun: python3 scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py\\n\\n1. THE FAILURE-MODE COUNT IS PARTITION-DEPENDENT. The brief's section-4 table\\n   scores a currency check 1 and per-run provenance 4 on \\\"fai",
+      "t_offset_s": 857.31
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd . && python3 - <<'EOF'\\np='scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py'\\ns=open(p).read()\\ns=s.replace(\\\"    s3.add(a > 0, b > 0, pa > 0, pb > 0, pa < 1, pb < 1)\\\",\\n            \\\"    s3.add(a > 0, b > 0, pa > 0, pb > 0, pa < 1, pb < 1)\\\\n\\\"\\n            \\\"    s3.add(a != b)   # forbid the degenerate tie-value witness\\\",1)\\nopen(p,'w').write(s)\\nEOF\\npytho",
+      "t_offset_s": 875.535
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git status --short 2>/dev/null; echo \\\"=== dispatcher still imports / preflight intact ===\\\"; python3 -c \\\"\\nimport ast\\nsrc=open('bench/confer_maths_panel_2026-09-05.py').read()\\nt=ast.parse(src)\\nfns={n.name for n in ast.walk(t) if isinstance(n,ast.FunctionDef)}\\nprint('_identity_caller defined:', '_identity_caller' in fns)\\nprint('_probe_caller still defined:', '_probe_caller' in f",
+      "t_offset_s": 892.377
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"timeout\\\" scripts/cdsfl_sv.py | grep -i \\\"deriv\\\\|percentile\\\\|median\\\\|quantile\\\\|ledger\\\\|last\\\\|recent\\\\|history\\\\|\\\\[-\\\" | head -20; echo \\\"--- any derived timeout at all ---\\\"; grep -n \\\"def .*timeout\\\\|_TIMEOUT\\\\|timeout =\\\" scripts/cdsfl_sv.py | head -20\", \"description\": \"Verify the cdsfl_sv timeout derivation premise\"}",
+      "t_offset_s": 923.324
+    }
+  ],
+  "n_tool_calls": 48,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1077.3,
+  "response": "Premise confirmed \u2014 my first grep was too narrow. `COMMIT_TIMEOUT_LEDGER_ROWS = 10`, `rows[-10:]`, `ledger_max`, `\u00d7 COMMIT_TIMEOUT_HEADROOM = 4`, floored at `300`. Note it uses **max**, an admissible order statistic \u2014 and three typed constants remain. That reshapes Q3.\n\n---\n\n## 1. VERDICT\n\n| | |\n|---|---|\n| **Q1 \u2014 commensuration** | **CC1 IS RIGHT** \u2014 disjunction over per-scale transported cuts is the admissible aggregator (z3: `unsat`); the gate that actually ships is the inadmissible one. |\n| **Q2 \u2014 default points HARD** | **CC1 IS RIGHT** on the asymmetry, but it is already the codified rule, not a proposal; the interruption-*count* question answers against CC1 (it increases). |\n| **Q3 \u2014 derived, not typed** | **CC1 IS WRONG** \u2014 \"curation\" is not a derivable quantity; it justifies the headroom multiplier, not the bound. The record supplies the scale. |\n| **Q4 \u2014 BIOS currency check** | **CC1 IS RIGHT** on both findings. The failure-mode *count* is **not** a legitimate dominance measurement (proven partition-dependent); the conclusion survives only via strict set inclusion. The 1 % ceiling is the **wrong objective**. |\n| **Q5 \u2014 model identity** | **CC1 IS RIGHT**, and the hole I expected to charge it with is closable \u2014 I measured the transport-side route and shipped it. |\n\n---\n\n## 2. REASONING\n\n### Q1 \u2014 CC1 IS RIGHT, and the brief understates the gap\n\n**Premises.** Severity is ordinal (project's standing ordinal-admissibility section). An aggregator is admissible iff its verdict survives independent strictly-increasing relabelling of each domain's own scale.\n\n**Executed evidence.** The resolver confirms the corrected reading: exactly **4 of 10** domains declare an own scale (biology/CTCAE v5.0/Grade 3, chemistry/GHS Rev. 11/Category 2, engineering/AIAG-VDA FMEA/7, software/CVSS v4.0/High); **6 of 10** return `how=\"unresolved\"` with no application and `how=\"inherited\"` with one. CC1's earlier reading \u2014 6 domains as two competing hard constraints \u2014 is **refuted by execution**; `inheriting_domains()` returns exactly those 6, and they declare no scale, so they cannot conflict.\n\nz3, over independent order-preserving relabellings:\n- disjunction over each domain's **own transported** cut \u2192 `unsat` (verdict cannot flip) \u2014 **admissible**\n- conjunction over the same \u2192 `unsat` \u2014 **also admissible**\n- mean of two severities vs the **fixed real 0.7** \u2192 `sat`, non-degenerate witness: raw `a=1/5, b=1/10` (mean 3/20, below cut) relabels order-preservingly to `pa=9/10, pb=1/2` (mean 7/10, at cut).\n\n**Conclusion.** The admissible aggregators are exactly the monotone Boolean functions of the per-scale indicators. Disjunction is the unique **fail-safe** member, so \"is disjunction right?\" is a policy question, not an admissibility one \u2014 and the brief's worry that it \"fires too readily as domains are added\" is bounded, not open: only 4 domains can ever contribute a disjunct, and `may_compose` is pairwise, so the fan-in is 1\u20132, not growing. The alternative that invents no CTCAE\u2194GHS mapping is conjunction or *k*-of-*n* \u2014 both admissible, both under-fire. **Report which disjunct fired**; that preserves the information commensuration would destroy.\n\nWhere the brief understates: CC1's proposal is not a change of aggregator from a neutral baseline. The gate that ships is `severity >= CRITICAL_SEVERITY_THRESHOLD = 0.7` on a dimensionless 0\u20131 number (`bench/reference_runner_v3.py`, duplicated in `bench/evidence.py:794`, pre-registered as \"operational proxy\" in `CRITICAL_DEFINITION_PREREG_2026-05-18.md`). That **already commensurates all four scales, by collapsing them**, and z3 shows that collapse is breakable. CC1 is right about the destination and the brief is too gentle about the starting point.\n\n### Q2 \u2014 CC1 IS RIGHT on the asymmetry; the interruption claim goes the other way\n\n**Premise.** Core directive \u00a71 already states `class(c) = HARD if c is ambiguous (default rule)`. CC1's \"position\" is the project's standing rule restated \u2014 so the verdict is right by codification, not by my measurement, and I say so rather than claim evidence I did not gather.\n\n**Derivation (mine, not measured).** Let *n_s* be soft rules wrongly HARD and *n_h* hard rules wrongly SOFT. Default-HARD maps ambiguity onto *n_s*; default-SOFT maps it onto *n_h*. Cost of a *n_s* error = one visible correction, bounded and immediate. Cost of a *n_h* error = silent failure plus rework, unbounded and discovered late. The asymmetry is real. **But** the count of visible interruptions strictly **increases** under default-HARD: it converts silent soft-treatments into surfaced ones. That is the point of it. Anyone selling mandatory-by-default as *fewer* interruptions is selling the wrong thing \u2014 it is fewer *silent failures* at the price of more *visible* ones, and the trade is only good while the correction stays cheap, which depends on latitude marking actually being honoured. I did not execute a measurement here and do not dress the derivation as one.\n\n### Q3 \u2014 CC1 IS WRONG\n\n**Premise.** Q3 demands a bound DERIVED, not TYPED. A justification is not a derivation.\n\n**Executed evidence.** The cited precedent is real but not what CC1 describes. `scripts/cdsfl_sv.py` sizes its commit timeout as `max(COMMIT_TIMEOUT_FLOOR, COMMIT_TIMEOUT_HEADROOM * ledger_max)` over `rows[-COMMIT_TIMEOUT_LEDGER_ROWS:]` \u2014 with `FLOOR = 300`, `HEADROOM = 4`, `LEDGER_ROWS = 10`. So the project's own exemplar of derive-don't-type is **derived with three typed parameters**. What the record supplies is the *scale*; the policy multiplier stays typed.\n\nTwo further things fall out. First, it uses **`ledger_max`** \u2014 a selected order statistic, which is admissible under the project's own table, where a mean would not have been. Good precedent, and worth copying deliberately rather than by accident. Second, \"curation is a human property that does not improve with hardware\" is true and **not a bound**. It is unmeasured and unmeasurable from the record, so a number justified by it is a typed constant wearing a rationale \u2014 exactly what Q3 forbids.\n\n**Conclusion.** The correct derivation for a preference-block bound is structurally the `commit_timeout` one: derive the *scale* from the record (the max block size actually honoured over the last *N* blocks \u2014 max, not mean), multiply by a typed headroom, floor it. Curation then justifies the **headroom**, which is where a human judgement legitimately belongs, and not the bound. CC1's instinct (the capacity justification expires) is sound; the move it proposes replaces a derivable quantity with an underivable one, which is backwards.\n\n### Q4 \u2014 CC1 IS RIGHT on both findings; its table is not a measurement; its cadence objective is wrong\n\n**Finding 1 (no auto-rewrite).** Sound and above threshold. A classifier that *updates the encoding dynamically before loading it* has a model mutating a HARD constraint with no human in the loop \u2014 a model vote on a hard constraint, against the standing rule that repairs go to the human. DETECT-DO-NOT-REWRITE is correct, and CC1's ticket route is the right shape.\n\n**Finding 2 (archive-breaking).** Sound, and I measured it **harder than the brief did**. The brief says \"nothing stored records which version produced a given severity\". Executed over the live tree (harvests excluded): 39 `.jsonl` files, **127,177** records parsed, **809** carrying a `severity`, and **0** carrying any of `scale` / `severity_scale` / `consequence_domain` / `critical_level` / `encoding_version` / `standard_version`. Wilson on 0/809 = `[0.000000, 0.004726]` (two routes agreeing to 1.7e-18); Clopper\u2013Pearson `[0.000000, 0.004549]`. A stored severity is a bare dimensionless number.\n\nThat result also answers Section 2 item 3, and answers it **against the brief's premise**. The brief asks whether a per-scale disjunction \"changes any decision the archive has already recorded.\" It cannot be asked: the field the disjunction needs is absent from all 809 records. The honest answer is **NOT MEASURABLE ON THE PRESENT RECORD** \u2014 which is a stronger argument for provenance than the one the brief made.\n\n**The table.** The count is **not** a legitimate dominance measurement \u2014 it is a rubric wearing a number, and I broke it. A count is `\u03a3 1[covered]`, a sum over an author-chosen partition. Two refinements of the *same* coverage reverse the ordering:\n\n| partition | check | prov | both | winner alone |\n|---|---|---|---|---|\n| brief's | 1 | 4 | 5 | provenance |\n| refinement A (split F1 per standard: GHS/CVSS/CTCAE/FMEA) | 4 | 4 | 8 | **tie** |\n| refinement B (merge F2\u2013F4 into the one archive consequence) | 1 | 2 | 3 | provenance |\n\nRefinement A is not a trick: the check must detect a revision of each of the four feeds, as separable as F2/F3/F4 are from each other. So \"provenance dominates the check 4 to 1\" is a property of the partition.\n\n**The conclusion survives anyway**, by a stronger and partition-invariant route: `covered(composition) = covered(check) \u222a covered(provenance)`, and `F1 \u2208 check \\ provenance` in **all three** partitions, so strict set inclusion holds in all three. Composition strictly dominates \u2014 as a set fact, not a count. The measurement that would settle the *ranking* is the per-mode **consequence**, each on its own named scale, **selected (max), never summed** \u2014 the project's own admissibility rule, which the count violates.\n\n**The cadence.** No, a 1 % exposure ceiling is not the right objective, and the brief half-knows it. Two reasons, one of them new.\n\nThe closed form is the **first-order term of a series, not the quantity**. SymPy: the exact union-safe exposure is `1 \u2212 1/(\u03bbT) + e^{\u2212\u03bbT}/(\u03bbT)`, whose series is `\u03bbT/2 \u2212 \u03bb\u00b2T\u00b2/6 + O(\u03bb\u00b3)` \u2014 the producer's `2T\u03bb/1461` is the leading term. Bias is +1.37 % at T=30/GHS and **+8.38 %** at T=180/GHS. Direction matters and cuts in the brief's favour: the approximation *overstates* exposure, so the exact 1 % ceiling is **14.708 days**, looser than the declared 14.61. No recommendation turns on it. Confirmed three ways: mpmath 40 dps, scipy `brentq`, and Wolfram Language (local Wolfram Engine) which returned series `x/2 - x^2/6 + x^3/24`, value `0.0202556498210766`, root `14.70821909608256`.\n\nWhat *does* turn on it is verification integrity. The producer advertises its Monte Carlo as an independent route \"agreeing on 4 of 4, worst relative error 0.1124.\" At 12 seeds, 40,000 years, 2M runs the MC sits **\u221210.7\u03c3** from the producer's form and **\u22124.2\u03c3** from the exact form at (\u03bb=0.5, T=30), and **\u221260.2\u03c3** vs **\u22124.7\u03c3** at T=180. The MC corroborates the *exact* expression and *rejects the form it is printed beside* \u2014 at a tolerance wide enough to hide it. A cross-check that cannot distinguish its own answer from one 8 % away is not a second route.\n\nAnd the objective itself: the producer states its own figures are an upper bound because every stale run counts as exposed regardless of whether the revision touched the clause in use. True harm is `exposure \u00d7 P(material)`, and `P(material)` is measured nowhere in the project. **Choosing a cadence against an unmeasured objective is the error, not choosing 30 days versus 14.61.** Which is the real argument for provenance over cadence: recording the standard version per run makes exposure retroactively computable, so `P(material)` becomes measurable instead of assumed. Per-run provenance is the repair that earns the cadence decision later; the cadence is a guess made now.\n\n### Q5 \u2014 CC1 IS RIGHT, and the obvious objection to it dissolves on measurement\n\n**Executed evidence.** The producer lifts the seat table by executing the dispatcher's syntax tree: 7 seats, 2 free `claude_cli`, **`free_seats_pinning_a_version = 0`** \u2014 `cc2` names `opus`, `fable` names `fable`, both aliases. `claude-fable-5-2` requires CLI 2.1.290; `claude --version` on this machine reports **2.1.220**; gap **70** patch releases. So the literal instruction \"update the dispatch to Fable 5.2\" either changes nothing (the alias already resolves to whatever is served) or pins a model this client cannot reach and kills the seat. Both findings stand.\n\nI expected to charge CC1's repair with a real hole: \"a probe reports WHICH model answered\" normally means parsing the reply, and a model's self-reported version is a **model vote** on its own identity \u2014 exactly what this project forbids. I tested it instead of asserting it. `claude --model opus -p \"say ok\" --output-format json` returns an envelope carrying `modelUsage: {\"claude-opus-5\": {...}}` \u2014 the **resolved** id, written by the client, not by the model. That is a tool fact, and it closes the hole. CC1's repair is implementable without trusting self-report, and I shipped it.\n\nCensus context, independently verified: 145/573 live model-identity literals are version-bearing, `share_version_bearing = 0.253054`, Wilson `[0.219182, 0.290216]` by two routes agreeing to 2.8e-17, Clopper\u2013Pearson `[0.217934, 0.290742]`. 77 of the 145 are in tests \u2014 a pin in a test is not a pin in a route, and the producer is right to split them.\n\n---\n\n## 3. EXECUTED FALSIFIER\n\n**Digest check \u2014 all 10 artefacts match the dispatch stamps.**\n```\n$ sha256sum <10 artefacts> | cut -c1-16\n83b641df55bb7566  scripts/standards_currency_and_model_staleness_2026-11-13.py\nf27c7b6cb0a63f56  bench/cdsfl_registry/domain_vocabulary.py\naea05271596a0a87  bench/confer_maths_panel_2026-09-05.py\n9a5c411a63b39fdd  bench/seat_aliveness_2026-10-06.py\n084f4f382743484a  bench/seat_readiness.py\ndd8518573b38ffbf  bench/model_catalogue.py\n88a6f8c910f6d028  bench/cdsfl_registry/composer.py\n14a5b7fa2949b134  bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md\n0aa813f3476403fc  scripts/cdsfl_sv.py\n5c4729a41861d3ce  bench/ticket_store.py\n```\n\n**Producer \u2014 all 7 declared figures reproduce.**\n```\n$ python3 scripts/standards_currency_and_model_staleness_2026-11-13.py\n  exposure_T30_GHS = 0.020534\n  T_max_worst_days = 14.61\n  share_version_bearing = 0.253054\n    Wilson statsmodels  [0.219182, 0.290216]\n    Wilson hand-rolled  [0.219182, 0.290216]\n  seat_rows_lifted = 7; free_claude_cli_seats = 2\n  free_seats_pinning_a_version = 0\n  claude-fable-5-2     needs 2.1.290  installed 2.1.220  gap =  70 patch releases\n  cli_patch_gap_fable_5_2 = 70\n  composed_covers = 5 of 5\n  archive_epochs_at_T30 = 4 encoding versions after 3 checks\n```\n\n**Resolver \u2014 4 own scales, 6 inherit.**\n```\n$ python3 -c \"... dv.consequence_domain(d) for d in dv.domains() ...\"\ndomains known = 10\nbiology        scale=CTCAE v5.0 grade        crit=Grade 3   how(noapp)=own\nchemistry      scale=GHS health hazard category (Rev. 11, 2025) crit=Category 2 how(noapp)=own\ncross_domain   scale=composed                crit=None      how(noapp)=composed\nengineering    scale=AIAG-VDA FMEA severity 1-10 (2019 handbook) crit=7 how(noapp)=own\ninformation_science scale=none               crit=None      how(noapp)=unresolved  how(app=software)=inherited\nlogistics      scale=none                    crit=None      how(noapp)=unresolved  how(app=software)=inherited\nmathematics    scale=none                    crit=None      how(noapp)=unresolved  how(app=software)=inherited\nphysics        scale=none                    crit=None      how(noapp)=unresolved  how(app=software)=inherited\nsoftware       scale=CVSS v4.0 base score    crit=High      how(noapp)=own\nstatistics     scale=none                    crit=None      how(noapp)=unresolved  how(app=software)=inherited\nhow==own: ['biology','chemistry','engineering','software'] 4\ninheriting_domains(): ['cross_domain','information_science','logistics','mathematics','physics','statistics'] 6\n```\n\n**Live CLI probe \u2014 the transport names the resolved model.**\n```\n$ claude --version\n2.1.220 (Claude Code)\n$ claude --model opus -p \"say ok\" --output-format json\n{\"is_error\":false,...,\"modelUsage\":{\"claude-opus-5\":{\"inputTokens\":53,\"outputTokens\":9276,...\n```\n\n**My four falsifiers \u2014 4 of 4 demonstrated.**\n```\n$ python3 scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py\n  partition                     check  prov  both  modes   winner alone\n  brief's partition                 1     4     5      5     provenance\n  refinement A (split F1)           4     4     8      8            tie\n  refinement B (merge F2-4)         1     2     3      3     provenance\n  the count's winner changes under repartition = True\n  strict SET INCLUSION holds in all 3 partitions = True\n\n  DISJUNCTION over each domain's own transported cut, flip? -> unsat\n  CONJUNCTION over the same,                             flip? -> unsat\n  MEAN of two severities against the FIXED real 0.7,     flip? -> sat\n      raw      a=1/5 b=1/10  -> mean 3/20\n      relabel pa=9/10 pb=1/2 -> mean 7/10\n\n  records parsed                                  = 127177\n  records carrying a `severity`                    = 809\n  of those, carrying ANY scale/version field       = 0\n\n  brief's form : 2*T*lambda/1461\n  exact form   : 1 - 1/(T*lambda) + exp(-T*lambda)/(T*lambda)\n  series       : T*lambda/2 - T**2*lambda**2/6 + O(lambda**3)\n  worst relative overstatement in the table = 0.08379\nfalsifiers that demonstrated their claim: 4 of 4\n```\n\n**Exact ceiling, three routes.**\n```\n    std    lambda  T_max approx  T_max exact  delta d      rel\n   FMEA  0.111111       65.7450      66.1870   0.4420 -0.00668\n  CTCAE  0.142857       51.1350      51.4788   0.3438 -0.00668\n   CVSS  0.222222       32.8725      33.0935   0.2210 -0.00668\n    GHS  0.500000       14.6100      14.7082   0.0982 -0.00668\nmpmath findroot GHS T_max = 14.7082190961\nscipy  brentq  GHS T_max = 14.708219096082557\n\n$ wolframscript -code 'Print[Normal[Series[1-(1-Exp[-x])/x,{x,0,3}]]]; lam=1/(2*36525/100); Print[N[1-(1-Exp[-lam*30])/(lam*30),15]]; Print[T/.FindRoot[...]]'\nx/2 - x^2/6 + x^3/24\n0.02025564982107662419242745213921913896`15.\n14.70821909608255565139731741792327711491`20.\nComputed with Wolfram Language (local Wolfram Engine, via wolframscript).\n```\n\n**MC rejects the form it is printed beside.**\n```\n   lam    T    MC mean     MC sd      exact     approx z vs exact z vs approx\n 0.500   30  0.0200773 0.0001477  0.0202556  0.0205339      -4.18      -10.71\n 0.500  180  0.1128790 0.0005938  0.1136778  0.1232033      -4.66      -60.23\n 0.111   30  0.0044764 0.0000921  0.0045492  0.0045631      -2.74       -3.26\n```\n\n**Wilson on 0/809, two routes.**\n```\narchive severities carrying a scale field: 0/809 = 0.000000\n   Wilson statsmodels [0.000000, 0.004726]\n   Wilson hand-rolled [0.000000, 0.004726]   max|diff| = 1.735e-18\n   Clopper-Pearson    [0.000000, 0.004549]\n```\n\n---\n\n## 4. FIX\n\n| real path | what it changes |\n|---|---|\n| **`bench/model_identity.py`** (new, 170 lines) | Reads the resolved model id from the **transport's** `modelUsage` envelope \u2014 never from the model's prose. `resolved_from_envelope`, `parse_required_cli`, `cli_version_gate`, `identity_verdict` \u2192 one of `match / mismatch / unreachable / unknown`. Stores **no model name and no version**: `patch_gap = 70` is derived from the refusal's own stated requirement against `claude --version`. Never raises. Reports; never repairs. |\n| **`bench/seat_aliveness_2026-10-06.py`** (modified) | `AliveResult` gains `identity`; `probe_seat` gains `identity=`, `probe_roster`/`probe_models` gain `identities=`. `_identity_for` degrades a raising probe to `how=\"unknown\"` and **never** changes `alive` \u2014 a reporting check that could refuse a live seat would be worse than the blindness it closes. `identity is None` (never ran) stays distinguishable from `how=\"unknown\"` (ran, transport silent). Identity is not asked of a dead seat. |\n| **`bench/confer_maths_panel_2026-09-05.py`** (modified) | `_identity_caller(model_id, route, timeout)` beside the existing `_probe_caller`, returning `None` for routes that cannot report identity (same None-means-unprobeable convention as `caller_for`). The preflight passes `identities=` to `probe_roster` and prints the verdict per seat, including `client short by N patch release(s)`. **Recorded, not gated.** |\n| **`scripts/is_a_failure_mode_count_a_dominance_measurement_2026-11-13.py`** (new) | The four falsifiers above, re-runnable. |\n\nI did **not** ship the standards-provenance repair, though my own measurement (0/809) makes it the dominant one. I do not know the severity write path well enough to wire it inside this dispatch, and an unwired addition is precisely this project's most frequent defect \u2014 11 confirmed since 2026-08-01. Specification: stamp each severity record with `(scale_name, standard_version, critical_level)` at the point of judgement, so exposure becomes retroactively computable and `P(material)` becomes measurable. **Unwired and untested by me; treat it as a specification, not a delivery.**\n\n---\n\n## 5. FIX TEST\n\n`bench/tests/test_model_identity_is_measured_not_self_reported_2026-11-13.py` \u2014 20 tests, all fixtures real observations from this machine on 2026-11-13.\n\n```\n$ python3 -m pytest bench/tests/test_model_identity_is_measured_not_self_reported_2026-11-13.py -q\n20 passed in 0.41s\n```\n\nThree independent reverts, each going red:\n\n```\n=== REVERT 1: remove model_identity.py ===\nERROR ... test_model_identity_is_measured_not_self_reported_2026-11-13.py\n!!!!!!! Interrupted: 1 error during collection !!!!!!!\n\n=== REVERT 2: drop identities= from the dispatcher preflight ===\nFAILED ...::test_dispatcher_preflight_passes_identities_to_the_probe\n1 failed, 19 passed in 0.24s\n\n=== REVERT 3: probe_seat loses the identity parameter ===\nFAILED ...::test_no_identity_probe_is_distinguishable_from_an_unknown_one\nFAILED ...::test_a_failing_identity_probe_never_kills_a_live_seat\nFAILED ...::test_probe_roster_threads_identities\nFAILED ...::test_identity_is_not_asked_of_a_dead_seat\n5 failed, 15 passed in 0.25s\n\n=== RESTORED ===\n20 passed in 0.22s\n```\n\nRevert 2 is the guard against an addition nothing reaches: it walks the dispatcher's AST for a `probe_roster` call passing `identities=` and fails if none exists. `test_self_report_is_not_accepted_as_identity` is the guard on the project's founding principle \u2014 an envelope saying `claude-opus-5` against an intent of `fable` must return `mismatch`, no matter what the reply claims.\n\nNo regression: `bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py` \u2192 **23 passed**; both files together \u2192 **43 passed in 0.99s**.\n\n---\n\n## 6. STRONGEST DISAGREEMENT WITH THIS BRIEF\n\n**The claim that the five sub-questions are instances of one question is false, and the false part is Q2.**\n\nQ1, Q3, Q4 and Q5 genuinely share a structure: a value that is *typed* goes stale, so derive it or record its provenance. Identity, encoding version, severity scale and size bound are all the same defect in four places, and that unification is real and useful.\n\nQ2 is not that. A researcher's stored preference is the one thing in the brief that the founder's own framing exempts: *\"User preferences/constraints don't change, but standards, formal measurements, legislation etc. should always be current.\"* So Q2's subject is the explicit **complement** of the other four. Worse, its answer runs the other way: Q1/Q3/Q4/Q5 all conclude \"derive it or record it, keep the human out of the loop for the mechanical part,\" whereas Q2 concludes \"default to the human's constraint being binding and interrupt them more often.\" Folding it in makes the round's thesis look broader than the evidence supports. Four instances of one question, plus one question about where the human sits \u2014 which is a genuinely different thing and better argued separately.\n\n**The weakest part of the framing I agree with:** Section 2 instructs seats to establish \"whether a per-scale disjunction changes any decision the archive has already recorded.\" That instruction is unsatisfiable, and the brief could have known it \u2014 809 severity records, 0 scale fields. Asking a seat to execute an unanswerable check invites a fabricated answer; the seat that reports \"no decisions change\" has reported a measurement it did not take. The instruction should have been \"establish *whether the question is answerable* from the record.\" That the brief's own section 5 notes \"nothing in the archive records which encoding version produced a severity\" while section 2 asks seats to measure across epochs anyway is an internal inconsistency, and it is the kind that produces a confident false green \u2014 exactly the Exp 48 shape the integrity directive archives.\n\n**One smaller thing.** `sev = 3094` is a typed literal in the producer (line 358), printed as \"archive severities (de-duplicated frame, B121 symlink correction)\" and then used by nothing \u2014 the adjacent `cross-epoch share` is `1 - 1/epochs`, which does not reference it. In a producer whose Q3 is *derive, don't type*, and in a sandbox where the archive it counts is absent, that is a number a reader will take for a measurement. Not above the real-world threshold \u2014 it feeds no decision \u2014 but it is the brief's own thesis failing inside the brief's own instrument.\n\n---\n\n## 7. COMPOSABILITY\n\n**Between my two repairs: no composition claimed. They are independent and address different sub-questions** (Q5 model identity; the falsifier script is an instrument, not a repair). Asserting they compose would be the weak \"they don't interfere\" reading the founder's definition excludes by name.\n\n**On the brief's composition (currency check + per-run provenance): the demonstrated advantage does not come from the table.** The failure-mode count is partition-dependent \u2014 I reversed its ordering twice, and a count is a sum of indicators, inadmissible under the project's own rule. What survives is `covered(composition) = covered(check) \u222a covered(provenance)` with `F1 \u2208 check \\ provenance` in **all three** partitions tested: strict set inclusion, partition-invariant. So the composition does strictly dominate, but on a set fact, not on 5-beats-4-beats-1.\n\n**And the single repair is strongly preferred as the first delivery.** The named property is *whether the repair's benefit is measurable at all*. Provenance makes exposure retroactively computable, which is what turns `P(material)` from an assumption into a measurement \u2014 the check's entire benefit is currently unquantifiable because `P(material)` is measured nowhere. Measured: 809 severity records, 0 carrying a scale or version field, Wilson `[0, 0.004726]`. Provenance also closes F4, a mode the **check itself creates**, so the check cannot ship alone without making the archive worse than it is today. **Order: provenance first, check second, and the check's cadence chosen from data provenance makes available** \u2014 not from a 1 % ceiling against an unmeasured objective.\n\n---\n\n## 8. PASSES RUN\n\n**Five passes.**\n\n1. Digests + producer re-execution. All 10 stamps match; all 7 declared figures reproduce.\n2. Resolver across all 10 domains. Corrected reading **verified** (4 own / 6 inherit); CC1's earlier 6-as-two-hard-constraints reading **refuted**.\n3. Mathematics. Exact exposure derived in SymPy; producer's form shown to be the leading series term; confirmed by mpmath, scipy and Wolfram; MC shown to reject the producer's form at 60\u03c3 while sitting 4.7\u03c3 from the exact.\n4. Instruments. z3 aggregator admissibility; failure-mode count broken by repartition; archive scale-field census (0/809) with Wilson by two routes; live CLI identity probe.\n5. Repair + revert. 20 new tests pass, three independent reverts each go red, 23 pre-existing aliveness tests still pass.\n\n**What the last pass found:** the brief's premise about `scripts/cdsfl_sv.py` is correct \u2014 my first grep was too narrow and I nearly reported a false refutation of it. Reading the real code changed my Q3 verdict's *reasoning*, not its direction: the precedent uses `ledger_max` (an admissible selected order statistic, not a mean) and carries **three** typed constants (`FLOOR=300`, `HEADROOM=4`, `LEDGER_ROWS=10`). That is what establishes that a bound is never fully derived \u2014 the record supplies the scale, the headroom stays typed \u2014 which is the precise sense in which CC1's \"curation\" claim is misplaced rather than merely unproven.\n\nI terminate here. A sixth pass would produce findings below the real-world-consequence threshold: the typed `sev = 3094` (feeds no decision), the producer's asymptotic `1 - 1/epochs` cross-epoch share (0.750000 vs 0.750243 exact at n=3094), and the fact that a `-p` probe in this tree inherits repo context and ran 28 turns at $3.36. All three are recorded above as observations, none is material.",
+  "t_start_epoch": 1794533244.508348,
+  "t_end_epoch": 1794534321.783596,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uw6vp7gz/repo",
+      "built": false
+    }
+  ]
+}

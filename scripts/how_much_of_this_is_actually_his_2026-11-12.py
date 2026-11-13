@@ -16,7 +16,7 @@ carried his ruling, and a stored verdict outvoted a live predicate for 9 days.
 ★ WHAT IT FINDS, AND THE HONEST SHAPE OF IT. The classifier's OWED test for an
 entry that carries a ruling is `_later` -- is there any date in the body later
 than the ruling date. That is a PROXY for "a question was raised after the
-ruling", and 3 predicates for the same idea disagree on 3 of the 4 entries it
+ruling", and 3 predicates for the same idea disagree on 4 of the 4 entries it
 applies to. This script computes all 3 and reports the disagreement rather than
 picking a winner, because picking one would be the 4th predicate on a surface
 that has already defeated 3 -- which this project's own record says is the point

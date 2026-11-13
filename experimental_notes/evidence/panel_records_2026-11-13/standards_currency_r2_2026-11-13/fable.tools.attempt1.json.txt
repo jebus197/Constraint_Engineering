@@ -1,0 +1,297 @@
+{
+  "model": "fable",
+  "elapsed_s": 1738.2,
+  "tool_calls": 56,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/user/cdsfl 2>/dev/null || cd ~/cdsfl 2>/dev/null || pwd; ls\", \"description\": \"Locate repository root\"}",
+      "t_offset_s": 13.155
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -maxdepth 3 -name \\\"cdsfl_core.txt\\\" -o -maxdepth 3 -name \\\"reference_runner_v3.py\\\" 2>/dev/null | head -5\", \"description\": \"Find CDSFL repo location\"}",
+      "t_offset_s": 14.212
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum scripts/standards_currency_and_model_staleness_2026-11-13.py bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py scripts/the_standards_currency_mutations_2026-11-13.py bench/cdsfl_registry/domain_vocabulary.py scripts/cdsfl_sv.py 2>/dev/null | awk '{print substr($1,1,16), $2}'\", \"description\": \"Verify artefact digests against dispatch stamps\"}",
+      "t_offset_s": 21.116
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls experimental_notes/seat_evidence/standards_currency_2026-11-13/ 2>/dev/null; ls bench/logs/standards_currency_2026-11-13/ 2>/dev/null\", \"description\": \"List blind-round seat evidence\"}",
+      "t_offset_s": 22.688
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -120\", \"description\": \"Run corrected standards-currency producer\"}",
+      "t_offset_s": 29.34
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -140\", \"description\": \"Run corrected standards-currency producer\", \"timeout\": 300000}",
+      "t_offset_s": 32.455
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | sed -n '120,260p'\", \"description\": \"Read remainder of producer output\", \"timeout\": 300000}",
+      "t_offset_s": 55.36
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | sed -n '260,400p'\", \"description\": \"Read end of producer output\", \"timeout\": 300000}",
+      "t_offset_s": 80.576
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | tail -40; echo \\\"EXIT=$?\\\"; python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | wc -l\", \"description\": \"Check producer tail and line count\", \"timeout\": 300000}",
+      "t_offset_s": 105.604
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exposure_exact\\\\|def \\\\|CROSS-CHECK\\\\|rel.err\\\\|0.1124\\\\|tolerance\\\\|seed\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py | head -60\", \"description\": \"Map producer source structure\"}",
+      "t_offset_s": 160.376
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 140, \"limit\": 90}",
+      "t_offset_s": 165.426
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 312, \"limit\": 100}",
+      "t_offset_s": 198.412
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exposure_exact\\\\|exposure_ceiling_cadence\\\\|exposure_closed_form\\\\|exposure_simulated\\\\|intervals(\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py scripts/the_standards_currency_mutations_2026-11-13.py | grep -v \\\"def \\\\|docstring\\\"\", \"description\": \"Find callers of exact-exposure functions\"}",
+      "t_offset_s": 216.909
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"description\": \"Read the guard test\"}",
+      "t_offset_s": 217.571
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/identity_probe_2026-11-13 && cd /tmp/identity_probe_2026-11-13 && claude --model opus -p \\\"say ok\\\" --output-format json 2>&1 | tail -c 2000\", \"description\": \"D5: CLI envelope identity probe from neutral cwd\", \"timeout\": 300000, \"run_in_background\": true}",
+      "t_offset_s": 347.935
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"output-format\\\\|modelUsage\\\\|--model\\\\|subprocess\\\\|-p \\\" bench/confer_maths_panel_2026-09-05.py | head -25\", \"description\": \"How the orchestrator invokes the CLI\"}",
+      "t_offset_s": 348.928
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '950,1000p' bench/confer_maths_panel_2026-09-05.py\", \"description\": \"Read CLI invocation in orchestrator\"}",
+      "t_offset_s": 352.428
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"def call_claude_cli\\\" bench/ scripts/ | head -3; grep -rln \\\"stream-json\\\" bench/*.py scripts/*.py | head -5\", \"description\": \"Locate call_claude_cli definition\"}",
+      "t_offset_s": 358.925
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1415,1480p' bench/experiment_11_orchestrator.py; grep -n '\\\"model\\\"\\\\|modelUsage\\\\|message.get' bench/experiment_11_orchestrator.py | sed -n '1,20p'\", \"description\": \"Read call_claude_cli and model-field handling\"}",
+      "t_offset_s": 379.875
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"stream-json\\\\|json.loads(line\\\\|\\\\\\\"result\\\\\\\"\\\\|output-format\\\" bench/experiment_11_orchestrator.py | head -20\", \"description\": \"Find stream-json parsing in orchestrator\"}",
+      "t_offset_s": 385.185
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '445,490p' bench/experiment_11_orchestrator.py\", \"description\": \"Read stream-json line parser\"}",
+      "t_offset_s": 388.042
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/d1_ratchet.py <<'EOF'\\n\\\"\\\"\\\"D1: does cc2's max-of-last-N-times-headroom bound ratchet, as fable claims?\\n\\ncc2's shape, copied from scripts/cdsfl_sv.py commit-timeout precedent:\\n    bound = max(FLOOR, HEADROOM * max(last N honoured sizes))\\nThe record is of sizes HONOURED (i.e. sizes that passed the bound), so the\\nrecorded quantity is causally downstream of the bound. fa",
+      "t_offset_s": 417.991
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/d4_epochs.py <<'EOF'\\n\\\"\\\"\\\"D4: verify fable's expected-epoch refutation, and the superposition model.\\\"\\\"\\\"\\nfrom scipy import stats\\nimport mpmath as mp\\nlams = {\\\"FMEA\\\": 1/9, \\\"CTCAE\\\": 1/7, \\\"CVSS\\\": 2/9, \\\"GHS\\\": 0.5}\\nlam = sum(lams.values())\\nprint(f\\\"combined lambda (Poisson superposition of 4 independent feeds) = {lam:.6f}/yr\\\")\\ndays = 104\\nmu = lam * days / 365.",
+      "t_offset_s": 425.935
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-7mvt0xik-repo/4eaab9f9-fa3d-4b87-ba09-73de6c2226ba/tasks/bgmd3zb4i.output\\\" | python3 -c \\\"\\nimport sys, json\\nraw = sys.stdin.read()\\n# find the json object\\ni = raw.find('{')\\nd = json.loads(raw[i:])\\nprint('keys:', sorted(d.keys()))\\nprint('is_error:', d.get('is_error'))\\nprint('model",
+      "t_offset_s": 435.25
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_severity_census_has_three_frames_2026-11-06.py 2>&1 | head -50\", \"description\": \"D3: run the three-frame severity census\", \"timeout\": 180000}",
+      "t_offset_s": 444.497
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/d3_reconcile.py <<'EOF'\\n\\\"\\\"\\\"D3: reconcile 809 / 3311 / 3094 \\u2014 name each population.\\\"\\\"\\\"\\nimport json, pathlib, hashlib\\nR = pathlib.Path(\\\".\\\")\\n\\ndef harvested(p):\\n    s = str(p)\\n    return \\\"sandbox_harvest\\\" in s or \\\"/seat_evidence/\\\" in s\\n\\n# Population 1 (cc2's): records in live-tree .jsonl files, harvests excluded.\\njl_files = [p for p in R.rglob(\\\"*.jso",
+      "t_offset_s": 501.659
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity\\\\|def .*findings\\\\|glob\\\\|json.loads\\\\|def walk\\\\|def _recs\\\\|yield\\\" scripts/the_severity_census_has_three_frames_2026-11-06.py | head -30\", \"description\": \"How the census extracts severity records\"}",
+      "t_offset_s": 507.88
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '70,100p' scripts/the_severity_census_has_three_frames_2026-11-06.py\", \"description\": \"Read census extraction logic\"}",
+      "t_offset_s": 510.784
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/d3b.py <<'EOF'\\nimport json, pathlib, hashlib\\nR = pathlib.Path(\\\".\\\")\\nfiles = sorted(R.glob(\\\"bench/logs/*/runner_state.json\\\"))\\nraw, seen = [], set()\\nfor f in files:\\n    try: d = json.loads(f.read_text(errors=\\\"replace\\\"))\\n    except Exception: continue\\n    for e in ((d.get(\\\"registry\\\") or {}).get(\\\"entries\\\") or {}).values():\\n        if isinstance(e, dict) and e.",
+      "t_offset_s": 518.147
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"GHS\\\\|Rev\\\\.\\\\|scale\\\\|Category\\\\|CTCAE\\\\|CVSS\\\\|FMEA\\\" bench/cdsfl_registry/domain_vocabulary.py | head -40\", \"description\": \"Inspect scale declarations in domain vocabulary\"}",
+      "t_offset_s": 531.772
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, \\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nd = dv.severity_scale_for(\\\"chemistry\\\") if hasattr(dv, \\\"severity_scale_for\\\") else None\\n# find the accessor\\nimport inspect\\nfns = [n for n,_ in inspect.getmembers(dv, inspect.isfunction)]\\nprint(fns)\\nEOF\", \"description\": \"List domain_vocabulary accessors\"}",
+      "t_offset_s": 535.932
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0, \\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nimport json\\nfor dom in (\\\"chemistry\\\", \\\"software\\\"):\\n    s = dv.severity(dom)\\n    print(dom, \\\"->\\\", json.dumps(s, default=str))\\nEOF\", \"description\": \"Read the chemistry/software scale tuples\"}",
+      "t_offset_s": 540.109
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"preferences\\\\|don't change\\\\|currency\\\" bench/logs/standards_currency_2026-11-13/BRIEF.md | head -10\", \"description\": \"D2: founder framing quote in blind brief\"}",
+      "t_offset_s": 609.465
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'lam=1/2/36525*100; f[T_]:=1-(1-Exp[-lam*T])/(lam*T); Print[N[f[1],10]]; Print[T/.FindRoot[f[T]==1/100,{T,15}]]; mu=(1/9+1/7+2/9+1/2)*104/36525*100; Print[N[1-Exp[-mu]*(1+mu+mu^2/2),8]]; p=1-Exp[-(1/9+1/7+2/9+1/2)*30/36525*100]; Print[N[p^3,8]]'\", \"description\": \"Wolfram second route: exposure at T=1, exact T_max, P(\\u22653), P(3 intervals)\", \"timeout\": 180000}",
+      "t_offset_s": 612.645
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' scripts/the_standards_currency_mutations_2026-11-13.py\", \"description\": \"Read mutation harness anchors\"}",
+      "t_offset_s": 651.541
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"old_string\": \"    print(\\\"  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo\\\")\\n    print(f\\\"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}\\\")\\n    worst_err = 0.0\\n    for L in (",
+      "t_offset_s": 703.73
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\nsrc = p.read_text()\\nold = '''    print(\\\"  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo\\\")\\n    print(f\\\"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}\\\")\\n    worst_err = 0.0\\n    for L in (min(lams.values()), lam_worst):\\n ",
+      "t_offset_s": 725.107
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | sed -n '/1 per cent exposure ceiling/,/UPPER BOUND/p'\", \"description\": \"Verify ceiling section output\", \"timeout\": 300000}",
+      "t_offset_s": 757.376
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/a_bound_from_honoured_sizes_ratchets_2026-11-13.py <<'EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"D1 of the standards-currency joint round: a bound derived from HONOURED sizes\\nratchets, and the commit-timeout precedent does not, and the difference is\\ncausal direction -- settled by execution on 2026-11-13.\\n\\nTHE QUESTION (joint brief D1). cc2 proposed bounding a preference blo",
+      "t_offset_s": 794.651
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_exact_law_is_executed_not_annotated_2026-11-13.py <<'EOF'\\n\\\"\\\"\\\"The joint-round fixes of 2026-11-13 hold: the exact exposure law is EXECUTED\\nby the producer, not merely annotated, and the ratchet instrument demonstrates\\nwhat it claims.\\n\\nWHY THIS GUARD EXISTS. The blind-round concession said the producer's Monte\\nCarlo tolerance \\\"is now derived from the",
+      "t_offset_s": 821.184
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_exact_law_is_executed_not_annotated_2026-11-13.py::test_a_bound_of_honoured_sizes_ratchets_and_a_jump_binds -q -p no:cacheprovider 2>&1 | sed -n '1,30p'\", \"description\": \"See the failing test's traceback\", \"timeout\": 60000}",
+      "t_offset_s": 855.796
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_exact_law_is_executed_not_annotated_2026-11-13.py\\\")\\ns = p.read_text()\\nold = '''    # Exogenous record (the commit-timeout analogue): stationary values never\\n    # push the bound upward without limit.\\n    stat = [60.0] * 50\\n    h3, _ = m.drive(stat)\\n    assert max(h3) == 60.0, \\\"a stationary record must n",
+      "t_offset_s": 873.989
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py -q -p no:cacheprovider 2>&1 | tail -2 && python3 scripts/the_standards_currency_mutations_2026-11-13.py 2>&1 | tail -12\", \"description\": \"Run guard and mutation harness against patched producer\", \"timeout\": 600000}",
+      "t_offset_s": 898.009
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git status --short 2>/dev/null | head; git stash list 2>/dev/null | head -2; git log --oneline -1 2>/dev/null\", \"description\": \"Check git state of sandbox\"}",
+      "t_offset_s": 1047.491
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/standards_currency_and_model_staleness_2026-11-13.py /tmp/producer.patched.py\\npython3 - <<'EOF'\\n# restore the dispatched producer byte-exactly by reversing my two patches\\nimport pathlib\\np = pathlib.Path(\\\"/tmp/producer.patched.py\\\")\\ns = p.read_text()\\n# reverse patch 2\\nnew2 = '''    print(f\\\"  T_max_worst_days = {tmax_worst:.2f}\\\")\\n    print(\\\"  and by the EXACT law ",
+      "t_offset_s": 1059.765
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/producer.pristine.py scripts/standards_currency_and_model_staleness_2026-11-13.py\\npython3 -m pytest bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py::test_the_producer_runs_clean_end_to_end -q -p no:cacheprovider 2>&1 | tail -3\\ncp /tmp/producer.patched.py scripts/standards_currency_and_model_staleness_2026-11-13.py\\necho \\\"--- patched producer restored, d",
+      "t_offset_s": 1066.482
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"THE COUNT THAT STOOD HERE\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py && python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns = p.read_text()\\nold = '''    print(\\\"  \\\\\\\\u2605 THE COUNT THAT STOOD HERE IS NOT A DOMINANCE MEASUREMENT, and both\\\")'''\\nnew = '''    print(\\\"  \\\\\\\\u2605 THE COU",
+      "t_offset_s": 1114.704
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns = p.read_text()\\nold = '    print(\\\"  \\u2605 THE COUNT THAT STOOD HERE IS NOT A DOMINANCE MEASUREMENT, and both\\\")\\\\n'\\nnew = old + (\\n    '    print(\\\"  free panel seats killed it. It printed `composed_covers = 5 of 5` --\\\")\\\\n'\\n    '    print(\\\"  the label is kep",
+      "t_offset_s": 1121.979
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_standards_currency_mutations_2026-11-13.py 2>&1 | tail -14\", \"description\": \"Run mutation harness against repaired tree\", \"timeout\": 600000}",
+      "t_offset_s": 1176.706
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exclude_self and p.resolve\\\" /tmp/producer.pristine.py scripts/standards_currency_and_model_staleness_2026-11-13.py; grep -n \\\"exclude_self\\\" /tmp/producer.pristine.py | head\", \"description\": \"Check M1 anchor in pristine and patched producer\"}",
+      "t_offset_s": 1334.572
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '119,141p' /tmp/producer.pristine.py\", \"description\": \"Read _live in pristine producer\"}",
+      "t_offset_s": 1337.428
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\")\\ns = p.read_text()\\nold = '''    (\\\"M1 self-exclusion made decorative\\\",\\n     \\\"test_c2_the_self_exclusion_is_reachable_and_moves_the_count\\\",\\n     \\\"    if exclude_self and p.resolve() == SELF:\\\\\\\\n        return False\\\\\\\\n\\\",\\n     \\\"    if False and p.resolve() == SELF:",
+      "t_offset_s": 1354.22
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/standards_currency_and_model_staleness_2026-11-13.py /tmp/producer.final.py\\n# REVERT 1: restore the dispatched producer\\ncp /tmp/producer.pristine.py scripts/standards_currency_and_model_staleness_2026-11-13.py\\necho \\\"=== REVERT 1: pristine producer ===\\\"\\npython3 -m pytest bench/tests/test_the_exact_law_is_executed_not_annotated_2026-11-13.py -q -p no:cacheprovider 2>&1 ",
+      "t_offset_s": 1514.703
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 > /tmp/final_out.txt; for L in exposure_T30_GHS T_max_worst_days share_version_bearing free_seats_pinning_a_version cli_patch_gap_fable_5_2 expected_revisions_in_window expected_epochs T_max_worst_days_exact; do grep -m1 \\\"  $L = \\\" /tmp/final_out.txt; done\", \"description\": \"Confirm all declared figures unchange",
+      "t_offset_s": 1578.656
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Wilson on 0/3311 scale-key records, two routes; and the provenance cost.\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport math, json, pathlib, hashlib\\nlo, hi = proportion_confint(0, 3311, method=\\\"wilson\\\")\\nz = 1.959963984540054\\nn, ph = 3311, 0.0\\nc = z*z/n\\ncentre = (ph + c/2)/(1+c); half = (z/(1+c))*math.sqrt(ph*(1-ph)/n + c/(4*n))\\nprint(",
+      "t_offset_s": 1586.067
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"3094\\\\|3311\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py | head -5\\npython3 -c \\\"\\nimport math\\nfor T,label in ((1.0,'daily out-of-band cron'),(104/65,'boot-path check at observed run rate (65 runs/104 d)')):\\n    x = 0.5*T/365.25\\n    print(f'{label}: T={T:.2f}d exact exposure = {1-(1-math.exp(-x))/x:.6f}')\\\"\", \"description\": \"Check typed 3094 literal; com",
+      "t_offset_s": 1612.384
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 1738.2,
+      "tool_calls": 56,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_7mvt0xik/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

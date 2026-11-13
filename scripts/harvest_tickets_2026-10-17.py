@@ -247,6 +247,57 @@ CODE_SPAN = re.compile(r"`[^`]*`")
 CHAT_EXCLUDED_KINDS = ("disc", "dis", "ds")   # `disc` live; 2 legacy spellings
 
 
+#: ★ AN ENTRY'S KIND IS DECLARED, NOT GUESSED FROM 2 TITLE WORDS -- entry B168,
+#: repaired 2026-11-13.
+#:
+#: WHAT STOOD HERE: `"fr" if ("orchestrator" in title.lower() or "selection" in
+#: title.lower()) else "pf"`. Measured over the live list, that gave `fr` to 3 of
+#: 174 entries -- B20, B21 and B147 -- selected because 2 words appear in a title,
+#: and NONE of them declares itself a feature request. Meanwhile the entries that
+#: DO declare it in a structured STATUS line came out `pf`.
+#:
+#: WHY THE STATUS LINE AND NOT THE PROSE, measured before the pattern was written
+#: because a coarse pattern was wrong 3 times earlier the same night. 4 open
+#: entries contain the phrase "feature request". Only 2 of them -- B161 and B163 --
+#: DECLARE it, in the form `**STATUS: FEATURE REQUEST, ...`. The other 2 merely
+#: MENTION it: B168 in a title describing this very defect, and B169 mid-prose
+#: quoting his rule about feature requests in general. A free-text search for the
+#: phrase matches all 4; the structured declaration matches exactly the 2 that
+#: mean it. Declare where produced; never infer from surrounding text.
+#:
+#: AN EXPLICIT MARKER STILL WINS, because `marked_kind` is the project's existing
+#: declaration mechanism and a 2nd declaration of 1 fact is the drift this project
+#: keeps finding.
+_DECLARED_FR = re.compile(r"\*\*STATUS:\s*FEATURE\s+REQUEST\b", re.I)
+
+
+def task_entry_kind(body: str, title: str = "") -> str:
+    """The kind a task-list entry DECLARES. Defaults to `pf`, never to a guess.
+
+    `_unmarked_kind` is deliberately NOT reused here: it encodes his ruling for
+    HIS OWN ANNOTATIONS -- a question mark means `qs`, otherwise `disc` -- and a
+    task-list entry is neither an annotation nor a chat message. Applying it
+    would make every entry a discussion.
+    """
+    # ★ STRIP CITATIONS AND CODE SPANS FIRST, exactly as the annotation path
+    # does. `MARKER` accepts `qs:`, which is ALSO the form of every REFERENCE to
+    # an existing ticket -- `[qs:6b0997d1f6b9]` -- and raising a ticket and
+    # citing one are opposite intents. This function first called `marked_kind`
+    # on the raw body and B45, whose text CITES a closed question, was filed as a
+    # question: the same mention-versus-declaration defect this repair exists to
+    # fix, one level down and committed by the repair itself. Caught by
+    # `test_both_sections_are_produced_from_the_real_record`, which pins that
+    # task-list rows yield only `fr` and `pf`.
+    _t = CODE_SPAN.sub(" ", body or "")
+    _t = CITATION.sub(" ", _t)
+    mk = marked_kind(_t)
+    if mk and mk in KINDS:
+        return mk
+    if _DECLARED_FR.search(body or ""):
+        return "fr"
+    return "pf"
+
+
 def _unmarked_kind(text: str) -> str:
     """The kind for an annotation he left unmarked. HIS RULING, 2026-10-30.
 
@@ -682,6 +733,25 @@ def from_task_list() -> list[dict]:
                 re.sub(r"\*+", "", body).split())[:300]
         title = _title_for(body, ident)
         out.append({"verbatim": verbatim, "title": title or f"task {ident}",
+                    # ★ NOT WIRED TO `task_entry_kind` YET, DELIBERATELY, 2026-11-13.
+                    # The reader is built and proven (entry B168, 4 of 4 mutations
+                    # red) and it is CORRECT: this expression gives `fr` to 3 of 174
+                    # entries on 2 title keywords, none of which declares itself a
+                    # feature request, while the 2 that DO declare it come out `pf`.
+                    #
+                    # WHY IT IS NOT SWITCHED ON. A ticket's identity DIGESTS ITS KIND,
+                    # so re-kinding an entry gives it a NEW identity and strands the
+                    # ticket filed under the old one. Measured: wiring it leaves 4
+                    # references -- R10, 6.2, B20, B147 -- resolving to no ticket, and
+                    # `test_a_ticket_identity_survives_a_reword_2026-10-17.py` goes
+                    # from 0 failures to 3. The supersession script that exists for
+                    # reclassifications plans 0 deprecations here, because it works on
+                    # anchors carrying several kinds rather than on an entry whose kind
+                    # changed. So the path does not exist yet.
+                    #
+                    # A repair that reddens 3 guards which pass without it SUBTRACTS
+                    # from reliability, and `additive-standard` requires the opposite.
+                    # The 1-line switch is here when the identity migration exists.
                     "kind": "fr" if ("orchestrator" in title.lower()
                                      or "selection" in title.lower()) else "pf",
                     "marked": False, "source": "task_list",

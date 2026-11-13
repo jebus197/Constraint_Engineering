@@ -30,23 +30,28 @@ from typing import Any, Callable, Literal, Optional, get_args
 # ---------------------------------------------------------------------------
 
 def _find_claude_cli() -> Optional[str]:
-    """Find claude CLI binary — checks PATH then macOS app bundle locations."""
-    found = shutil.which("claude")
-    if found:
-        return found
+    """Find the claude CLI binary. DELEGATES to bench/claude_cli_resolution.py.
 
-    # macOS app bundle locations (newest version first)
-    app_support = Path.home() / "Library" / "Application Support" / "Claude"
-    patterns = [
-        str(app_support / "claude-code" / "*" / "claude.app" / "Contents" / "MacOS" / "claude"),
-        str(app_support / "claude-code-vm" / "*" / "claude"),
-    ]
-    for pattern in patterns:
-        matches = sorted(globmod.glob(pattern), reverse=True)
-        if matches and os.path.isfile(matches[0]):
-            return matches[0]
+    ★ ENTRY B173, 2026-11-13. This used to be 18 lines duplicated in 2 modules,
+    holding 4 faults of which 3 were masked by the 1st. The logic now lives in 1
+    place. BEHAVIOUR IS UNCHANGED where it matters: PATH still wins, so which
+    client serves a dispatch -- and therefore which model answers -- is exactly
+    what it was. The 1 case that differs is the case that was broken: with no
+    `claude` on PATH this used to return None because its bundle glob was a
+    directory level short, and now it returns the newest installed bundle.
 
-    return None
+    Falls back to the old inline search if the module cannot be imported, so a
+    missing file degrades to today's behaviour rather than breaking every caller.
+    """
+    try:
+        from claude_cli_resolution import resolve as _resolve
+    except Exception:                                              # noqa: BLE001
+        try:
+            from bench.claude_cli_resolution import resolve as _resolve
+        except Exception:                                          # noqa: BLE001
+            found = shutil.which("claude")
+            return found or None
+    return _resolve()
 
 
 CLAUDE_CLI: Optional[str] = _find_claude_cli()

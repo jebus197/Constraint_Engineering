@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -310,8 +311,22 @@ def main() -> int:
         print("\n  HEURISTIC, NOT A VERDICT. 'Commissioning candidate' means a test names")
         print("  the component and carries both a positive and a negative assertion. The")
         print("  panel confirms or refutes each row with tools (founder ruling 2026-08-22).")
-    (REPO / "experimental_notes/data/instrument_inventory.json").write_text(
-        json.dumps({"n": n, "commissioning_candidates": c, "rows": rows}, indent=1))
+    #: ★ THIS WRITE WAS UNCONDITIONAL, AND A TEST RUNNING THIS SCRIPT FOR ITS
+    #: STDOUT THEREFORE MUTATED THE TREE. Observed 2026-11-13 at 04:42:02 and
+    #: again at 04:42:39, 31 minutes into a clean full-suite run:
+    #: `test_derived_docs_match_their_generators_2026-09-01.py` runs this script
+    #: as a subprocess to read its figures, and the write took the repository
+    #: from 34 modified paths to 35. The regeneration was CORRECT -- 4
+    #: `naming_tests` counts each rose by 1 because new guards name those
+    #: instruments -- so the content is not the fault; where it landed is.
+    #: A COOPERATION SEAM AND NOT AN ENFORCEMENT: a generator that does not read
+    #: this variable still writes, so the test setting it protects only the
+    #: generators that honour it. This is the one known to write.
+    if os.environ.get("CDSFL_NO_TREE_WRITE", "").strip() not in ("", "0"):
+        print("  [CDSFL_NO_TREE_WRITE] inventory JSON not written")
+    else:
+        (REPO / "experimental_notes/data/instrument_inventory.json").write_text(
+            json.dumps({"n": n, "commissioning_candidates": c, "rows": rows}, indent=1))
     return 0
 
 

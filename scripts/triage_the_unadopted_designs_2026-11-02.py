@@ -46,6 +46,7 @@ import subprocess
 REPO = pathlib.Path(__file__).resolve().parents[1]
 OUT = REPO / "experimental_notes" / "data" / "unadopted_design_triage_2026-11-02.json"
 STORE = REPO / "scripts" / "how_big_is_the_unapplied_fix_store_2026-11-01.py"
+SEAT_EVIDENCE = REPO / "experimental_notes" / "seat_evidence"
 TASKS = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
 
 
@@ -118,14 +119,42 @@ def main() -> int:
     _store = _ilu.module_from_spec(_sp)
     _sp.loader.exec_module(_store)
     _all = re.findall(r"^\s{3}\[[^\]]+\]\s+(\w+)\s+(\S+\.py)$", store_text, re.M)
-    absent = [(seat, path) for seat, path in _all
-              if _store_kind_of(_store, path) == "live-module file"]
+    #: ★ THE ROUND IS RECOVERED HERE, AND A FIRST ATTEMPT AT DEDUPLICATION WAS
+    #: WRONG. 2026-11-13: cc2 appears twice for `bench/model_identity.py`,
+    #: because it proposed that path in `rung_promotion_and_model_ids_2026-10-08`
+    #: AND again in `standards_currency_2026-11-13`. Those are 2 DIFFERENT
+    #: designs -- 5,744 bytes against 8,373, different digests -- so collapsing
+    #: them to 1 row discards a proposal that has never been triaged.
+    #:
+    #: The real defect is upstream and is an information loss: the store KNOWS
+    #: the round (`round_name` in its own row tuple) and does not PRINT it in
+    #: M3, so 2 distinct artefacts arrive here indistinguishable. Rather than
+    #: change the store's output format, which other readers parse, the round is
+    #: recovered from `seat_evidence/` -- the same directory the store walks --
+    #: and attached to each row, so the record can tell the 2 apart.
+    _rounds: dict[tuple[str, str], list[str]] = {}
+    for _f in sorted(SEAT_EVIDENCE.rglob("*.py")):
+        _parts = _f.relative_to(SEAT_EVIDENCE).parts
+        if len(_parts) < 3:
+            continue
+        _rounds.setdefault((_parts[1], str(pathlib.Path(*_parts[2:]))),
+                           []).append(_parts[0])
+    _used: dict[tuple[str, str], int] = {}
+    absent = []
+    for seat, path in _all:
+        if _store_kind_of(_store, path) != "live-module file":
+            continue
+        _k = (seat, path)
+        _i = _used.get(_k, 0)
+        _used[_k] = _i + 1
+        _rs = _rounds.get(_k, [])
+        absent.append((seat, path, _rs[_i] if _i < len(_rs) else ""))
     tasks = TASKS.read_text(encoding="utf-8")
     done_idents = set(re.findall(
         r"<!--\s*task:\s*([A-Za-z0-9]+)\s*\|[^>]*?state:\s*DONE", tasks))
 
     rows = []
-    for seat, path in absent:
+    for seat, path, round_name in absent:
         p = pathlib.Path(path)
         stem = p.stem
         live = (REPO / path).is_file()
@@ -172,7 +201,8 @@ def main() -> int:
             verdict, why = "CANDIDATE", (
                 f"no live file, and {len(refs)} live file(s) reference it: "
                 f"{refs[:3]}. The only shape where value may be waiting")
-        rows.append({"seat": seat, "path": path, "state": "ABSENT",
+        rows.append({"seat": seat, "path": path, "round": round_name,
+                     "state": "ABSENT",
                      "verdict": verdict, "why": why, "references": refs[:5]})
 
     for path, seat in div:

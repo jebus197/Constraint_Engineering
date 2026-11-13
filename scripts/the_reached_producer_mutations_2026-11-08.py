@@ -140,8 +140,9 @@ def main() -> int:
             rc, tail = _run(guard, node)
             ok = rc != 0
             red += int(ok)
-            print(f"  {label}: {'RED (good)' if ok else 'STILL GREEN -- the '
-                  'property is NOT guarded'}  [{guard.name}::{node}]")
+            print(f"  {label}: "
+                  f"{'RED (good)' if ok else 'STILL GREEN -- the property is NOT guarded'}"
+                  f"  [{guard.name}::{node}]")
             if not ok:
                 print(f"      tail: {tail.strip()[-220:]}")
         finally:

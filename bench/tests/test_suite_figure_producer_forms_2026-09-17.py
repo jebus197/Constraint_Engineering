@@ -153,3 +153,60 @@ class TestTheMeasurementBehindTheWideningTravels:
         assert s["backed_by_a_pytest_command"] >= 1
         assert (s["backed_by_either"]
                 == s["paragraphs_with_a_suite_figure"] - s["backed_by_neither"])
+
+
+# ★ B166: THE THOUSANDS SEPARATOR IS OPTIONAL, AND THE WIDENING MUST NOT OVER-MATCH.
+#
+# The pattern required a comma in any count of 4 digits or more, so `4476 passed`
+# was invisible to the guard that polices `measured-rate-travels-with-its-script`
+# on the one document a post-compaction reader trusts most. A widened pattern that
+# accuses correct prose is the instrument false positive this project has recorded
+# repeatedly, so the negatives are pinned beside the positives rather than left to
+# the widening's good intentions.
+_B166_POSITIVE = (
+    "4476 passed",        # the defect: plain 4-digit
+    "127177 passed",      # plain 6-digit
+    "4,476 passed",       # separator still accepted
+    "23 passed",
+    "2,333 passed",
+    "15,423 failed",
+)
+_B166_NEGATIVE = (
+    "v4476 passed",       # a digit run preceded by a word character
+    "4476 passengers",    # a different word
+    "4476passed",         # no separator at all
+)
+
+
+def test_b166_a_plain_four_digit_count_is_visible_to_the_figure_pattern():
+    """The figure the guard could not see. EXECUTED against the live pattern."""
+    g = _guard()
+    missed = [c for c in _B166_POSITIVE if not g._SUITE_FIGURE.search(c)]
+    assert not missed, (
+        f"the suite-figure pattern cannot see {missed}. A figure the detector "
+        f"misses is a figure the producer rule cannot police, so the rule is "
+        f"silent rather than satisfied. Entry B166.")
+
+
+def test_b166_the_widening_does_not_accuse_correct_prose():
+    """The boundary. A widened detector that over-matches is worse than a narrow one."""
+    g = _guard()
+    wrong = [c for c in _B166_NEGATIVE if g._SUITE_FIGURE.search(c)]
+    assert not wrong, (
+        f"the widened pattern matches {wrong}, which are not suite figures. "
+        f"A detector that accuses correct prose is the false positive this "
+        f"project has repeatedly recorded as the reason a rule goes unenforced.")
+
+
+def test_b166_the_widening_surfaces_no_unfixed_offender():
+    """Widening a detector can reveal real offenders. It must not leave them unfixed."""
+    import re as _re
+    g = _guard()
+    blk = g._newest_block_text()
+    paras = [p for p in _re.split(r"\n\s*\n", blk) if p.strip()]
+    offenders = [p for p in paras
+                 if g._SUITE_FIGURE.search(p) and not g._NAMES_A_PRODUCER.search(p)]
+    assert not offenders, (
+        f"{len(offenders)} paragraph(s) in the newest SESSION STATE block quote a "
+        f"suite figure and name no producer a reader can re-run:\n  "
+        + "\n  ".join(g._SUITE_FIGURE.search(p).group(0) for p in offenders))

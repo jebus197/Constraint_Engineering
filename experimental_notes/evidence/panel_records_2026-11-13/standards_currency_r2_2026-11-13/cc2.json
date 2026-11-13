@@ -1,0 +1,367 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 31842,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /mnt/user-data/outputs 2>/dev/null; pwd; ls ~ 2>/dev/null | head; echo \\\"---\\\"; ls / | head -30\", \"description\": \"Orient filesystem\"}",
+      "t_offset_s": 5.49
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -maxdepth 4 -name \\\"reference_runner_v3.py\\\" -not -path \\\"*/proc/*\\\" 2>/dev/null | head\", \"description\": \"Locate repo root\"}",
+      "t_offset_s": 6.438
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"--- git\\\" && git status --short 2>&1 | head -20 && echo \\\"--- stamps\\\" && sha256sum scripts/standards_currency_and_model_staleness_2026-11-13.py bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py scripts/the_standards_currency_mutations_2026-11-13.py bench/cdsfl_registry/domain_vocabulary.py bench/model_catalogue.py scripts/cdsfl_sv.py bench/exp40_baseli",
+      "t_offset_s": 13.033
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | tail -120; echo \\\"EXIT=$?\\\"\", \"description\": \"Run corrected producer\", \"timeout\": 600000}",
+      "t_offset_s": 17.681
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"(claude --version; echo \\\"---JSON---\\\"; timeout 150 claude --model opus -p \\\"say ok\\\" --output-format json 2>&1 | head -c 3000) 2>&1\", \"description\": \"D5 envelope route probe\", \"timeout\": 200000, \"run_in_background\": true}",
+      "t_offset_s": 19.727
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | tail -150; echo \\\"EXIT=${pipestatus[1]}\\\"\", \"description\": \"Run corrected producer\", \"timeout\": 600000}",
+      "t_offset_s": 22.265
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd_s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bztvysah2.output 2>/dev/null || ls /private/tmp/claude-501/*/*/tasks/ 2>/dev/null | head\", \"description\": \"Read background probe output\"}",
+      "t_offset_s": 53.122
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -60\", \"description\": \"Producer head\", \"timeout\": 300000}",
+      "t_offset_s": 54.378
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bztvysah2.output\"}",
+      "t_offset_s": 86.791
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exposure_exact\\\\|def exposure\\\\|seed\\\\|rel.err\\\\|CROSS-CHECK\\\\|tolerance\\\\|TOL\\\\|agree on\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py | head -60\", \"description\": \"Grep producer for cross-check internals\"}",
+      "t_offset_s": 88.123
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --model opus -p \\\"say ok\\\" --output-format json > /tmp/d5_envelope.json 2>&1; echo \\\"EXIT=$?\\\"; head -c 2500 /tmp/d5_envelope.json\", \"description\": \"D5 envelope probe, no timeout wrapper\", \"timeout\": 400000, \"run_in_background\": true}",
+      "t_offset_s": 93.062
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 130, \"limit\": 90}",
+      "t_offset_s": 94.311
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 300, \"limit\": 90}",
+      "t_offset_s": 98.385
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py -q 2>&1 | tail -20; echo \\\"=== MUTATIONS ===\\\"; python3 scripts/the_standards_currency_mutations_2026-11-13.py 2>&1 | tail -30\", \"description\": \"Run guard test and mutation harness\", \"timeout\": 600000}",
+      "t_offset_s": 99.957
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bwy061c68.output\"}",
+      "t_offset_s": 210.068
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== callers of exact helpers ===\\\"; grep -rn \\\"exposure_ceiling_cadence\\\\|exposure_exact_value\\\\|exposure_exact(\\\" --include=*.py . | grep -v \\\"^./scripts/standards_currency_and_model_staleness_2026-11-13.py:1[4-9][0-9]\\\\|^./scripts/standards_currency_and_model_staleness_2026-11-13.py:20[0-9]\\\"; echo \\\"=== BRIEF.md on disk ===\\\"; ls -la bench/logs/standards_currency_2026-11-13/",
+      "t_offset_s": 213.671
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"exposure_ceiling_cadence\\\\|exposure_exact\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v \\\"def exposure\\\" ; echo \\\"=== cdsfl_sv commit timeout ===\\\"; grep -n \\\"COMMIT_TIMEOUT\\\\|ledger_max\\\\|rows\\\\[-\\\" scripts/cdsfl_sv.py | head -30\", \"description\": \"Find exact-form callers and the cdsfl_sv bound\"}",
+      "t_offset_s": 256.885
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,pathlib,collections\\nREPO=pathlib.Path(\\\".\\\")\\nSEV=(\\\"severity\\\",)\\nSCALE=(\\\"scale\\\",\\\"severity_scale\\\",\\\"consequence_domain\\\",\\\"critical_level\\\",\\\"encoding_version\\\",\\\"standard_version\\\",\\\"scale_name\\\")\\ndef walk(obj,hits,scalehits):\\n    if isinstance(obj,dict):\\n        if any(k in obj for k in SEV):\\n            hits[0]+=1\\n            if any(k in obj",
+      "t_offset_s": 264.814
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_severity_census_has_three_frames_2026-11-06.py 2>&1 | tail -45\", \"description\": \"Run the three-frame severity census\", \"timeout\": 600000}",
+      "t_offset_s": 283.758
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,pathlib,collections\\nREPO=pathlib.Path(\\\".\\\")\\nSEV=\\\"severity\\\"\\ndef count(obj,h):\\n    if isinstance(obj,dict):\\n        if SEV in obj: h[0]+=1; return\\n        for v in obj.values(): count(v,h)\\n    elif isinstance(obj,list):\\n        for v in obj: count(v,h)\\nbuck=collections.Counter()\\nfor p in REPO.rglob(\\\"*.jsonl\\\"):\\n    parts=p.parts\\n    if \\\"san",
+      "t_offset_s": 288.475
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/wk && cat > scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py <<'PY'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"D1, settled by arithmetic over the shape cc2 proposes, not by opinion.\\n\\ncc2's proposed bound, read from `scripts/cdsfl_sv.py` lines 615-723:\\n\\n    bound(k) = max(FLOOR, HEADROOM * max(observed[k-N+1 .. k]))\\n\\nwith FLOOR = 300, HEADROOM = 4, N = COMMIT_TIMEOUT_LE",
+      "t_offset_s": 391.848
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"offset\": 150, \"limit\": 80}",
+      "t_offset_s": 394.817
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re,pathlib,subprocess,sys\\nbrief=pathlib.Path(\\\"bench/logs/standards_currency_2026-11-13/BRIEF.md\\\")\\ndecl=re.findall(r\\\"<!--\\\\s*figure:[^|]+\\\\|[^|]+\\\\|\\\\s*([^>]+?)\\\\s*-->\\\",brief.read_text(errors=\\\"replace\\\"))\\nprint(\\\"declared in ON-DISK (blind) brief:\\\",len(decl))\\nout=subprocess.run([sys.executable,\\\"scripts/standards_currency_and_model_staleness_2026-11-1",
+      "t_offset_s": 434.939
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 55, \"limit\": 50}",
+      "t_offset_s": 465.994
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '555,600p' scripts/standards_currency_and_model_staleness_2026-11-13.py; echo \\\"=== tail ===\\\"; tail -25 scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"description\": \"Read producer tail\"}",
+      "t_offset_s": 467.128
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"old_string\": \"    print(\\\"  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo\\\")\\n    print(f\\\"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}\\\")\\n    worst_err = 0.0\\n    for L in (",
+      "t_offset_s": 495.626
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text()\\nold = '''    print(\\\"  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo\\\")\\n    print(f\\\"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}\\\")\\n    worst_err = 0.0\\n    for L in (min(lams.values()), lam_worst):\\n        fo",
+      "t_offset_s": 520.339
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text()\\nanchor='CLAUDE_FAMILIES = (\\\"opus\\\", \\\"fable\\\", \\\"sonnet\\\", \\\"haiku\\\")\\\\n'\\nassert anchor in s\\nledger = anchor + '''\\n\\n#: THE FIGURE LEDGER -- a declared figure's STATUS, recorded where the figure is\\n#: produced rather than inferred from whether its l",
+      "t_offset_s": 567.404
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 >/dev/null | tail -20\", \"description\": \"Show producer stderr\", \"timeout\": 600000}",
+      "t_offset_s": 573.297
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py >/tmp/o.txt 2>/tmp/e.txt; echo \\\"EXIT=$?\\\"; echo \\\"--- stderr ---\\\"; tail -25 /tmp/e.txt\", \"description\": \"Capture producer stderr to file\", \"timeout\": 600000}",
+      "t_offset_s": 596.773
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\")\\ns=p.read_text()\\nold='''    out = r.stdout\\n    # The LABELS the brief declares must still be printed. Derived from the brief\\n    # itself rather than typed here, so the 2 files cannot drift apart.\\n    brief = REPO / \\\"bench\\\" / \\\"logs\\\" / \\\"standards_currency_",
+      "t_offset_s": 636.143
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,45p' bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"description\": \"Inspect test module import mechanism\"}",
+      "t_offset_s": 683.35
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '45,70p' bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"description\": \"See how prod is loaded\"}",
+      "t_offset_s": 685.69
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\")\\ns=p.read_text()\\nold=\\\"def test_the_producer_runs_clean_end_to_end():\\\"\\nassert old in s\\ns=s.replace(old,\\\"def test_the_producer_runs_clean_end_to_end(prod):\\\",1)\\np.write_text(s); print(\\\"ok\\\")\\nPY\\npython3 -m pytest bench/tests/test_the_standards_currency_prod",
+      "t_offset_s": 694.547
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_standards_currency_mutations_2026-11-13.py 2>&1 | tail -25\", \"description\": \"Run mutation harness with green baseline\", \"timeout\": 900000, \"run_in_background\": true}",
+      "t_offset_s": 744.95
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib,sys\\nsys.path.insert(0,\\\"scripts\\\")\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location(\\\"pbv\\\",pathlib.Path(\\\"scripts/panel_brief_validate.py\\\"))\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nb=pathlib.Path(\\\"bench/logs/standards_currency_2026-11-13/BRIEF.md\\\")\\nprobs=m.check_declared_figures(b.read_text(errors=",
+      "t_offset_s": 747.803
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bx7ttr311.output\"}",
+      "t_offset_s": 934.256
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"M1\\\\|self-exclusion\\\\|ANCHOR\\\" scripts/the_standards_currency_mutations_2026-11-13.py | head -20; echo \\\"---\\\"; sed -n '/self-exclusion made decorative/,/^    ),/p' scripts/the_standards_currency_mutations_2026-11-13.py | head -25\", \"description\": \"Inspect M1 anchor\"}",
+      "t_offset_s": 940.499
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\")\\ns=p.read_text()\\nold='''     \\\"    if exclude_self and p.resolve() == SELF:\\\\\\\\n        return False\\\\\\\\n\\\",\\n     \\\"    if False and p.resolve() == SELF:\\\\\\\\n        return False\\\\\\\\n\\\",'''\\nnew='''     \\\"            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:\\\\",
+      "t_offset_s": 957.968
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"output-format\\\\|--print\\\\|\\\\\\\"-p\\\\\\\"\\\\|'-p'\\\\|claude_cli\\\" bench/confer_maths_panel_2026-09-05.py | head -25\", \"description\": \"Check whether the panel already uses the JSON envelope\"}",
+      "t_offset_s": 959.477
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '955,985p' bench/confer_maths_panel_2026-09-05.py; echo \\\"=== call_claude_cli signature/returns ===\\\"; grep -rn \\\"def call_claude_cli\\\" -A 40 bench/*.py bench/**/*.py 2>/dev/null | grep -n \\\"output-format\\\\|return\\\\|modelUsage\\\\|json\\\" | head -20\", \"description\": \"Inspect the claude_cli call path for the JSON envelope\"}",
+      "t_offset_s": 963.165
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"f=bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt; echo \\\"=== modelUsage present in the panel's OWN sink? ===\\\"; grep -o \\\"modelUsage\\\" $f | head -3; grep -o '\\\"model\\\":\\\"[^\\\"]*\\\"' $f | sort | uniq -c | head; echo \\\"--- canonicalModel ---\\\"; grep -o '\\\"canonicalModel\\\":\\\"[^\\\"]*\\\"' $f | sort | uniq -c | head; echo \\\"--- any resolved id ---\\\"; grep -o 'claude-[a-z]*",
+      "t_offset_s": 977.61
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -c 600 bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt; echo; echo \\\"=== keys ===\\\"; python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt'))\\nprint(type(d), len(d) if hasattr(d,'__len__') else '')\\nprint(sorted(d[0].keys()) if isinstance(d,list) and d and isinstance(d[0],dict) else str(d)[:300])\\n\\",
+      "t_offset_s": 983.68
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"stream-json\\\\|tool_log_sink\\\\|_TOOL_SINK\\\\|def _emit\\\\|\\\\\\\"type\\\\\\\"\\\\|json.loads\\\" bench/experiment_11_orchestrator.py | sed -n '1,60p'\", \"description\": \"Locate the stream-json parser and sink writer\"}",
+      "t_offset_s": 994.662
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '445,485p' bench/experiment_11_orchestrator.py; echo \\\"=== sink write site ===\\\"; sed -n '1615,1645p' bench/experiment_11_orchestrator.py\", \"description\": \"Read the stream-json line parser and sink writer\"}",
+      "t_offset_s": 997.728
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"tool_calls\\\"\\\\|\\\"elapsed_s\\\"\\\\|_sink_calls' bench/experiment_11_orchestrator.py | head\", \"description\": \"Find sink dict assembly\"}",
+      "t_offset_s": 1005.45
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1650,1670p' bench/experiment_11_orchestrator.py\", \"description\": \"Read sink final write\"}",
+      "t_offset_s": 1007.285
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/experiment_11_orchestrator.py\\\")\\ns=p.read_text()\\n\\nfn_anchor = \\\"def _run_cli_incrementally(cmd, user_prompt, timeout, cwd, env, on_call=None):\\\"\\nfn = '''def resolved_model_from_stream_json(text: str):\\n    \\\"\\\"\\\"The model id the TRANSPORT resolved, read from the reply's own envelope.\\n\\n    D6, TOCTOU, settled by using the r",
+      "t_offset_s": 1026.78
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys,pathlib,json\\nsys.path.insert(0,'bench')\\nimport experiment_11_orchestrator as m\\nenv=pathlib.Path('/tmp/d5_envelope.json').read_text()\\nprint('REAL envelope ->', m.resolved_model_from_stream_json(env))\\nprint('not json      ->', m.resolved_model_from_stream_json('not json'))\\nprint('empty         ->', m.resolved_model_from_stream_json(''))\\nprint('None      ",
+      "t_offset_s": 1031.664
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_currency_repairs_hold_2026-11-13.py <<'PY'\\n\\\"\\\"\\\"The joint-round currency repairs, EXECUTED rather than described.\\n\\nWHAT THESE GUARD, and why each exists rather than reads well.\\n\\nR1  THE FIGURE LEDGER. `test_the_standards_currency_producer_holds_2026-11-13`\\n    re-reads the DISPATCH BRIEF at test time and required every figure the brief\\n    declares t",
+      "t_offset_s": 1091.884
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bzbzyp9nq.output\"}",
+      "t_offset_s": 1104.462
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/revert.py <<'PY'\\nimport hashlib,pathlib,subprocess,sys\\nR=pathlib.Path(\\\".\\\")\\nT=\\\"bench/tests/test_the_currency_repairs_hold_2026-11-13.py\\\"\\nG=\\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\"\\ndef run(tests,k=None):\\n    c=[sys.executable,\\\"-m\\\",\\\"pytest\\\",*tests,\\\"-q\\\"]+([\\\"-k\\\",k] if k else [])\\n    r=subprocess.run(c,capture_output=True,text=Tr",
+      "t_offset_s": 1116.406
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_standards_currency_mutations_2026-11-13.py > /tmp/mut.txt 2>&1; echo DONE; tail -12 /tmp/mut.txt\", \"description\": \"Re-run mutation harness to file\", \"timeout\": 900000, \"run_in_background\": true}",
+      "t_offset_s": 1194.526
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'lam=1/(2*36525/100); Print[\\\"exact_T30 = \\\", N[1-(1-Exp[-lam*30])/(lam*30),16]]; Print[\\\"exact_T180 = \\\", N[1-(1-Exp[-lam*180])/(lam*180),16]]; Print[\\\"firstorder_T30 = \\\", N[lam*30/2,16]]; Print[\\\"Tmax_1pct = \\\", T/.FindRoot[1-(1-Exp[-lam*T])/(lam*T)==1/100,{T,15}]]; Print[\\\"series = \\\", Normal[Series[1-(1-Exp[-x])/x,{x,0,3}]]]; r={2001,200",
+      "t_offset_s": 1201.509
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport numpy as np, scipy.stats as sps\\n# D4: is SUMMING the 4 rates the right model for independent feeds?\\n# Superposition theorem: independent Poisson(l_i) -> Poisson(sum l_i). Verified\\n# by simulation, and the ALTERNATIVE model (GHS is exactly biennial, variance 0)\\n# is tested beside it because a deterministic feed is NOT Poisson.\\nlams=[0.1111111111111111,0.14",
+      "t_offset_s": 1229.277
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport math\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport scipy.stats as sps\\ndef wilson(k,n,z=1.959963984540054):\\n    ph=k/n; c=z*z/n\\n    cen=(ph+c/2)/(1+c); half=(z/(1+c))*math.sqrt(ph*(1-ph)/n+c/(4*n))\\n    return (max(0.0,cen-half),min(1.0,cen+half))\\nprint(\\\"population                                   k/n            Wilson(statsmodels) ",
+      "t_offset_s": 1245.727
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"[\\\"']severity[\\\"']\\\\s*:\", \"glob\": \"*.py\", \"output_mode\": \"count\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo\", \"head_limit\": 60}",
+      "t_offset_s": 1252.647
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib,re\\npat=re.compile(r'[\\\"\\\\']severity[\\\"\\\\']\\\\s*:')\\nfiles=0;sites=0;names=[]\\nfor p in pathlib.Path(\\\".\\\").rglob(\\\"*.py\\\"):\\n    parts=p.parts\\n    if any(x in parts for x in (\\\"seat_evidence\\\",\\\"sandbox_harvest\\\",\\\"logs\\\",\\\".git\\\")): continue\\n    n=len(pat.findall(p.read_text(errors=\\\"replace\\\")))\\n    if n: files+=1; sites+=n; names.append((n,str(p)",
+      "t_offset_s": 1259.656
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep_until() { :; }; i=0; while [ $i -lt 40 ]; do if grep -q \\\"mutations_red\\\" /tmp/mut.txt 2>/dev/null; then break; fi; i=$((i+1)); python3 -c \\\"import time;time.sleep(10)\\\"; done; tail -16 /tmp/mut.txt\", \"description\": \"Wait for mutation harness to finish\", \"timeout\": 600000}",
+      "t_offset_s": 1275.683
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/standards_currency_and_model_staleness_2026-11-13.py /tmp/prod.bak\\npython3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text().replace(\\\"FIGURE_LEDGER = {\\\",\\\"_RETIRED_LEDGER = {\\\",1)\\np.write_text(s)\\nPY\\necho \\\"=== CELL: M1 anchor repaired, ledger REVERTED ===\\\"\\npython3 scripts/the_standards_currenc",
+      "t_offset_s": 1330.26
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,inspect\\nsys.path.insert(0,\\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nds=list(dv.domains())\\nprint(\\\"domains:\\\",len(ds))\\nprint([f.__name__ for f in ()] )\\npub=[n for n in dir(dv) if not n.startswith(\\\"_\\\") and callable(getattr(dv,n))]\\nprint(\\\"callables:\\\",pub)\\ncd=dv.consequence_domain\\nprint(inspect.signature(cd))\\nfor d in ds:\\n   ",
+      "t_offset_s": 1383.251
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,json,copy,inspect\\nsys.path.insert(0,\\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nprint(\\\"encoding_path:\\\",dv.encoding_path())\\nenc=dv.load()\\nch=enc[\\\"domains\\\"][\\\"chemistry\\\"] if \\\"domains\\\" in enc else None\\nprint(\\\"keys:\\\",list(enc.keys())[:10])\\nimport pprint\\nif ch: pprint.pprint({k:v for k,v in ch.items() if k in (\\\"consequence_sc",
+      "t_offset_s": 1394.764
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,inspect\\nsys.path.insert(0,\\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nfor f in (\\\"load\\\",\\\"encoding_path\\\",\\\"may_compose\\\",\\\"tiers\\\",\\\"severity\\\",\\\"composition_rule\\\",\\\"resolve_pair\\\",\\\"entry\\\"):\\n    try: print(f, inspect.signature(getattr(dv,f)))\\n    except Exception as e: print(f,\\\"ERR\\\",e)\\ne=dv.entry(\\\"chemistry\\\")\\nimport pprint",
+      "t_offset_s": 1398.206
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/is_a_relabel_non_semantic_2026-11-13.py <<'PY'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Is a RELABEL safe to apply without a human? Executed, not argued.\\n\\nCC1's proposed boundary for the dynamic half of the founder's question: a\\nrevision may be applied AUTOMATICALLY when it is provably non-semantic for the\\nencoding's purpose -- the standard's NAME or CITATION YEAR changes whil",
+      "t_offset_s": 1430.143
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nfrom cdsfl_registry import domain_vocabulary as dv\\ne=dv.load(); print(list(e.keys()))\\nfor k,v in e.items():\\n  if isinstance(v,dict) and 'chemistry' in v: print('CONTAINER:',k); break\\n\\\"\", \"description\": \"Find the encoding container key\"}",
+      "t_offset_s": 1433.078
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/is_a_relabel_non_semantic_2026-11-13.py\\\")\\ns=p.read_text().replace('enc[\\\"domains\\\"][\\\"chemistry\\\"]','enc[\\\"chemistry\\\"]')\\np.write_text(s); print(\\\"ok\\\")\\nPY\\npython3 scripts/is_a_relabel_non_semantic_2026-11-13.py\", \"description\": \"Rerun the relabel falsifier\", \"timeout\": 300000}",
+      "t_offset_s": 1436.116
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== final state ===\\\"; python3 -m pytest bench/tests/test_the_currency_repairs_hold_2026-11-13.py bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py -q 2>&1 | tail -3\\necho \\\"=== producer exits ===\\\"; python3 scripts/standards_currency_and_model_staleness_2026-11-13.py >/tmp/final.txt 2>&1;",
+      "t_offset_s": 1449.543
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"APPARATUS = \\\\|APPARATUS=\\\" -A 12 scripts/standards_currency_and_model_staleness_2026-11-13.py | head -20\", \"description\": \"Read the apparatus set\"}",
+      "t_offset_s": 1523.574
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text()\\nold='''    \\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\",\\n})'''\\nnew='''    \\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\",\\n    # IT GREW A 2ND TIME, 2026-11-13 (joint round), for the same reason and\\n    # measured the same wa",
+      "t_offset_s": 1531.839
+    }
+  ],
+  "n_tool_calls": 69,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1766.3,
+  "response": "All machinery executed. Final answer.\n\n---\n\n## 1. PRIMARY ANSWER\n\n**The harness keeps an encoding current by recording, not by checking \u2014 and the one class of update that may be applied dynamically is narrower than CC1 drew it.**\n\nCC1's structural answer is **confirmed**: a standard version is a dependency, you pin it, you record the pin per run, you run the currency check out of band, and a human merges the proposal. The load-bearing claim \u2014 *moving the network call off the critical path costs nothing in currency* \u2014 **verifies**. The exposure quantity is `1 \u2212 (1\u2212e^{\u2212\u03bbT})/(\u03bbT)`; it contains \u03bb and T and nothing else. Neither the run rate nor the check's *position* in the pipeline appears, so a boot-path spinner buys exactly zero exposure reduction. Confirmed symbolically in SymPy, numerically in mpmath/SciPy, and by a second route in Wolfram Language (`Tmax_1pct = 14.708219096083182`).\n\n**The boundary is MUTATION, and it sits one step earlier than CC1 placed it.** Not \"a machine may not change a level or a cut\" but **\"a machine may not change anything another artefact has already compared against.\"** The gate's inputs are not the encoding's only consumers; the scale *name* is itself load-bearing, because the provenance repair both seats recommend stamps that name into every record.\n\n**What CAN be done dynamically, with no human:** *detect and record*. Specifically \u2014 and this is new in this round \u2014 **per-reply identity provenance is already free and is being discarded.** `--output-format stream-json` is in force on every free-seat call whenever a tool-log sink is set, and its terminal `result` record already carries `modelUsage` with `canonicalModel`. The panel's own sink recorded `\"model\": \"opus\"` \u2014 the alias *asked for* \u2014 and dropped the id *served*. Reading it costs no call, no network, no dispatch, and closes D6's TOCTOU window completely, because the id comes from the same bytes as the reply.\n\nSo: **detect dynamically, record dynamically, propose dynamically; mutate never.**\n\n---\n\n## 2. VERDICT ON THE RELABEL-ONLY BOUNDARY\n\n**UNSOUND AS STATED. Sound for the gate, unsound for the encoding.** Executed, not argued.\n\n`scripts/is_a_relabel_non_semantic_2026-11-13.py` applies exactly the relabel CC1 licenses \u2014 GHS `Rev. 11, 2025` \u2192 `Rev. 12, 2027` \u2014 holding `severity_levels` and `critical_level` byte-identical, then diffs every decision `domain_vocabulary` makes:\n\n```\n  ordinal scale bit-identical : True\n  critical cut bit-identical  : True  ('Category 2')\n  => CC1's admissibility check PASSES: this relabel is auto-appliable\n\n  decisions that CHANGED anyway: 6 of 67\n```\n\nThe 6 are `consequence_domain('chemistry')`, `severity('chemistry')`, and **four `may_compose` pairings**. No verdict flips \u2014 every pairing stays `False` \u2014 but `may_compose` returns `(bool, str)`, and the string is part of the return value:\n\n```\nbefore: (False, \"'CTCAE v5.0 grade' and 'GHS health hazard category (Rev. 11, 2025)' are different scales\u2026\")\nafter : (False, \"'CTCAE v5.0 grade' and 'GHS health hazard category (Rev. 12, 2027)' are different scales\u2026\")\n```\n\nAnd the consumer the check structurally cannot see:\n\n```\n    archived stamp : 'GHS health hazard category (Rev. 11, 2025)'\n    live scale     : 'GHS health hazard category (Rev. 12, 2027)'\n    stamps match   : False\n```\n\nA relabel that is provably non-semantic **for the gate** silently makes every previously archived record compare unequal to the live encoding. Neither the record nor the gate is wrong; the *equality* is. CC1's check tests the gate's inputs \u2014 scale tuple and cut \u2014 and the gate is precisely the consumer that cannot detect this.\n\n**The repair that makes the boundary sound** is not a better check. It is to make the admissibility predicate quantify over *consumers* rather than over *fields*: a revision is auto-appliable iff no artefact outside the encoding compares against the changed field. Under the provenance repair this round recommends, the scale name becomes such an artefact \u2014 so **the relabel-only boundary collapses the moment provenance ships.** That is a composability result in the founder's sense and it runs *against* composing: the two repairs interfere, and the provenance repair wins.\n\n---\n\n## 3. D1 to D6\n\n### D1 \u2014 **fable is right; cc2 is right about the precedent and wrong about the transfer.**\n\n`scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py`, driving cc2's exact shape `max(FLOOR=300, HEADROOM=4 \u00d7 max(last 10))` read from `scripts/cdsfl_sv.py:615\u2013723`:\n\n```\n    series                        refusals      final bound     max admitted\n    flat at 100                          0              400              100\n    linear +10/step                      0             8360             2090\n    geometric x1.5/step                  0        9.805e+12        2.451e+12\n    geometric x3/step                    0        1.621e+21        4.053e+20\n    geometric x4/step (= H)              0        1.153e+20        2.882e+19\n    geometric x4.1/step (> H)           29        2.359e+20        5.898e+19\n```\n\n**It ratchets, and the arithmetic says why.** Under monotone growth at per-step ratio `r`, `max(last N) = s_{k\u22121}`, so the bound is `H\u00b7s_{k\u22121}` and the next entry is `s_{k\u22121}\u00b7r`. **The bound binds iff `r > H`, independently of how large the entries have become.** Verified across `r \u2208 {1, 2, 3, 3.9, 4.0, 4.1, 8.0}`: 0 refusals at every `r \u2264 4`, 29 of 30 at every `r > 4`. Blocks can grow to 2.45e12 with the bound never once binding.\n\nSo cc2's repair **is self-defeating as a curation bound**, which settles D1 for fable. But cc2 read the precedent correctly, and the decisive distinction is one neither seat named: **direction of failure**. `max`-of-last-N is monotone non-decreasing in the record *by construction*, so it can only ever be conservative **upward**. For a commit timeout \u2014 a tolerance whose too-small failure aborts a healthy commit \u2014 upward is fail-safe, and the ratchet is the feature. For a limit on human review load \u2014 whose too-large failure admits unreviewed content \u2014 upward is fail-unsafe. **The shape transfers; the direction does not.** cc2's \"the record supplies the scale, the headroom stays typed\" is a correct reading of a correct precedent, applied to a quantity whose conservative direction is inverted.\n\n### D2 \u2014 **cc2 is right, on the brief's own text.** Not settleable by execution, and I say so rather than manufacture a measurement.\n\nThe founder's framing exempts preferences by name: *\"User preferences/constraints don't change, but standards, formal measurements, legislation etc. should always be current.\"* Q1/Q3/Q4/Q5 all conclude *derive it or record it*; Q2 concludes *default to the human's constraint being binding and interrupt more often*. Q2's subject is the explicit complement of the other four and its answer runs the opposite way. fable's \"they are instances of one question\" is true of four of them. I have no executed evidence here and do not dress the reading as one.\n\n### D3 \u2014 **Neither; all three are correct counts of three different populations, and I reproduced all three plus a fourth.**\n\n| figure | population | reproduced |\n|---|---|---|\n| **809** (cc2) | severity-bearing objects in **`.jsonl` streams only**, `sandbox_harvest`/`seat_evidence` excluded | **exactly**: 33 logs files (796) + 6 live files (13) = **809**, across **39 files / 127,177 records** \u2014 cc2's own file and record counts to the unit |\n| **3,311** (fable) | **frame A raw** \u2014 `bench/logs/*/runner_state.json`, non-recursive, 65 files: the population of **runs**, with duplicates | exactly, from the census instrument |\n| **3,094** (census) | **frame A content-hash dedup** \u2014 same population, 217 duplicates removed, cross-confirmed by the B121 symlink double-count | exactly |\n| **10,549** (mine) | severity-bearing dicts in **live `.json`** \u2014 checkpoints, which `.jsonl` scanning misses entirely | new |\n\n**Which answers \"how many severities does the archive hold\": 3,094.** That is the de-duplicated run population, and it is the only one of the three whose instrument declares its own frame. 809 counts a *transport format*, not a population \u2014 `runner_state.json` is `.json`, so cc2's scan could not see a single run record. 3,311 is 3,094 before dedup.\n\n**The qualitative finding is safe across all four and is now far stronger than either seat reported.** 0 of 14,452 severity records across every population carry any of `scale` / `severity_scale` / `consequence_domain` / `critical_level` / `encoding_version` / `standard_version` / `scale_name`:\n\n| population | k/n | Wilson | Clopper\u2013Pearson |\n|---|---|---|---|\n| jsonl streams | 0/809 | [0, 0.00472596] | [0, 0.00454942] |\n| frame A dedup | 0/3,094 | [0, 0.00124004] | [0, 0.00119156] |\n| live `.json` | 0/10,549 | [0, 0.00036402] | [0, 0.00034963] |\n| **union** | **0/14,452** | **[0, 0.00026574]** | [0, 0.00025522] |\n\nTwo Wilson routes (statsmodels, closed form) agree to 5.4e-20.\n\n### D4 \u2014 **fable's refutation is CONFIRMED, by a second independent route, and the summation question answers YES with one caveat.**\n\nWolfram Language (local Wolfram Engine, via `wolframscript`) independently: `lam_sum = 0.9761904761904762`, `expected_revisions_104d = 0.27795704181741143`, `P_ge3 = 0.0029099413897510917`. Identical to the producer's SciPy figures. `days//30 + 1` counts check boundaries; an encoding version is created by a revision; 4 epochs was a 0.29 % event reported as what *would already* hold.\n\n**Summing the 4 rates is correct**, by the superposition theorem for independent Poisson processes, verified by simulation at N=400,000:\n\n```\nsuperposition of 4 independent Poisson: mean=0.276153  P(>=3)=0.002838\nsingle Poisson at the summed rate     : mean=0.277570  P(>=3)=0.002810\nanalytic Poisson(sum)                 : mean=0.277957  P(>=3)=0.002910\nGHS DETERMINISTIC biennial + 3 Poisson: mean=0.278693  P(>=3)=0.001517\n```\n\n**The caveat neither seat raised:** GHS's history is `Range[2005,2025,2]` \u2014 *exactly* biennial, variance zero. That is not a Poisson feed. `E[N]` survives the model choice (all four agree to three decimals, because `E[N] = \u03bbt` either way), so **`expected_epochs = 1.277957` is model-free**. `P(\u22653) = 0.002910` is **not** \u2014 a deterministic-GHS model puts 0.001517 on it, nearly half. The refutation stands on the expectation; the tail figure is conditional on an assumption the record contradicts for one of the four feeds.\n\n### D5 \u2014 **cc2 is right, and it reproduces on this machine.** fable's objection (b) is answered.\n\n```\n$ claude --model opus -p \"say ok\" --output-format json\n{\"is_error\":false,\u2026,\"modelUsage\":{\"claude-opus-5\":{\u2026,\"canonicalModel\":\"claude-opus-5\",\"provider\":\"firstParty\"}},\u2026}\n```\n\nThe envelope names the **resolved** id and carries `canonicalModel` and `provider` \u2014 written by the client, not by the model. That is transport metadata, not self-report, so it is not a model vote on its own identity. fable's probe timed out; mine did not (74 s, `claude --version` = 2.1.220). The provenance half of Q5 is deliverable now \u2014 and is **cheaper than cc2 built it**, see D6.\n\n### D6 \u2014 **fable's TOCTOU is REAL, and the cheapest repair is already paid for.**\n\nA boot-time probe certifies identity at probe time. An alias repointing upstream or a CLI auto-update between probe and reply escapes it, and cc2's route costs a full dispatch (mine: $2.32, 15 turns) to certify a window it does not cover.\n\n**The repair costs nothing, because the data is already flowing and already being thrown away.** `bench/confer_maths_panel_2026-09-05.py:963` switches the CLI to `--output-format stream-json` whenever a tool-log sink is set \u2014 which is every free-seat call. That stream's terminal `result` record carries `modelUsage`. The sink writer at `bench/experiment_11_orchestrator.py:1659` records:\n\n```json\n{ \"model\": \"opus\", \"elapsed_s\": 1077.3, \"tool_calls\": 48, \u2026 }\n```\n\n\u2014 the alias **asked for**. I checked cc2's own blind-round sink, `bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt`: `grep modelUsage` \u2192 nothing, `grep canonicalModel` \u2192 nothing, `grep 'claude-[a-z]*-[0-9]'` \u2192 nothing. The resolved id passed through the process and was discarded.\n\nReading it from the reply eliminates the window entirely \u2014 there is no interval between the measurement and the thing measured, because they are the same bytes. **Shipped**, as `resolved_model_from_stream_json`, wired into the sink beside the alias.\n\n---\n\n## 4. REASONING\n\n**Premise 1.** A currency mechanism must distinguish a *defect* from a *correction*. **Executed:** CC1's guard cannot. As dispatched, `test_the_producer_runs_clean_end_to_end` is **RED** \u2014 it re-reads the dispatch brief at test time and requires every figure the brief declares to still print, so withdrawing `composed_covers` (refuted: a coverage count is a union and can never come out against composing) **fails the contract**. The mutation harness then refuses: *\"baseline is already red (rc=1). A mutation harness cannot measure anything against a red baseline.\"* **0 of 5 mutations were exercised.** The brief's \"5 of 5 red\" does not reproduce on the tree I was given. A guard that goes red on a correction pays the next seat to keep the refuted figure.\n\n**Premise 2.** The same contract has two further failure modes, both executed. It matches only the text left of `=`, so `share_version_bearing` moving 0.253054 \u2192 0.282700 passed **silently**. And `archive_epochs_at_T30 = 4` \u2014 *refuted* \u2014 still appears **verbatim** in stdout, because the refutation quotes it; a value-matching contract would report the refuted figure as holding. Confirmed by direct test: `verbatim=True` for `archive_epochs_at_T30 = 4`.\n\n**Premise 3.** The project's independent dispatch-time validator catches what the guard misses and still cannot tell correction from regression. `scripts/panel_brief_validate.py:check_declared_figures` against the on-disk brief returns **2 problems** \u2014 `share_version_bearing` *and* `composed_covers` \u2014 with the same refusal text for both. That validator is correct as designed: the brief gets re-issued, and the joint brief *was* re-issued with 0.282700 and without `composed_covers`. The guard has no re-issue path, because it pins history.\n\n**Premise 4.** The conceded repair was documented but never wired. `exposure_exact()` exists at line 167; its docstring describes a 12-seed z-test with `z = \u22121.13, \u22120.90` against the exact form and `\u22123.33, \u221228.65` against the first-order one. **Nothing called it.** The cross-check still ran `assert err < 0.12` against the first-order form on a single seed, and 0.12 is wider than that form's own truncation error (0.0838 at T=180). All four cells sat *below* the closed form with the same sign \u2014 the signature of a bias, not of noise \u2014 and it printed `agree on 4 of 4`.\n\n**Conclusion.** The root cause under all four is one thing: **status is inferred from an artefact's current text instead of being declared where the quantity is produced.** That is precisely the dependency-currency defect the founder's question is about, occurring inside the instrument built to study it. The repair is the pin-and-supersession pattern applied to the brief's own figures \u2014 one declaration, two readers \u2014 and it is the same mechanism the primary answer recommends for standards.\n\n---\n\n## 5. EXECUTED FALSIFIER\n\n**Digests \u2014 all 8 named artefacts I read match the dispatch stamps.**\n```\n2ed3279ba53887ea  scripts/standards_currency_and_model_staleness_2026-11-13.py\n4a8cb5de14ada92a  bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\n833707de4e82bd20  scripts/the_standards_currency_mutations_2026-11-13.py\nf27c7b6cb0a63f56  bench/cdsfl_registry/domain_vocabulary.py\ndd8518573b38ffbf  bench/model_catalogue.py\n0aa813f3476403fc  scripts/cdsfl_sv.py\n14a5b7fa2949b134  bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md\na6ae2ee482750b21  scripts/the_severity_census_has_three_frames_2026-11-06.py\n```\n\n**The guard is RED as dispatched, and the mutation harness therefore measures nothing.**\n```\n$ python3 -m pytest bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py -q\nE  AssertionError: the producer no longer prints label(s) the brief declares: ['composed_covers = 5 of 5']\n1 failed, 5 passed in 45.72s\n\n$ python3 scripts/the_standards_currency_mutations_2026-11-13.py\nBASELINE -- every contract must be GREEN before any mutation\n  REFUSED: baseline is already red (rc=1). A mutation harness cannot measure anything against a red baseline.\n```\n\n**The three failure modes of the figure contract, measured directly.**\n```\n  'exposure_T30_GHS = 0.020534'          label_present=True   verbatim=True\n  'T_max_worst_days = 14.61'             label_present=True   verbatim=True\n  'share_version_bearing = 0.253054'     label_present=True   verbatim=False   <- mode 2, silent\n  'composed_covers = 5 of 5'             label_present=False  verbatim=False   <- mode 1, red\n  'cli_patch_gap_fable_5_2 = 70'         label_present=True   verbatim=True\n  'free_seats_pinning_a_version = 0'     label_present=True   verbatim=True\n  'archive_epochs_at_T30 = 4'            label_present=True   verbatim=True    <- mode 3, REFUTED yet verbatim\n```\n\n**The independent dispatch-time validator, on the on-disk brief.**\n```\nON-DISK (blind) BRIEF.md -> problems: 2\n   * 'share_version_bearing = 0.253054' \u2026 does not print it\n   * 'composed_covers = 5 of 5' \u2026 does not print it\n```\n\n**The cross-check, after wiring the conceded repair.**\n```\n       lambda     T    MC mean    MC s.e.      exact  z_exact  1st-order     z_1st\n     0.111111    30   0.004434   0.000116   0.004549    -0.99   0.004563     -1.11\n     0.111111   180   0.026334   0.000583   0.026886    -0.95   0.027379     -1.79\n     0.500000    30   0.019974   0.000220   0.020256    -1.28   0.020534     -2.55\n     0.500000   180   0.112433   0.001084   0.113678    -1.15   0.123203     -9.93\n    tolerance = |z| < 4.0 standard errors over 12 independent seeds -- DERIVED, not typed.\n```\nThe exact form is accepted at \u22121.15\u03c3; the first-order form is **rejected at \u22129.93\u03c3** at the same cell. cc2's \u221260\u03c3 used more runs; same verdict, independent seeds.\n\n**Wolfram second route** (Wolfram Language, local Wolfram Engine, via `wolframscript`; exit 0, `Out` values present, no `Name::tag`, no `$Failed`):\n```\nexact_T30 = 0.02025564982107662419242745213921913896`16.\nexact_T180 = 0.11367778672231888883503712787304628238`16.\nfirstorder_T30 = 0.02053388090349075975359342915811088296`16.\nTmax_1pct = 14.708219096083182\nseries = x/2 - x^2/6 + x^3/24\nlam_sum = 0.9761904761904762\nexpected_revisions_104d = 0.27795704181741143\nP_ge3 = 0.0029099413897510917\n```\n\n**D5, the transport envelope, on this machine.**\n```\n$ claude --version\n2.1.220 (Claude Code)\n$ claude --model opus -p \"say ok\" --output-format json\n\u2026\"modelUsage\":{\"claude-opus-5\":{\"inputTokens\":28,\"outputTokens\":2907,\u2026,\n  \"canonicalModel\":\"claude-opus-5\",\"provider\":\"firstParty\"}}\u2026\n```\n\n**D6, the extractor against that real envelope.**\n```\nREAL envelope -> claude-opus-5\nnot json      -> None\nempty         -> None\nNone          -> None\n```\n\n**D1, D3, D4 and the relabel falsifier** \u2014 outputs quoted in full in \u00a73 and \u00a72 above.\n\n**Final state.**\n```\n$ python3 -m pytest bench/tests/test_the_currency_repairs_hold_2026-11-13.py \\\n    bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py \\\n    bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py -q\n39 passed in 45.61s\n\n$ python3 scripts/standards_currency_and_model_staleness_2026-11-13.py ; echo EXIT=$?\nEXIT=0\n  exposure_T30_GHS = 0.020534\n  T_max_worst_days = 14.61\n  share_version_bearing = 0.282700\n  free_seats_pinning_a_version = 0\n  cli_patch_gap_fable_5_2 = 70\n```\n\n---\n\n## 6. FIX\n\nAll written into the sandbox repository tree at real paths.\n\n| real path | what it changes |\n|---|---|\n| `scripts/standards_currency_and_model_staleness_2026-11-13.py` (modified, `a91c\u2026`\u2192`6cd6\u2026`) | **(a)** `FIGURE_LEDGER` + `figure_ledger_lines()` + a new section 0 that prints it: every brief-declared figure is `CURRENT`, `SUPERSEDED` (old \u2192 new + reason), or `WITHDRAWN` (+ reason). Status is declared where the figure is produced; the brief is history and is never rewritten. **(b)** `CROSS_CHECK_SEEDS` (12), `CROSS_CHECK_Z = 4.0`, `exposure_simulated_many()`; the cross-check now asserts against the **exact** form at a tolerance in units of the simulation's own standard error, and **reports** the first-order z rather than hiding it. The first-order form is retained and labelled, not removed. **(c)** `APPARATUS` extended by 3 files \u2014 my own deliverables moved `share_version_bearing` to 0.287212 by entering the population they measure. |\n| `bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py` (modified) | The figure contract becomes three-way: a declared figure must reproduce its **value verbatim**, or be recorded in `FIGURE_LEDGER`. Adds two anti-abuse checks \u2014 every ledger entry must actually print (no ledger nothing reaches), and a ledger entry naming a figure the brief never declared is refused (no retiring inconvenient figures). |\n| `bench/experiment_11_orchestrator.py` (modified) | `resolved_model_from_stream_json()` reads the id the **transport** resolved from the reply's own `modelUsage`/`canonicalModel`. Wired into the tool-log sink as `resolved_model` + `identity_match`, beside the existing `\"model\"` alias. Wrapped so a failure can never change what the seat returned \u2014 `None` means the envelope named none, which stays distinguishable from a mismatch. No extra call, no network, no probe. |\n| `scripts/the_standards_currency_mutations_2026-11-13.py` (modified) | M1's anchor was **stale at dispatch** \u2014 it targeted `if exclude_self and p.resolve() == SELF:`, which the producer replaced with an `APPARATUS` set membership test. Re-pointed at the current form. A mutation that cannot apply is a mutation that tests nothing. |\n| `scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py` (new) | D1's falsifier: drives cc2's bound with 7 series and 7 growth ratios; asserts 0 refusals at `r \u2264 HEADROOM` and >0 above. |\n| `scripts/is_a_relabel_non_semantic_2026-11-13.py` (new) | The relabel-boundary falsifier: applies a relabel passing CC1's check and diffs all 67 decisions. Mutates an in-memory dict and reverts; writes nothing. |\n| `bench/tests/test_the_currency_repairs_hold_2026-11-13.py` (new, 10 tests) | Guards all of the above. Its identity fixture is a **real** envelope captured on this machine, not a typed one. |\n\n**Not shipped, and I name why.** I did not stamp `(scale_name, standard_version, critical_level)` onto the severity write path. Measured edit surface: **269 sites across 139 live Python files** reference a `\"severity\"` key \u2014 an upper bound, since the archived records come through far fewer writers, and I did not identify the write path well enough to wire it inside this dispatch. An unwired addition is this project's most frequent defect (11 since 2026-08-01). Treat it as a specification.\n\n---\n\n## 7. FIX TEST\n\n`bench/tests/test_the_currency_repairs_hold_2026-11-13.py` \u2014 **10 tests**. Four independent reverts, each red, restored green:\n\n```\nBASELINE          : 10 passed in 3.91s\n\n=== REVERT 1: drop FIGURE_LEDGER from the producer ===\n  repair guard R1  : 3 failed, 7 deselected in 2.19s\n\n=== REVERT 2: restore the typed 0.12 single-seed tolerance ===\n  repair guard R1b : 1 failed, 9 deselected in 3.42s\n\n=== REVERT 3: sink stops recording the resolved id ===\n  repair guard R2  : 1 failed, 9 deselected in 0.35s\n\n=== REVERT 4: ratchet bound loses its headroom window ===\n  repair guard R3  : 1 failed, 1 passed, 8 deselected in 0.36s\n\n=== RESTORED ===\n  repair guard     : 10 passed in 1.56s\n  CC1 brief guard  : 6 passed in 51.27s\n```\n\nRevert 2 is the one worth naming: dropping to a single seed makes `test_r1b` fail on `z_first > z_exact` \u2014 the contract is that the cross-check must **prefer** the exact form over its own first-order term. A tolerance that cannot express that preference is a tolerance absorbing the truncation error, which is exactly what `err < 0.12` did. Revert 3 is the guard against an addition nothing reaches: it walks the orchestrator's AST for a dict literal carrying `resolved_model`.\n\nRegression: `bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py` \u2192 **23 passed**. All three files \u2192 **39 passed**.\n\n---\n\n## 8. STRONGEST DISAGREEMENT\n\n**With this brief, and it is the sharpest thing I found: the brief reports concessions that are not in the code it dispatched.**\n\nConcession 2 states *\"The tolerance is now derived from the simulation's own sampling error.\"* It is not. Line 358 of the dispatched producer reads `assert err < 0.12` \u2014 a typed relative tolerance, against the **first-order** form, on a **single** seed, printing `agree on 4 of 4, worst relative error 0.1124`. The 12-seed z-test exists only in `exposure_exact`'s **docstring**, where it has no caller. The brief's framing \u2014 *\"it now carries `exposure_exact()` beside the first-order form\"* \u2014 is true of section 4 and false of section 1, which is where every declared figure and the entire cross-check live.\n\nThat matters beyond the one defect. **A concession that is written in prose and not in code is the project's named failure shape, occurring in the document that names it.** And it compounds: the brief told two seats the apparatus was repaired, so a seat that trusted the brief would not have re-run the cross-check. I ran it, and found the correction had not landed.\n\nSecond, and it cost me real time to discover: **the brief's claim that the mutation harness is \"5 of 5 red\" does not reproduce.** On the dispatched tree it is **0 of 5** \u2014 the guard is red, the harness refuses, and M1's anchor was independently stale. Both facts were discoverable by running the two commands the brief names in Section 2.\n\n**With cc2.** Your 809 is not wrong, but it is not the archive. It scans `.jsonl` only, so `runner_state.json` \u2014 the run population, 3,094 records \u2014 was invisible to it, as were 10,549 severity-bearing dicts in live checkpoints. Your conclusion survives (0 scale keys in all four populations, union Wilson [0, 0.000266], which is *tighter* than yours by a factor of 18), but you reported a transport format as a census. What would move me: a reason `.json` checkpoints are not archive.\n\n**With fable.** Your D1 objection is right and your proposed replacement inherits the defect you identified. \"Per-entry review currency derived from recorded review timestamps\" is still a `max`-of-recent-record derivation, and `test_r3_the_bound_is_monotone_non_decreasing_in_the_record` shows that shape can only be conservative upward: as review gaps grow, the derived staleness window grows to admit them. You moved the quantity and kept the ratchet. The property that fixes it is not *which* quantity but *which direction* \u2014 a bound on human load must be derived by an order statistic that is monotone **non-increasing** in the record, or typed.\n\n**With both of you.** You each located the human-in-the-loop boundary at mutation and neither tested it. The relabel falsifier took 40 lines and shows a relabel that passes the gate check changes 6 of 67 decisions and breaks every archived stamp comparison.\n\n---\n\n## 9. COMPOSABILITY\n\n**Two repairs compose, on a measurement, and the named property is countable: mutations the harness actually exercises and catches.**\n\n| state | baseline | exercised | red |\n|---|---|---|---|\n| as dispatched | **RED** (refused) | 0 | 0 |\n| M1 anchor repaired, ledger reverted | **RED** (refused) | 0 | 0 |\n| ledger only | **GREEN** | 5 | **4** (M1 `ANCHOR MISSING`) |\n| **both** | **GREEN** | 5 | **5** |\n\nAll four cells executed. `mutations_red = 5 of 5`, `restore verified: a91c6858b1844e91 == a91c6858b1844e91 -> True`.\n\nThe M1 anchor repair alone achieves **nothing** \u2014 the harness refuses a red baseline, so a correct mutation that cannot run is worth zero. The ledger alone achieves 4. Together, 5. That is strictly better than either alone on a counted property, which is the founder's standard and not the weak \"they fail to interfere\" reading. Both halves still satisfy the additive standard independently: the ledger removes no check (it adds value-verbatim checking the old contract lacked), and the anchor repair restores a mutation that was dead.\n\n**Where composition is refused.** The relabel-only boundary and the provenance repair do **not** compose \u2014 they *interfere*. Provenance stamps the scale name into records; the relabel boundary licenses a machine to change that name; the falsifier shows the stamp then compares unequal. **The single repair is preferred: provenance, without the dynamic relabel.** This is the case the founder's definition exists to catch \u2014 two repairs that can coexist and must not.\n\n---\n\n## 10. PASSES RUN\n\n**Six.**\n\n1. **Reproduction.** 8 digests match. Producer runs. **Found the guard RED as dispatched and the mutation harness refusing \u2014 0 of 5 mutations exercised, against a declared 5 of 5.**\n2. **Mathematics, second routes.** Wolfram confirms exact exposure, `Tmax = 14.708`, the series `x/2 \u2212 x\u00b2/6 + x\u00b3/24`, `lam_sum`, `P(\u22653)`. Poisson superposition verified at N=400,000; found `E[N]` model-free and `P(\u22653)` not, because GHS is deterministic-biennial.\n3. **D1, D3, D5 by execution.** Ratchet confirmed (binds on ratio, never size). Three severity populations reconciled exactly, plus a fourth. Envelope route reproduces with `canonicalModel`.\n4. **The relabel boundary.** 6 of 67 decisions change under a relabel passing CC1's check; archived stamp comparison breaks.\n5. **Repair, revert, composability.** 10 tests green, 4 reverts red, 39 passed total, four-cell composability measurement.\n6. **Final.** **This pass found a defect in my own delivery:** my new files entered the population the producer measures, moving `share_version_bearing` from 0.282700 to 0.287212. Three files added to `APPARATUS`; the declared figure reproduces exactly. The instrument had started measuring itself \u2014 the precise defect the figure exists to detect.\n\nI terminate here. A seventh pass would return findings below threshold: the ~1\u03c3 negative bias common to all four Monte Carlo cells (an edge effect at the simulation horizon, which tightens rather than loosens the test), the `severity_scale_source` field carrying its own `[VERIFY:current]` marker that nothing checks, and the fact that `may_compose` returns a `(bool, str)` tuple whose string half is load-bearing for equality but documented as explanatory. None feeds a decision.\n\n**What would refute me.** My relabel verdict falls if a consumer is shown that compares *only* the scale tuple and cut and never the name \u2014 produce it and the boundary is sound as stated; I diffed all 67 decisions `domain_vocabulary` exposes and 6 moved. My guard finding falls if `bench/logs/standards_currency_2026-11-13/BRIEF.md` is shown to be the *live* contract rather than a frozen dispatch artefact \u2014 if it is re-issued per round, the contract is correct and my ledger is unnecessary; its mtime is 01:26, before the producer's 01:51, which is why I read it as history. My D1 verdict falls if a curation bound is shown whose too-large failure is the safe direction \u2014 then upward conservatism is correct and the ratchet is a feature, as it is for the commit timeout. My D3 reconciliation falls if `bench/results/round_robin_phase2/checkpoint.json`'s 3,637 severity-bearing dicts are shown not to be archive records \u2014 the union interval widens, the qualitative finding does not change. My D6 repair falls if `modelUsage` is shown absent from the stream-json variant the panel actually uses; I verified it on `--output-format json` and read the switch at `confer_maths_panel_2026-09-05.py:963`, but I did not capture a live stream-json panel reply, and that is the one link in this chain I inferred rather than observed.",
+  "t_start_epoch": 1794535086.5969012,
+  "t_end_epoch": 1794536852.895566,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo",
+      "built": false
+    }
+  ]
+}

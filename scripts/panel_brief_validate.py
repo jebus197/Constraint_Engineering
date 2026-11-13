@@ -187,6 +187,56 @@ _TIGHT = re.compile(r"[0-9A-Za-z_]")
 _GROUPERS = ",:/"
 
 
+#: ★ RETRACTION MARKERS, entry B174, 2026-11-13. A producer that withdraws a figure
+#: QUOTES the figure it withdraws -- that is what makes the retraction legible --
+#: so any token test over the raw output finds the figure ON ITS OWN RETRACTION
+#: LINE and reads a retraction as a confirmation. Measured the day it was found: a
+#: brief declaring 2 figures the producer printed only inside `REFUTED` lines was
+#: accepted on both, so a withdrawn number could keep passing validation forever.
+#:
+#: THE SHAPE IS ALREADY IN THE RECORD TWICE -- a grep verdict cannot see its
+#: subject removed, and a detector must not spell out its own pattern. It was
+#: found here because a hand-written audit of this very question made the
+#: IDENTICAL error first and its verdict contradicted what the producer plainly
+#: said on the line above.
+_RETRACTION_MARKERS = ("REFUTED", "WITHDRAWN", "SUPERSEDED")
+
+
+def _retraction_line(want: str, haystack: str) -> str | None:
+    """The marker, if `want` appears ONLY on lines that retract it. Else None.
+
+    `_figure_token_found` is NOT changed: its contract -- is this token present --
+    is correct, it has its own boundary tests, and it has a second caller in
+    `_historical_reproduction`. What was wrong is the HAYSTACK this one consumer
+    handed it, which included the producer's own retractions.
+    """
+    lines = haystack.splitlines()
+    plain = "\n".join(ln for ln in lines
+                      if not any(m in ln for m in _RETRACTION_MARKERS))
+    if _figure_token_found(want, plain):
+        return None                      # it genuinely prints, somewhere real
+    for ln in lines:
+        marker = next((m for m in _RETRACTION_MARKERS if m in ln), None)
+        if marker and _figure_token_found(want, ln):
+            return marker
+    return None
+
+#: ★ THE STATED LIMIT OF THE CHECK ABOVE, named rather than hidden, because an
+#: undocumented conservatism is how a reader comes to trust a check further than
+#: it goes. It fires only when the figure appears EXCLUSIVELY on retraction
+#: lines. A producer that also quotes a withdrawn figure on an UNMARKED line --
+#: explanatory prose such as "it read `x = 4` before" -- evades it, and that is
+#: deliberate: the alternative is to treat any passing mention as a retraction,
+#: which would accuse a producer that genuinely still prints the figure. The
+#: false positive is worse than this false negative, because a guard that
+#: accuses correct prose stops being run at all.
+#:
+#: THE BURDEN THEREFORE SITS WITH THE PRODUCER: do not quote a withdrawn figure
+#: on a line that does not carry its marker. Found on the day this check was
+#: written, on the very producer that prompted it -- 2 of its 3 retracted
+#: figures were caught and the 3rd evaded it through exactly this route.
+
+
 def _figure_token_found(want: str, haystack: str) -> bool:
     """True iff `want` occurs in `haystack` as a whole figure.
 
@@ -475,7 +525,23 @@ def check_declared_figures(text: str, repo: Path = REPO,
         # trailing newline and `9 done` to stderr satisfied a declared
         # `rate = 0.29`. A figure must be found in output that was actually
         # emitted, not in the seam between two streams.
-        if not _figure_token_found(want, r.stdout + "\n" + r.stderr):
+        _out = r.stdout + "\n" + r.stderr
+        # ★ B174: A RETRACTION IS NOT A REPRODUCTION, and it is not a silent
+        # disappearance either. Checked BEFORE acceptance, because the raw output
+        # contains the figure on its own retraction line; and reported with its
+        # own message, because `does not print it` sends a reader to RESTORE a
+        # figure that was deliberately withdrawn. The 2 messages send a reader to
+        # opposite actions, so collapsing them would be worse than the defect.
+        _retracted = _retraction_line(want, _out)
+        if _retracted is not None:
+            problems.append(
+                f"declared figure {label!r}: {want!r} is {_retracted} by its own "
+                f"producer {rel} -- it appears only on a line retracting it. The "
+                f"brief cites a figure the project has withdrawn. Re-issue the "
+                f"brief without it, or with the replacement value; do NOT restore "
+                f"the figure to the producer")
+            continue
+        if not _figure_token_found(want, _out):
             hist = _historical_reproduction(want, script, brief_path, text,
                                             repo, timeout)
             if hist is not None:

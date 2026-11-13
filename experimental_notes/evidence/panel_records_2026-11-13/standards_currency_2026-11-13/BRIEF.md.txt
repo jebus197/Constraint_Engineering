@@ -1,0 +1,117 @@
+# PANEL BRIEF — building for limits that will relax, when the standards themselves move
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `scripts/standards_currency_and_model_staleness_2026-11-13.py` | `83b641df55bb7566` | 18354 | 2026-11-13T01:17:12+00:00 |
+| `bench/cdsfl_registry/domain_vocabulary.py` | `f27c7b6cb0a63f56` | 21926 | 2026-11-12T21:03:50+00:00 |
+| `bench/confer_maths_panel_2026-09-05.py` | `aea05271596a0a87` | 117551 | 2026-11-12T06:30:53+00:00 |
+| `bench/seat_aliveness_2026-10-06.py` | `9a5c411a63b39fdd` | 10061 | 2026-10-06T06:49:18+00:00 |
+| `bench/seat_readiness.py` | `084f4f382743484a` | 18455 | 2026-11-04T00:28:53+00:00 |
+| `bench/model_catalogue.py` | `dd8518573b38ffbf` | 13863 | 2026-11-10T03:04:27+00:00 |
+| `bench/cdsfl_registry/composer.py` | `88a6f8c910f6d028` | 113110 | 2026-11-12T01:21:40+00:00 |
+| `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md` | `14a5b7fa2949b134` | 3739 | 2026-07-28T12:27:32+00:00 |
+| `scripts/cdsfl_sv.py` | `0aa813f3476403fc` | 184562 | 2026-11-12T08:37:04+00:00 |
+| `bench/ticket_store.py` | `5c4729a41861d3ce` | 107783 | 2026-11-07T20:50:33+00:00 |
+
+## REQUIRED SECTION 1 — The question
+
+**One question: in a harness that must still be correct in 5 to 20 years, what must be DERIVED rather than TYPED, what must be RECORDED rather than CHECKED, and where does the human-in-the-loop boundary fall when an externally-defined standard changes underneath a stored result?**
+
+The founder's framing, verbatim, 2026-11-13: *"we are building for limitations that exist today. In 5, 10, 15 or 20 years, those limits will become progressively less pressing and less constraining for our purposes. So we should be building not just for today, but for the future also."* And the proposal that follows from it, verbatim: *"when an encoding is loaded, perhaps our classifier model (in this case Haiku) should perform an online check to ensure any encoding matches the existing formal standards, and if not update the encoding dynamically before loading it? This can be a part of the 'Bios' boot up/health check process that the harness performs before an experiment begins? User preferences/constraints don't change, but standards, formal measurements, legislation etc. should always be current? This could slow experiments down if it happened every time. So I would propose a cadence of one month between checks, in order to stay current."* Separately, on model identity: *"sometimes the model names and version numbers can become stale. So in order to fix this fully too, perhaps we can integrate a model name/version check with our aliveness check, so that the harness can stay fully current with whatever models we are using at any given point too?"*
+
+The artefacts under review, each by real path:
+
+- `scripts/standards_currency_and_model_staleness_2026-11-13.py` — the producer for every figure declared below. Run it.
+- `bench/cdsfl_registry/domain_vocabulary.py` — resolves a task's consequence domain and its severity scale. The function `consequence_domain` returns how the scale was obtained: own, inherited, composed, or unresolved.
+- `bench/confer_maths_panel_2026-09-05.py` — this dispatcher. Its seat table is bound to `_ALL` near line 474.
+- `bench/seat_aliveness_2026-10-06.py` — the aliveness probe. It asks whether a route answers.
+- `bench/seat_readiness.py` — asks whether a seat is configured. Neither file checks which model version answered.
+- `bench/model_catalogue.py` — the generated selectable model list, with a free remote listing that is opt-in.
+- `bench/cdsfl_registry/composer.py` — holds per-model calibration keyed on identity strings such as the Fable entry.
+- `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md` — the pre-registered definition of a critical finding.
+
+### The 5 sub-questions, all instances of the one question above
+
+**Q1 — COMMENSURATION.** Exactly 4 domains in `bench/cdsfl_registry/domain_vocabulary.py` declare a consequence scale of their own: biology on CTCAE v5.0 grade with a critical cut at Grade 3, chemistry on GHS health hazard category with a critical cut at Category 2, engineering on AIAG-VDA FMEA severity 1 to 10 with a critical cut at 7, and software on CVSS v4.0 base score with a critical cut at High. All 6 pairings of those 4 are incommensurable: no common unit exists, so neither a precedence order nor a strictest-wins rule is defined across them. The other 6 domains declare no scale and inherit one, so they cannot conflict. CC1's proposal is to NEVER commensurate: carry per-domain severities side by side, each in its own named scale, and let the gate fire if any domain sits at or above its OWN critical cut, a disjunction over per-scale cuts. Attack that. Is a disjunction the right aggregator, or does it make the gate fire too readily as domains are added? What is the alternative that does not invent a mapping between CTCAE and GHS?
+
+**Q2 — WHICH WAY THE DEFAULT POINTS.** A researcher's stored preferences must be classified HARD or SOFT. CC1's position is that the default should be MANDATORY, with latitude marked explicitly, because the costs are asymmetric: a process rule wrongly treated as soft fails silently and costs real work, while a style rule wrongly treated as mandatory costs visible rigidity that a human corrects immediately. Attack that. Is the asymmetry real, and does a mandatory-by-default rule increase or decrease the number of times a researcher is interrupted?
+
+**Q3 — DERIVED, NOT TYPED.** A bound written as a literal constant goes stale as the thing it counts grows; a bound computed from the record does not. `scripts/cdsfl_sv.py` already derives its commit timeout from the last 10 ledger rows rather than pinning a number. The question: what is the correct derivation for a bound on a stored preference block's size, given that the usual justification — scarce context — is exactly the limit the founder says will relax? CC1's position is that the justification must move from capacity to CURATION, because curation is a human property that does not improve with hardware. Attack that.
+
+**Q4 — HIS BIOS CURRENCY CHECK, AND ITS HARD-CONSTRAINT BOUNDARY.** Two findings CC1 believes are above threshold and wants broken:
+
+First, a classifier that *updates the encoding dynamically before loading it* has a model editing a HARD constraint with no human in the loop. The project's standing rules are that a proposed repair goes to the human and is never auto-applied, and that a finding is confirmed programmatically or by the human and never by a model vote. A model deciding that a severity scale should change is a model vote on a hard constraint. CC1's repair is DETECT, DO NOT REWRITE: the check raises a ticket through `bench/ticket_store.py` and either refuses the run or records the suspected staleness, and the human rules.
+
+Second, a dynamically-updating encoding BREAKS the archive. Run the producer: at the proposed cadence the record from 2026-08-01 to 2026-11-13 would already carry 4 encoding versions, and nothing stored records which version produced a given severity.
+
+CC1's repair is a COMPOSITION, and it is offered under the founder's own standard. Compose only on a DEMONSTRATED advantage over each repair alone, where the demonstration is a measurement and not a judgement, and prefer the single repair wherever it performs as well; asking merely whether two repairs fail to interfere is the weaker reading that his definition excludes by name. The named property here is FAILURE MODES COVERED, and section 4 of the producer prints the table: a currency check alone covers 1 of 5, per-run provenance alone covers 4 of 5, and the composition covers 5 of 5. Note which way that cuts — provenance dominates the check 4 to 1, and one of the modes provenance closes is CREATED by the check. Attack the table itself: is a failure-mode count a legitimate dominance measurement, or is it a rubric wearing a number? If it is not legitimate, name the measurement that would settle it.
+
+Then attack the cadence. The producer derives the exposure fraction, the share of runs executed under a superseded standard, in closed form; the run rate cancels, so it is a property of the cadence alone. At the worst observed revision rate, the 2-yearly one, a 30-day cadence gives the declared exposure below, and a 1 per cent exposure ceiling would require the declared interval instead. Is a 1 per cent exposure ceiling even the right objective, given that the producer's own figures are an UPPER bound on harm because they count every stale run as exposed whether or not the revision touched the clause in use?
+
+**Q5 — MODEL IDENTITY IS THE SAME DEFECT, AND IT IS LIVE RIGHT NOW.** The founder states the current Fable release is 5.2 and instructed that the dispatch and runners be updated to match before this round. Probed live on the Max subscription through the CLI on 2026-11-13: the model identifier for Fable 5.2 is REAL — the upstream response names its own minimum CLI version — and it is UNREACHABLE from this machine, which runs CLI 2.1.220. The declared patch gap is below. Meanwhile the producer lifts this dispatcher's seat table by executing its syntax tree and finds the 2 free Max-subscription seats pin NO version at all; they name an alias that resolves to whatever the installed CLI serves. So carrying out the instruction literally would either change nothing or kill the seat. Attack the proposed repair: wire a model-identity check to the aliveness probe so that a probe reports WHICH model answered and whether the installed client can reach the intended one, and derive the identifier from a free listing rather than typing it. Where does that fail?
+
+### Declared figures — every one re-executes from the producer
+
+<!-- figure: exposure at a 30-day cadence, worst standard | scripts/standards_currency_and_model_staleness_2026-11-13.py | exposure_T30_GHS = 0.020534 -->
+<!-- figure: cadence a 1 per cent exposure ceiling requires | scripts/standards_currency_and_model_staleness_2026-11-13.py | T_max_worst_days = 14.61 -->
+<!-- figure: share of live model-identity literals carrying a version | scripts/standards_currency_and_model_staleness_2026-11-13.py | share_version_bearing = 0.253054 -->
+<!-- figure: failure modes covered by the composition | scripts/standards_currency_and_model_staleness_2026-11-13.py | composed_covers = 5 of 5 -->
+<!-- figure: CLI patch releases missing for the newest Fable | scripts/standards_currency_and_model_staleness_2026-11-13.py | cli_patch_gap_fable_5_2 = 70 -->
+<!-- figure: free seats pinning a model version | scripts/standards_currency_and_model_staleness_2026-11-13.py | free_seats_pinning_a_version = 0 -->
+<!-- figure: encoding versions the archive would already span | scripts/standards_currency_and_model_staleness_2026-11-13.py | archive_epochs_at_T30 = 4 -->
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it. A seat that returns prose without having executed anything has not answered this brief.
+
+At minimum, execute all 3 of these:
+
+1. Run `scripts/standards_currency_and_model_staleness_2026-11-13.py` and report what it actually printed. Do not take the declared figures on trust — they are declared so that you can refute them.
+2. Import `bench/cdsfl_registry/domain_vocabulary.py` and call `consequence_domain` across every domain it knows. Establish for yourself how many declare an own scale and how many inherit. CC1 previously asserted that 6 of 10 domains have a consequence domain differing from the subject and read that as 2 competing hard constraints; executing the resolver refuted that reading, because those 6 declare no scale and inherit one. Verify or refute the corrected reading.
+3. The SEVERITY model is the instrument that bears directly on Q1 and Q4. Severity is what the critical cut is applied to, and the pre-registered definition is in `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md`. Establish by execution what the gate currently does when 2 domains are in play, and whether a per-scale disjunction changes any decision the archive has already recorded. A Wilson interval is expected on any proportion you report, as is a second independent route for any number you compute.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a repair is incomplete. A repair without a runnable falsifier that you have EXECUTED is a hypothesis, not a repair. Report the exact command you ran and the output you saw.
+
+Deliver each fix as a file, written INTO the sandbox repository tree at its real path. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down.
+
+Where more than one repair is in play, state composability as the founder defines it: compose ONLY on a DEMONSTRATED advantage over each repair alone, where the demonstration is a MEASUREMENT and not a judgement, and prefer the single repair wherever it performs as well or better. Reporting only that the repairs do not interfere is the weak reading his definition excludes.
+
+Your repair must not be an addition that nothing reaches. Every new flag, gate, subcommand or entry point must be wired to a caller and executed by a test, and the test must go RED when the repair is reverted. State which test, and state what reverting it does.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before you conclude, state what evidence would overturn your own answer. A verdict with no stated refutation condition is an opinion.
+
+State it concretely: name the measurement, the file, or the observation that would falsify your position, and say which way the result would have to come out.
+
+If you believe one of CC1's 5 positions is wrong, say which and why, with the executed evidence. Disagreement is wanted as information and will not be smoothed into consensus. There is no requirement that the seats converge.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return exactly these fields, in this order, so replies can be compared without a parser guessing:
+
+1. `VERDICT` — per sub-question Q1 to Q5, one of: CC1 IS RIGHT, CC1 IS WRONG, or UNDECIDABLE ON PRESENT EVIDENCE. One line each.
+2. `REASONING` — for each verdict, the derivation. Premises, then the executed evidence, then the conclusion.
+3. `EXECUTED FALSIFIER` — the command you ran, verbatim, and the output you saw, verbatim. For every number you report.
+4. `FIX` — the real path of each file you wrote into the sandbox tree, and what it changes.
+5. `FIX TEST` — the test that goes red when the fix is reverted, and the output proving it did.
+6. `STRONGEST DISAGREEMENT WITH THIS BRIEF` — mandatory, never empty. The brief's own framing may be wrong, including the claim that the 5 sub-questions are instances of one question. If you think the framing is sound, say what the weakest part of it is anyway.
+7. `COMPOSABILITY` — for any 2 repairs you propose together, the measurement showing the pair beats each alone on a named property, or an explicit statement that the single repair is preferred and why.
+8. `PASSES RUN` — how many falsification passes you ran, and what the last one found.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop at diminishing returns, which is this project's own criterion: terminate when a further pass produces no new finding above the real-world-consequence threshold. A finding is above threshold if missing it could cause real-world failure, an invalid result, or an unsafe condition. Do not generate findings for their own sake, do not police style, and do not push back on valid design choices.
+
+Report how many passes you ran. If you terminate after 1 pass, justify it.

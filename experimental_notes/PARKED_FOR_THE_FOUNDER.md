@@ -247,6 +247,30 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B163 user-preferences section in each expert encoding: he issued d (discuss, do not implement) and deferred it until both free-panel rounds are in; the blind round is in flight and its brief asks the panel to attack the very design B163 would build
+
+*Parked 2026-11-13T01:26:45+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## The joint star round is mid-dispatch with 2 live CLI seats and a hard 1800 s ceiling expiring 02:28:06; the deliverable he asked for is the d after BOTH rounds, and his heavy-work budget on 8 GiB is 1, so starting a third heavy process would contend with the seats rather than advance anything
+
+*Parked 2026-11-13T02:16:43+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## B165 full suite measurement is RUNNING now, launched 03:48:21, expected to finish about 06:02; it occupies the single heavy process slot his 8 GiB ruling allows, so no further pytest may start until it lands
+
+*Parked 2026-11-13T03:52:17+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## B165 clean full-suite run is in flight from 04:10:53 with 8 files hashed; any edit to a file the suite reads would void the measurement a second time, as happened at 03:48
+
+*Parked 2026-11-13T04:12:01+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (38)

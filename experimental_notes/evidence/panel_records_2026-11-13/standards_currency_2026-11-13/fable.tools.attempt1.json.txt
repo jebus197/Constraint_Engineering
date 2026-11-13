@@ -1,0 +1,177 @@
+{
+  "model": "fable",
+  "elapsed_s": 1014.8,
+  "tool_calls": 32,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/user 2>/dev/null; pwd; ls\", \"description\": \"Find sandbox repository root\"}",
+      "t_offset_s": 5.548
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/standards_currency_and_model_staleness_2026-11-13.py\"}",
+      "t_offset_s": 6.128
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum scripts/standards_currency_and_model_staleness_2026-11-13.py bench/cdsfl_registry/domain_vocabulary.py bench/confer_maths_panel_2026-09-05.py bench/seat_aliveness_2026-10-06.py bench/seat_readiness.py bench/model_catalogue.py bench/cdsfl_registry/composer.py bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md scripts/cdsfl_sv.py bench/ticket_store.py 2>&1 | awk '{p",
+      "t_offset_s": 10.55
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -150\", \"description\": \"Run the producer script for declared figures\"}",
+      "t_offset_s": 11.775
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\"}",
+      "t_offset_s": 127.474
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/bench/cdsfl_registry/domain_vocabulary.py\"}",
+      "t_offset_s": 128.285
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --version 2>&1; which claude\", \"description\": \"Check installed Claude CLI version\"}",
+      "t_offset_s": 237.333
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, '.')\\nfrom bench.cdsfl_registry import domain_vocabulary as dv\\ndoms = dv.domains()\\nprint(\\\"domains:\\\", len(doms), doms)\\nown, inh, comp, unres = [], [], [], []\\nfor d in doms:\\n    r = dv.consequence_domain(d)\\n    print(f\\\"{d:22s} how={r['how']:10s} scale={r['scale']!r} crit={r['critical_level']!r} resolved={r['resolved']}\\\")\\n    {",
+      "t_offset_s": 243.784
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp, numpy as np, mpmath as mp\\nmp.mp.dps = 40\\n# DERIVATION: revisions Poisson(lam). Checks every T. Run at age a=t mod T in its\\n# check window, a~U(0,T). Exposed iff >=1 revision in the current window before t:\\n# P = E_a[1 - e^(-lam a)] = 1 - (1 - e^(-lam T))/(lam T).   lam T/2 is the O(lamT) term.\\nlam, T, a = sp.symbols(\\\"lambda T a\\\", positive=",
+      "t_offset_s": 268.141
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Corrected census: the producer's VER regex only matches Claude-family names.\\n# Extend to any provider-versioned model identity and recount.\\nimport ast, pathlib, re\\nfrom statsmodels.stats.proportion import proportion_confint\\nREPO = pathlib.Path(\\\".\\\")\\nVER_CLAUDE = re.compile(r\\\"\\\\b(?:claude[-_])?(?:opus|fable|sonnet|haiku)[-_]?\\\\d+(?:[-_.]\\\\d+)*\\\", re.I)\\nVER_",
+      "t_offset_s": 283.846
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '455,500p' bench/confer_maths_panel_2026-09-05.py; grep -n \\\"fable\\\" bench/cdsfl_registry/composer.py | head -20\", \"description\": \"Read seat table _ALL and composer Fable calibration keys\"}",
+      "t_offset_s": 285.394
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md\", \"description\": \"Read pre-registered critical definition\"}",
+      "t_offset_s": 344.691
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"consequence_domain\\\\|critical_level\\\\|may_compose\\\" bench/cdsfl_registry/composer.py scripts/cdsfl_sv.py bench/confer_maths_panel_2026-09-05.py 2>/dev/null | grep -v \\\"def \\\\|#\\\" | head -30; echo ---CALLERS---; grep -rln \\\"consequence_domain\\\" --include=\\\"*.py\\\" . | grep -v sandbox_harvest | grep -v logs/\", \"description\": \"Find gate code and consequence_domain callers\"}",
+      "t_offset_s": 347.095
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' bench/seat_aliveness_2026-10-06.py\", \"description\": \"Read aliveness probe structure\"}",
+      "t_offset_s": 347.711
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity\\\" bench/ticket_store.py | head -15; echo ---; grep -rn \\\"3094\\\\|B121\\\" scripts/*.py bench/*.py 2>/dev/null | grep -v standards_currency | head -8; echo ---PROPOSER---; grep -n \\\"consequence_domain\\\\|critical_level\\\\|scale\\\" bench/cdsfl_registry/domain_proposer.py | head -20\", \"description\": \"Check severity storage, 3094 provenance, proposer gate use\"}",
+      "t_offset_s": 380.669
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(mktemp -d)\\\" && timeout 90 claude -p 'Reply with exactly one word: Ready!' --model fable --output-format json 2>&1 | head -c 2000\", \"description\": \"Probe claude CLI for resolved model identity in response metadata\"}",
+      "t_offset_s": 381.753
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(mktemp -d)\\\" && claude -p 'Reply with exactly one word: Ready!' --model fable --output-format json 2>&1 | head -c 2000\", \"description\": \"Probe claude CLI for resolved model identity in response JSON\", \"timeout\": 120000}",
+      "t_offset_s": 387.188
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_severity_census_has_three_frames_2026-11-06.py 2>&1 | tail -30\", \"description\": \"Reproduce the 3094 archive severity count by its own census script\"}",
+      "t_offset_s": 388.284
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\nkeys = collections.Counter(); scale_hits = 0; sev_records = 0; sample = None\\nfor f in glob.glob(\\\"bench/logs/*/runner_state.json\\\"):\\n    try: d = json.load(open(f))\\n    except Exception: continue\\n    def walk(o):\\n        global scale_hits, sev_records, sample\\n        if isinstance(o, dict):\\n            if \\\"severity\\\" in o:\\n  ",
+      "t_offset_s": 565.225
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, glob, collections\\nvals = collections.Counter()\\nfor f in glob.glob(\\\"bench/logs/*/runner_state.json\\\"):\\n    try: d = json.load(open(f))\\n    except Exception: continue\\n    def walk(o):\\n        if isinstance(o, dict):\\n            if \\\"source_model\\\" in o and isinstance(o[\\\"source_model\\\"], str):\\n                vals[o[\\\"source_model\\\"]] += 1\\n     ",
+      "t_offset_s": 598.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'x = 0.5*30/365.25; {1 - (1 - Exp[-x])/x, T /. FindRoot[1 - (1 - Exp[-(0.5/365.25) T])/((0.5/365.25) T) == 1/100, {T, 15}], Normal[Series[1 - (1 - Exp[-y])/y, {y, 0, 2}]]}' 2>&1\", \"description\": \"Wolfram second check: exact exposure value, exact T_max, series\"}",
+      "t_offset_s": 600.331
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"old_string\": \"VER = re.compile(r\\\"\\\\b(?:claude[-_])?(?:opus|fable|sonnet|haiku)[-_]?\\\\d+(?:[-_.]\\\\d+)*\\\", re.I)\\nALIASES = (\\\"opus\\\", \\\"fable\\\", \\\"sonnet\\\", \\\"haiku\\\")\", \"new_string\": \"VER = re.compile(r\\\"\\\\b(?:claud",
+      "t_offset_s": 657.439
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"old_string\": \"def version_census(exclude_self: bool = True):\", \"new_string\": \"def exposure_exact(lam_yr: float, T_days: float) -> float:\\n    \\\"\\\"\\\"EXACT exposure fraction; lam*T/2 is only this expression's O(x) term",
+      "t_offset_s": 667.217
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns = p.read_text()\\n\\nold1 = '''VER = re.compile(r\\\"\\\\\\\\b(?:claude[-_])?(?:opus|fable|sonnet|haiku)[-_]?\\\\\\\\d+(?:[-_.]\\\\\\\\d+)*\\\", re.I)\\nALIASES = (\\\"opus\\\", \\\"fable\\\", \\\"sonnet\\\", \\\"haiku\\\")'''\\nnew1 = '''VER = re.compile(r\\\"\\\\\\\\b(?:claude[-_])?(?:opus|fable|sonnet|",
+      "t_offset_s": 705.655
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns = p.read_text()\\nold = '''            sm = float(np.mean([exposure_simulated(L, td, seed=s_)\\n                                for s_ in (20261113, 20261114, 20261115)]))\\n            err = abs(sm - ex) / ex\\n            worst_err = max(worst_err, err)\\n           ",
+      "t_offset_s": 731.105
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns = p.read_text()\\ns = s.replace(r'''r\\\"[-_]?k?\\\\d+(?:[-_.]\\\\w+)*\\\", re.I)''',\\n              r'''r\\\"[-_]?[vk]?\\\\d+(?:[-_.]\\\\w+)*\\\", re.I)''')\\np.write_text(s)\\nPYEOF\\npython3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | grep -E \\\"ds |exit\\\" ;",
+      "t_offset_s": 764.373
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/seat_aliveness_2026-10-06.py\\\")\\ns = p.read_text()\\n\\nold1 = '''@dataclass\\nclass AliveResult:\\n    seat: str\\n    alive: bool\\n    attempts_used: int\\n    elapsed_s: float\\n    detail: str\\n    replies: list = field(default_factory=list)'''\\nnew1 = '''@dataclass\\nclass AliveResult:\\n    seat: str\\n    alive: bool\\n    atte",
+      "t_offset_s": 778.094
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C . rev-parse --is-inside-work-tree 2>&1; git status --porcelain 2>&1 | head -5\\nmkdir -p bench/tests\\ncat > bench/tests/test_standards_currency_fixes_2026-11-13.py <<'PYEOF'\\n\\\"\\\"\\\"Panel fixes of 2026-11-13: these tests go RED if the fixes are reverted.\\n\\n1. `exposure_exact` -- the producer's first draft quoted lam*T/2 as \\\"the\\n   closed form\\\" and tested its Monte Carlo again",
+      "t_offset_s": 811.228
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_standards_currency_fixes_2026-11-13.py::test_probe_records_which_model_answered_without_benching -q 2>&1 | sed -n '1,40p'\", \"description\": \"Show full probe test failure\"}",
+      "t_offset_s": 819.739
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_standards_currency_fixes_2026-11-13.py\\\")\\ns = p.read_text()\\ns = s.replace('''    mod = importlib.util.module_from_spec(spec)\\n    spec.loader.exec_module(mod)''',\\n'''    mod = importlib.util.module_from_spec(spec)\\n    sys.modules[name] = mod            # dataclasses resolves string annotations\\n    spec.loade",
+      "t_offset_s": 828.393
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/standards_currency_and_model_staleness_2026-11-13.py /tmp/prod.patched\\ncp bench/seat_aliveness_2026-10-06.py /tmp/alive.patched\\npython3 - <<'PYEOF'\\nimport pathlib, re\\n# Revert 1: remove exposure_exact / expected_archive_epochs / VER_ANY from producer\\np = pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns = p.read_text()\\ns = s.replace(\\\"d",
+      "t_offset_s": 842.197
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py -q 2>&1 | tail -2; python3 scripts/standards_currency_and_model_staleness_2026-11-13.py >/tmp/final.out 2>&1; echo \\\"producer exit=$?\\\"; grep -E \\\"exposure_T30_GHS|T_max_worst_days|archive_epochs_at_T30|free_seats_pinning|share_version_bearing|cli_patch_gap\\\" /tmp/final.out\", \"description\": \"Regre",
+      "t_offset_s": 904.174
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 1014.8,
+      "tool_calls": 32,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ys2fv0bt/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

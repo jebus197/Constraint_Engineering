@@ -276,3 +276,89 @@
 # Over-interpreting S_k as a guarantee of correctness is a category
 # error. Under-interpreting S_k = 0 is also wrong — a detected failure
 # is a detected failure regardless of what else might exist.
+
+# =========================================================================
+# SECTION: User Preferences
+# =========================================================================
+#
+# Added 2026-11-13 on the founder's proposal, verbatim: "over time we will
+# probably want the harness and whatever profile a user uses to be able to
+# learn from the researcher what their preferences are and how they prefer
+# to work. (Pretty much like like how I have facilitated this for you in
+# your CLAUDE.md file). So there should probably be a section in each
+# encoding to store 'user preferences'."
+#
+# Purpose: hold how a RESEARCHER prefers to work, so the harness does not
+# re-learn it every session. This is the EXPLICIT, user-led form. The
+# induced form -- the harness inferring preferences from interaction
+# traces -- is sequenced after this and after a bound on section length,
+# and is PROPOSE-only when it arrives.
+#
+# -------------------------------------------------------------------------
+# 1. THE ENTRY SHAPE REUSES THE PARAMETER SCHEMA. IT IS NOT A NEW FORMAT.
+# -------------------------------------------------------------------------
+# bench/cdsfl_registry/schema.toml already gives every parameter a
+# `constraint_class` of HARD or SOFT, a `min_layer`, a `default` and a
+# `description`. A user preference is not a new kind of object: it is a
+# parameter whose constraint_class expresses MANDATORY against LATITUDE.
+# Inventing a separate preferences format would be a second declaration of
+# one fact, which is the drift this project repeatedly finds.
+#
+#   [user_preferences.<name>]
+#   type             = "bool" | "int" | "float" | "string" | "enum"
+#   default          = <value>
+#   constraint_class = "HARD"   # MANDATORY: apply it; do not ask each time
+#                    | "SOFT"   # LATITUDE: a default the researcher may waive
+#   description      = "<what it asks for, in the researcher's own words>"
+#   stated_by        = "<who said it>"
+#   stated_on        = "<YYYY-MM-DD>"
+#   source           = "<where it was said: chat, annotation, file>"
+#
+# `stated_by`, `stated_on` and `source` are REQUIRED and are the whole
+# point of the explicit form. A preference you cannot trace to a person and
+# a date cannot be questioned, and one that cannot be questioned cannot be
+# withdrawn. The founder's own CLAUDE.md is the existence proof: it works
+# because every line is visible and any line can be struck, which he has
+# done repeatedly.
+#
+# -------------------------------------------------------------------------
+# 2. WHICH CLASS A PREFERENCE DEFAULTS TO
+# -------------------------------------------------------------------------
+# HARD, with latitude marked explicitly. The costs are asymmetric: a
+# process preference wrongly treated as SOFT fails SILENTLY and costs real
+# work, while a style preference wrongly treated as HARD costs visible
+# rigidity that the researcher corrects once. The project's own record is
+# one-directional on this -- rules stated but read as advisory were
+# re-violated until a blocking check existed.
+#
+# This does NOT mean more interruptions are the goal. It converts silent
+# soft-treatments into surfaced ones, which is the trade being made, and it
+# is only a good trade while the correction stays cheap -- which depends on
+# latitude marking actually being honoured.
+#
+# -------------------------------------------------------------------------
+# 3. THE HARNESS MAY PROPOSE. THE HARNESS MAY NOT WRITE.
+# -------------------------------------------------------------------------
+# A machine may read this section, and may raise a ticket proposing an
+# addition or a change to it through bench/ticket_store.py. A machine may
+# NOT write this file. The researcher merges.
+#
+# This is the same boundary the free panel of 2026-11-13 reached on keeping
+# externally-defined standards current -- detect and record, never mutate --
+# and the founder's own reasoning gives it independently: a learned
+# artefact cannot be queried about why it believes something, so a
+# preference learned wrongly cannot be pointed at and deleted.
+#
+# -------------------------------------------------------------------------
+# 4. WHAT IS DELIBERATELY NOT SPECIFIED HERE
+# -------------------------------------------------------------------------
+#   * A LENGTH BOUND on this section. It is a separate, sequenced decision,
+#     and the panel of 2026-11-13 left its derivation contested between its
+#     two seats: one holds the bound must be monotone non-increasing in the
+#     record or else typed, the other that the derived quantity must not be
+#     downstream of the bound, since a section that enters the record by
+#     passing a bound expands to fill it. Both constraints are real.
+#   * WHERE a user layer sits relative to universal, domain, task and model
+#     in bench/cdsfl_registry/engine.py. The engine enforces HARD
+#     monotonicity across layers, so the position decides what a preference
+#     may override. It is the founder's decision and is not taken here.

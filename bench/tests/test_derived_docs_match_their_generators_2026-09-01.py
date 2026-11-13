@@ -25,6 +25,7 @@ Found by the panel (fable, 2026-09-01) after being asked to sweep for the class
 rather than re-verify the one instance.
 """
 
+import os
 import re
 import subprocess
 import sys
@@ -38,8 +39,15 @@ NOTES = REPO / "experimental_notes"
 
 
 def _run(script: str) -> str:
+    #: ★ GENERATORS ARE RUN FOR THEIR STDOUT AND MUST NOT WRITE TO THE TREE.
+    #: `scripts/instrument_inventory.py` wrote its JSON unconditionally, so this
+    #: test dirtied the repository twice during the clean full-suite run of
+    #: 2026-11-13. Set for EVERY generator rather than for the 1 known offender:
+    #: a generator that ignores the variable is unaffected, and one added later
+    #: that honours it is covered without this line changing.
     out = subprocess.run([sys.executable, str(REPO / script)],
                          cwd=str(REPO), capture_output=True, text=True,
+                         env={**os.environ, "CDSFL_NO_TREE_WRITE": "1"},
                          timeout=240)
     if out.returncode != 0:
         # A GENERATOR THAT NEEDS AN UNTRACKED ARTEFACT CANNOT RUN IN A CLONE,

@@ -157,7 +157,26 @@ class TestTheCheckIsNotVacuous:
 #: quotes, but a matcher that reads 7,237 as 237 is one consumer away from
 #: reporting the wrong number, and that is the defect class this session
 #: found 16 times.
-_SUITE_FIGURE = re.compile(r"\b\d{1,3}(?:,\d{3})*\s+(?:passed|failed)\b")
+#: ★ THE THOUSANDS SEPARATOR IS OPTIONAL, 2026-11-13 (entry B166). The pattern
+#: above required one: `\d{1,3}` takes 3 digits, the group then DEMANDS a
+#: comma, and the 4th digit refuses -- so `4476 passed` and `127177 passed`
+#: did not match at all. A figure the detector cannot see is a figure this
+#: guard's producer rule cannot police, so the rule was SILENT rather than
+#: satisfied on any paragraph whose only figure was a plain 4-digit count.
+#:
+#: MEASURED BEFORE APPLYING, because widening a detector can surface real
+#: offenders: against the newest SESSION STATE block the widening finds 6
+#: figures where the old pattern found 5, and surfaces 0 new offending
+#: paragraphs -- the paragraph holding the previously invisible figure
+#: already names its producer.
+#:
+#: IT IS A WIDENING AND NOT A LOOSENING, same boundary discipline as
+#: `_NAMES_A_PYTEST_RUN` above: it still refuses `v4476 passed` (a digit run
+#: preceded by a word character), `4476 passengers` (a different word) and
+#: `4476passed` (no separator). Those 3 negative controls are pinned in
+#: bench/tests/test_suite_figure_producer_forms_2026-09-17.py, where this
+#: pattern's other boundary controls already live.
+_SUITE_FIGURE = re.compile(r"\b\d{1,3}(?:,?\d{3})*\s+(?:passed|failed)\b")
 
 #: Anything that looks like it names a committed producer.
 _NAMES_A_SCRIPT = re.compile(r"scripts/[\w./-]+\.py")

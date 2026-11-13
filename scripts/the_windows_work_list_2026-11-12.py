@@ -229,8 +229,9 @@ def main() -> int:
         return 1
 
     print("COMPLETE: every blocking item is settled.")
-    print(f"HIS MARKING CLAUSE: {gap_note or 'every settled item with an entry '
-          'of its own is marked DONE and its ticket closed.'}")
+    _marking_default = ("every settled item with an entry of its own is marked "
+                        "DONE and its ticket closed.")
+    print(f"HIS MARKING CLAUSE: {gap_note or _marking_default}")
     if deferred:
         print(f"REMAINING BY HIS OWN SEQUENCING: {deferred} -- the commit, which he "
               f"ruled comes last once the work list is confirmed complete.")

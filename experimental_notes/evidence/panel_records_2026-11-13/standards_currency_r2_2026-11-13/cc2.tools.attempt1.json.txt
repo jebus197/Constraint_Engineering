@@ -1,0 +1,362 @@
+{
+  "model": "opus",
+  "elapsed_s": 1766.3,
+  "tool_calls": 69,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /mnt/user-data/outputs 2>/dev/null; pwd; ls ~ 2>/dev/null | head; echo \\\"---\\\"; ls / | head -30\", \"description\": \"Orient filesystem\"}",
+      "t_offset_s": 5.49
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"find / -maxdepth 4 -name \\\"reference_runner_v3.py\\\" -not -path \\\"*/proc/*\\\" 2>/dev/null | head\", \"description\": \"Locate repo root\"}",
+      "t_offset_s": 6.438
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"--- git\\\" && git status --short 2>&1 | head -20 && echo \\\"--- stamps\\\" && sha256sum scripts/standards_currency_and_model_staleness_2026-11-13.py bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py scripts/the_standards_currency_mutations_2026-11-13.py bench/cdsfl_registry/domain_vocabulary.py bench/model_catalogue.py scripts/cdsfl_sv.py bench/exp40_baseli",
+      "t_offset_s": 13.033
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | tail -120; echo \\\"EXIT=$?\\\"\", \"description\": \"Run corrected producer\", \"timeout\": 600000}",
+      "t_offset_s": 17.681
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"(claude --version; echo \\\"---JSON---\\\"; timeout 150 claude --model opus -p \\\"say ok\\\" --output-format json 2>&1 | head -c 3000) 2>&1\", \"description\": \"D5 envelope route probe\", \"timeout\": 200000, \"run_in_background\": true}",
+      "t_offset_s": 19.727
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | tail -150; echo \\\"EXIT=${pipestatus[1]}\\\"\", \"description\": \"Run corrected producer\", \"timeout\": 600000}",
+      "t_offset_s": 22.265
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /private/tmp/claude-501/-private-var-folders-cc-scptwd_s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bztvysah2.output 2>/dev/null || ls /private/tmp/claude-501/*/*/tasks/ 2>/dev/null | head\", \"description\": \"Read background probe output\"}",
+      "t_offset_s": 53.122
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 | head -60\", \"description\": \"Producer head\", \"timeout\": 300000}",
+      "t_offset_s": 54.378
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bztvysah2.output\"}",
+      "t_offset_s": 86.791
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"exposure_exact\\\\|def exposure\\\\|seed\\\\|rel.err\\\\|CROSS-CHECK\\\\|tolerance\\\\|TOL\\\\|agree on\\\" scripts/standards_currency_and_model_staleness_2026-11-13.py | head -60\", \"description\": \"Grep producer for cross-check internals\"}",
+      "t_offset_s": 88.123
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"claude --model opus -p \\\"say ok\\\" --output-format json > /tmp/d5_envelope.json 2>&1; echo \\\"EXIT=$?\\\"; head -c 2500 /tmp/d5_envelope.json\", \"description\": \"D5 envelope probe, no timeout wrapper\", \"timeout\": 400000, \"run_in_background\": true}",
+      "t_offset_s": 93.062
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 130, \"limit\": 90}",
+      "t_offset_s": 94.311
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 300, \"limit\": 90}",
+      "t_offset_s": 98.385
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py -q 2>&1 | tail -20; echo \\\"=== MUTATIONS ===\\\"; python3 scripts/the_standards_currency_mutations_2026-11-13.py 2>&1 | tail -30\", \"description\": \"Run guard test and mutation harness\", \"timeout\": 600000}",
+      "t_offset_s": 99.957
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bwy061c68.output\"}",
+      "t_offset_s": 210.068
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== callers of exact helpers ===\\\"; grep -rn \\\"exposure_ceiling_cadence\\\\|exposure_exact_value\\\\|exposure_exact(\\\" --include=*.py . | grep -v \\\"^./scripts/standards_currency_and_model_staleness_2026-11-13.py:1[4-9][0-9]\\\\|^./scripts/standards_currency_and_model_staleness_2026-11-13.py:20[0-9]\\\"; echo \\\"=== BRIEF.md on disk ===\\\"; ls -la bench/logs/standards_currency_2026-11-13/",
+      "t_offset_s": 213.671
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"exposure_ceiling_cadence\\\\|exposure_exact\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v \\\"def exposure\\\" ; echo \\\"=== cdsfl_sv commit timeout ===\\\"; grep -n \\\"COMMIT_TIMEOUT\\\\|ledger_max\\\\|rows\\\\[-\\\" scripts/cdsfl_sv.py | head -30\", \"description\": \"Find exact-form callers and the cdsfl_sv bound\"}",
+      "t_offset_s": 256.885
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,pathlib,collections\\nREPO=pathlib.Path(\\\".\\\")\\nSEV=(\\\"severity\\\",)\\nSCALE=(\\\"scale\\\",\\\"severity_scale\\\",\\\"consequence_domain\\\",\\\"critical_level\\\",\\\"encoding_version\\\",\\\"standard_version\\\",\\\"scale_name\\\")\\ndef walk(obj,hits,scalehits):\\n    if isinstance(obj,dict):\\n        if any(k in obj for k in SEV):\\n            hits[0]+=1\\n            if any(k in obj",
+      "t_offset_s": 264.814
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_severity_census_has_three_frames_2026-11-06.py 2>&1 | tail -45\", \"description\": \"Run the three-frame severity census\", \"timeout\": 600000}",
+      "t_offset_s": 283.758
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport json,pathlib,collections\\nREPO=pathlib.Path(\\\".\\\")\\nSEV=\\\"severity\\\"\\ndef count(obj,h):\\n    if isinstance(obj,dict):\\n        if SEV in obj: h[0]+=1; return\\n        for v in obj.values(): count(v,h)\\n    elif isinstance(obj,list):\\n        for v in obj: count(v,h)\\nbuck=collections.Counter()\\nfor p in REPO.rglob(\\\"*.jsonl\\\"):\\n    parts=p.parts\\n    if \\\"san",
+      "t_offset_s": 288.475
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/wk && cat > scripts/does_a_max_of_last_n_bound_ratchet_2026-11-13.py <<'PY'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"D1, settled by arithmetic over the shape cc2 proposes, not by opinion.\\n\\ncc2's proposed bound, read from `scripts/cdsfl_sv.py` lines 615-723:\\n\\n    bound(k) = max(FLOOR, HEADROOM * max(observed[k-N+1 .. k]))\\n\\nwith FLOOR = 300, HEADROOM = 4, N = COMMIT_TIMEOUT_LE",
+      "t_offset_s": 391.848
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"offset\": 150, \"limit\": 80}",
+      "t_offset_s": 394.817
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport re,pathlib,subprocess,sys\\nbrief=pathlib.Path(\\\"bench/logs/standards_currency_2026-11-13/BRIEF.md\\\")\\ndecl=re.findall(r\\\"<!--\\\\s*figure:[^|]+\\\\|[^|]+\\\\|\\\\s*([^>]+?)\\\\s*-->\\\",brief.read_text(errors=\\\"replace\\\"))\\nprint(\\\"declared in ON-DISK (blind) brief:\\\",len(decl))\\nout=subprocess.run([sys.executable,\\\"scripts/standards_currency_and_model_staleness_2026-11-1",
+      "t_offset_s": 434.939
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"offset\": 55, \"limit\": 50}",
+      "t_offset_s": 465.994
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '555,600p' scripts/standards_currency_and_model_staleness_2026-11-13.py; echo \\\"=== tail ===\\\"; tail -25 scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"description\": \"Read producer tail\"}",
+      "t_offset_s": 467.128
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py\", \"old_string\": \"    print(\\\"  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo\\\")\\n    print(f\\\"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}\\\")\\n    worst_err = 0.0\\n    for L in (",
+      "t_offset_s": 495.626
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text()\\nold = '''    print(\\\"  CROSS-CHECK  SymPy closed form against NumPy Monte Carlo\\\")\\n    print(f\\\"    {'lambda':>9} {'T':>5} {'closed':>10} {'simulated':>11} {'rel.err':>9}\\\")\\n    worst_err = 0.0\\n    for L in (min(lams.values()), lam_worst):\\n        fo",
+      "t_offset_s": 520.339
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text()\\nanchor='CLAUDE_FAMILIES = (\\\"opus\\\", \\\"fable\\\", \\\"sonnet\\\", \\\"haiku\\\")\\\\n'\\nassert anchor in s\\nledger = anchor + '''\\n\\n#: THE FIGURE LEDGER -- a declared figure's STATUS, recorded where the figure is\\n#: produced rather than inferred from whether its l",
+      "t_offset_s": 567.404
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py 2>&1 >/dev/null | tail -20\", \"description\": \"Show producer stderr\", \"timeout\": 600000}",
+      "t_offset_s": 573.297
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/standards_currency_and_model_staleness_2026-11-13.py >/tmp/o.txt 2>/tmp/e.txt; echo \\\"EXIT=$?\\\"; echo \\\"--- stderr ---\\\"; tail -25 /tmp/e.txt\", \"description\": \"Capture producer stderr to file\", \"timeout\": 600000}",
+      "t_offset_s": 596.773
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\")\\ns=p.read_text()\\nold='''    out = r.stdout\\n    # The LABELS the brief declares must still be printed. Derived from the brief\\n    # itself rather than typed here, so the 2 files cannot drift apart.\\n    brief = REPO / \\\"bench\\\" / \\\"logs\\\" / \\\"standards_currency_",
+      "t_offset_s": 636.143
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,45p' bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"description\": \"Inspect test module import mechanism\"}",
+      "t_offset_s": 683.35
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '45,70p' bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\", \"description\": \"See how prod is loaded\"}",
+      "t_offset_s": 685.69
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\")\\ns=p.read_text()\\nold=\\\"def test_the_producer_runs_clean_end_to_end():\\\"\\nassert old in s\\ns=s.replace(old,\\\"def test_the_producer_runs_clean_end_to_end(prod):\\\",1)\\np.write_text(s); print(\\\"ok\\\")\\nPY\\npython3 -m pytest bench/tests/test_the_standards_currency_prod",
+      "t_offset_s": 694.547
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_standards_currency_mutations_2026-11-13.py 2>&1 | tail -25\", \"description\": \"Run mutation harness with green baseline\", \"timeout\": 900000, \"run_in_background\": true}",
+      "t_offset_s": 744.95
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib,sys\\nsys.path.insert(0,\\\"scripts\\\")\\nimport importlib.util\\nspec=importlib.util.spec_from_file_location(\\\"pbv\\\",pathlib.Path(\\\"scripts/panel_brief_validate.py\\\"))\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nb=pathlib.Path(\\\"bench/logs/standards_currency_2026-11-13/BRIEF.md\\\")\\nprobs=m.check_declared_figures(b.read_text(errors=",
+      "t_offset_s": 747.803
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bx7ttr311.output\"}",
+      "t_offset_s": 934.256
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"M1\\\\|self-exclusion\\\\|ANCHOR\\\" scripts/the_standards_currency_mutations_2026-11-13.py | head -20; echo \\\"---\\\"; sed -n '/self-exclusion made decorative/,/^    ),/p' scripts/the_standards_currency_mutations_2026-11-13.py | head -25\", \"description\": \"Inspect M1 anchor\"}",
+      "t_offset_s": 940.499
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\")\\ns=p.read_text()\\nold='''     \\\"    if exclude_self and p.resolve() == SELF:\\\\\\\\n        return False\\\\\\\\n\\\",\\n     \\\"    if False and p.resolve() == SELF:\\\\\\\\n        return False\\\\\\\\n\\\",'''\\nnew='''     \\\"            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:\\\\",
+      "t_offset_s": 957.968
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"output-format\\\\|--print\\\\|\\\\\\\"-p\\\\\\\"\\\\|'-p'\\\\|claude_cli\\\" bench/confer_maths_panel_2026-09-05.py | head -25\", \"description\": \"Check whether the panel already uses the JSON envelope\"}",
+      "t_offset_s": 959.477
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '955,985p' bench/confer_maths_panel_2026-09-05.py; echo \\\"=== call_claude_cli signature/returns ===\\\"; grep -rn \\\"def call_claude_cli\\\" -A 40 bench/*.py bench/**/*.py 2>/dev/null | grep -n \\\"output-format\\\\|return\\\\|modelUsage\\\\|json\\\" | head -20\", \"description\": \"Inspect the claude_cli call path for the JSON envelope\"}",
+      "t_offset_s": 963.165
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"f=bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt; echo \\\"=== modelUsage present in the panel's OWN sink? ===\\\"; grep -o \\\"modelUsage\\\" $f | head -3; grep -o '\\\"model\\\":\\\"[^\\\"]*\\\"' $f | sort | uniq -c | head; echo \\\"--- canonicalModel ---\\\"; grep -o '\\\"canonicalModel\\\":\\\"[^\\\"]*\\\"' $f | sort | uniq -c | head; echo \\\"--- any resolved id ---\\\"; grep -o 'claude-[a-z]*",
+      "t_offset_s": 977.61
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -c 600 bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt; echo; echo \\\"=== keys ===\\\"; python3 -c \\\"\\nimport json\\nd=json.load(open('bench/logs/standards_currency_2026-11-13/cc2.tools.attempt1.json.txt'))\\nprint(type(d), len(d) if hasattr(d,'__len__') else '')\\nprint(sorted(d[0].keys()) if isinstance(d,list) and d and isinstance(d[0],dict) else str(d)[:300])\\n\\",
+      "t_offset_s": 983.68
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"stream-json\\\\|tool_log_sink\\\\|_TOOL_SINK\\\\|def _emit\\\\|\\\\\\\"type\\\\\\\"\\\\|json.loads\\\" bench/experiment_11_orchestrator.py | sed -n '1,60p'\", \"description\": \"Locate the stream-json parser and sink writer\"}",
+      "t_offset_s": 994.662
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '445,485p' bench/experiment_11_orchestrator.py; echo \\\"=== sink write site ===\\\"; sed -n '1615,1645p' bench/experiment_11_orchestrator.py\", \"description\": \"Read the stream-json line parser and sink writer\"}",
+      "t_offset_s": 997.728
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '\\\"tool_calls\\\"\\\\|\\\"elapsed_s\\\"\\\\|_sink_calls' bench/experiment_11_orchestrator.py | head\", \"description\": \"Find sink dict assembly\"}",
+      "t_offset_s": 1005.45
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1650,1670p' bench/experiment_11_orchestrator.py\", \"description\": \"Read sink final write\"}",
+      "t_offset_s": 1007.285
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"bench/experiment_11_orchestrator.py\\\")\\ns=p.read_text()\\n\\nfn_anchor = \\\"def _run_cli_incrementally(cmd, user_prompt, timeout, cwd, env, on_call=None):\\\"\\nfn = '''def resolved_model_from_stream_json(text: str):\\n    \\\"\\\"\\\"The model id the TRANSPORT resolved, read from the reply's own envelope.\\n\\n    D6, TOCTOU, settled by using the r",
+      "t_offset_s": 1026.78
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys,pathlib,json\\nsys.path.insert(0,'bench')\\nimport experiment_11_orchestrator as m\\nenv=pathlib.Path('/tmp/d5_envelope.json').read_text()\\nprint('REAL envelope ->', m.resolved_model_from_stream_json(env))\\nprint('not json      ->', m.resolved_model_from_stream_json('not json'))\\nprint('empty         ->', m.resolved_model_from_stream_json(''))\\nprint('None      ",
+      "t_offset_s": 1031.664
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_currency_repairs_hold_2026-11-13.py <<'PY'\\n\\\"\\\"\\\"The joint-round currency repairs, EXECUTED rather than described.\\n\\nWHAT THESE GUARD, and why each exists rather than reads well.\\n\\nR1  THE FIGURE LEDGER. `test_the_standards_currency_producer_holds_2026-11-13`\\n    re-reads the DISPATCH BRIEF at test time and required every figure the brief\\n    declares t",
+      "t_offset_s": 1091.884
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-p7n9dg-x-repo/ac831782-1c55-4989-9c98-6c6b021d938a/tasks/bzbzyp9nq.output\"}",
+      "t_offset_s": 1104.462
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/revert.py <<'PY'\\nimport hashlib,pathlib,subprocess,sys\\nR=pathlib.Path(\\\".\\\")\\nT=\\\"bench/tests/test_the_currency_repairs_hold_2026-11-13.py\\\"\\nG=\\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\"\\ndef run(tests,k=None):\\n    c=[sys.executable,\\\"-m\\\",\\\"pytest\\\",*tests,\\\"-q\\\"]+([\\\"-k\\\",k] if k else [])\\n    r=subprocess.run(c,capture_output=True,text=Tr",
+      "t_offset_s": 1116.406
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_standards_currency_mutations_2026-11-13.py > /tmp/mut.txt 2>&1; echo DONE; tail -12 /tmp/mut.txt\", \"description\": \"Re-run mutation harness to file\", \"timeout\": 900000, \"run_in_background\": true}",
+      "t_offset_s": 1194.526
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'lam=1/(2*36525/100); Print[\\\"exact_T30 = \\\", N[1-(1-Exp[-lam*30])/(lam*30),16]]; Print[\\\"exact_T180 = \\\", N[1-(1-Exp[-lam*180])/(lam*180),16]]; Print[\\\"firstorder_T30 = \\\", N[lam*30/2,16]]; Print[\\\"Tmax_1pct = \\\", T/.FindRoot[1-(1-Exp[-lam*T])/(lam*T)==1/100,{T,15}]]; Print[\\\"series = \\\", Normal[Series[1-(1-Exp[-x])/x,{x,0,3}]]]; r={2001,200",
+      "t_offset_s": 1201.509
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport numpy as np, scipy.stats as sps\\n# D4: is SUMMING the 4 rates the right model for independent feeds?\\n# Superposition theorem: independent Poisson(l_i) -> Poisson(sum l_i). Verified\\n# by simulation, and the ALTERNATIVE model (GHS is exactly biennial, variance 0)\\n# is tested beside it because a deterministic feed is NOT Poisson.\\nlams=[0.1111111111111111,0.14",
+      "t_offset_s": 1229.277
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport math\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport scipy.stats as sps\\ndef wilson(k,n,z=1.959963984540054):\\n    ph=k/n; c=z*z/n\\n    cen=(ph+c/2)/(1+c); half=(z/(1+c))*math.sqrt(ph*(1-ph)/n+c/(4*n))\\n    return (max(0.0,cen-half),min(1.0,cen+half))\\nprint(\\\"population                                   k/n            Wilson(statsmodels) ",
+      "t_offset_s": 1245.727
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"[\\\"']severity[\\\"']\\\\s*:\", \"glob\": \"*.py\", \"output_mode\": \"count\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo\", \"head_limit\": 60}",
+      "t_offset_s": 1252.647
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib,re\\npat=re.compile(r'[\\\"\\\\']severity[\\\"\\\\']\\\\s*:')\\nfiles=0;sites=0;names=[]\\nfor p in pathlib.Path(\\\".\\\").rglob(\\\"*.py\\\"):\\n    parts=p.parts\\n    if any(x in parts for x in (\\\"seat_evidence\\\",\\\"sandbox_harvest\\\",\\\"logs\\\",\\\".git\\\")): continue\\n    n=len(pat.findall(p.read_text(errors=\\\"replace\\\")))\\n    if n: files+=1; sites+=n; names.append((n,str(p)",
+      "t_offset_s": 1259.656
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep_until() { :; }; i=0; while [ $i -lt 40 ]; do if grep -q \\\"mutations_red\\\" /tmp/mut.txt 2>/dev/null; then break; fi; i=$((i+1)); python3 -c \\\"import time;time.sleep(10)\\\"; done; tail -16 /tmp/mut.txt\", \"description\": \"Wait for mutation harness to finish\", \"timeout\": 600000}",
+      "t_offset_s": 1275.683
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/standards_currency_and_model_staleness_2026-11-13.py /tmp/prod.bak\\npython3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text().replace(\\\"FIGURE_LEDGER = {\\\",\\\"_RETIRED_LEDGER = {\\\",1)\\np.write_text(s)\\nPY\\necho \\\"=== CELL: M1 anchor repaired, ledger REVERTED ===\\\"\\npython3 scripts/the_standards_currenc",
+      "t_offset_s": 1330.26
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,inspect\\nsys.path.insert(0,\\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nds=list(dv.domains())\\nprint(\\\"domains:\\\",len(ds))\\nprint([f.__name__ for f in ()] )\\npub=[n for n in dir(dv) if not n.startswith(\\\"_\\\") and callable(getattr(dv,n))]\\nprint(\\\"callables:\\\",pub)\\ncd=dv.consequence_domain\\nprint(inspect.signature(cd))\\nfor d in ds:\\n   ",
+      "t_offset_s": 1383.251
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,json,copy,inspect\\nsys.path.insert(0,\\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nprint(\\\"encoding_path:\\\",dv.encoding_path())\\nenc=dv.load()\\nch=enc[\\\"domains\\\"][\\\"chemistry\\\"] if \\\"domains\\\" in enc else None\\nprint(\\\"keys:\\\",list(enc.keys())[:10])\\nimport pprint\\nif ch: pprint.pprint({k:v for k,v in ch.items() if k in (\\\"consequence_sc",
+      "t_offset_s": 1394.764
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport sys,inspect\\nsys.path.insert(0,\\\"bench\\\")\\nfrom cdsfl_registry import domain_vocabulary as dv\\nfor f in (\\\"load\\\",\\\"encoding_path\\\",\\\"may_compose\\\",\\\"tiers\\\",\\\"severity\\\",\\\"composition_rule\\\",\\\"resolve_pair\\\",\\\"entry\\\"):\\n    try: print(f, inspect.signature(getattr(dv,f)))\\n    except Exception as e: print(f,\\\"ERR\\\",e)\\ne=dv.entry(\\\"chemistry\\\")\\nimport pprint",
+      "t_offset_s": 1398.206
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/is_a_relabel_non_semantic_2026-11-13.py <<'PY'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Is a RELABEL safe to apply without a human? Executed, not argued.\\n\\nCC1's proposed boundary for the dynamic half of the founder's question: a\\nrevision may be applied AUTOMATICALLY when it is provably non-semantic for the\\nencoding's purpose -- the standard's NAME or CITATION YEAR changes whil",
+      "t_offset_s": 1430.143
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nfrom cdsfl_registry import domain_vocabulary as dv\\ne=dv.load(); print(list(e.keys()))\\nfor k,v in e.items():\\n  if isinstance(v,dict) and 'chemistry' in v: print('CONTAINER:',k); break\\n\\\"\", \"description\": \"Find the encoding container key\"}",
+      "t_offset_s": 1433.078
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/is_a_relabel_non_semantic_2026-11-13.py\\\")\\ns=p.read_text().replace('enc[\\\"domains\\\"][\\\"chemistry\\\"]','enc[\\\"chemistry\\\"]')\\np.write_text(s); print(\\\"ok\\\")\\nPY\\npython3 scripts/is_a_relabel_non_semantic_2026-11-13.py\", \"description\": \"Rerun the relabel falsifier\", \"timeout\": 300000}",
+      "t_offset_s": 1436.116
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== final state ===\\\"; python3 -m pytest bench/tests/test_the_currency_repairs_hold_2026-11-13.py bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py bench/tests/test_seats_must_answer_before_work_is_passed_2026-10-06.py -q 2>&1 | tail -3\\necho \\\"=== producer exits ===\\\"; python3 scripts/standards_currency_and_model_staleness_2026-11-13.py >/tmp/final.txt 2>&1;",
+      "t_offset_s": 1449.543
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"APPARATUS = \\\\|APPARATUS=\\\" -A 12 scripts/standards_currency_and_model_staleness_2026-11-13.py | head -20\", \"description\": \"Read the apparatus set\"}",
+      "t_offset_s": 1523.574
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np=pathlib.Path(\\\"scripts/standards_currency_and_model_staleness_2026-11-13.py\\\")\\ns=p.read_text()\\nold='''    \\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\",\\n})'''\\nnew='''    \\\"scripts/the_standards_currency_mutations_2026-11-13.py\\\",\\n    # IT GREW A 2ND TIME, 2026-11-13 (joint round), for the same reason and\\n    # measured the same wa",
+      "t_offset_s": 1531.839
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 1766.3,
+      "tool_calls": 69,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_p7n9dg_x/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}
