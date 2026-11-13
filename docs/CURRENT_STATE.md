@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 13 November 2026 15:39 GMT (2026-11-13T15:39:30+00:00)
+Generated: 13 November 2026 23:29 GMT (2026-11-13T23:29:18+00:00)
 
 ---
 
@@ -18,25 +18,34 @@ Generated: 13 November 2026 15:39 GMT (2026-11-13T15:39:30+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `665a4b41` B165: the clean-tree full-suite measurement, and what it caught doing
-- **Committed:** 2026-11-13 14:47:30 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 2
+- **Last commit (the PARENT of the commit containing this file):** `84fd2253` B169: the permission predicate under-reported a residue, and composing was measured rather than asserted
+- **Committed:** 2026-11-13 15:39:31 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 3
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M  bench/tests/test_a_movable_entry_is_not_one_that_merely_asks_nothing_2026-11-12.py`
-- `M  experimental_notes/CDSFL_MASTER_TASK_LIST.md`
-- `M  experimental_notes/data/output_hashes.json`
-- `M  hooks/work_not_narrate.py`
-- `M  resources/RECOVERY.md`
-- `A  scripts/the_residue_rule_mutations_2026-11-13.py`
-- `A  scripts/which_residue_rule_discriminates_2026-11-13.py`
+- `M  .claude/CLAUDE.md`
+- `M  bench/cdsfl_registry/composer.py`
+- `A  bench/directives/researchers/README.md`
+- `A  bench/directives/researchers/founder/confirmations.toml`
+- `A  bench/directives/researchers/founder/preferences.toml`
+- `A  bench/directives/researchers/founder/standards.toml`
+- `M  bench/reference_runner_v3.py`
+- `A  bench/tests/test_b103s_rule_is_measured_2026-11-13.py`
+- `M  bench/tests/test_cdsfl_qc_and_seal_repairs.py`
+- `A  bench/tests/test_frx_is_its_own_kind_2026-11-13.py`
+- `M  bench/tests/test_operational_scripts.py`
+- `A  bench/tests/test_qc_declares_its_cost_2026-11-13.py`
+- `A  bench/tests/test_the_budget_gate_census_holds_2026-11-13.py`
+- `A  bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py`
+- `M  bench/tests/test_the_ds_kind_is_confined_to_his_annotations_2026-10-30.py`
+- … and 60 more, not shown (list capped at 15 of 75 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**17547 tests collected** at 13 November 2026 15:39 GMT, HEAD `665a4b41` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**17622 tests collected** at 13 November 2026 23:29 GMT, HEAD `84fd2253` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -66,6 +75,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `84fd2253 B169: the permission predicate under-reported a residue, and composing was measured rather than asserted`
 - `665a4b41 B165: the clean-tree full-suite measurement, and what it caught doing`
 - `846c4ffe fix: 21 anchored corrections, 4 entries raised, 7 guards repaired`
 - `e37fed9d sv: the Stop hook was overactive on his report, 4 faults fixed, 7 of 7 mutations red, and re-armed only after a green board -- plus 5 errors of my own caught before any of them shipped`
@@ -75,4 +85,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `072c038d sv: the 10 agreed items added to the task list and the registry, 5 of 10 measured DONE, and the instrument that measures them corrected twice in the flattering direction`
 - `a081b117 sv: one domain vocabulary where there were 2 agreeing on 3 names of 17, 22 expert encodings against current standards, both convergence arms wired, and 3 board refusals fixed at their causes`
 - `d41ea210 sv: the 0.7 cut is not a severity measurement -- every CRITICAL call the project has made dies under a re-scaling that reorders nothing; the domain that would supply the units is a flag with no classifier and no record`
-- `92ae4a1a A retirement flag was silencing a question 15,438 characters below the marker that could not reach it, a stored verdict was outvoting the live predicate, and his credential store is built`

@@ -849,6 +849,71 @@ def _load_universal_directive(model: str | None = None) -> DirectivePacket:
     )
 
 
+from . import domain_vocabulary as _domain_vocabulary
+
+
+def _severity_declaration(domain: str, composed_text: str) -> str:
+    """The domain's scale and critical LEVEL, as text a seat actually receives.
+
+    ★ WHY THIS EXISTS. `cdsfl_core_formal.md` tells every seat, in its own
+    words: "Severity is ORDINAL. The ordering and the critical level are the
+    DOMAIN's, and both arrive in your directive. Do not invent either."
+    That sentence was FALSE for every domain. Measured by AST on 2026-11-13,
+    this module made 0 calls to any severity API -- `severity`,
+    `consequence_domain`, `inheriting_domains` and `may_compose` had 0 product
+    call sites repo-wide -- so the manifest's `severity_scale` and
+    `critical_level` reached no composed prompt at all.
+
+    THE WORST CASE WAS ENGINEERING, and it is the combination that matters:
+    the manifest declares `AIAG-VDA FMEA severity 1-10 (2019 handbook)` with a
+    critical level of 7, its default composed box `structural/
+    structural_building.txt` declares no scale, and the directive forbids the
+    seat from inventing one. A seat was instructed not to invent a level and
+    then given none.
+
+    ★ IT DOES NOT OVERRIDE AN ENCODING THAT ALREADY DECLARES. 22 of the 51
+    encodings carry their own `SEVERITY SCALE:` line, and those are the
+    narrower, better-sourced statement -- `software_general.txt` cites Table 22
+    of the CVSS specification by name. This only fills a silence.
+
+    ★ AND IT DOES NOT TOUCH WHAT THE GATE ADMITS. The live
+    `CRITICAL_SEVERITY_THRESHOLD` is unchanged. The entry that measured the
+    frozen cut holds any change to the gate under his `d`; making a printed
+    promise true is a different act from moving a threshold, and only the first
+    is done here.
+    """
+    if re.search(r"^SEVERITY SCALE:", composed_text or "", re.M):
+        return ""
+    try:
+        sev = _domain_vocabulary.severity(domain)
+    except Exception:                                          # noqa: BLE001
+        return ""
+    scale = sev.get("scale")
+    if not scale:
+        return ""
+    lines = ["", "SEVERITY SCALE FOR THIS DOMAIN, from the project's domain "
+             "manifest rather than from this encoding:"]
+    if scale in ("none", "None"):
+        reason = sev.get("reason") or "this domain declares no consequence scale"
+        lines.append(f"  SCALE: none. {reason}")
+        if sev.get("inherits_from_application"):
+            lines.append("  The consequence scale is INHERITED from the "
+                         "application the work is used in. Report the "
+                         "consequence in that application's scale and name it.")
+        if sev.get("composes_from_selected"):
+            lines.append("  The consequence scale is COMPOSED from the domains "
+                         "actually selected. Report each in its own scale.")
+    else:
+        lines.append(f"  SCALE: {scale}")
+        if sev.get("levels"):
+            lines.append("  LEVELS: " + "; ".join(str(x) for x in sev["levels"]))
+        if sev.get("critical_level"):
+            lines.append(f"  CRITICAL LEVEL: {sev['critical_level']}")
+        lines.append("  Report a consequence as a (value, scale-name) pair. "
+                     "Never average, sum or interpolate across scales.")
+    return "\n".join(lines) + "\n"
+
+
 def _load_domain_directive(
     domain: str, variant: str | None = None
 ) -> DirectivePacket | None:
@@ -2062,6 +2127,20 @@ def compose(
         if p.layer == "domain" else p
         for p in packets
     ]
+
+    # ★ THE DOMAIN'S SEVERITY SCALE, APPENDED AFTER THE TRANSFORM ON PURPOSE.
+    # The phenotype transform rewords domain text per model; a scale name and a
+    # critical level are not prose to be reworded, and `CVSS v4.0` reworded is
+    # no longer a citation. Appending here puts it beyond that rewrite while
+    # keeping it inside the domain packet, so no new layer is introduced and no
+    # existing reader of `packets` changes shape.
+    if domain_packet is not None:
+        for _i, _p in enumerate(packets):
+            if _p.layer == "domain":
+                _decl = _severity_declaration(task_domain, _p.text)
+                if _decl:
+                    packets[_i] = replace(_p, text=_p.text + "\n" + _decl)
+                break
 
     # --- Layer 4: Situation (per-dispatch) ---
     if situation is None and review_target:

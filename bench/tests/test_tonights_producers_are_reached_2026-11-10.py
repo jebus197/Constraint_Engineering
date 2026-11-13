@@ -71,6 +71,14 @@ MUST_RUN = (
     "which_admissions_are_truth_blind_2026-11-10.py",                # 11.31 s
     "a_third_class_row_was_invisible_to_its_own_guard_2026-11-10.py",
                                                                     # 4.79 s
+    #: ★ 4 ADDED 2026-11-13, each MEASURED read-only and timed before being
+    #: admitted rather than assumed cheap. Adding a slow or a writing producer
+    #: to a set that runs on a board is a regression wearing the shape of
+    #: coverage.
+    "a_derived_owed_line_is_cut_at_an_emphasis_2026-11-10.py",       # 10.18 s
+    "a_true_sub_claim_admits_an_unexamined_fix_2026-11-10.py",       # 20.15 s
+    "the_asking_predicate_misses_three_phrasings_2026-11-10.py",      # 0.67 s
+    "what_v_bar_actually_counts_2026-11-10.py",                       # 4.60 s
 )
 
 #: ★ 4 -> 11 ON 2026-11-10, AND A FREE PANEL SEAT IS WHY. The 3 added here
@@ -113,6 +121,40 @@ EXEMPT: dict[str, str] = {
         "2 by argparse design, outside the run test's 0-or-1 contract; and it "
         "WRITES a BRIEF.md into a round directory, so a bare run would alter "
         "the panel archive. Reached by the --help test instead.",
+
+    #: ★ 7 ADDED 2026-11-13, AND EACH REASON IS MEASURED RATHER THAN ASSERTED.
+    "a_bare_entry_code_in_chat_2026-11-10.py":
+        "read-only and correct, but it streams every session transcript and "
+        "takes 206.87 s measured 2026-11-13 -- about 30 times the next slowest "
+        "member of the run set. A board that gains 3.5 minutes for 1 producer "
+        "is the cost this project already refused when it declined to put the "
+        "whole unreached set on the gate. Reached by its own guard instead.",
+    "the_commit_timeout_left_the_board_running_2026-11-10.py":
+        "it WRITES, so a bare run during a test would mutate the tree -- the "
+        "exact defect recorded when 2 tests wrote to the live repository "
+        "during a clean-suite run. Reached by its own guard instead.",
+
+    #: THE 5 MUTATION HARNESSES. Every one deliberately EDITS ITS SUBJECT and
+    #: restores it, which is what a mutation harness is for. Running one from
+    #: a test would mutate the live tree mid-run, and if the test process were
+    #: killed between the edit and the restore the repository would be left
+    #: damaged. They are exercised by being RUN DELIBERATELY when their
+    #: subject changes, never as a side effect of a board.
+    "the_credential_store_mutations_2026-11-10.py":
+        "a mutation harness: it edits its subject and restores it. Running it "
+        "from a test would mutate the live tree mid-run.",
+    "the_descriptor_roster_mutations_2026-11-10.py":
+        "a mutation harness: it edits its subject and restores it. Running it "
+        "from a test would mutate the live tree mid-run.",
+    "the_mid_turn_predicate_mutations_2026-11-10.py":
+        "a mutation harness: it edits its subject and restores it. Running it "
+        "from a test would mutate the live tree mid-run.",
+    "the_owed_derivation_mutations_2026-11-10.py":
+        "a mutation harness: it edits its subject and restores it. Running it "
+        "from a test would mutate the live tree mid-run.",
+    "the_timeout_reap_mutations_2026-11-10.py":
+        "a mutation harness: it edits its subject and restores it. Running it "
+        "from a test would mutate the live tree mid-run.",
 }
 
 

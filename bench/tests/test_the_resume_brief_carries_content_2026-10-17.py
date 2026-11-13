@@ -107,13 +107,51 @@ def test_overflow_is_announced_and_the_identifiers_always_survive():
 
 
 def test_a_tighter_cap_shortens_rather_than_dropping_entries():
+    """★ RE-POINTED 2026-11-13. THIS GUARD WAS OUTGROWN, NOT BROKEN.
+
+    It asserted `len(tight) < len(loose)` -- that a tighter PER-ENTRY cap
+    yields a shorter TOTAL. That held while the live set was small enough that
+    neither render reached the budget. It is false now and the producer is
+    right: `brief` fills a FIXED total budget of DEFAULT_BUDGET characters, so
+    a tighter per-entry cap makes each line shorter and lets MORE entries fit.
+    Measured 2026-11-13 over 47 live entries -- cap 40 gives 3989 characters
+    with 3 entries omitted inline; cap 160 gives 3906 with 29 omitted. The
+    tighter cap is strictly BETTER for the reader and marginally longer.
+
+    SO THE LENGTH COMPARISON MEASURED THE WRONG THING. What the test is named
+    for -- that a tighter cap shortens rather than DROPPING entries -- is kept
+    and strengthened: no identifier may vanish at any cap, the tighter cap must
+    omit FEWER entries inline, and both renders must stay inside the budget.
+    """
     sys.path.insert(0, str(REPO / "scripts"))
+    import re as _re
     import task_list_markers as markers
     live = [e for e in markers.parse_entries() if e.state in M.LIVE_STATES]
     tight, loose = M.brief(cap=40), M.brief(cap=160)
-    assert len(tight) < len(loose)
+
+    # 1. NOTHING DISAPPEARS. An entry pushed out of the inline listing must
+    #    still be named in the overflow line, at either cap.
     for e in live:
-        assert e.ident in tight, f"{e.ident} was dropped by a tighter cap"
+        assert e.ident in tight, f"{e.ident} vanished entirely at the tight cap"
+        assert e.ident in loose, f"{e.ident} vanished entirely at the loose cap"
+
+    # 2. THE TIGHTER CAP SERVES HIM BETTER, which is the property the name
+    #    actually promises: fewer entries pushed into the overflow line.
+    def _omitted(text: str) -> int:
+        m = _re.search(r"identifiers are: ([^\n]+)", text)
+        return len(m.group(1).split(",")) if m else 0
+
+    assert _omitted(tight) <= _omitted(loose), (
+        f"the tighter cap pushed MORE entries into the overflow line "
+        f"({_omitted(tight)}) than the looser one ({_omitted(loose)}), so "
+        f"shortening each line is costing him entries rather than saving them")
+
+    # 3. AND NEITHER MAY BREACH THE BUDGET, which is what the length
+    #    comparison was reaching for and failed to express.
+    for name, text in (("tight", tight), ("loose", loose)):
+        assert len(text) <= M.DEFAULT_BUDGET, (
+            f"the {name} render is {len(text)} characters against a "
+            f"{M.DEFAULT_BUDGET} budget")
 
 
 def test_the_script_runs_clean_and_refuses_an_unknown_flag():

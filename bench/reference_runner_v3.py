@@ -3978,7 +3978,8 @@ class FindingRegistry:
                          "CORROBORATED", "WITHHELD")
         count = 0
         for e in self.entries.values():
-            if e["status"] not in _NON_TERMINAL or e["severity"] < 0.7:
+            if (e["status"] not in _NON_TERMINAL
+                        or e["severity"] < CRITICAL_SEVERITY_THRESHOLD):
                 continue
             if e.get("exhausted"):
                 continue
@@ -5892,7 +5893,7 @@ def _update_finding_statuses(registry: FindingRegistry, round_idx: int,
             exhausted_threshold = _max_reachable_age
     for e in registry.entries.values():
         if (e["status"] in EXHAUSTED_ELIGIBLE_STATUSES
-                and e["severity"] >= 0.7):
+                and e["severity"] >= CRITICAL_SEVERITY_THRESHOLD):
             age = round_idx - e.get("last_status_change_round", 0)
             has_reviews = len(e.get("verdicts", [])) > 0
             if exhausted_threshold > 0 and age >= exhausted_threshold and has_reviews:
@@ -20261,7 +20262,7 @@ def run_experiment(
                 per_model_novel_this_round[f.model_id] = (
                     per_model_novel_this_round.get(f.model_id, 0) + 1
                 )
-                if getattr(f, "severity", 0.0) >= 0.7:
+                if getattr(f, "severity", 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
                     novel_critical_this_round += 1
                 # Stamp the severity proof onto the registry entry, so every
                 # channel that reads severity can also see whether that severity
@@ -20383,7 +20384,7 @@ def run_experiment(
                     per_model_novel_this_round[f.model_id] = (
                         per_model_novel_this_round.get(f.model_id, 0) + 1
                     )
-                    if getattr(f, "severity", 0.0) >= 0.7:
+                    if getattr(f, "severity", 0.0) >= CRITICAL_SEVERITY_THRESHOLD:
                         novel_critical_this_round += 1
                     # Registered here and nowhere else, so without this stamp these
                     # entries were born unprovable and blocked for ever.
@@ -21595,6 +21596,18 @@ def run_experiment(
                         getattr(cfg, 'falsifier_gate_enabled', False))),
                 rho_churn=rho_churn, irreducible_queue=_irreducible_q,
                 gamma_critical=gamma_critical,
+                # ★ n_live ADDED 2026-11-13. The shadow below replayed this
+                # gate WITHOUT it, so it used the unscaled quiet window while
+                # the live call 20 lines above passes
+                # `live_seat_count(round_idx, raw_counts_per_model) or None`.
+                # On a DEGRADED roster the 2 windows differ -- B77's own
+                # figures give 18 quiet rounds against 3 at 1 live seat of 6 --
+                # so `verdict_would_differ` could report a disagreement caused
+                # by the missing argument rather than by the sweep, which is
+                # the one thing this shadow exists to measure. Captured rather
+                # than re-derived, for the reason this block already states: a
+                # shadow that guessed at them would measure a gate nobody ran.
+                n_live=(live_seat_count(round_idx, raw_counts_per_model) or None),
             )
         # ★ B76, 2026-11-08 on his ruling: BOTH gates must agree. This was an
         # OR, under which either gate alone terminated the run and the state
@@ -22563,6 +22576,7 @@ def run_experiment(
                     _shadow_conv, _shadow_reason = _check_gamma_alt_convergence(
                         _gi["round_idx"], _gi["gamma"],
                         _gi["novel_critical_history"], cfg,
+                        n_live=_gi.get("n_live"),
                         unresolved_critical=_swept_unresolved,
                         contested=_gi["contested"],
                         rho_churn=_gi["rho_churn"],

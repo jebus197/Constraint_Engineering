@@ -115,13 +115,56 @@ class TestTheFiguresAreLive:
     @pytest.mark.parametrize("spoken", [True, False],
                              ids=["spoken", "written"])
     def test_the_named_entries_are_this_file_s_own(self, bdf, rendered, spoken):
+        """★ RE-POINTED 2026-11-13. THIS GUARD WAS OUTGROWN, NOT BROKEN.
+
+        It asserted that every entry the banner COMPUTES as carrying a ruling
+        also appears in the rendered head BY ITS CODE -- `B77` literally in the
+        text. On 2026-11-10 the banner was deliberately changed to render
+        DECISION NUMBERS instead: "decision 4 below", "decisions 1 to 6 below".
+        That change is his own descriptor rule applied to this surface -- he
+        has no access to the ticket store and cannot look a bare code up -- so
+        the renderer is right and this assertion was pinning the form the rule
+        replaced.
+
+        THE PROPERTY IS KEPT AND IS NOW STRONGER. What matters is that nothing
+        the banner computes goes unrendered. That is asserted here against the
+        NUMBER the reader can actually follow, and the count is compared too,
+        so a renderer that silently dropped one would still fail.
+        """
         texts, rows = rendered
         s = bdf.repeats_summary(rows)
         idents = {r["ident"] for r in rows}
         head = _head(texts[spoken])
-        for named in s["ruled"] + s["responded"]:
-            assert named in idents
-            assert named in head, f"{named} is computed but not rendered"
+        computed = s["ruled"] + s["responded"]
+        for named in computed:
+            assert named in idents, (
+                f"{named} is named by the banner but is not one of this "
+                f"file's own rows")
+        # ★ CALL THE PRODUCER'S OWN RENDERER, do not re-derive its string
+        # shapes. A first version of this assertion guessed at the forms --
+        # "decision N below", "decisions N and M" -- and merged the ruled and
+        # responded groups into one range, so it demanded "decisions 1 to 6
+        # below" where the banner correctly prints "decisions 1 to 4 below"
+        # and "decisions 5 and 6 below" as 2 separate groups. A test that
+        # re-implements its subject tests its own copy.
+        pos = {r["ident"]: i + 1 for i, r in enumerate(rows) if r.get("ident")}
+        for group, label in ((s["ruled"], "ruled"), (s["responded"], "responded")):
+            if not group:
+                continue
+            phrase = bdf._decision_numbers(group, pos)
+            assert phrase != "none", (
+                f"the banner counts {len(group)} entries as {label} and "
+                f"renders them as 'none'")
+            assert phrase in head, (
+                f"the {label} group renders as {phrase!r}, which is not in "
+                f"the head. A banner that counts an entry and then does not "
+                f"point at it tells him a number he cannot act on.")
+            # ...and nothing computed may be silently dropped by the renderer.
+            missing = [i for i in group if i not in pos]
+            assert not missing, (
+                f"{missing} are counted as {label} but have no position, so "
+                f"`_decision_numbers` drops them silently while the COUNT "
+                f"still includes them")
 
 
 class TestTheVerdictIsDerived:
@@ -153,14 +196,35 @@ class TestTheVerdictIsDerived:
 
 
 class TestGrammarHeReadsAloud:
+    """★ THESE 2 PINNED THE PRE-2026-11-10 LABEL FORM AND ARE RE-POINTED.
+
+    They asserted the label rendered as "entry Z1" and "entries Z1, Z2" --
+    bare codes. On 2026-11-10 the banner was deliberately changed to render
+    DECISION NUMBERS, because he has no access to the ticket store and a bare
+    code tells him nothing he can act on. The renderer is right; these
+    assertions pinned the form his own rule replaced.
+
+    THE PROPERTY THEY EXIST FOR IS THE VERB AGREEMENT, and that is kept
+    exactly: 1 entry takes a singular verb, 2 take a plural. Only the label
+    form moves, and it moves to what the producer actually emits.
+    """
+
     def test_one_entry_takes_a_singular_verb(self, bdf):
         s = bdf.repeats_summary([{"ident": "Z1", "ruled": "2026-01-01"}])
-        assert s["ruled_verb"] == "carries" and s["ruled_label"] == "entry Z1"
+        assert s["ruled_verb"] == "carries", (
+            f"1 entry took the plural verb {s['ruled_verb']!r}")
+        assert s["ruled_label"] == "decision 1 below", (
+            f"the singular label is {s['ruled_label']!r}")
 
     def test_two_entries_take_a_plural_verb(self, bdf):
         s = bdf.repeats_summary([{"ident": "Z1", "ruled": "2026-01-01"},
                                  {"ident": "Z2", "ruled": "2026-01-02"}])
-        assert s["ruled_verb"] == "carry" and "entries Z1, Z2" == s["ruled_label"]
+        assert s["ruled_verb"] == "carry", (
+            f"2 entries took the singular verb {s['ruled_verb']!r}")
+        assert s["ruled_label"] == "decisions 1 and 2 below", (
+            f"the plural label is {s['ruled_label']!r}. 2 consecutive numbers "
+            f"read better aloud as '1 and 2' than as a range, which is the "
+            f"renderer's own stated rule.")
 
     @pytest.mark.parametrize("spoken", [True, False],
                              ids=["spoken", "written"])

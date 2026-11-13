@@ -119,6 +119,14 @@ def test_every_one_of_his_sections_exists_and_separates(store):
     property should grow with the vocabulary rather than be relaxed to fit it.
     """
     store.propose("fr", "a feature", "please add X", "chat", subjects=["m.x"])
+    # ★ EXTENDED 2026-11-13 for `frx`, which is the SAME growth this test's
+    # docstring describes: his ruling added a FIX REQUEST kind beside the
+    # feature request, so the vocabulary grew by 1 and the coverage grows with
+    # it. The 2 are deliberately proposed with DIFFERENT text, because the
+    # property under test is that each kind is separately storable and
+    # separately retrievable -- identical text would make them 1 identity.
+    store.propose("frx", "a fix request", "X is broken, please repair it",
+                  "chat", subjects=["m.xr"])
     store.propose("pf", "a fix", "Y is broken", "chat", subjects=["m.y"])
     store.propose("qs", "a question", "why is Z so?", "chat", subjects=["m.z"])
     # EXTENDED AGAIN 2026-10-20 when `wr` became the 4th kind, on his instruction:

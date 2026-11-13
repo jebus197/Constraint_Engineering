@@ -300,6 +300,34 @@ cd "$REPO" || exit 1
 # B81 is itself the entry about this gate running 2.71 times the limit stated
 # in this file's own header -- and the answer to that is the tier split he has
 # yet to rule on, not leaving new guards off the board.
+# ★ 36 GUARDS ADDED 2026-11-13, AND B103's RULE IS WHY RATHER THAN A JUDGEMENT.
+# This file states that rule twice in its own prose -- "SO THE SCOPE IS THE
+# GUARDS WRITTEN SINCE 2026-10-29" and "B103's rule is that every guard
+# written on or after 2026-10-29 goes on this gate" -- and 36 of 220 broke it,
+# 0.163636. 11 of the 36 were written the same day they were found.
+#
+# IT HAD ALREADY FAILED ONCE AND THIS FILE SAYS SO: against the 6 guards dated
+# 2026-11-10 it records that 5 "WERE MINE TO ADD EARLIER THE SAME NIGHT AND
+# WERE NOT ADDED ... so each guarded a repair that this gate could not have
+# caught regressing". It recurred at 6 times that scale.
+#
+# ★ THE DRIFT WAS REAL AND THE FILE'S OWN PREDICTION HELD. Run together the
+# first time, 7 of 368 tests FAILED -- "a guard outside the gate drifts in
+# silence; the drift is discovered by the commit that brings it inside". All 7
+# were repaired before this addition: a stale morning report, a banner guard
+# OUTGROWN by his own descriptor rule rather than broken, and 11 producers
+# accounted for by measurement -- 4 admitted after being timed read-only, 7
+# exempted with a measured reason, 5 of those being mutation harnesses that
+# edit their subject and must never run from a board.
+#
+# MEASURED COST, 1 invocation, 2026-11-13: 400 tests in 396.77 s wall. Against
+# the 2,236.11 s board recorded the same day that is +17.74 per cent, taking it
+# to about 2,633 s = 43.9 min. THE COST IS REPORTED RATHER THAN TREATED AS
+# FREE, because this file records a recommendation once accepted on a figure
+# answering a different question -- "about 6 per cent" where the truth was
+# 1,705 per cent. The gate's TOTAL runtime is B81 and remains his ruling; the
+# answer to it is the tier split he has yet to make, not leaving new guards off
+# the board, which is this file's own stated position.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
 bench/tests/test_the_gate_board_is_not_the_suite_2026-11-04.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
@@ -558,7 +586,44 @@ bench/tests/test_the_launcher_substitutes_no_suite_2026-11-11.py
 bench/tests/test_the_constraint_class_has_a_writer_2026-11-11.py
 bench/tests/test_the_fix_examined_is_what_the_fix_says_2026-11-11.py
 bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py
-bench/tests/test_both_convergence_arms_are_roster_aware_2026-11-12.py"
+bench/tests/test_both_convergence_arms_are_roster_aware_2026-11-12.py
+bench/tests/test_a_help_flag_must_not_mutate_the_tree_2026-11-12.py
+bench/tests/test_a_movable_entry_is_not_one_that_merely_asks_nothing_2026-11-12.py
+bench/tests/test_a_prose_fix_is_gated_on_its_falsifier_2026-11-10.py
+bench/tests/test_a_refusal_names_every_failure_2026-11-09.py
+bench/tests/test_a_refusal_records_why_2026-11-09.py
+bench/tests/test_a_retraction_is_not_a_reproduction_2026-11-13.py
+bench/tests/test_a_route_specific_limit_names_its_route_2026-11-12.py
+bench/tests/test_an_entrys_kind_is_declared_not_guessed_2026-11-13.py
+bench/tests/test_are_items_12_to_21_done_2026-11-12.py
+bench/tests/test_b103s_rule_is_measured_2026-11-13.py
+bench/tests/test_b21_steps_are_built_2026-11-09.py
+bench/tests/test_frx_is_its_own_kind_2026-11-13.py
+bench/tests/test_qc_declares_its_cost_2026-11-13.py
+bench/tests/test_the_board_share_producer_holds_2026-11-13.py
+bench/tests/test_the_brief_is_stamped_at_dispatch_2026-11-12.py
+bench/tests/test_the_budget_gate_census_holds_2026-11-13.py
+bench/tests/test_the_cheap_checks_run_before_the_board_2026-11-09.py
+bench/tests/test_the_client_is_resolved_and_recorded_2026-11-13.py
+bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py
+bench/tests/test_the_domain_proposer_proposes_2026-11-12.py
+bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py
+bench/tests/test_the_encoding_carries_user_preferences_2026-11-13.py
+bench/tests/test_the_predicate_breadth_census_holds_2026-11-13.py
+bench/tests/test_the_pulse_says_whose_move_it_is_2026-11-09.py
+bench/tests/test_the_ratchet_needs_both_conditions_2026-11-13.py
+bench/tests/test_the_repeats_banner_is_computed_2026-11-09.py
+bench/tests/test_the_retired_error_figure_stays_retired_2026-11-09.py
+bench/tests/test_the_spoken_copy_is_not_older_than_its_record_2026-11-13.py
+bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py
+bench/tests/test_the_steering_chat_can_recover_2026-11-12.py
+bench/tests/test_the_triage_refuses_to_write_while_a_board_runs_2026-11-12.py
+bench/tests/test_the_verification_set_comes_from_the_topic_2026-11-10.py
+bench/tests/test_the_work_list_loop_can_terminate_2026-11-12.py
+bench/tests/test_tonights_producers_are_reached_2026-11-10.py
+bench/tests/test_tonights_two_producers_run_2026-11-09.py
+bench/tests/test_what_models_are_in_use_is_derived_2026-11-10.py
+bench/tests/test_the_researcher_encoding_holds_2026-11-13.py"
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
 # was run 5 times to discover 2 classes of defect that a commit-time check catches

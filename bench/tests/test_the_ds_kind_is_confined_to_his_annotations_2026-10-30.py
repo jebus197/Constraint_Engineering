@@ -260,8 +260,20 @@ class TestChatRefusesDs:
         # test failed on a correct change -- while silently ceasing to widen,
         # which would have made the rest of it vacuous rather than red. It is
         # red here only because the next line asserts the widening happened.
+        #
+        # ★ CORRECTED AGAIN 2026-11-13, SAME SHAPE, THIRD OCCURRENCE IN THIS
+        # ONE LINE. The 2026-11-01 repair still anchored on `fr` being the
+        # FIRST alternative. His `frx` kind sorts before it -- the longer token
+        # is written first for readability -- so the pattern became `(frx|fr|`
+        # and the substitution silently matched nothing again. The lesson the
+        # previous correction drew was "do not hardcode the literal"; the
+        # lesson it MISSED is that POSITION is a literal too. This version
+        # anchors on the SHAPE of the alternation, a run of pipe-separated
+        # lowercase words inside a capturing group, so no kind added at any
+        # position can break it.
         widened = re.compile(
-            re.sub(r"\((fr\|[^)]*)\)", r"(\1|ds)", harv.MARKER.pattern, count=1),
+            re.sub(r"\(((?:[a-z]+\|)+[a-z]+)\)", r"(\1|ds)",
+                   harv.MARKER.pattern, count=1),
             harv.MARKER.flags)
         assert "|ds)" in widened.pattern, widened.pattern
         monkeypatch.setattr(harv, "MARKER", widened)

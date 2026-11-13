@@ -92,7 +92,25 @@ TRANSCRIPTS = (pathlib.Path.home() /
 #: declarations of 1 vocabulary with no comparator, which is why his `stm`
 #: markers were silently read as discussions. A guard now asserts every kind is
 #: either readable here or listed as default-only.
-MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr|stm)(?:[:\]\)]|\s*[-—]\s|$)",
+#: ★ `frx` ADDED AND THE SUFFIX WIDENED, 2026-11-13. His FIRST USE of the new
+#: fix-request kind was INVISIBLE to this pattern, and the cause was not the
+#: alternation -- it was the suffix. The old suffix admitted a colon, a closing
+#: bracket, a spaced dash, or end of line. He wrote:
+#:
+#:     "As I said above you should fix both. frx (as you will note this is my
+#:      first use of the fix request ticket classification.)"
+#:
+#: `frx` there is followed by " (", which matched NONE of those, so the marker
+#: returned None and his ruling would have been harvested as an unmarked
+#: annotation.
+#:
+#: ★ THE WIDENING WAS MEASURED BEFORE IT WAS MADE, because adding to an
+#: accepting pattern is a LOOSENING and this project has recorded one admitting
+#: things nobody intended. Driven over all 895 of his annotations, the widened
+#: pattern changes exactly 1 verdict -- 0.001117, Wilson [0.000197, 0.006302],
+#: Clopper-Pearson [0.000028, 0.006209] on 2 agreeing routes -- and that 1 is
+#: his frx sentence above. 0 false positives in 895.
+MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(frx|fr|pf|qs|wr|stm)(?:[:\]\)]|\s*[-—]\s|\s*[(\[]|$)",
                     re.IGNORECASE | re.MULTILINE)
 
 #: A SUPERSET OF `MARKER`, for cheap rejection on RAW JSON lines only -- see the
@@ -132,7 +150,14 @@ MARKER = re.compile(r"(?:(?<=^)|(?<=[\s(\[]))(fr|pf|qs|wr|stm)(?:[:\]\)]|\s*[-�
 #: the moment an ASCII-letter escape appears in a transcript, and names cc2's
 #: bare form as the fallback. That is neither seat's answer and it is better
 #: than both: fable's cost with cc2's safety property turned into a check.
-CANDIDATE_LINE = re.compile(r"(?:fr|pf|qs|wr|stm)\b", re.IGNORECASE)
+#: ★ `frx` ADDED 2026-11-13. This prefilter MUST BE A SUPERSET of what
+#: `MARKER` decides, and `fr\b` does NOT match "frx" -- the word boundary
+#: fails on the trailing x -- so adding the kind to `MARKER` alone made the
+#: prefilter strictly weaker than the decision, which is the one direction
+#: this file's own note forbids. The note at the head of this section names
+#: the 4 places that must stay in step; 2 of the 4 were updated and 2 were
+#: not, and the guard caught it on the commit board rather than in review.
+CANDIDATE_LINE = re.compile(r"(?:frx|fr|pf|qs|wr|stm)\b", re.IGNORECASE)
 
 #: WHAT MAY BE A BLOCKING SUBJECT, and the measurement that narrowed it.
 #:
@@ -205,7 +230,12 @@ def marked_kind(text: str) -> str | None:
 #: usage is unambiguous and was already measured -- 30 of 30 of his markers sit
 #: on their OWN LINE as a bare token, 0 inline -- so a marker followed by a hex
 #: id is a citation by construction, not by preference.
-CITATION = re.compile(r"\b(?:fr|pf|qs|wr|stm):[0-9a-f]{6,}\b", re.IGNORECASE)
+#: ★ `frx` ADDED 2026-11-13, for the same reason and with the same cause: a
+#: citation `frx:1234abcd` was unrecognised, so CITING an existing fix
+#: request would have read as RAISING a new one -- the mention-versus-
+#: declaration defect this file already exists to prevent, reintroduced by
+#: a kind added to 2 of its 4 declaration sites.
+CITATION = re.compile(r"\b(?:frx|fr|pf|qs|wr|stm):[0-9a-f]{6,}\b", re.IGNORECASE)
 
 #: HARNESS TEXT IS NOT A PROPOSAL, and it is the bulk of what chat contains.
 #: Measured 2026-10-28: of 31 marker-bearing chat messages since 2026-10-01, 24

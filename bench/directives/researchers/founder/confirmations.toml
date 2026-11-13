@@ -1,0 +1,45 @@
+# Layer 3 — confirmations. WHEN EACH STANDARD WAS LAST CHECKED AGAINST
+# UPSTREAM. This is the file that changes constantly: about 1370 writes a year
+# at a measured session cadence of 3.75 starts per day. It is separate from
+# standards.toml for exactly that reason -- a content hash over a file that
+# changes 1370 times a year of which 0.98 are meaningful has a tamper-alert
+# precision of 0.00071220, which is an alarm nobody can act on.
+#
+# ★ WHAT A CONFIRMATION IS AND IS NOT. It records that a human or a panel
+# CHECKED the standard against its publisher on a date. It is NOT a claim that
+# the standard is unchanged -- nothing here reaches the network, and a checker
+# that pretended to would be asserting what it cannot observe.
+schema_version = "1.0"
+researcher = "founder"
+
+# The exposure ceiling decides the backstop interval. At 1 per cent, the
+# fastest-moving of the 4 standards feeds needs re-checking every 14.61 days.
+# The primary trigger is a session start, measured at an expected undetected
+# window of 0.412371 days and an exposure of 0.00056451; the backstop exists
+# only to cover an absence.
+[policy]
+exposure_ceiling = 0.01
+backstop_days = 14
+backstop_basis = "exposure = lambda * T / 730.5 with lambda in revisions per year; at 0.5/yr for the fastest feed, a 1 per cent ceiling gives T = 14.61 days"
+primary_trigger = "session start"
+
+[confirmed."CVSS v4.0"]
+standard = "CVSS v4.0 base score"
+publisher = "FIRST"
+released = "2023-11"
+last_confirmed = "2026-11-12"
+confirmed_by = "read directly from the specification's Table 22, Qualitative Severity Rating Scale"
+bands = "None 0.0, Low 0.1-3.9, Medium 4.0-6.9, High 7.0-8.9, Critical 9.0-10.0"
+
+# ★ 2 OF THE 3 DOMAINS DECLARE NO SCALE, AND THAT IS A FACT TO RECORD RATHER
+# THAN A GAP TO FILL. A domain with no consequence scale has nothing to go
+# stale, so it needs no confirmation and must not be reported as overdue.
+[confirmed."mathematics: none"]
+standard = "none"
+reason = "pure mathematics has no recognised consequence scale"
+needs_confirmation = false
+
+[confirmed."statistics: none"]
+standard = "none"
+reason = "inherited from the application the statistics serves"
+needs_confirmation = false

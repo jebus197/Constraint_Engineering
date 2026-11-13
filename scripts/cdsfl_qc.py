@@ -53,6 +53,16 @@ RECOVERY_CURRENT_SECTION_LINES = 100
 # real PASSED count; `test_count()` from cdsfl_utils returns COLLECTED, which
 # is a different number and must never be compared against a pass count.
 PYTEST_SUITE_ARGS = ["-m", "pytest", "bench/tests/", "-q", "--netguard-strict"]
+#: ★ NOW A FLOOR, NOT THE ANSWER (B172, 2026-11-13). As a fixed ceiling this
+#: was 1800 s against a suite recorded at 11278.43 s -- 6.27x short -- so
+#: `measure_suite` could only ever raise TimeoutExpired and return None after
+#: spending 30 minutes, and the "Suite is GREEN" branch below was unreachable
+#: at every suite size this project has ever recorded. `suite_timeout()`
+#: derives the real bound from `resources/suite_record.json`, exactly as
+#: `cdsfl_sv.py:commit_timeout` already does for the commit board -- whose own
+#: docstring names this defect class: a larger typed number would only move the
+#: date of the next failure. The constant is KEPT because a fresh checkout has
+#: no ledger to derive from.
 PYTEST_SUITE_TIMEOUT_S = 1800
 
 
@@ -167,6 +177,36 @@ def _unique_ints(pattern: str, text: str) -> list[int]:
     return out
 
 
+def _recorded_suite_seconds(root: Path) -> str:
+    """The recorded runtime as a readable duration, or a plain unknown."""
+    record = root / "resources" / "suite_record.json"
+    try:
+        seconds = float(json.loads(record.read_text(encoding="utf-8"))["seconds"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return "an unrecorded amount of time"
+    return f"{seconds:.0f} s = {seconds / 3600:.2f} h"
+
+
+def suite_timeout(root: Path) -> int:
+    """How long to wait for the suite, DERIVED from its own recorded runtime.
+
+    Reads `seconds` from `resources/suite_record.json` and allows 2x it, with
+    `PYTEST_SUITE_TIMEOUT_S` as the floor for a checkout that has no record.
+    The 2x headroom is the same shape as the commit board's 4x: generous
+    enough that an ordinary slowdown does not read as a hang, bounded enough
+    that a genuine hang still ends.
+    """
+    floor = PYTEST_SUITE_TIMEOUT_S
+    record = root / "resources" / "suite_record.json"
+    try:
+        seconds = float(json.loads(record.read_text(encoding="utf-8"))["seconds"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return floor
+    if seconds <= 0:
+        return floor
+    return max(floor, int(seconds * 2))
+
+
 def measure_suite(root: Path) -> dict | None:
     """Run the offline suite once and return its real pass/skip/fail counts.
 
@@ -180,7 +220,7 @@ def measure_suite(root: Path) -> dict | None:
             cwd=str(root),
             capture_output=True,
             text=True,
-            timeout=PYTEST_SUITE_TIMEOUT_S,
+            timeout=suite_timeout(root),
         )
     except (subprocess.TimeoutExpired, OSError):
         return None
@@ -195,7 +235,7 @@ def measure_suite(root: Path) -> dict | None:
     return counts
 
 
-def check_test_consistency(root: Path) -> list[dict]:
+def check_test_consistency(root: Path, with_suite: bool = False) -> list[dict]:
     """Compare test counts claimed in RECOVERY.md against measured reality.
 
     Two DIFFERENT numbers appear in that document and must never be compared
@@ -217,17 +257,48 @@ def check_test_consistency(root: Path) -> list[dict]:
             "detail": "Could not collect test count (pytest collection failed)",
         })
 
-    measured = measure_suite(root)
-    if measured is None:
+    # ★ B172: THE DEFAULT NO LONGER SPENDS THE SUITE. His command list
+    # documents `qc` as quality control to run and fix what it prints; nothing
+    # on either surface warned that it occupies the only heavy process slot his
+    # 8 GiB allows for hours. The capability is NOT removed -- `--with-suite`
+    # runs it exactly as before -- it is made asked-for rather than assumed.
+    if not with_suite:
         findings.append({
-            "category": "WARN",
+            "category": "INFO",
             "file": "bench/tests/",
             "detail": (
-                "Could not measure pass count — "
-                f"`{sys.executable} {' '.join(PYTEST_SUITE_ARGS)}` produced "
-                "no summary line"
+                f"Suite NOT run (default). The recorded full suite takes "
+                f"{_recorded_suite_seconds(root)}; this command would occupy "
+                f"the machine for that long. To measure it: "
+                f"python3 scripts/cdsfl_qc.py --with-suite"
             ),
         })
+        measured = None
+    else:
+        measured = measure_suite(root)
+    # ★ A DELIBERATE SKIP IS NOT A FAILED MEASUREMENT, so the WARN below is
+    # reached only when the suite was actually attempted. Reporting a skip as
+    # "could not measure" would be a fail-safe recorded as a fact: the right
+    # decision carrying a false reason, which this project has already logged
+    # once as a defect in its own right.
+    if measured is None:
+        # ★ THE SKIP AND THE FAILURE SHARE A VALUE AND MUST NOT SHARE A BRANCH.
+        # A first version tested `measured is None and with_suite`, which fell
+        # through to the `elif` on the DEFAULT path and subscripted None. The
+        # existing tests could not catch it: all 11 of them now ask for the
+        # measured path explicitly, so not one exercises the default. Caught by
+        # this repair's own new guard on its first run, which is the argument
+        # for writing the guard before trusting the patch.
+        if with_suite:
+            findings.append({
+                "category": "WARN",
+                "file": "bench/tests/",
+                "detail": (
+                    "Could not measure pass count — "
+                    f"`{sys.executable} {' '.join(PYTEST_SUITE_ARGS)}` produced "
+                    "no summary line"
+                ),
+            })
     elif measured["failed"] or measured["error"]:
         findings.append({
             "category": "WARN",
@@ -873,7 +944,13 @@ def main() -> int:
     instructions to run it and fix what it prints.
     """
     parser = argparse.ArgumentParser(description="CDSFL Quality Control")
-    parser.parse_args()
+    parser.add_argument(
+        "--with-suite", action="store_true",
+        help="Also RUN the full test suite and report its pass counts. Off by "
+             "default: the suite takes hours and occupies the only heavy "
+             "process slot this machine has. Without it, qc is the "
+             "documentation sweep its name promises.")
+    args = parser.parse_args()
 
     root = repo_root()
     print(f"CDSFL Quality Control — {timestamp_iso()}")
@@ -886,7 +963,9 @@ def main() -> int:
     all_findings.extend(run_check("timestamps", check_staleness, root))
 
     print("Checking test consistency...", flush=True)
-    all_findings.extend(run_check("test consistency", check_test_consistency, root))
+    all_findings.extend(run_check(
+        "test consistency",
+        lambda r: check_test_consistency(r, with_suite=args.with_suite), root))
 
     print("Checking experiment consistency...", flush=True)
     all_findings.extend(

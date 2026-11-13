@@ -1572,9 +1572,27 @@ def _stub_qc(monkeypatch, tmp_path: Path, *, crash: bool) -> None:
     monkeypatch.setattr(cdsfl_qc, "repo_root", lambda: tmp_path)
     monkeypatch.setattr(cdsfl_qc, "timestamp_iso", lambda: "2026-08-05T21:00:00+01:00")
     for name in _QC_CHECKS:
+        # ★ `**_kw` MATCHES THE `boom` STUB IMMEDIATELY BELOW, which has taken
+        # kwargs since `check_broken_references` gained its `audit` argument.
+        # `run_check` calls `fn(root)`, so a check needing anything else is
+        # dispatched through a lambda in `main()`, and this double must
+        # tolerate what that lambda forwards. B172 made
+        # `check_test_consistency` the 2nd such check by giving it the
+        # `with_suite` switch that stops `qc` spending 3 hours unasked.
+        #
+        # ★ THIS FILE IS NOT ON THE COMMIT GATE, which is why the sibling
+        # double in `test_cdsfl_qc_and_seal_repairs.py` was fixed with the
+        # repair and this one was not: nothing cheap ran it. Measured
+        # 2026-11-13 by restoring HEAD's `cdsfl_qc.py` under this file: 3
+        # failures at HEAD against 6 with the repair, so exactly 3 were caused
+        # here and all 3 are this stale double. That is B183 exactly -- a
+        # guard outside the gate drifts in silence -- found on my own change.
+        # It does NOT weaken what these tests pin: they assert on main()'s
+        # exit code and its crashed-check count, neither of which this touches.
         monkeypatch.setattr(
             cdsfl_qc, name,
-            lambda _root: [{"category": "OK", "file": "x", "detail": "ran"}],
+            lambda _root, **_kw: [
+                {"category": "OK", "file": "x", "detail": "ran"}],
         )
     if crash:
         def boom(_root, **_kw):

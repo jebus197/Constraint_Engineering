@@ -526,7 +526,7 @@ def file_shape(path: Path) -> dict:
 #: own. Without it, `stm` would have been readable by the harvester and
 #: invisible to the reader that actually parses his annotations.
 _MARKER_LINE = re.compile(
-    r"^\s*(fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|stm|disc|dis|ds))*\s*$", re.I)
+    r"^\s*(frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*\s*$", re.I)
 
 
 #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
@@ -557,7 +557,7 @@ _MARKER_LINE = re.compile(
 #: ticket's verbatim, so stripping the marker out of the annotation would move
 #: every identity derived from it -- a far larger change than the defect.
 _MARKER_TRAILING = re.compile(
-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:fr|pf|qs|wr|stm|disc|dis|ds))*)"
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*)"
     r"[\s.!?]*$", re.I)
 
 

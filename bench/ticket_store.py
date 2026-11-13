@@ -319,7 +319,25 @@ LEGACY_KIND_ALIASES = {"ds": "disc", "dis": "disc"}
 #: uses of the marker, 0.003632 Wilson [0.001236, 0.010623], so 0 colliding
 #: senses; 0 user-role transcript entries contain it; and the word boundary
 #: keeps it out of system, stem, statement, custom, stemming and STM32.
-KINDS = ("fr", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
+#: ★ `frx` ADDED 2026-11-13 ON HIS RULING, and it exists to end a collision he
+#: named himself: *"'fr' to my eyes can sometimes be read as 'feature request',
+#: or 'fix request'. What I propose going forward is that a fix request should
+#: be marked by me as a 'frx' and a feature request should remain as 'fr'. We
+#: only need to do this going forward. It does not need to be applied to the
+#: historical record, providing we document the change in our docs
+#: appropriately."*
+#:
+#: SO `fr` KEEPS ITS MEANING AND ITS HISTORY. Nothing is re-filed: his ruling is
+#: explicit that the change is forward-only, and re-kinding 311 historical rows
+#: would rewrite what he meant at the time from what he means now.
+#:
+#: ★ THE ORDER IN `MARKER` DOES NOT DECIDE THIS, WHICH WAS CHECKED RATHER THAN
+#: ASSUMED. `fr` is a prefix of `frx`, so a left-to-right alternation looks as
+#: though it would swallow the longer token. Driven over both orderings it does
+#: not: Python backtracks when the suffix fails, and `fr|frx` and `frx|fr` give
+#: identical answers on every probe. The real defect was elsewhere -- see the
+#: suffix note in `scripts/harvest_tickets_2026-10-17.py`.
+KINDS = ("fr", "frx", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
 
 _STOP = frozenset("""a an and are as at be been being but by can could did do does
 for from had has have he her him his how i if in into is it its me my no nor not

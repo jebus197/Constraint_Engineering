@@ -1,0 +1,41 @@
+# Layer 3 — standards. WHICH DOMAIN ENCODINGS APPLY, AND ANY STANDARD CITED
+# DIRECTLY. This file changes only when a standard changes: about 0.976190
+# revisions per year across the 4 feeds the project tracks. Its content hash is
+# therefore a usable tamper signal, which is the whole reason it is separate
+# from the confirmations file.
+schema_version = "1.0"
+researcher = "founder"
+created = "2026-11-13"
+
+# ★ POINTING, NOT RESTATING. These name encodings that already exist and are
+# already maintained. Copying their content here would go stale the moment one
+# of them changed, and this project has measured that exact decay elsewhere.
+[domains]
+primary = ["software", "mathematics", "statistics"]
+
+[domains.software]
+encoding = "bench/directives/software/software_general.txt"
+reason = "the declared default for software work that is not distributed, real-time or security specialised"
+severity_scale = "CVSS v4.0 base score"
+critical_level = "High (7.0)"
+source = "CVSS v4.0, FIRST, released November 2023; bands from the specification's Table 22"
+
+[domains.mathematics]
+encoding = "bench/directives/mathematics/mathematics_general.txt"
+reason = "general mathematical work; the proof and numerical variants are narrower"
+severity_scale = "none"
+severity_scale_reason = "pure mathematics has no recognised consequence scale; an error's consequence is a property of the application, not of the error's form"
+
+[domains.statistics]
+encoding = "bench/directives/statistics/statistics_inference.txt"
+reason = "the declared default for statistics; inference rather than experimental design or time series"
+severity_scale = "none"
+severity_scale_reason = "inherited from the application the statistics serves"
+
+# ★ THE CONSEQUENCE DOMAIN MAY DIFFER FROM THE SUBJECT DOMAIN, and conflating
+# the 2 is a recorded defect of this project. A statistical error about a
+# clinical trial has statistics as its SUBJECT and biology as its CONSEQUENCE
+# scale. Declare it per task rather than assuming it.
+[consequence]
+inherits_from_application = true
+note = "state the consequence domain explicitly when it differs from the subject domain; do not assume they coincide"

@@ -1,0 +1,78 @@
+# Layer 3 — preferences. HOW THIS RESEARCHER PREFERS TO WORK. Changes rarely,
+# and only when the researcher says so. Nothing here is inferred from
+# behaviour: every entry traces to something they stated.
+#
+# ★ WHAT IS DELIBERATELY ABSENT. This is the REPOSITORY instance and carries no
+# health, neurotype or identifying detail, which is the researcher's standing
+# position. Where a requirement has a private reason, THE REQUIREMENT TRAVELS
+# AND THE REASON DOES NOT -- a delivery format is a working preference and is
+# stated as one. The private instance lives outside the repository.
+schema_version = "1.0"
+researcher = "founder"
+created = "2026-11-13"
+instance = "public"
+
+[delivery]
+# Prose deliverables are produced as a PAIR: plain text for reading aloud, and
+# markdown for the repository. The plain-text form carries no markdown at all --
+# no hashes, asterisks, backticks, pipes, bullet glyphs or em-dashes -- because
+# a formatting character read aloud is noise. Numbers are digits, never words.
+spoken_copy = true
+spoken_format = "plain text, no markup, digits for all numbers"
+written_copy = true
+written_format = "markdown"
+re_render = true
+re_render_note = "the 2 forms are RE-RENDERED from the source, never converted into one another; 5 of 6 predicates differ between them"
+third_party_voice = true
+third_party_voice_note = "written for a competent outside reader with no session context; descriptive third person, technical rigour preserved"
+
+
+# ★ HIS RULING, 2026-11-13: "my morning report is premature. You should
+# only print this after a batched list is complete." A report issued while
+# work is still moving describes a state that has already changed, which is
+# the same staleness measured at 7 of 9 claims superseded within hours.
+report_timing = "after the batch completes"
+report_timing_note = "a consolidated report is printed once the agreed batch is complete, never mid-batch"
+[evidence]
+# A figure without a committed producer is a claim about evidence, not evidence.
+figures_name_their_producer = true
+two_tool_cross_check = true
+two_tool_note = "every computational claim verified on 2 independent tools; every proportion carries a confidence interval"
+falsification_before_presentation = true
+
+[standards]
+# The project's formal standards, in the order they were adopted.
+simplest_sufficient = true
+additive = true
+additive_note = "work adds to reliability and function; a removal needs a committed measurement showing the replacement dominates on a named property. An addition nothing reaches is equally not additive."
+composability_requires_a_measurement = true
+composability_note = "2 fixes may be composed only where the pair demonstrably beats either part alone; where a single fix performs as well, prefer the single fix"
+real_world_applicability = "PROPOSED, NOT ADOPTED"
+real_world_applicability_note = "proposed 2026-11-13, scoped to where a change has a meaningful consequence for the human in the loop. Not adopted: the proposal used 'I am considering' and 'I would suggest', and adopting a standard from a deliberation would be an inference rather than a ruling."
+
+[working]
+# Commits happen once an agreed BATCH is complete, never after every fix. Each
+# gated commit costs about 27 minutes of an 8-core, 8 GiB machine, so 10
+# commits for 10 fixes is over 4 hours against 1 board for the same work.
+commit_unit = "agreed batch"
+commit_timeout = "none; a commit takes as long as it takes"
+machine_is_a_fixed_resource = true
+machine_note = "8 logical cores, 8 GiB. Light delegated work is capped at 6 concurrent; heavy work that imports the project or runs tests is capped at 1."
+
+[disagreement]
+# Disagreement backed by evidence is a contribution. Reflexive agreement is a
+# cost, and 'eagerness to please' is named as a failure mode to avoid.
+factual_synthesis_over_agreement = true
+preserve_disagreement = true
+preserve_disagreement_note = "panel seats return independent verdicts; disagreement is kept as information rather than smoothed to consensus"
+no_model_voting = true
+no_model_voting_note = "a finding is confirmed programmatically or by the human, never by a model vote"
+
+[correction]
+# Quotation convention is load-bearing: single quotes mark a paraphrase or a
+# framing concept, double quotes mark a verbatim lift. Anything inside double
+# quotes must be byte-exact from a source that is named.
+quote_convention = "single = paraphrase, double = verbatim"
+never_paraphrase_inside_quotation_marks = true
+asterisk_marks_a_correction = true
+asterisk_note = "a trailing asterisk corrects the word it follows in the previous message"

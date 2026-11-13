@@ -343,7 +343,7 @@ class TestQ3TestCountConsistency:
         '2099 passed' nor '2102 collected' — so the check said nothing."""
         root = _recovery(tmp_path, self.CURRENT)
         _fake_counts(monkeypatch, collected=2102, passed=2099)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         details = " | ".join(f["detail"] for f in findings)
         assert "2102 collected" in details
         assert "2099 passed" in details
@@ -354,14 +354,14 @@ class TestQ3TestCountConsistency:
         matching reality, neither may be reported stale against the other."""
         root = _recovery(tmp_path, self.CURRENT)
         _fake_counts(monkeypatch, collected=2102, passed=2099, skipped=3)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         assert [f["category"] for f in findings if f["file"].endswith("RECOVERY.md")] \
             == ["OK", "OK"]
 
     def test_stale_collected_count_is_flagged(self, tmp_path, monkeypatch):
         root = _recovery(tmp_path, self.CURRENT)
         _fake_counts(monkeypatch, collected=2556, passed=2099)
-        stale = [f for f in qc.check_test_consistency(root)
+        stale = [f for f in qc.check_test_consistency(root, with_suite=True)
                  if f["category"] == "STALE"]
         assert len(stale) == 1
         assert "2102 collected, actual collected is 2556" in stale[0]["detail"]
@@ -369,7 +369,7 @@ class TestQ3TestCountConsistency:
     def test_stale_passed_count_is_flagged(self, tmp_path, monkeypatch):
         root = _recovery(tmp_path, self.CURRENT)
         _fake_counts(monkeypatch, collected=2102, passed=2549)
-        stale = [f for f in qc.check_test_consistency(root)
+        stale = [f for f in qc.check_test_consistency(root, with_suite=True)
                  if f["category"] == "STALE"]
         assert len(stale) == 1
         assert "2099 passed, actual passed is 2549" in stale[0]["detail"]
@@ -380,7 +380,7 @@ class TestQ3TestCountConsistency:
             "# RECOVERY\n1121 tests pass and 1255 tests collected.\n",
         )
         _fake_counts(monkeypatch, collected=1255, passed=1121)
-        cats = [f["category"] for f in qc.check_test_consistency(root)
+        cats = [f["category"] for f in qc.check_test_consistency(root, with_suite=True)
                 if f["file"].endswith("RECOVERY.md")]
         assert cats == ["OK", "OK"]
 
@@ -397,7 +397,7 @@ class TestQ3TestCountConsistency:
         """
         root = _recovery(tmp_path, "# RECOVERY\nThe suite is entirely green.\n")
         _fake_counts(monkeypatch, collected=2556, passed=2549)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         warns = [f for f in findings if f["category"] == "WARN"]
         assert warns, "a blind check must announce that it is blind"
         assert "blind" in warns[0]["detail"].lower()
@@ -420,7 +420,7 @@ class TestQ3TestCountConsistency:
         """
         root = _recovery(tmp_path, self.CURRENT)
         _fake_counts(monkeypatch, collected=2556, passed=2549)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
 
         suite = [f for f in findings if f["file"] == "bench/tests/"]
         assert suite, "a green suite produced no finding at all — silence again"
@@ -437,7 +437,7 @@ class TestQ3TestCountConsistency:
         monkeypatch.setattr(qc, "test_count", lambda: 2556)
         monkeypatch.setattr(qc, "measure_suite", lambda root: {
             "passed": 2540, "skipped": 7, "failed": 9, "error": 0})
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         suite = [f for f in findings if f["file"] == "bench/tests/"]
         assert suite and suite[0]["category"] == "WARN"
         assert "RED" in suite[0]["detail"]
@@ -459,7 +459,7 @@ class TestQ3TestCountConsistency:
             "Every pass-count in the dated session entries below is retracted.\n"
             "Any future claim must carry a date, a commit, and the command.\n"))
         _fake_counts(monkeypatch, collected=2556, passed=2549)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         assert not [f for f in findings if f["category"] == "WARN"], (
             "a documented, deliberate absence is not a blind check")
         oks = [f for f in findings if f["category"] == "OK"]
@@ -471,7 +471,7 @@ class TestQ3TestCountConsistency:
         root = _recovery(tmp_path, self.CURRENT)
         monkeypatch.setattr(qc, "test_count", lambda: 2102)
         monkeypatch.setattr(qc, "measure_suite", lambda _root: None)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         assert any("Could not measure pass count" in f["detail"]
                    and f["category"] == "WARN" for f in findings)
         # and it must not invent a passed comparison out of nothing
@@ -480,7 +480,7 @@ class TestQ3TestCountConsistency:
     def test_red_suite_is_reported(self, tmp_path, monkeypatch):
         root = _recovery(tmp_path, self.CURRENT)
         _fake_counts(monkeypatch, collected=2102, passed=2090, failed=9, error=1)
-        findings = qc.check_test_consistency(root)
+        findings = qc.check_test_consistency(root, with_suite=True)
         assert any("Suite is RED" in f["detail"] and f["category"] == "WARN"
                    for f in findings)
 
@@ -739,7 +739,17 @@ class TestY4ExitCode:
         monkeypatch.setattr(qc, "repo_root", lambda: tmp_path)
         monkeypatch.setattr(qc, "timestamp_iso", lambda: "2026-08-05T00:00:00+01:00")
 
-        def ok(_root):
+        # ★ `**_kw` MATCHES THE SIBLING STUB 6 LINES BELOW, which has accepted
+        # kwargs since `check_broken_references` started taking an `audit`
+        # argument. `run_check` calls `fn(root)`, so a check needing anything
+        # else is dispatched through a lambda in `main()` and its stub must
+        # tolerate what that lambda forwards. B172 made
+        # `check_test_consistency` the 2nd such check, by giving it the
+        # `with_suite` switch that stops `qc` spending hours of the machine
+        # unasked. Widening this double does NOT weaken the exit-code
+        # contract these tests pin: they assert on main()'s return value and
+        # on the crashed-check count, neither of which this touches.
+        def ok(_root, **_kw):
             return [{"category": "OK", "file": "x", "detail": "ran"}]
 
         for name in ("check_staleness", "check_test_consistency",
