@@ -690,6 +690,24 @@ _CLASS_OBJECT = re.compile(
     r"\bonly\s+he\s+(?:may|can)\s+\w+(?:\s+\w+)??\s+"
     r"(?:a|an|one|any)\b", re.I)
 
+#: ★ B169's OWN PROPOSAL, ADDED 2026-11-13 AND MEASURED AGAINST THE ALTERNATIVE.
+#: The entry asked for the sentence's SUBJECT to decide -- a sentence REPORTING
+#: a rule is not a residue, whoever the rule is about. `_CLASS_OBJECT` decides
+#: on the OBJECT instead, and alone it MISSES a genuine residue whose object
+#: happens to be indefinite: "only he may authorise a paid panel dispatch, and
+#: this entry needs one" returned False, which is the worse direction -- a
+#: false positive stalls work, a false negative acts without him.
+_ATTRIBUTIVE = re.compile(
+    r"\b(?:his|the)\s+(?:rule|ruling|instruction|directive|standard|policy)\b"
+    r"|\brecords?\s+that\b|\bstates?\s+that\b|\bsays?\s+that\b"
+    r"|\bper\s+his\b|\bunder\s+his\s+(?:rule|ruling)\b", re.I)
+
+#: ★ AND THE OBJECT RULE IS NARROWED SO IT CANNOT SUPPRESS A CLAUSE TIED TO THIS
+#: ITEM. An indefinite object means a CLASS only when nothing in the sentence
+#: binds it to the entry in hand.
+_THIS_ITEM = re.compile(
+    r"\bthis\s+(?:entry|item|change|one)\b|\bwhat\s+this\s+(?:entry|item)\b", re.I)
+
 
 def _residue_is_his(body: str) -> bool:
     """True when the entry's OWN TEXT says what remains is his permission.
@@ -708,8 +726,45 @@ def _residue_is_his(body: str) -> bool:
             #: permission to edit this very file. Caught by driving it over the
             #: live entries before it was applied.
             for m in _HIS_RESIDUE.finditer(sent):
-                if m.group(0).lower().startswith("only he") \
-                        and _CLASS_OBJECT.search(sent):
+                _only_he = m.group(0).lower().startswith("only he")
+                #: ★ MEASURED, NOT ASSERTED, 2026-11-13, over 9 labelled
+                #: cases -- 2 quoted from B169, the rest written to probe the
+                #: boundary. Scores: no suppressor 4, the object rule alone
+                #: (what was live this morning) 6, B169's subject rule alone 8,
+                #: the 2 naively composed 7, the NARROWED object rule alone 8,
+                #: and the narrowed object rule composed with the subject rule
+                #: 9. The composition DOMINATES either part alone, 9 against 8,
+                #: which is what `composability-requires-a-measurement` asks
+                #: before a composed fix may be recommended. Each part is
+                #: load-bearing for a different case: the object rule for case
+                #: 1, the narrowing for cases 3 and 8, the subject rule for
+                #: case 9. The NAIVE composition did not dominate -- 7, worse
+                #: than either part -- because the object rule's misses
+                #: survived it, so the narrowing is what makes composing work.
+                #:
+                #: ★ THE FIRST VERSION OF THIS COMMENT WAS WRONG AND IS NAMED
+                #: SO A READER WHO SAW IT KNOWS WHICH FIGURES MOVED. It quoted
+                #: 6/7/6/8 over 8 cases and claimed dominance. An ablation then
+                #: showed the subject rule changed the verdict on 0 of those 8
+                #: cases AND on 0 of 181 live entries, so on that corpus the
+                #: narrowed object rule alone tied at 8 and the standard's own
+                #: words -- where a single fix performs as well, PREFER IT --
+                #: refused the composition. The cause was a HOLE in the corpus:
+                #: every attributive case written had an indefinite object,
+                #: which the object rule already suppresses, so no case reached
+                #: the subject rule. Case 9 is the minimal pair of case 4 and
+                #: closes it. The addition is declared in the producer.
+                #:
+                #: ★ AND BOTH NEW PARTS ARE INERT ON THE LIVE LIST TODAY: 0 of
+                #: 181 entries change verdict. That is deliberate -- a guard
+                #: must not need a live defect to be worth having -- but it
+                #: means this rule is carried by the constructed corpus alone,
+                #: and the honest statement of its support is n = 9, not 181.
+                #: Producer: `scripts/which_residue_rule_discriminates_2026-11-13.py`.
+                if _only_he and _CLASS_OBJECT.search(sent) \
+                        and not _THIS_ITEM.search(sent):
+                    continue
+                if _only_he and _ATTRIBUTIVE.search(sent):
                     continue
                 return True
         return False

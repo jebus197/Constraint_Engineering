@@ -410,3 +410,133 @@ class TestTheClassStatementIsNotAClaim:
                   "the design consequence is his",
                   "it is held under his d"):
             assert WNN._residue_is_his(s), s
+
+
+class TestTheNarrowingAndTheSubjectRule:
+    """★ ENTRY B169, and the 2 parts added to the class-statement rule.
+
+    B169 reported that `_residue_is_his` read B168's record of his GENERAL rule
+    -- "only he may REJECT one" -- as B168 asking him for something, and so took
+    an entry that is mine to build off the movable set. The fix shipped that
+    morning suppressed on the OBJECT: an indefinite object names a class.
+
+    That fix is right about B168 and WRONG IN THE DANGEROUS DIRECTION on a
+    sentence it was never tried against. "only he may authorise a paid panel
+    dispatch, and this entry needs one" has an indefinite object AND claims it
+    for this entry; the object rule alone returns False, so the gate would prod
+    the session to do work that needs his permission. A false POSITIVE stalls
+    work and is visible; a false NEGATIVE acts without him and is not.
+
+    2 parts close it. `_THIS_ITEM` narrows the object rule so a class tied to
+    this item is not excused. `_ATTRIBUTIVE` is B169's own proposal -- decide on
+    the SUBJECT, because a sentence reporting a rule is not a sentence claiming
+    one -- and it covers the case the narrowing cannot: an attributive frame
+    with a DEFINITE object.
+
+    Measured over 9 constructed cases by
+    `scripts/which_residue_rule_discriminates_2026-11-13.py`: object rule alone
+    6, subject rule alone 8, the 2 naively composed 7, narrowed object alone 8,
+    narrowed object + subject 9. The composition DOMINATES either part alone,
+    which is what `composability-requires-a-measurement` requires before a
+    composed fix may be preferred to a single one.
+    """
+
+    def test_b169s_constructed_case_is_a_residue(self, WNN):
+        """★ THE FALSIFIER B169 ASKED FOR, and the reason it is needed.
+
+        The existing polarity tests all PASS with the defect present, because
+        every one of them has either a definite object or no tie to this item.
+        This sentence is the first with both, and it is the one the object rule
+        alone gets wrong.
+        """
+        assert WNN._residue_is_his(
+            "only he may authorise a paid panel dispatch, and this entry "
+            "needs one"), (
+            "a genuine residue was read as mine to do, because its object "
+            "happens to be indefinite. This is the under-report direction: "
+            "the gate would prod the session into work needing his permission.")
+        assert WNN._residue_is_his(
+            "only he may authorise any paid dispatch, and that is what this "
+            "item needs")
+
+    def test_an_attributive_frame_flips_a_definite_object(self, WNN):
+        """★ THE MINIMAL PAIR. 2 sentences of the same shape and a definite
+        object, differing ONLY in the attributive frame, carrying opposite
+        labels. This pair is the only thing in the corpus that separates the
+        narrowed object rule from the composition, and its absence was why an
+        ablation first showed B169's own proposal to be decorative.
+        """
+        claims = "only he may approve this change"
+        reports = "his rule is that only he may approve this change"
+        assert WNN._residue_is_his(claims), (
+            "the definite-object residue stopped firing; the narrowing has "
+            "been widened into the clause it was meant to leave alone")
+        assert not WNN._residue_is_his(reports), (
+            "a sentence REPORTING his rule was read as CLAIMING his "
+            "authority, which is B169's defect with a definite object")
+
+    def test_both_parts_are_load_bearing(self, WNN):
+        """★ `additive-standard`, SYMMETRIC FORM: an addition nothing reaches
+        is not additive. Each suppressor must change at least 1 verdict, or it
+        is decorative and must come out. This is pinned because an ablation
+        found exactly that -- the subject rule changed 0 of 8 verdicts before
+        the corpus hole was closed, and 0 of 181 live entries.
+        """
+        import re as _re
+
+        def decide(sent, use_this, use_attr):
+            for mm in WNN._HIS_RESIDUE.finditer(sent):
+                only_he = mm.group(0).lower().startswith("only he")
+                if only_he and WNN._CLASS_OBJECT.search(sent) \
+                        and not (use_this and WNN._THIS_ITEM.search(sent)):
+                    continue
+                if only_he and use_attr and WNN._ATTRIBUTIVE.search(sent):
+                    continue
+                return True
+            return False
+
+        this_case = ("only he may authorise a paid panel dispatch, and this "
+                     "entry needs one")
+        attr_case = "his rule is that only he may approve this change"
+        assert decide(this_case, True, True) != decide(this_case, False, True), (
+            "`_THIS_ITEM` no longer changes any verdict; the narrowing is "
+            "decorative and the object rule is back to under-reporting")
+        assert decide(attr_case, True, True) != decide(attr_case, True, False), (
+            "`_ATTRIBUTIVE` no longer changes any verdict; B169's own proposal "
+            "has become decorative and should be removed rather than carried")
+
+    def test_the_guard_and_the_producer_cannot_drift(self, WNN):
+        """★ The cases live in the producer, not retyped here -- a count or a
+        label with 2 copies is 2 claims that can disagree. But the 2 quoted
+        from B169 are ALSO pinned literally below, so flipping a label in the
+        producer to make a rule look good goes red here.
+        """
+        import importlib.util
+        import pathlib
+        import sys
+        repo = pathlib.Path(__file__).resolve().parent.parent.parent
+        src = repo / "scripts" / "which_residue_rule_discriminates_2026-11-13.py"
+        assert src.is_file(), f"the producer is gone: {src}"
+        spec = importlib.util.spec_from_file_location("_b169_producer", src)
+        pm = importlib.util.module_from_spec(spec)
+        sys.modules["_b169_producer"] = pm
+        try:
+            spec.loader.exec_module(pm)
+        except SystemExit:
+            pass
+        assert len(pm.CASES) >= 9, (
+            f"the labelled corpus shrank to {len(pm.CASES)}; the measurement "
+            f"the shipped rule rests on no longer covers its own boundary")
+        wrong = [(t, w, WNN._residue_is_his(t))
+                 for t, w, _why in pm.CASES if WNN._residue_is_his(t) != w]
+        assert not wrong, (
+            f"the live predicate disagrees with the committed measurement on "
+            f"{len(wrong)} of {len(pm.CASES)} cases: {wrong}")
+        # ...and the 2 B169 quoted its defect from, pinned independently.
+        by_text = {t: w for t, w, _ in pm.CASES}
+        assert by_text.get("only he may reject a feature request") is False, (
+            "B169's class-statement case changed label in the producer")
+        assert by_text.get(
+            "only he may authorise a paid panel dispatch, and this entry "
+            "needs one") is True, (
+            "B169's missed-residue case changed label in the producer")
