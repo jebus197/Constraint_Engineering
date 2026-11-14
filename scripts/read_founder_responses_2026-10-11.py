@@ -265,10 +265,38 @@ try:
     _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from bench.ticket_store import KINDS as _HIS_KINDS
 except Exception:                                         # noqa: BLE001
-    _HIS_KINDS = ("fr", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
+    #: ★ THIS LITERAL WENT STALE AND THE STALENESS WAS SILENT, found 2026-11-14.
+    #: It omitted `frx`, so on any run where the import above fails his newest
+    #: marker became UNREADABLE -- and that is precisely the run where nothing
+    #: else is available to notice. Driven both ways on his own sentence
+    #: "you should fix both. frx": READ with the import, INVISIBLE with the
+    #: fallback. A fallback that is stale is worse than no fallback, because it
+    #: looks like coverage. `bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py`
+    #: now asserts this literal equals `KINDS` exactly, so it cannot go stale again.
+    _HIS_KINDS = ("fr", "frx", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
 _ENDS_IN_HIS_MARKER = re.compile(
     r"\b(?:" + "|".join(sorted(_HIS_KINDS, key=len, reverse=True)) + r")\b\s*$",
     re.IGNORECASE)
+
+#: ★ ONE ALTERNATION, DERIVED, USED BY EVERY PATTERN BELOW THAT NEEDS IT.
+#:
+#: 2 patterns in this file -- `_MARKER_LINE` and `_MARKER_TRAILING` -- each
+#: SPELLED THE VOCABULARY OUT TWICE, so the 9 kinds appeared 4 more times in
+#: this module alone. The cost is measured rather than feared: adding his `frx`
+#: on 2026-11-13 needed every site updated, the harvester's own comment names
+#: only 4 of them and none of them is in this file, and the commit board refused
+#: with 6 failures until they were found by hand.
+#:
+#: `_ENDS_IN_HIS_MARKER` above already did it the right way. These now do too,
+#: which REMOVES 4 re-spellings rather than adding a comparator for them -- a
+#: derived pattern cannot diverge, and under `simplicity-default` a deletion
+#: beats a checker that has to be kept honest.
+#:
+#: LONGEST FIRST is load-bearing, not cosmetic: `fr` is a prefix of `frx`, so a
+#: shorter-first alternation relies on the engine backtracking out of a failed
+#: suffix. It does backtrack, measured both ways -- but the ordering makes the
+#: pattern correct by construction instead of correct by accident.
+_KIND_ALT = "|".join(sorted(_HIS_KINDS, key=len, reverse=True))
 
 #: Where this project's own generated TTS reports live. An annotated response
 #: file is a COPY of one of these with his '#' insertions, so the original is an
@@ -526,7 +554,7 @@ def file_shape(path: Path) -> dict:
 #: own. Without it, `stm` would have been readable by the harvester and
 #: invisible to the reader that actually parses his annotations.
 _MARKER_LINE = re.compile(
-    r"^\s*(frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*\s*$", re.I)
+    r"^\s*(" + _KIND_ALT + r")(?:\s*,\s*(?:" + _KIND_ALT + r"))*\s*$", re.I)
 
 
 #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
@@ -556,9 +584,28 @@ _MARKER_LINE = re.compile(
 #: THE TEXT IS NOT ALTERED. Only this field is filled. `tid_of` digests a
 #: ticket's verbatim, so stripping the marker out of the annotation would move
 #: every identity derived from it -- a far larger change than the defect.
+#: ★ THE SUFFIX ADMITS A FOLLOWING PARENTHETICAL, WIDENED 2026-11-14, AND THE
+#: DEFECT IT CLOSES IS HIS OWN FIRST USE OF `frx` -- AGAIN, IN THE SECOND
+#: READER. B184 widened the HARVESTER's suffix for exactly this sentence and
+#: stopped there; this file carries the other reader of the same vocabulary and
+#: was never touched. Driven on his words, "you should fix both. frx (as you
+#: will note this is my first use of the fix request ticket classification.)":
+#: the harvester returned `frx`, `_MARKER_LINE` returned None and this pattern
+#: returned None, so `annotations()` reported the marker as blank.
+#:
+#: ★ IT WAS MASKED, NOT HARMLESS. `scripts/harvest_tickets_2026-10-17.py:432`
+#: re-applies its own MARKER when this field is empty, so the TICKET was filed
+#: correctly and the blind spot never surfaced there. 3 other production
+#: consumers read this field directly and saw his fix request as unmarked.
+#:
+#: ★ MEASURED BEFORE IT WAS MADE, because adding to an accepting pattern is a
+#: LOOSENING: over all 895 of his annotations the widened suffix changes
+#: exactly 1 verdict, 0.001117, Wilson [0.000197, 0.006302], Clopper-Pearson
+#: [0.000028, 0.006209] -- and that 1 is his own `frx` sentence. 0 verdicts
+#: LOST, 0 false positives in 895.
 _MARKER_TRAILING = re.compile(
-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*)"
-    r"[\s.!?]*$", re.I)
+    r"(?:^|[\s.,;:!?)\]\"'’”])((?:" + _KIND_ALT + r")(?:\s*,\s*(?:" + _KIND_ALT + r"))*)"
+    r"(?:[\s.!?]*$|\s*[(\[][^\n]*$)", re.I)
 
 
 #: ★ THE OTHER 5 SEATS, so a trailing `ds` that is the DeepSeek seat is not

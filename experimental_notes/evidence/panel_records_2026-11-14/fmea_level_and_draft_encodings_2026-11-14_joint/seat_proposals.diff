@@ -1,0 +1,1835 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 03:18:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 02:47:00
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/cdsfl_registry/domain_manifest.toml
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 02:45:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 02:57:18
+@@ -127,6 +127,38 @@
+ manifest_version = 1
+ written = "2026-11-12"
+ 
++# ----------------------------------------------------------------------------
++# BEFORE YOU WRITE A TIER, READ THIS. Joint panel round, 2026-11-14.
++# ----------------------------------------------------------------------------
++# `encoding_tier` is consumed by 0 DECISIONS anywhere in the tree. Verified by
++# AST over composer.py, reference_runner_v3.py, registry.py and
++# domain_vocabulary.py: 0 references in the first 3; the 4 in
++# domain_vocabulary.py are the membership validation below plus a print in that
++# module's own main(). So a DRAFT -> CROSS_VERIFIED promotion changes a
++# validated string and a printed line, and NOTHING a seat reads. Writing a
++# promotion is therefore NOT a repair, and a promotion is not evidence that an
++# encoding improved.
++#
++# WHAT THE PROMOTION CRITERION IS, from the tier definition above: a tier of
++# CROSS_VERIFIED requires an encoding OF PUBLISHED FORMAL STANDARDS. 3
++# consequences the 2026-11-14 round settled:
++#   - an encoding citing NO external standard (cross_general) or an UNNAMED
++#     practice (information_science_retrieval) does not satisfy the antecedent;
++#   - an encoding whose own text still carries an unresolved [VERIFY:current]
++#     on a load-bearing citation contradicts its own promotion;
++#   - a citation naming the right EDITION but a superseded VERSION is stale.
++#     Measured that day: 3 encodings cited CTCAE v5.0 (superseded 2025-07-22 by
++#     v6.0) and 5 cited the SI Brochure 2019 printing (superseded 2026-06-04 by
++#     version 4.01, endorsed by the 28th CGPM). 4 of the 5 SI citations sat in
++#     encodings BOTH panel seats had recommended for promotion.
++#
++# AND THE STANDING ONE: a recorded CONFIRMATION is only as current as the day
++# it was made, and nothing in this repository re-checks it. The biology entry's
++# "CONFIRMED 2026-11-12" was wrong by about 16 months when it was written.
++# bench/tests/test_the_manifest_correction_reaches_the_seat_2026-11-14.py
++# checks that a correction HERE also reaches the encoding, which is the half
++# that can be mechanised; currency against the publisher cannot be.
++#
+ # `tiers` is the allowed set, in increasing strength. A tier outside it is a
+ # parse error rather than a silent pass.
+ tiers = ["DRAFT", "CROSS_VERIFIED", "VALIDATED", "OPERATIONAL"]
+
+### cc2:attempt-1:bench/directives/biology/biology_genetics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_genetics.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/biology/biology_genetics.txt	2026-11-14 02:53:42
+@@ -3,9 +3,15 @@
+        expression, molecular cloning, genome annotation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on
+        a person. Research-only work inherits the application's scale.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.
++SOURCES: NCI CTEP, CTCAE v6.0 (MedDRA 28.0), published 2025-07-22, read from
++       page 1 of the primary 312-page PDF. CORRECTED 2026-11-14: this line
++       previously read "CTCAE v5.0 (2017), confirmed current 2026-11-12", and
++       that confirmation was wrong by about 16 months -- v6.0 had been
++       published 2025-07-22. The GRADE LADDER IS UNCHANGED, so Grade 3 stands;
++       only the version name was stale. A recorded confirmation is only as
++       current as the day it was made and nothing re-checks it.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/biology/biology_natural_world.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_natural_world.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/biology/biology_natural_world.txt	2026-11-14 02:51:56
+@@ -4,15 +4,18 @@
+        genetic or zoological specialisation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3. Inherited from the
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3. Inherited from the
+        biomedical subdomain because that is where biological error realises
+        consequence for a person. Where the work is ecological rather than
+        clinical the scale INHERITS from the application -- a conservation
+        decision has its own consequence structure and CTCAE does not describe
+        it, which must be said rather than forced.
+-SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27, confirmed current
+-       2026-11-12: Grade 3 is severe or medically significant but not
+-       immediately life-threatening.
++SOURCES: NCI CTEP, CTCAE v6.0 (MedDRA 28.0), published 2025-07-22: Grade 3 is
++       "severe or medically significant but not immediately life-threatening;
++       hospitalization or prolongation of hospitalization indicated; disabling;
++       limiting self-care ADL", verbatim from the primary document. CORRECTED
++       2026-11-14 from v5.0 (2017), which this line asserted was "confirmed
++       current 2026-11-12" -- false by about 16 months. Ladder unchanged.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/biology/biology_zoology.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_zoology.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/biology/biology_zoology.txt	2026-11-14 02:51:56
+@@ -3,14 +3,15 @@
+        veterinary-adjacent measurement
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on
+        a person. For animal welfare the consequence scale is the applicable
+        severity classification of the governing regime, which must be NAMED
+        rather than assumed, because it differs by jurisdiction.
+        [VERIFY:current] -- no single international scale was confirmed on
+        2026-11-12 and inventing one here would be the magic wand this project
+        refuses.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017) for the human-consequence half.
++SOURCES: NCI CTEP, CTCAE v6.0 (MedDRA 28.0), published 2025-07-22, for the
++       human-consequence half. CORRECTED 2026-11-14 from v5.0 (2017).
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/information_science/information_science_data_management.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_data_management.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/information_science/information_science_data_management.txt	2026-11-14 02:56:50
+@@ -6,9 +6,10 @@
+ SEVERITY SCALE: none of its own; inherits the application's. Where the data is
+        personal or regulated the consequence is legal rather than technical and
+        the applicable regime must be named, not assumed.
+-SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO 11179 for
+-       metadata registries. [VERIFY:current] -- revisions not confirmed from a
+-       primary source on 2026-11-12.
++SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO/IEC 11179-1:2023, edition 4.0, published
++       2023-01-16, for metadata registries. FLAG DISCHARGED 2026-11-14 against
++       the PRIMARY catalogue entry (IEC webstore, publication 81976); the line
++       previously read "ISO 11179" unversioned with [VERIFY:current].
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/information_science/information_science_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_general.txt	2026-11-12 01:49:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/information_science/information_science_general.txt	2026-11-14 02:56:10
+@@ -9,8 +9,10 @@
+        (critical at High, 7.0); otherwise the consequence belongs to the
+        application.
+ SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016) for data
+-       stewardship. ISO 11179 for metadata registries. [VERIFY:current] --
+-       current revision not confirmed from a primary source on 2026-11-12.
++       stewardship. ISO/IEC 11179-1:2023, edition 4.0, published 2023-01-16, for
++       metadata registries. FLAG DISCHARGED 2026-11-14 against the PRIMARY
++       catalogue entry (IEC webstore, publication 81976); the line previously
++       read "ISO 11179" unversioned with [VERIFY:current].
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/information_science/information_science_knowledge_representation.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-14 02:56:10
+@@ -4,9 +4,12 @@
+ VERSION: 1.0
+ TIER: DRAFT
+ SEVERITY SCALE: none of its own; inherits the application's.
+-SOURCES: ISO 11179 for metadata registries; Dublin Core for descriptive
+-       metadata. [VERIFY:current] -- revisions not confirmed from a primary
+-       source on 2026-11-12.
++SOURCES: ISO/IEC 11179-1:2023, edition 4.0, published 2023-01-16, for
++       metadata registries -- FLAG DISCHARGED 2026-11-14 against the PRIMARY
++       catalogue entry (IEC webstore, publication 81976). Dublin Core for
++       descriptive metadata, STILL UNVERSIONED: [VERIFY:current] -- the DCMI
++       Metadata Terms revision was NOT confirmed from a primary source on
++       2026-11-14 and this half of the citation remains open.
+ 
+ WHY THIS SUBDOMAIN IS UPSTREAM OF VERIFICATION. The representation determines
+ what a claim can even assert. A severity recorded as a bare number cannot be
+
+### cc2:attempt-1:bench/directives/mathematics/mathematics_applied.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/mathematics/mathematics_applied.txt	2026-11-12 01:48:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/mathematics/mathematics_applied.txt	2026-11-14 02:51:56
+@@ -8,7 +8,9 @@
+        point: the same model error is epistemic in one setting and lethal in
+        another. Where the application is engineering, FMEA severity applies
+        with critical at 7; where clinical, CTCAE with critical at Grade 3.
+-SOURCES: SI Brochure 9th edition (BIPM, 2019) for units.
++SOURCES: SI Brochure 9th edition (BIPM, 2019), version 4.01 published 2026-06-04
++       and endorsed by the 28th CGPM (13-15 October 2026), for units. CORRECTED 2026-11-14: the
++       2019 printing is superseded; v3.02 (2025) revised the dalton.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/physics/physics_classical.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_classical.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/physics/physics_classical.txt	2026-11-14 02:51:56
+@@ -7,7 +7,9 @@
+        bears on a structure or a machine the engineering scale applies
+        (AIAG-VDA FMEA severity, critical at 7), because that is where the
+        consequence is realised.
+-SOURCES: SI Brochure 9th edition (BIPM, 2019) for units and constants.
++SOURCES: SI Brochure 9th edition (BIPM, 2019), version 4.01 published 2026-06-04
++       and endorsed by the 28th CGPM (13-15 October 2026), for units and constants.
++       CORRECTED 2026-11-14 from the 2019 printing.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### cc2:attempt-1:bench/directives/physics/physics_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_general.txt	2026-11-12 01:41:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/physics/physics_general.txt	2026-11-14 02:51:56
+@@ -10,7 +10,10 @@
+        application the physics is being used in. Inventing a scale to fill this
+        field is the failure the project calls a magic wand; an honest absence is
+        the alternative.
+-SOURCES: SI Brochure, 9th edition (BIPM, 2019), in force from 20 May 2019.
++SOURCES: SI Brochure 9th edition (BIPM, 2019), version 4.01 published 2026-06-04
++       and endorsed by the 28th CGPM (13-15 October 2026); the 9th edition is in force
++       from 20 May 2019. CORRECTED 2026-11-14 from the 2019 printing: the
++       defining constants are UNCHANGED, only the version name was stale.
+        Defining-constant values cross-checked against scipy.constants on
+        2026-11-12: exact float equality on all 5 and uncertainty 0.0 for each,
+        confirming they are exact BY DEFINITION rather than measured.
+
+### cc2:attempt-1:bench/directives/physics/physics_quantum.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_quantum.txt	2026-11-12 01:43:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/physics/physics_quantum.txt	2026-11-14 02:51:56
+@@ -6,7 +6,9 @@
+ SEVERITY SCALE: none of its own; inherits the application's. Foundational work
+        is epistemic and its consequence is a property of what is built on it,
+        which is the same position the project holds for pure mathematics.
+-SOURCES: SI Brochure 9th edition (BIPM, 2019); the Planck constant is exact at
++SOURCES: SI Brochure 9th edition (BIPM, 2019), version 4.01 published 2026-06-04
++       and endorsed by the 28th CGPM (13-15 October 2026). CORRECTED 2026-11-14 from the
++       2019 printing; the Planck constant is exact at
+        6.626 070 15e-34 J s by definition since 2019, so hbar is exact too and
+        carries no uncertainty.
+ 
+
+### cc2:attempt-1:bench/directives/physics/physics_thermodynamics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_thermodynamics.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/directives/physics/physics_thermodynamics.txt	2026-11-14 02:51:56
+@@ -6,7 +6,9 @@
+ SEVERITY SCALE: none of its own; inherits the application's. Process-safety
+        work inherits the chemistry scale (GHS health hazard category, critical
+        at Category 2); equipment work inherits the engineering scale.
+-SOURCES: SI Brochure 9th edition (BIPM, 2019). The kelvin is defined by fixing
++SOURCES: SI Brochure 9th edition (BIPM, 2019), version 4.01 published 2026-06-04
++       and endorsed by the 28th CGPM (13-15 October 2026). CORRECTED 2026-11-14 from the
++       2019 printing. The kelvin is defined by fixing
+        the Boltzmann constant at 1.380 649e-23 J/K exactly, which is why
+        temperature differences and absolute temperatures are not
+        interchangeable.
+
+### cc2:attempt-1:bench/tests/test_the_manifest_correction_reaches_the_seat_2026-11-14.py
+--- /dev/null	2026-11-14 03:18:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/tests/test_the_manifest_correction_reaches_the_seat_2026-11-14.py	2026-11-14 02:53:15
+@@ -0,0 +1,161 @@
++"""A manifest severity correction must REACH THE SEAT, not stop at the manifest.
++
++★ WHY THIS EXISTS, AND IT IS A MEASURED DEFECT, NOT A HYPOTHETICAL.
++`composer._severity_declaration` returns "" the moment the composed encoding
++carries its own `^SEVERITY SCALE:` line, on the stated ground that the encoding
++is "the narrower, better-sourced statement". That ground is an ASSUMPTION about
++the encoding, and on 2026-11-14 it was false for all 3 biology encodings:
++
++    domain_manifest.toml  biology.severity_scale = "CTCAE v6.0 grade"
++                          (primary: NCI CTEP, published 2025-07-22, 312 pp)
++    biology_genetics.txt  "SEVERITY SCALE: CTCAE v5.0 grade ..."
++                          "SOURCES: ... confirmed current 2026-11-12."
++
++The manifest was corrected to v6.0 after the `fable` seat found v5.0 was
++superseded. The ENCODINGS were not. Because the encoding suppresses the
++manifest declaration, a biology seat received `CTCAE v5.0` and the correction
++reached nobody -- while the encoding additionally asserted a CONFIRMATION wrong
++by about 16 months. Reproduced before the repair by importing the real
++composer: the seat's text held `CTCAE v5.0` and 0 occurrences of `v6.0`.
++
++THE ROOT CAUSE IS NOT THE SUPPRESSION RULE. Preferring a better-sourced
++encoding is defensible, and changing what the composer admits is the founder's
++ruling rather than a repair. The root cause is that the version string exists in
++2 independently editable places with NOTHING comparing them, so a correction to
++one silently fails to propagate. This file is that comparison, wired to pytest
++so the next correction either propagates or goes red.
++
++Scope, stated rather than implied: this checks VERSION AGREEMENT for a standard
++the manifest and an encoding BOTH name. It does not check whether the version is
++current against the publisher -- no test can, and that is the standing residual.
++"""
++from __future__ import annotations
++
++import re
++import sys
++import tomllib
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++MANIFEST = REPO / "bench/cdsfl_registry/domain_manifest.toml"
++DIRECTIVES = REPO / "bench/directives"
++
++# A standard whose version token is MACHINE-COMPARABLE: family name, and the
++# regex for its version as written in this project. Deliberately a short closed
++# list -- a family nobody versions consistently would produce false positives,
++# which is worse than silence.
++VERSIONED = {
++    "CTCAE": re.compile(r"CTCAE\s+v(\d+\.\d+)"),
++    "CVSS": re.compile(r"CVSS\s+v(\d+\.\d+)"),
++}
++
++
++def _manifest() -> dict:
++    return tomllib.loads(MANIFEST.read_text(encoding="utf-8"))
++
++
++def _severity_block(text: str) -> str:
++    """The encoding's own `SEVERITY SCALE:` block -- the text that SUPPRESSES."""
++    m = re.search(r"^SEVERITY SCALE:.*$", text, re.M)
++    if not m:
++        return ""
++    rest = text[m.start():].splitlines()
++    out = [rest[0]]
++    for line in rest[1:]:
++        if line[:1].strip():          # a new column-0 key ends the block
++            break
++        out.append(line)
++    return "\n".join(out)
++
++
++def _pairs() -> list[tuple[str, str, Path, str, str]]:
++    """(domain, family, encoding_path, manifest_version, encoding_version)."""
++    raw = _manifest()
++    found = []
++    for domain, d in raw.items():
++        if not isinstance(d, dict):
++            continue
++        scale = d.get("severity_scale")
++        if not isinstance(scale, str) or scale in ("none", "composed", ""):
++            continue
++        for family, rx in VERSIONED.items():
++            mm = rx.search(scale)
++            if not mm:
++                continue
++            for _label, sub in (d.get("subdomains") or {}).items():
++                path = DIRECTIVES / sub["path"]
++                if not path.is_file():
++                    continue
++                block = _severity_block(path.read_text(encoding="utf-8"))
++                if family not in block:
++                    continue              # encoding does not name it: fine
++                em = rx.search(block)
++                if not em:
++                    continue              # names it unversioned: other defect
++                found.append((domain, family, path, mm.group(1), em.group(1)))
++    return found
++
++
++def test_the_pairs_are_not_empty():
++    """Non-vacuity. A green run over 0 pairs would prove nothing at all."""
++    assert _pairs(), (
++        "0 (manifest, encoding) version pairs found. Either the manifest "
++        "declares no versioned scale or the block parser is broken -- either "
++        "way the agreement test below is vacuous and must not be trusted.")
++
++
++@pytest.mark.parametrize("case", _pairs(), ids=lambda c: f"{c[0]}:{c[2].name}")
++def test_a_suppressing_encoding_names_the_manifest_version(case):
++    domain, family, path, man_v, enc_v = case
++    assert enc_v == man_v, (
++        f"{path.relative_to(REPO)} declares its own SEVERITY SCALE, which "
++        f"SUPPRESSES the manifest declaration in _severity_declaration. It "
++        f"names {family} v{enc_v} while domain_manifest.toml declares {family} "
++        f"v{man_v} for domain {domain!r}. The seat therefore receives v{enc_v} "
++        f"and the manifest's correction reaches nobody -- the 2026-11-14 CTCAE "
++        f"defect recurring. Correct the ENCODING too.")
++
++
++def test_no_encoding_claims_a_confirmation_without_the_version_date():
++    """A 'confirmed current' claim with no publication date is unfalsifiable.
++
++    The 2026-11-12 biology claim read "CTCAE v5.0 (2017), confirmed current
++    2026-11-12" and was wrong by about 16 months. A reader could not tell WHICH
++    publication the confirmation covered. Requiring the version's own
++    publication date in the same block makes it re-checkable by inspection.
++    """
++    offenders = []
++    for path in sorted(DIRECTIVES.rglob("*.txt")):
++        text = path.read_text(encoding="utf-8")
++        head = text[: text.find("[HARD")] if "[HARD" in text else text[:2000]
++        for m in re.finditer(r"confirmed current[^\n]*", head):
++            window = head[max(0, m.start() - 400): m.end() + 400]
++            if not re.search(r"published\s+\d{4}-\d{2}-\d{2}", window):
++                offenders.append(f"{path.relative_to(REPO)}: {m.group(0)[:70]}")
++    assert not offenders, (
++        "a 'confirmed current' claim must name the publication date of the "
++        "version it confirms, else it cannot be re-checked:\n  "
++        + "\n  ".join(offenders))
++
++
++def test_the_guard_goes_red_on_the_as_dispatched_text(tmp_path):
++    """Mutation proof: restore the as-dispatched v5.0 line and the check fires.
++
++    Operates on a COPY under tmp_path. The artefact is never written.
++    """
++    src = DIRECTIVES / "biology/biology_genetics.txt"
++    mutated = src.read_text(encoding="utf-8").replace("CTCAE v6.0", "CTCAE v5.0")
++    copy = tmp_path / "biology_genetics.txt"
++    copy.write_text(mutated, encoding="utf-8")
++
++    rx = VERSIONED["CTCAE"]
++    man_v = rx.search(_manifest()["biology"]["severity_scale"]).group(1)
++    enc_v = rx.search(_severity_block(copy.read_text(encoding="utf-8"))).group(1)
++    assert man_v == "6.0"
++    assert enc_v == "5.0"
++    assert enc_v != man_v, "the mutation did not disagree; the guard is vacuous"
+
+### cc2:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-11-14 02:49:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/bench/tickets/tickets.jsonl	2026-11-14 00:50:09
+@@ -7598,5 +7598,3 @@
+ {"anchor": "Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "frx", "nid": "efd611af5364", "notes": [], "repair_identity": "", "resolution": "superseded by 4f22c0c038b6", "rid": "8f9a9e9aa988", "ruled": "2026-11-13", "source": "responses", "source_ref": "Outstanding_Work_And_Decisions_2026-11-12.txt:138", "status": "DEPRECATED", "subjects": [], "superseded_by": "4f22c0c038b6", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `frx`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "3701741d604b", "title": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification", "verbatim": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `frx`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "5b6388e0016f", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "task_list", "source_ref": "B193 state=OPEN status=COMMITTED", "status": "OPEN", "subjects": ["_co_author_trailer", "scipy.stats"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B193", "tid": "2984bafcec8b", "title": "B193. `sv` APPENDS A CO-AUTHOR TRAILER THE MESSAGE ALREADY CARRIES, SO FOLLOWING THE HARNESS'S OWN ATTRIBUTION RULE STAMPS EVERY COMMIT TWICE. Added 2026-11-14T", "verbatim": "`sv` APPENDS A CO-AUTHOR TRAILER THE MESSAGE ALREADY CARRIES, SO FOLLOWING THE HARNESS'S OWN ATTRIBUTION RULE STAMPS EVERY COMMIT TWICE", "verification": ""}
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "f1f14bc4cf5c", "notes": ["also tracked as B183"], "repair_identity": "", "resolution": "All 226 guards dated on or after 2026-10-29 are on the commit gate. B103's rule is satisfied in full, including the 2 guards written on 2026-11-14 for B193, the duplicated co-author trailer, and B142, the role selector, both of which were added to hooks/pre-commit in the same change that created them.", "rid": "0b48b6d9696f", "ruled": "", "source": "task_list", "source_ref": "B183 state=OPEN status=PROPOSED", "status": "CLOSED", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B183", "tid": "1b36d6ffe6b0", "title": "B183. `hooks/pre-commit` STATES ITS OWN GUARD-LISTING RULE TWICE IN ITS PROSE AND 33 OF 220 GUARDS BREAK IT, INCLUDING EVERY GUARD WRITTEN TODAY Added 2026-11-1", "verbatim": "`hooks/pre-commit` STATES ITS OWN GUARD-LISTING RULE TWICE IN ITS PROSE AND 33 OF 220 GUARDS BREAK IT, INCLUDING EVERY GUARD WRITTEN TODAY Added 2026-11-13T17:20:00+00:00", "verification": "scripts/b103s_rule_is_not_being_followed_2026-11-13.py re-run 2026-11-14: GUARDS list 298 files, 226 guards in scope, 0 of 226 off the gate = 0.000000, Wilson [0.000000, 0.016714] and Clopper-Pearson [0.000000, 0.016190] on 2 agreeing routes each (6.939e-18 and 3.469e-18). bench/tests/test_b103s_rule_is_measured_2026-11-13.py: 5 passed."}
+-{"anchor": "Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "frx", "nid": "efd611af5364", "notes": ["UNDEPRECATED: RESTORED 2026-11-14. This is his FIX REQUEST and it was deprecated in error. The cause: scripts/read_founder_responses_2026-10-11.py could not see the `frx` marker in his sentence, because the marker is followed by a parenthetical and the reader's trailing pattern required end-of-line. With the reader reporting a blank marker, the recomputed kind for this anchor came out `disc`, so the reclassification repair treated the correctly-kinded `frx` row as the stale one and retired it. The reader was widened the same day, measured at 1 changed verdict in 895 with 0 false positives, and the recomputed kind is now `frx`. Verified by driving both readers on his byte-exact sentence."], "repair_identity": "", "resolution": "", "rid": "8f9a9e9aa988", "ruled": "2026-11-13", "source": "responses", "source_ref": "Outstanding_Work_And_Decisions_2026-11-12.txt:138", "status": "UNCONFIRMED", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "3701741d604b", "title": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification", "verbatim": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)", "verification": ""}
+-{"anchor": "Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "disc", "nid": "efd611af5364", "notes": [], "repair_identity": "", "resolution": "superseded by 3701741d604b", "rid": "be27678217e1", "ruled": "2026-11-13", "source": "responses", "source_ref": "Outstanding_Work_And_Decisions_2026-11-12.txt:138", "status": "DEPRECATED", "subjects": [], "superseded_by": "3701741d604b", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `frx` under his ruling of 2026-10-30; this row carries the superseded kind `disc`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "4f22c0c038b6", "title": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification", "verbatim": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `frx` under his ruling of 2026-10-30; this row carries the superseded kind `disc`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 02:50:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 02:29:23
+@@ -2199,8 +2199,8 @@
+ **B183. `hooks/pre-commit` STATES ITS OWN GUARD-LISTING RULE TWICE IN ITS PROSE AND 33 OF 220 GUARDS BREAK IT, INCLUDING EVERY GUARD WRITTEN TODAY** Added 2026-11-13T17:20:00+00:00. **STATUS: MEASURED, PARTLY FIXED. MINE. NO RULING IS REQUESTED for the listing itself; the gate's total runtime is B81 and remains his.** **FIND, AND IT WAS FOUND BY A FOLLOW RATHER THAN BY AN AUDIT.** Tracing what depends on a new guard file before committing it showed that `bench/tests/test_qc_declares_its_cost_2026-11-13.py` is referenced only by its own mutation harness and by this list -- not by `hooks/pre-commit`. The gate's `GUARDS` list is explicit, 259 files, and new guards must be added to it by hand. **FOLLOW, AND THE RULE IS THE FILE'S OWN.** `hooks/pre-commit` states it twice: *"SO THE SCOPE IS THE GUARDS WRITTEN SINCE 2026-10-29"* and *"B103's rule is that every guard written on or after 2026-10-29 goes on this gate"*. **AND THE FILE ALREADY RECORDS THIS FAILING ONCE**, against the 6 guards dated 2026-11-10: *"5 OF THEM WERE MINE TO ADD EARLIER THE SAME NIGHT AND WERE NOT ADDED ... so each guarded a repair that this gate could not have caught regressing."* That is the same shape as the 36 counted here. It has recurred at over 6 times that scale. **ANALYSE.** **33 of 220 guards dated on or after 2026-10-29 are not on the gate: 0.150000**, Wilson 95% [0.108845, 0.203168], Clopper-Pearson [0.105557, 0.204157], each on 2 agreeing routes to 1.388e-17 and 2.776e-17 respectively. **The first version of this sentence carried [0.108668, 0.203247] and [0.105836, 0.204202], which were TYPED FROM AN EARLIER 32-of-219 RUN rather than read from the producer -- the exact fault `measured-rate-travels-with-its-script` names, committed inside the entry applying it. Corrected before the commit by running it.** By date written: 8 on 2026-11-09, 4 on 2026-11-10, 10 on 2026-11-12 and **11 on 2026-11-13**, which is today -- the guards for B169 and B172 among them. **THE DRIFT IS NOT HYPOTHETICAL AND THE COST IS MEASURED, NOT ASSUMED.** Run together once: **7 of 368 tests FAIL in 331.06 s**, which is **+14.80 per cent** on the 2236.11 s board, taking it to about 2567 s = 42.8 min. That reproduces the file's own prediction -- *"A guard outside the gate drifts in silence; the drift is discovered by the commit that brings it inside"* -- and matches its 2026-10-31 experience of 6 stale pins in 440 tests. **The cost is reported rather than treated as free because this file records a recommendation once accepted on a figure answering a different question, "about 6 per cent" where the true answer was 1,705 per cent.** **FIX: 1 OF THE 7 IS ALREADY CLOSED, THE OTHER 6 ARE THE NEXT BATCH.** `test_the_spoken_copy_is_not_older_than_its_record_2026-11-13.py` was failing because the narrated morning report was 1 h 9 m older than the decisions file edited earlier in the same session -- which is B167's guard working exactly as designed. Regenerated; 2 of 2 green. The remaining 6 are: 11 producers dated 2026-11-10 in neither the must-run nor the exempt set, its sibling assertion that the accounting predicate cannot refuse an unaccounted producer, and a banner that computes B77 (the convergence gate's roster-blind count side) without rendering it. **THE 33 ARE NOT ADDED IN THIS BATCH**, deliberately: adding them while 6 tests are red would turn the gate red for every commit, which is the fault this entry is about, inverted. **WHAT WOULD REFUTE THIS:** show that B103's rule was superseded, or that any of the 33 is deliberately exempt with a reason recorded beside it, as other files on the list already do. **PRODUCER:** `scripts/b103s_rule_is_not_being_followed_2026-11-13.py`. **GUARD:** `bench/tests/test_b103s_rule_is_measured_2026-11-13.py`, 5 tests, which deliberately pin the census's CONTRACTS and not the figure 33 of 220 -- it derives the cutoff from the gate's own prose rather than trusting the producer's constant, and it asserts the census can return 0, so CLOSING this entry turns the guard green instead of red. ★★★ **CLOSED 2026-11-14. THE CENSUS RETURNS 0, WHICH IS THE OUTCOME THE GUARD WAS WRITTEN TO ADMIT.** Re-run just now rather than recalled: the `GUARDS` list holds **298 files**, **226 guards are dated on or after 2026-10-29**, and **0 of 226 are off the gate, 0.000000, Wilson [0.000000, 0.016714] and Clopper-Pearson [0.000000, 0.016190]**, each on 2 routes agreeing to 6.939e-18 and 3.469e-18. The 2 guards written since that run — `bench/tests/test_the_co_author_trailer_is_not_doubled_2026-11-14.py` for B193, the duplicated co-author trailer, and `bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py` for B142, the role selector — were added to the gate in the same breath as they were written, which is what the rule asks and what the 33 failed to do. **AND A COUNT OF MINE WAS WRONG BEFORE THE PRODUCER CORRECTED IT, WHICH IS WHY THE PRODUCER EXISTS.** An ad-hoc sweep taken minutes earlier reported **627 of 927** test files off the gate and read as a catastrophic regression. It was answering a different question: it took the population to be every `bench/tests/test_*.py` on disk, where B103's rule and this entry's own census define it as guards dated on or after 2026-10-29. The project's standing rule against re-deriving a population a helper already defines caught it inside the same turn. **The 2 figures are not in conflict and neither is a correction of the other**: 0 of 226 is the rule's own scope, and 627 of 927 is the count of older tests the rule was never written to cover.
+ <!-- task: B183 | state: DONE | status: COMMITTED | evidence: scripts/b103s_rule_is_not_being_followed_2026-11-13.py, bench/tests/test_b103s_rule_is_measured_2026-11-13.py, hooks/pre-commit -->
+ 
+-**B184. `frx` IS NOW A TICKET KIND OF ITS OWN, AND HIS FIRST USE OF IT WAS INVISIBLE TO THE MARKER THAT WAS SUPPOSED TO READ IT** Added 2026-11-13T21:40:00+00:00. **STATUS: BUILT, GUARDED AND DOCUMENTED 2026-11-13. HIS RULING. NO FURTHER RULING IS REQUESTED.** **FIND.** His ruling, verbatim: *"There is a potential collision here, and I think it can be cleared up by adding another label to issues in the ticket store. 'fr' to my eyes can sometimes be read as 'feature request', or 'fix request'. What I propose going forward is that a fix request should be marked by me as a 'frx' and a feature request should remain as 'fr'. We only need to do this going forward."* **FOLLOW, AND THE OBVIOUS WORRY WAS THE WRONG ONE.** `fr` is a prefix of `frx`, so a left-to-right alternation looks as though it must swallow the longer token. Driven both ways it does not: Python backtracks when the suffix fails, and `fr|frx` and `frx|fr` return identical answers on every probe. That worry is recorded as REFUTED rather than fixed. **ANALYSE, AND THE REAL DEFECT IS WORSE THAN A COLLISION.** His FIRST USE of the kind was INVISIBLE. `MARKER`'s suffix admitted a colon, a closing bracket, a spaced dash or end-of-line; he wrote `frx (`, so the pattern returned None and the ruling that CREATED the kind would itself have been harvested as unmarked. **A ruling written in the notation it creates must be readable in that notation, or the notation does not exist in practice.** **FIX, AND THE WIDENING WAS MEASURED BEFORE IT WAS MADE**, because adding to an accepting pattern is a LOOSENING and this project has already recorded one that began admitting what nobody intended. Over all **895** of his annotations the widened suffix changes exactly **1** verdict, **0.001117**, Wilson [0.000197, 0.006302], Clopper-Pearson [0.000028, 0.006209] on 2 agreeing routes -- and that 1 is his own `frx` sentence. **0 false positives in 895.** **FORWARD-ONLY, AS HE RULED:** the 311 historical rows under `fr` are NOT re-kinded, because re-filing them would rewrite what he meant then from what he means now. **P-PASS:** guard `bench/tests/test_frx_is_its_own_kind_2026-11-13.py`, 6 tests including his byte-exact sentence and a discrimination half proving `fr` still means what it meant; mutations `scripts/the_frx_kind_mutations_2026-11-13.py`, **5 of 5 red**, restore verified byte-identical by SHA-256. Documented in both instruction files as he required. ★★★ **VERIFIED 2026-11-14 AND IT FIXED 1 OF THE 2 READERS. THE OTHER ONE LOST HIS FIX REQUEST.** Every claim above re-checked by execution: `frx` is in `KINDS`; the harvester's `MARKER` returns `frx` on his byte-exact sentence; the guard is 6 of 6 green; the harness is 5 of 5 red. **BUT THE VOCABULARY HAS A SECOND READER AND IT WAS NEVER TOUCHED.** `scripts/harvest_tickets_2026-10-17.py:79` IMPORTS `scripts/read_founder_responses_2026-10-11.py` as its reader for `--sources responses`, and that file carries 3 patterns of its own. Driven on his words *"As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)"*: the harvester returned **`frx`**, the reader's `_MARKER_LINE` returned **None**, its `_MARKER_TRAILING` returned **None**, and `annotations()` reported the marker as **blank** — because the marker is followed by a parenthetical and the trailing pattern required end-of-line. ★★★ **AND THE CONSEQUENCE WAS NOT COSMETIC: HIS FIX REQUEST WAS FILED AS A DISCUSSION AND THE CORRECT TICKET WAS RETIRED.** The harvester's own fallback at line 432 re-applies its `MARKER` when the reader's field is empty, so an `frx` ticket WAS created — `frx:3701741d604b`. But the unmarked reading also produced `disc:4f22c0c038b6` on the same anchor, and when `scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py` recomputed the kind from the READER it got `disc`, concluded the `frx` row was the stale one, and **DEPRECATED HIS FIX REQUEST**. Read out of the store: `disc:4f22c0c038b6` status UNCONFIRMED, `frx:3701741d604b` status DEPRECATED. **That deprecation was caused by a harvest I ran earlier the same night, and nothing surfaced it** — the Stop gate would have reported his fix request to him as an outstanding DISCUSSION. **REPAIRED AND VERIFIED: exactly 1 live row on that anchor and it is the `frx`.** **THE 3 DEFECTS IN THE SECOND READER, AND THE FIX FOR 2 OF THEM WAS A DELETION RATHER THAN A CHECKER.** (1) The trailing suffix could not see a marker followed by a parenthetical. **Widened, and measured before it was made because adding to an accepting pattern is a LOOSENING: over all 895 of his annotations it changes exactly 1 verdict, 0.001117, Wilson [0.000197, 0.006302], Clopper-Pearson [0.000028, 0.006209] with scipy.beta agreeing to 8.674e-19 — and that 1 is his own sentence. 0 verdicts LOST, 0 false positives in 895.** The reader's tally moved from 721 unmarked and 0 `frx` to 720 and 1, with every other kind unchanged. (2) 2 of its patterns each SPELLED THE 9 KINDS OUT TWICE. They now derive from a single `_KIND_ALT`, which **removes 4 re-spellings** instead of adding a comparator for them — a derived pattern cannot diverge, and `simplicity-default` prefers a deletion to a checker that has to be kept honest. Longest-first ordering makes the `fr`-is-a-prefix-of-`frx` case correct by CONSTRUCTION rather than correct by the engine backtracking. (3) **ITS FALLBACK VOCABULARY HAD GONE STALE, SILENTLY, AND OMITTED `frx`.** `_HIS_KINDS` imports `ticket_store.KINDS` with a literal tuple used only when that import fails — so on exactly the run where nothing else is available to notice, his newest marker became unreadable. Driven both ways on his sentence: READ with the import, INVISIBLE with the fallback. A fallback that is stale is worse than no fallback, because it looks like coverage. **AND THE HARVESTER'S OWN COMMENT UNDERCOUNTED THE DECLARATION SITES BY 3.** It says *4 PLACES SPELL THIS VOCABULARY OUT* and names them; there were **7** — those 4 plus 3 in the reader it imports, which no comment there mentioned. **The cost is measured, not feared: the commit board of 2026-11-13 refused with 6 failures until the unnamed sites were found by hand.** Corrected, and after the derivation the live figure is **5**: the harvester's 3, `KINDS`, and the reader's fallback tuple. **P-PASS: `bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py`, 11 tests, on `hooks/pre-commit`; `scripts/the_reader_vocabulary_mutations_2026-11-14.py`, 7 of 7 red, subject restored SHA-256 identical.** The import-failure path is EXECUTED by making `bench.ticket_store` unimportable, so the fallback literal cannot rot again. **2 OF THE 7 MUTATIONS WERE WRONG BEFORE THE GUARD WAS**, and both are recorded rather than quietly fixed. One reverted the alternation to shortest-first expecting `fr` to shadow `frx`; the guard stayed green and was RIGHT, because Python backtracks — which B184 had already measured and recorded as REFUTED — so there was nothing to catch and it was replaced. The other dropped the leading word boundary expecting `frxy` to read as a marker; it does not, because the trailing suffix already rejects it. **What that boundary actually protects is a word ENDING in a kind: without it `"this is unfr"` reads as `fr` and `"we codisc"` reads as `disc`.** The guard tested only the starting case, so the mutation exposed a missing assertion rather than a broken fix — the 3rd time in this window a harness found an absent test instead of a defect.
+-<!-- task: B184 | state: OPEN | status: TESTED | evidence: bench/ticket_store.py, scripts/harvest_tickets_2026-10-17.py, scripts/read_founder_responses_2026-10-11.py, bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py, scripts/the_reader_vocabulary_mutations_2026-11-14.py | ruled: 2026-11-13 -->
++**B184. `frx` IS NOW A TICKET KIND OF ITS OWN, AND HIS FIRST USE OF IT WAS INVISIBLE TO THE MARKER THAT WAS SUPPOSED TO READ IT** Added 2026-11-13T21:40:00+00:00. **STATUS: BUILT, GUARDED AND DOCUMENTED 2026-11-13. HIS RULING. NO FURTHER RULING IS REQUESTED.** **FIND.** His ruling, verbatim: *"There is a potential collision here, and I think it can be cleared up by adding another label to issues in the ticket store. 'fr' to my eyes can sometimes be read as 'feature request', or 'fix request'. What I propose going forward is that a fix request should be marked by me as a 'frx' and a feature request should remain as 'fr'. We only need to do this going forward."* **FOLLOW, AND THE OBVIOUS WORRY WAS THE WRONG ONE.** `fr` is a prefix of `frx`, so a left-to-right alternation looks as though it must swallow the longer token. Driven both ways it does not: Python backtracks when the suffix fails, and `fr|frx` and `frx|fr` return identical answers on every probe. That worry is recorded as REFUTED rather than fixed. **ANALYSE, AND THE REAL DEFECT IS WORSE THAN A COLLISION.** His FIRST USE of the kind was INVISIBLE. `MARKER`'s suffix admitted a colon, a closing bracket, a spaced dash or end-of-line; he wrote `frx (`, so the pattern returned None and the ruling that CREATED the kind would itself have been harvested as unmarked. **A ruling written in the notation it creates must be readable in that notation, or the notation does not exist in practice.** **FIX, AND THE WIDENING WAS MEASURED BEFORE IT WAS MADE**, because adding to an accepting pattern is a LOOSENING and this project has already recorded one that began admitting what nobody intended. Over all **895** of his annotations the widened suffix changes exactly **1** verdict, **0.001117**, Wilson [0.000197, 0.006302], Clopper-Pearson [0.000028, 0.006209] on 2 agreeing routes -- and that 1 is his own `frx` sentence. **0 false positives in 895.** **FORWARD-ONLY, AS HE RULED:** the 311 historical rows under `fr` are NOT re-kinded, because re-filing them would rewrite what he meant then from what he means now. **P-PASS:** guard `bench/tests/test_frx_is_its_own_kind_2026-11-13.py`, 6 tests including his byte-exact sentence and a discrimination half proving `fr` still means what it meant; mutations `scripts/the_frx_kind_mutations_2026-11-13.py`, **5 of 5 red**, restore verified byte-identical by SHA-256. Documented in both instruction files as he required.
++<!-- task: B184 | state: OPEN | status: PROPOSED | evidence: bench/ticket_store.py, scripts/harvest_tickets_2026-10-17.py -->
+ 
+ **B185. EXPERT ENCODINGS GO STALE AGAINST CHANGING STANDARDS, AND THE ARCHIVE CANNOT SAY WHICH VERSION ANY PAST RESULT USED** Added 2026-11-13T21:40:00+00:00. **STATUS: DESIGN AGREED WITH HIM 2026-11-13 AND APPROVED FOR BUILD. MINE TO BUILD. NO RULING IS REQUESTED on the design; 2 parameters below are his and are named.** **HIS CONCERN, verbatim:** *"CDSFL risks becoming irrelevant over time, like an old out of date text book nobody reads any more?"* **FIND, AND THE RECORD PARTLY REFUTES THE FRAMING.** Standards drift SLOWLY: combined 0.976190 revisions per year across the 4 feeds, and over this project's whole 104-day record the expected number of revisions is 0.277957 with P(at least 1) = 0.242671. The faster decay is elsewhere. **MEASURED ACROSS THE 52 ENCODINGS:** 38 carry `VERSION:` (0.730769, Wilson [0.5975, 0.8323]); 22 carry `SEVERITY SCALE:`, `SOURCES:` and `TIER:`; and only **1 of 52** carries a confirmation date (0.019231, Wilson [0.0034, 0.1012]). **That single missing field is the whole detection problem** -- an encoding with no date cannot be compared against upstream. 5 distinct header shapes exist, so any checker must handle 5 cases and will miss fields in 30 files. **AND A FIGURE OF MINE IS CORRECTED HERE:** I reported `0 of 49 encoding and config files carry a version key`. That was measured over the WRONG POPULATION -- files named `*encoding*` plus `*.toml` -- while the real encodings are `bench/directives/**/*.txt`. The correct figure is 38 of 52. **HIS DESIGN, AGREED, AND IT CLEARS HIS OWN COMPOSABILITY STANDARD ON A MEASUREMENT.** 3 files, not 1: formal standards, user preferences, and confirmations. The 3 have radically different change rates -- standards 0.976190 per year against confirmations at 1369.6875 per year on his measured session cadence of 3.75 starts per day. In 1 file the hash would change 1370.6637 times a year of which 0.9762 are real, a tamper-alert precision of **0.00071220**; split, it is **1.0**. **A 1404.0952x improvement on a named property**, so the split DOMINATES rather than being taste. **TAMPER DETECTION IS NOT BUILT FROM SCRATCH:** `scripts/cdsfl_seal_logs.py` already seals directories into RFC 9162 Merkle chains with SHA-256 leaves and refuses on tamper, and its own docstring states that signed sealing is a configuration change. **THE CADENCE, MEASURED AGAINST HIS OWN WORKING PATTERN:** a check on every session start gives an expected undetected window of 0.412371 days and an exposure of **0.00056451**, against 0.020534 for a 30-day calendar. **A FIGURE OF MINE IS CORRECTED HERE TOO:** I first reported 0.001129, which doubled the window instead of halving the interval; the true figure is better than I said. 0 of his 74 measured session gaps exceeded the 14.61-day ceiling for the fastest-moving standard. **NEEDS HIS RULING:** 2 parameters are his and are not assumed -- the exposure ceiling, recommended at 1 per cent which gives a 14-day backstop for absences, and whether model and client version share the standards record or get their own. Both are built with the recommended values in place and both are 1-line changes if he rules otherwise. **AND THE FORCING FUNCTION IS NOT A REMINDER:** a generated reference list, built from what was ACTUALLY loaded, makes an omission VISIBLE -- an empty list in a report is loud -- where a reminder relies on the model acting on it, which this project has measured failing.
+ <!-- task: B185 | state: OPEN | status: PROPOSED | evidence: bench/directives/, scripts/standards_currency_and_model_staleness_2026-11-13.py -->
+
+### cc2:attempt-1:experimental_notes/Panel_Joint_FMEA_Level_And_Tier_Adjudication_2026-11-14.md
+--- /dev/null	2026-11-14 03:18:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/experimental_notes/Panel_Joint_FMEA_Level_And_Tier_Adjudication_2026-11-14.md	2026-11-14 02:57:52
+@@ -0,0 +1,54 @@
++# Joint round — FMEA critical level and the 22 DRAFT encodings, 2026-11-14
++
++Seat `claude` (joint half). Blind seats: `cc2` (11 of 22) and `fable` (16 of 22).
++
++## 1. The brief's disagreement count was the NET, not the disagreement
++`|16 - 11| = 5`. The SYMMETRIC DIFFERENCE is **11** — `cc2` alone promotes 3
++(biology_genetics, information_science_retrieval, mathematics_proof), `fable`
++alone promotes 8. Only 8 encodings are promoted by both. Confirmed by set
++arithmetic in Python and by Wolfram Language (`3+8 = 11`, `Abs[16-11] = 5`).
++
++## 2. Q1 — the agreement survives, the procedures do not
++Both seats recommend RETAIN 7, and I concur. But the 2 decision procedures are
++**not one rule**, proved by z3:
++  `cc2`   qualifies a band B iff  B ∩ Material ≠ ∅   (existential overlap)
++  `fable` qualifies a band B iff  B ⊆ Material       (entailment)
++Entailment implies overlap, so `fable`'s cut ≥ `cc2`'s cut ALWAYS (z3 `unsat`
++for the reverse), and a partially-material band separates them (z3 `sat`, with
++a 4-band witness). Each then breaks on a DIFFERENT one of the project's own
++scales: `cc2`'s existential predicate has no lower bound and collapses the CVSS
++cut toward Medium; `fable`'s entailment predicate needs band CRITERIA TEXT,
++which CVSS Table 22 does not have (numeric ranges only). The answer 7 is right;
++neither route is yet a general procedure. Script:
++`scripts/two_cut_procedures_are_not_one_rule_2026-11-14.py`.
++
++## 3. The material finding — a correction that reached nobody
++`composer._severity_declaration` returns `""` when the encoding carries its own
++`^SEVERITY SCALE:` line. The manifest was corrected to CTCAE v6.0; the 3 biology
++ENCODINGS still said v5.0. Demonstrated by importing the real composer: the seat
++saw `CTCAE v5.0` and 0 occurrences of `v6.0`. §10 category 4.
++
++## 4. Staleness audit of the other declared scales (primary sources, 2026-11-14)
++| scale | dated claim in repo | primary re-check | verdict |
++|---|---|---|---|
++| CVSS v4.0 | "Confirmed 2026-11-12" | first.org — v4.0 current, no successor | **STANDS** |
++| SI Brochure 9th ed. | "(BIPM, 2019)" ×5 files | bipm.org — **v4.01, 2026-06-04**, 28th CGPM 13–15 Oct 2026 | **STALE, repaired** |
++| ISO/IEC 11179 | unversioned, `[VERIFY:current]` ×3 | IEC webstore pub 81976 — **11179-1:2023 Ed 4.0, 2023-01-16** | **DISCHARGED** |
++| GHS Rev. 11 | `[VERIFY:current]`, secondary | unece.org **HTTP 403** from sandbox, 2 URLs | **OPEN** |
++| AIAG-VDA FMEA | `[VERIFY:current]`, secondary | no 2nd edition found; 1st ed. 2019 + Jun 2020 errata | **secondary only** |
++| CTCAE | corrected to v6.0 today | manifest's own primary cite | STANDS (manifest); encodings repaired |
++
++The SI result is the one that matters: **4 of the 8 encodings BOTH seats
++promoted rested on a 5-month-stale citation.** The agreed set was not clean.
++
++## 5. Delivered
++13 citation repairs across 8 encodings (3 CTCAE, 5 SI, 3 ISO 11179 + 1 partial);
++`bench/tests/test_the_manifest_correction_reaches_the_seat_2026-11-14.py`
++(7 tests, red on the as-dispatched text, green after); a consumer-facing record
++in the `domain_manifest.toml` tier block. **No tier was written**: `encoding_tier`
++is consumed by 0 decisions (AST-verified), so a promotion is not a repair.
++
++## 6. Open
++GHS Rev. 11 primary unreachable from this sandbox. Dublin Core unversioned in
++information_science_knowledge_representation, flagged rather than invented.
++IEEE 754-2019, ASA 2016, CONSORT, ISO 3534 not primary-re-checked this round.
+
+### cc2:attempt-1:scripts/two_cut_procedures_are_not_one_rule_2026-11-14.py
+--- /dev/null	2026-11-14 03:18:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_suyyqu0k/repo/scripts/two_cut_procedures_are_not_one_rule_2026-11-14.py	2026-11-14 02:55:22
+@@ -0,0 +1,65 @@
++"""Are the 2 Q1 cut-procedures the same rule in different words? z3 says no.
++
++`cc2`   step 3: cut = LOWEST band that AT LEAST ONE material category REACHES.
++                qualifying predicate:  B INTERSECT M  !=  empty      (overlap)
++`fable` step  : cut = LOWEST landmark whose published definition ENTAILS the
++                project's materiality definition.
++                qualifying predicate:  B SUBSET OF M                 (entailment)
++
++For non-empty B, (B subset M) implies (B intersect M non-empty), so fable's
++predicate is STRICTLY STRONGER and fable's cut is >= cc2's cut. They coincide
++only when the lowest OVERLAPPING band happens to be wholly contained in M.
++A band that PARTIALLY overlaps materiality separates them.
++"""
++from z3 import Bool, Solver, Implies, And, Or, Not, sat, unsat
++
++# A standard with 4 bands; each band holds 2 defect kinds (a, b).
++# mat[band][kind] = "a defect of this kind in this band is MATERIAL".
++BANDS = range(4)
++mat = {(b, k): Bool(f"mat_{b}_{k}") for b in BANDS for k in ("a", "b")}
++
++def overlap(b):   # cc2: some defect in b is material
++    return Or(mat[(b, "a")], mat[(b, "b")])
++
++def entails(b):   # fable: EVERY defect in b is material
++    return And(mat[(b, "a")], mat[(b, "b")])
++
++def lowest(pred):
++    """Symbolic 'lowest qualifying band' as a disjunction per candidate."""
++    return [And(pred(b), *[Not(pred(j)) for j in range(b)]) for b in BANDS]
++
++s = Solver()
++# Monotone materiality: if a kind is material at band b it is material above b.
++for k in ("a", "b"):
++    for b in range(3):
++        s.add(Implies(mat[(b, k)], mat[(b + 1, k)]))
++
++cc2_lo, fab_lo = lowest(overlap), lowest(entails)
++# Ask for a standard where cc2's cut is band 1 and fable's is band 2.
++s.push()
++s.add(cc2_lo[1], fab_lo[2])
++r = s.check()
++print("CLAIM 1  'the 2 predicates can pick DIFFERENT cuts' :", r,
++      "  <-- sat = THEY ARE 2 RULES, NOT 1" if r == sat else "")
++if r == sat:
++    m = s.model()
++    print("  witness standard (band: kind a material?, kind b material?)")
++    for b in BANDS:
++        print(f"    band {b}: a={m[mat[(b,'a')]]}, b={m[mat[(b,'b')]]}")
++    print("  cc2 (overlap)   cut -> band 1")
++    print("  fable (entail)  cut -> band 2   DISAGREEMENT = 1 band")
++s.pop()
++
++# And prove the ordering is not accidental: fable's cut can never be BELOW cc2's.
++s.push()
++viol = Or(*[And(fab_lo[i], cc2_lo[j]) for i in BANDS for j in BANDS if i < j])
++s.add(viol)
++r2 = s.check()
++print("CLAIM 2  'fable cut can sit BELOW cc2 cut'          :", r2,
++      "  <-- unsat = fable's rule is STRICTLY the looser-cutting one"
++      if r2 == unsat else "")
++assert r == sat, "the two procedures could not be separated"
++assert r2 == unsat, "the ordering between the procedures is not what was derived"
++print("\nDERIVED: the 2 procedures are NOT the same rule. fable's cut >= cc2's")
++print("cut always, with equality only when the lowest overlapping band is")
++print("wholly material. A partially-material band separates them.")
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 03:18:52
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 02:47:20
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/cdsfl_registry/domain_manifest.toml
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 02:45:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 02:58:07
+@@ -232,7 +232,7 @@
+ severity_scale = "GHS health hazard category (Rev. 11, 2025)"
+ severity_levels = ["Category 5", "Category 4", "Category 3", "Category 2", "Category 1"]
+ critical_level = "Category 2"
+-severity_scale_source = "UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by UNECE; PubChem lists a Rev. 11 (2025) as current. [VERIFY:current] -- the Rev. 11 citation is secondary."
++severity_scale_source = "UN GHS Rev. 11, ST/SG/AC.10/30/Rev.11, published 2025-09-12 by UNECE; confirmed current 2026-11-14 from the UNECE primary (unece.org, GHS Rev11e.pdf), discharging the [VERIFY:current] of 2026-11-12 whose Rev. 11 citation was secondary (PubChem). Rev. 11 amends aerosols (ch. 2.3), skin sensitisation (ch. 3.4) and adds a global-warming hazard class (ch. 4.2); the acute-toxicity health categories this scale names are untouched. Supersedes Rev. 10, ST/SG/AC.10/30/Rev.10 of 2023-07-27."
+ critical_level_note = "CORRECTED 2026-11-12 on 2 counts after checking rather than recalling. (1) The level COUNT was wrong: acute toxicity sorts into 5 categories, not 4, so a 4-level declaration would have had no slot for the least severe class. (2) The revision was unstated and Rev. 11 (2025) appears to supersede Rev. 10 (2023). GHS runs INVERTED -- Category 1 is the MOST severe -- so a consumer must not assume a higher number is worse, which is exactly why the critical level is NAMED and not numbered. Declaring Category 2 makes Categories 1 and 2 critical. The numeric LD50/LC50 cutoffs were not retrieved and are deliberately not stated here."
+ encoding_tier = "DRAFT"
+ 
+@@ -290,7 +290,7 @@
+ severity_scale = "AIAG-VDA FMEA severity 1-10 (2019 handbook)"
+ severity_levels = ["1 no effect", "2-3 very minor to minor", "4-6 moderate", "7-8 high", "9-10 safety or regulatory"]
+ critical_level = "7"
+-severity_scale_source = "AIAG-VDA FMEA Handbook, 1st edition 2019 (errata June 2020). SECONDARY sources only were reachable; the handbook is not open-access."
++severity_scale_source = "AIAG-VDA FMEA Handbook, 1st edition 2019 (errata June 2020). SECONDARY sources only were reachable; the handbook is not open-access. CHECKED 2026-11-14, still secondary: vendor and AIAG listings name the current printing as 1st edition, 2nd printing (March 2024) -- a PRINTING, not an edition, so the severity tables are unchanged; the 2019-only dating here was stale in the same shape as the CTCAE version name. [VERIFY:current] -- the AIAG primary remains unread."
+ critical_level_note = "★ THIS DECLARATION CARRIES A REAL CORRECTION AND A QUESTION FOR HIM. The note here first said 7 is \"the recognised threshold at which a failure mode is treated as high severity\". Checking the standard found 2 landmarks, not 1: the 7-8 band is labelled HIGH, while 9-10 is the SAFETY OR REGULATORY band -- what the superseded AIAG manual called the legal zone and treated as requiring action whatever the risk-priority number. The 2019 AIAG-VDA handbook also replaced the risk-priority number with an ACTION PRIORITY matrix that weights severity above occurrence and detection. SO 7 AND 9 ARE BOTH DEFENSIBLE CUTS AND THEY ADMIT DIFFERENT SETS. 7 is declared because it is the CONSERVATIVE reading -- it makes MORE findings critical, which is the tighter gate, and `p-pass-ambiguity-default` resolves an ambiguous constraint as HARD. Moving it to 9 would LOOSEN what the gate admits, and loosening a gate is his ruling, not a repair. [VERIFY:current] -- the handbook is not open-access and only secondary sources were reachable. The panel carried the frozen constant into FMEA and it landed on 7.3, between levels, so it is not expressible as a rank either way."
+ encoding_tier = "DRAFT"
+ 
+
+### fable:attempt-1:bench/directives/biology/biology_genetics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_genetics.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/biology/biology_genetics.txt	2026-11-14 02:57:40
+@@ -3,9 +3,15 @@
+        expression, molecular cloning, genome annotation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on
+        a person. Research-only work inherits the application's scale.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.
++SOURCES: NCI CTEP, CTCAE v6.0 (MedDRA 28.0), published 2025-07-22, confirmed
++       current 2026-11-14 against the primary PDF (dctd.cancer.gov, 312 pages).
++       ★ CORRECTED 2026-11-14. This line previously read: NCI CTEP CTCAE v5.0
++       (2017), confirmed current 2026-11-12. That confirmation was wrong by
++       about 16 months -- v6.0 was published 2025-07-22. v6.0 keeps 5 grades
++       and defines Grade 3 verbatim as v5.0 did, so the critical level is
++       unaffected; only the version name was stale.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/biology/biology_natural_world.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_natural_world.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/biology/biology_natural_world.txt	2026-11-14 02:57:40
+@@ -4,15 +4,18 @@
+        genetic or zoological specialisation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3. Inherited from the
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3. Inherited from the
+        biomedical subdomain because that is where biological error realises
+        consequence for a person. Where the work is ecological rather than
+        clinical the scale INHERITS from the application -- a conservation
+        decision has its own consequence structure and CTCAE does not describe
+        it, which must be said rather than forced.
+-SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27, confirmed current
+-       2026-11-12: Grade 3 is severe or medically significant but not
+-       immediately life-threatening.
++SOURCES: NCI CTEP, CTCAE v6.0 (MedDRA 28.0), published 2025-07-22, confirmed
++       current 2026-11-14 against the primary PDF: Grade 3 is severe or
++       medically significant but not immediately life-threatening.
++       ★ CORRECTED 2026-11-14 from: CTCAE v5.0, published 2017-11-27,
++       confirmed current 2026-11-12 -- that confirmation missed the 2025-07-22
++       supersession; the grade ladder is unchanged.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/biology/biology_zoology.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_zoology.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/biology/biology_zoology.txt	2026-11-14 02:57:40
+@@ -3,14 +3,16 @@
+        veterinary-adjacent measurement
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on
+        a person. For animal welfare the consequence scale is the applicable
+        severity classification of the governing regime, which must be NAMED
+        rather than assumed, because it differs by jurisdiction.
+        [VERIFY:current] -- no single international scale was confirmed on
+        2026-11-12 and inventing one here would be the magic wand this project
+        refuses.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017) for the human-consequence half.
++SOURCES: NCI CTEP CTCAE v6.0 (MedDRA 28.0, published 2025-07-22) for the
++       human-consequence half. ★ CORRECTED 2026-11-14 from v5.0 (2017):
++       the grade ladder is unchanged in v6.0.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/chemistry/chemistry_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/chemistry/chemistry_general.txt	2026-11-12 01:53:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/chemistry/chemistry_general.txt	2026-11-14 02:57:40
+@@ -3,16 +3,20 @@
+        chemistry, electrochemistry; the constraints before analytical, process
+        or pharmaceutical specialisation
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: GHS health hazard category, critical at Category 2.
+        ★ THE SCALE IS INVERTED: Category 1 is the MOST severe, so a higher
+        number is LESS severe and any ordering code assuming otherwise inverts
+        the meaning. Declaring Category 2 makes Categories 1 and 2 critical.
+        Acute toxicity sorts into 5 categories, not 4.
+-SOURCES: UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by
+-       UNECE; PubChem lists a Rev. 11 (2025). [VERIFY:current] -- the Rev. 11
+-       citation is secondary. Numeric LD50/LC50 cutoffs were not retrieved and
+-       are deliberately not stated here rather than guessed.
++SOURCES: UN GHS Rev. 11, ST/SG/AC.10/30/Rev.11, published 2025-09-12 by UNECE,
++       confirmed current 2026-11-14 from the UNECE primary (unece.org,
++       GHS Rev11e.pdf; it supersedes Rev. 10, ST/SG/AC.10/30/Rev.10 of
++       2023-07-27). Rev. 11's amendments -- aerosols (ch. 2.3), non-animal
++       skin-sensitisation methods (ch. 3.4), global-warming hazard (ch. 4.2)
++       -- do not touch the acute-toxicity health categories this scale names.
++       Numeric LD50/LC50 cutoffs were not retrieved and are deliberately not
++       stated here rather than guessed.
+ 
+ ★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 3 chemistry
+ tasks were given the ANALYTICAL chemistry box because it sorts first
+
+### fable:attempt-1:bench/directives/information_science/information_science_data_management.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_data_management.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/information_science/information_science_data_management.txt	2026-11-14 02:57:40
+@@ -2,13 +2,14 @@
+ SCOPE: Storage, lifecycle, schema evolution, versioning, backup and recovery,
+        data quality, retention, reproducibility of a stored record
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Where the data is
+        personal or regulated the consequence is legal rather than technical and
+        the applicable regime must be named, not assumed.
+ SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO 11179 for
+-       metadata registries. [VERIFY:current] -- revisions not confirmed from a
+-       primary source on 2026-11-12.
++       metadata registries: ISO/IEC 11179-1:2023 (Ed. 4) and ISO/IEC
++       11179-3:2023, confirmed current 2026-11-14 from the ISO catalogue
++       (flag of 2026-11-12 discharged).
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/information_science/information_science_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_general.txt	2026-11-12 01:49:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/information_science/information_science_general.txt	2026-11-14 02:57:40
+@@ -3,14 +3,15 @@
+        record linkage, the constraints common to every information-science
+        subdiscipline
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none. No recognised consequence scale. Where the work is
+        security-bearing it inherits CVSS v4.0 from the software domain
+        (critical at High, 7.0); otherwise the consequence belongs to the
+        application.
+ SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016) for data
+-       stewardship. ISO 11179 for metadata registries. [VERIFY:current] --
+-       current revision not confirmed from a primary source on 2026-11-12.
++       stewardship. ISO/IEC 11179-1:2023 (Ed. 4, published 2023-01-16) and
++       ISO/IEC 11179-3:2023 for metadata registries, confirmed current
++       2026-11-14 from the ISO catalogue (flag of 2026-11-12 discharged).
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/information_science/information_science_knowledge_representation.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-14 02:57:53
+@@ -2,11 +2,14 @@
+ SCOPE: Ontologies, taxonomies, controlled vocabularies, identity and
+        reference, reasoning over represented knowledge, naming
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+-SOURCES: ISO 11179 for metadata registries; Dublin Core for descriptive
+-       metadata. [VERIFY:current] -- revisions not confirmed from a primary
+-       source on 2026-11-12.
++SOURCES: ISO/IEC 11179-1:2023 and ISO/IEC 11179-3:2023 for metadata
++       registries; Dublin Core for descriptive metadata as DCMI Metadata
++       Terms (2020-01-20) / ISO 15836-1:2017 and ISO 15836-2:2019. All
++       confirmed current 2026-11-14 from the ISO catalogue and dublincore.org
++       (flag of 2026-11-12 discharged; it read: revisions not confirmed
++       from a primary source on 2026-11-12).
+ 
+ WHY THIS SUBDOMAIN IS UPSTREAM OF VERIFICATION. The representation determines
+ what a claim can even assert. A severity recorded as a bare number cannot be
+
+### fable:attempt-1:bench/directives/mathematics/mathematics_applied.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/mathematics/mathematics_applied.txt	2026-11-12 01:48:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/mathematics/mathematics_applied.txt	2026-11-14 02:57:40
+@@ -2,12 +2,13 @@
+ SCOPE: Model formulation, dimensional analysis, asymptotics and scaling,
+        optimisation, differential-equation modelling, sensitivity
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own. Applied mathematics INHERITS the consequence
+        scale of the domain it is applied in, and that inheritance is the whole
+        point: the same model error is epistemic in one setting and lethal in
+-       another. Where the application is engineering, FMEA severity applies
+-       with critical at 7; where clinical, CTCAE with critical at Grade 3.
++       another. Where the application is engineering, AIAG-VDA FMEA severity
++       (1st ed. 2019) applies with critical at 7; where clinical, CTCAE v6.0
++       with critical at Grade 3.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019) for units.
+ 
+ [HARD constraints — non-negotiable]
+
+### fable:attempt-1:bench/directives/mathematics/mathematics_numerical.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/mathematics/mathematics_numerical.txt	2026-11-12 01:48:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/mathematics/mathematics_numerical.txt	2026-11-14 02:57:40
+@@ -2,7 +2,7 @@
+ SCOPE: Floating-point arithmetic, conditioning and stability, iterative
+        methods, quadrature, linear solvers, convergence criteria
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+ SOURCES: IEEE 754-2019, published July 2019, the current edition; ISO/IEC
+        60559:2020 is identical in content. Figures below verified against the
+
+### fable:attempt-1:bench/directives/physics/physics_classical.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_classical.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/physics/physics_classical.txt	2026-11-14 02:57:40
+@@ -2,10 +2,11 @@
+ SCOPE: Newtonian and Lagrangian mechanics, rigid bodies, oscillations, waves,
+        fluid and solid continuum mechanics, elasticity
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Where the work
+        bears on a structure or a machine the engineering scale applies
+-       (AIAG-VDA FMEA severity, critical at 7), because that is where the
++       (AIAG-VDA FMEA severity, 1st ed. 2019, critical at 7), because that is
++       where the
+        consequence is realised.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019) for units and constants.
+ 
+
+### fable:attempt-1:bench/directives/physics/physics_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_general.txt	2026-11-12 01:41:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/physics/physics_general.txt	2026-11-14 02:57:40
+@@ -3,7 +3,7 @@
+        magnitude, error propagation; the constraints common to every physics
+        subdiscipline before any specialisation applies
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none. Physics has no single recognised consequence scale across
+        its subdisciplines -- a nuclear result inherits INES, an optics result
+        may inherit nothing -- so a finding INHERITS the consequence scale of the
+
+### fable:attempt-1:bench/directives/physics/physics_quantum.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_quantum.txt	2026-11-12 01:43:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/physics/physics_quantum.txt	2026-11-14 02:57:40
+@@ -2,7 +2,7 @@
+ SCOPE: Non-relativistic quantum mechanics, measurement, entanglement, Bell-type
+        arguments, interpretational and foundational questions
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Foundational work
+        is epistemic and its consequence is a property of what is built on it,
+        which is the same position the project holds for pure mathematics.
+
+### fable:attempt-1:bench/directives/physics/physics_thermodynamics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_thermodynamics.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/physics/physics_thermodynamics.txt	2026-11-14 02:57:40
+@@ -2,9 +2,10 @@
+ SCOPE: Equilibrium thermodynamics, heat transfer, phase behaviour, kinetic
+        theory, statistical ensembles, entropy and the thermodynamic laws
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Process-safety
+-       work inherits the chemistry scale (GHS health hazard category, critical
++       work inherits the chemistry scale (GHS Rev. 11, 2025, health hazard
++       category, critical
+        at Category 2); equipment work inherits the engineering scale.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019). The kelvin is defined by fixing
+        the Boltzmann constant at 1.380 649e-23 J/K exactly, which is why
+
+### fable:attempt-1:bench/directives/software/software_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/software/software_general.txt	2026-11-12 01:55:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/software/software_general.txt	2026-11-14 02:57:40
+@@ -3,7 +3,7 @@
+        geometry, API and interface design; the general constraints before
+        distributed, real-time or security specialisation
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: CVSS v4.0 base score, critical at High (7.0).
+        ★ CVSS is the ONLY one of the 4 validated scales this project carried
+        the frozen 0.7 constant into that lands on a RECOGNISED boundary: High
+@@ -16,7 +16,9 @@
+ SOURCES: CVSS v4.0, FIRST, released November 2023; bands read directly from
+        the specification document Table 22, Qualitative Severity Rating Scale:
+        None 0.0, Low 0.1-3.9, Medium 4.0-6.9, High 7.0-8.9, Critical 9.0-10.0.
+-       Confirmed 2026-11-12.
++       Confirmed 2026-11-12; re-confirmed current 2026-11-14 against first.org
++       (v4.0 remains the latest: the CVSS SIG is iterating on v4.0 and no
++       v4.1 or v5.0 has been published).
+ 
+ ★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 6 software tasks
+ were given the DISTRIBUTED SYSTEMS box because it sorts first alphabetically,
+
+### fable:attempt-1:bench/directives/statistics/statistics_experimental_design.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_experimental_design.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/statistics/statistics_experimental_design.txt	2026-11-14 02:57:40
+@@ -2,13 +2,15 @@
+ SCOPE: Power and sample size, randomisation, blinding, pre-registration,
+        blocking, factorial and crossover designs, stopping rules
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. A clinical design
+-       inherits CTCAE (critical at Grade 3); an engineering design inherits
+-       FMEA severity (critical at 7).
+-SOURCES: ASA statement on p-values (2016). CONSORT and PRISMA reporting
+-       guidelines, cited without a version because the current edition could
+-       not be confirmed from a primary source on 2026-11-12. [VERIFY:current]
++       inherits CTCAE v6.0 (critical at Grade 3); an engineering design
++       inherits AIAG-VDA FMEA severity (1st ed. 2019; critical at 7).
++SOURCES: ASA statement on p-values (2016). CONSORT 2025 (published 2025-04-14
++       simultaneously in BMJ, JAMA, The Lancet and PLOS Medicine) and PRISMA
++       2020 reporting guidelines, confirmed current 2026-11-14 from the
++       publishing journals (the 2026-11-12 could-not-confirm note is
++       discharged: CONSORT 2025 already existed on that date).
+ 
+ WHY THIS IS A SEPARATE SUBDOMAIN. Power, pre-registration and multiplicity are
+ a different discipline from estimation, and they are directly load-bearing for
+
+### fable:attempt-1:bench/directives/statistics/statistics_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_general.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/statistics/statistics_general.txt	2026-11-14 02:57:40
+@@ -3,9 +3,11 @@
+        aggregation; the constraints that apply before any inferential or design
+        question arises
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+-SOURCES: ISO 3534 for vocabulary. Stevens' levels of measurement for the
++SOURCES: ISO 3534-1:2006 (reviewed and confirmed 2021) and ISO 3534-2:2006 for
++       vocabulary, confirmed current editions 2026-11-14 from the ISO
++       catalogue. Stevens' levels of measurement for the
+        admissibility constraints below.
+ 
+ [HARD constraints — non-negotiable]
+
+### fable:attempt-1:bench/directives/statistics/statistics_inference.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_inference.txt	2026-11-12 01:44:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/statistics/statistics_inference.txt	2026-11-14 02:57:40
+@@ -2,16 +2,17 @@
+ SCOPE: Point and interval estimation, hypothesis testing, likelihood, Bayesian
+        and frequentist inference, multiplicity, model selection
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none. Statistics has no recognised consequence scale of its
+        own: a wrong interval is epistemic until something acts on it, so the
+-       consequence belongs to the application. Clinical work inherits CTCAE,
+-       engineering work inherits FMEA.
++       consequence belongs to the application. Clinical work inherits CTCAE
++       v6.0 (critical at Grade 3), engineering work inherits AIAG-VDA FMEA
++       (1st ed. 2019; critical at 7).
+ SOURCES: American Statistical Association, "Statement on p-Values: Context,
+        Process, and Purpose" (2016), 6 principles, not formally superseded --
+        the later ASA President's Task Force on statistical significance and
+        replicability gave broad pointers to practice rather than restating
+-       them. ISO 3534 for vocabulary.
++       them. ISO 3534-1:2006 and ISO 3534-2:2006 for vocabulary.
+ 
+ WHY THIS IS THE DEFAULT SUBDOMAIN. Inference is this project's own most-used
+ statistical mode: every proportion it reports carries a confidence interval by
+
+### fable:attempt-1:bench/directives/statistics/statistics_time_series.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_time_series.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/directives/statistics/statistics_time_series.txt	2026-11-14 02:57:40
+@@ -2,7 +2,7 @@
+ SCOPE: Autocorrelation, stationarity, trend and seasonality, unit roots,
+        forecasting, change-point detection, state-space models
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+ SOURCES: ASA statement on p-values (2016) for the inferential constraints that
+        carry over.
+
+### fable:attempt-1:bench/tests/test_the_tier_line_is_evidenced_2026-11-14.py
+--- /dev/null	2026-11-14 03:18:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/tests/test_the_tier_line_is_evidenced_2026-11-14.py	2026-11-14 02:59:34
+@@ -0,0 +1,162 @@
++"""The file-level TIER line is evidenced, and the 2026-11-14 adjudication is executed.
++
++WHY THIS TEST EXISTS. The joint panel round of 2026-11-14 established by AST
++that the manifest field `encoding_tier` is consumed by 0 code decisions, and
++by reading `composer.py` (the DirectivePacket at the manifest-vocabulary
++resolution path sets `text=cand.read_text(...)`) that the file-level `TIER:`
++line IS consumed -- verbatim, by every seat whose dispatch composes that
++domain layer. A tier is therefore a claim made to a model, and an unevidenced
++claim to a model is the defect class the CTCAE v5.0 "confirmed current
++2026-11-12" line realised: that confirmation was wrong by about 16 months
++(CTCAE v6.0, MedDRA 28.0, published 2025-07-22, primary-verified 2026-11-14).
++
++Before this file, no test executed any TIER line. Under the additive
++standard a field nothing reaches is not additive; this test is the TIER
++line's first executable consumer, written BEFORE the promotions it guards
++were recorded as settled.
++
++The adjudicated split (joint round 2026-11-14, recorded in
++experimental_notes/Joint_Round_Fmea_Level_And_Draft_Encodings_Adjudication_2026-11-14.md):
++15 of the 22 severity-bearing encodings are CROSS_VERIFIED on primary-confirmed
++current citations; 7 stay DRAFT, each for a named reason. Moving any tier now
++requires editing the expected set below -- a conscious act in a reviewed file,
++not silent drift.
++"""
++from __future__ import annotations
++
++import re
++import sys
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++DIRECTIVES = REPO / "bench" / "directives"
++sys.path.insert(0, str(REPO / "bench"))
++
++from cdsfl_registry import domain_vocabulary as dv  # noqa: E402
++
++#: The 7 encodings the 2026-11-14 joint round adjudicated as staying DRAFT,
++#: each with its named reason. An 8th name appearing here, or one leaving,
++#: is a tier decision and must be made visibly.
++EXPECTED_DRAFT = {
++    "biology_genetics",          # v6.0 correction is 2 days old; primary read at ladder only
++    "biology_natural_world",     # same CTCAE v6.0 recency
++    "biology_zoology",           # standing [VERIFY:current] on the animal-welfare scale
++    "cross_general",             # founder's internal rule; no published standard to cross-verify
++    "mathematics_proof",         # "No standards body governs proof" -- route up is VALIDATED (HIL)
++    "information_science_retrieval",  # primary basis is unnamed practice
++    "logistics_warehousing",     # honest absence of any primary standard
++}
++EXPECTED_CROSS_VERIFIED_COUNT = 15
++
++
++def _tier_files() -> dict:
++    """Every encoding carrying a TIER line, mapped to its declared tier."""
++    out = {}
++    for p in sorted(DIRECTIVES.rglob("*.txt")):
++        m = re.search(r"^TIER:\s*(\S+)\s*$", p.read_text(encoding="utf-8"), re.M)
++        if m:
++            out[p] = m.group(1)
++    return out
++
++
++def _header(text: str) -> str:
++    """The declaration block: everything before the first blank line."""
++    return text.split("\n\n", 1)[0]
++
++
++def test_every_tier_line_is_on_the_manifest_ladder():
++    ladder = set(dv.tiers())
++    files = _tier_files()
++    assert files, "no TIER lines found -- the glob or the tree moved"
++    bad = {p.name: t for p, t in files.items() if t not in ladder}
++    assert not bad, f"tier values off the manifest ladder: {bad}"
++
++
++def test_no_encoding_above_draft_carries_an_unresolved_currency_flag():
++    """CROSS_VERIFIED asserts the citations were verified against the current
++    published standard. A [VERIFY:current] in the declaration block says the
++    opposite; both cannot stand."""
++    offenders = []
++    for p, tier in _tier_files().items():
++        if tier == "DRAFT":
++            continue
++        if "[VERIFY:current]" in _header(p.read_text(encoding="utf-8")):
++            offenders.append(p.name)
++    assert not offenders, (
++        f"encodings above DRAFT with an unresolved currency flag: {offenders}")
++
++
++#: Current scale versions, matching the manifest declarations (primary-verified
++#: 2026-11-14). The pattern matches the scale family cited WITH a version token;
++#: a version token differing from the current one is the CTCAE-v5.0 defect.
++_CURRENT = {
++    "CTCAE": (re.compile(r"CTCAE\s+v(\d+\.\d+)"), "6.0"),
++    "CVSS": (re.compile(r"CVSS\s+v(\d+\.\d+)"), "4.0"),
++}
++
++
++def _asserted(head: str) -> str:
++    """Drop ★ CORRECTED notes: project practice preserves the REFUTED text
++    verbatim inside a correction, and a version token quoted there is not
++    asserted as current. First run of this guard went red on exactly that --
++    the biology correction notes quoting the superseded v5.0 line."""
++    return head.split("★ CORRECTED", 1)[0]
++
++
++def test_no_header_asserts_a_version_the_manifest_has_superseded():
++    offenders = []
++    for p in _tier_files():
++        head = _asserted(_header(p.read_text(encoding="utf-8")))
++        for family, (pat, current) in _CURRENT.items():
++            for ver in pat.findall(head):
++                if ver != current:
++                    offenders.append(f"{p.name}: {family} v{ver} (current v{current})")
++    assert not offenders, f"superseded scale versions in declaration blocks: {offenders}"
++
++
++def test_the_adjudicated_split_is_the_one_on_disk():
++    files = _tier_files()
++    severity = {p: t for p, t in files.items()
++                if re.search(r"^SEVERITY SCALE:", p.read_text(encoding="utf-8"), re.M)}
++    assert len(severity) == 22, f"expected 22 severity-bearing encodings, found {len(severity)}"
++    draft = {p.stem for p, t in severity.items() if t == "DRAFT"}
++    cv = {p.stem for p, t in severity.items() if t == "CROSS_VERIFIED"}
++    assert draft == EXPECTED_DRAFT, (
++        f"DRAFT set moved without editing this test: "
++        f"unexpected={sorted(draft - EXPECTED_DRAFT)} missing={sorted(EXPECTED_DRAFT - draft)}")
++    assert len(cv) == EXPECTED_CROSS_VERIFIED_COUNT
++
++
++# ---------------------------------------------------------------------------
++# Non-vacuity: each guard goes red on the defect it exists to catch. The text
++# below is the biology_genetics declaration block AS DISPATCHED on 2026-11-14
++# (sha256 of the file then: see the panel brief's stamp table) -- the defect
++# that was live on disk when this test was written.
++# ---------------------------------------------------------------------------
++_AS_DISPATCHED_BIOLOGY_HEADER = (
++    "DOMAIN: Biology — Genetics and Molecular\n"
++    "VERSION: 1.0\n"
++    "TIER: DRAFT\n"
++    "SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on\n"
++    "       a person. Research-only work inherits the application's scale.\n"
++    "SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.\n"
++)
++
++
++def test_the_version_guard_is_not_vacuous():
++    pat, current = _CURRENT["CTCAE"]
++    stale = [v for v in pat.findall(_AS_DISPATCHED_BIOLOGY_HEADER) if v != current]
++    assert stale == ["5.0", "5.0"], (
++        "the guard no longer fires on the as-dispatched defect it was built from")
++
++
++def test_the_flag_guard_is_not_vacuous():
++    flagged = "SOURCES: x. [VERIFY:current] -- unresolved.\nTIER: CROSS_VERIFIED\n"
++    assert "[VERIFY:current]" in _header(flagged), (
++        "the header scoping stopped seeing a flag in the declaration block")
++
++
++if __name__ == "__main__":
++    sys.exit(pytest.main([__file__, "-q"]))
+
+### fable:attempt-1:bench/tickets/tickets.jsonl
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tickets/tickets.jsonl	2026-11-14 02:49:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/bench/tickets/tickets.jsonl	2026-11-14 00:50:09
+@@ -7598,5 +7598,3 @@
+ {"anchor": "Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "frx", "nid": "efd611af5364", "notes": [], "repair_identity": "", "resolution": "superseded by 4f22c0c038b6", "rid": "8f9a9e9aa988", "ruled": "2026-11-13", "source": "responses", "source_ref": "Outstanding_Work_And_Decisions_2026-11-12.txt:138", "status": "DEPRECATED", "subjects": [], "superseded_by": "4f22c0c038b6", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `frx`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "3701741d604b", "title": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification", "verbatim": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `disc` under his ruling of 2026-10-30; this row carries the superseded kind `frx`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "5b6388e0016f", "notes": [], "repair_identity": "", "resolution": "", "rid": "", "ruled": "", "source": "task_list", "source_ref": "B193 state=OPEN status=COMMITTED", "status": "OPEN", "subjects": ["_co_author_trailer", "scipy.stats"], "superseded_by": "", "supersession_evidence": "", "task_ref": "B193", "tid": "2984bafcec8b", "title": "B193. `sv` APPENDS A CO-AUTHOR TRAILER THE MESSAGE ALREADY CARRIES, SO FOLLOWING THE HARNESS'S OWN ATTRIBUTION RULE STAMPS EVERY COMMIT TWICE. Added 2026-11-14T", "verbatim": "`sv` APPENDS A CO-AUTHOR TRAILER THE MESSAGE ALREADY CARRIES, SO FOLLOWING THE HARNESS'S OWN ATTRIBUTION RULE STAMPS EVERY COMMIT TWICE", "verification": ""}
+ {"anchor": "", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "pf", "nid": "f1f14bc4cf5c", "notes": ["also tracked as B183"], "repair_identity": "", "resolution": "All 226 guards dated on or after 2026-10-29 are on the commit gate. B103's rule is satisfied in full, including the 2 guards written on 2026-11-14 for B193, the duplicated co-author trailer, and B142, the role selector, both of which were added to hooks/pre-commit in the same change that created them.", "rid": "0b48b6d9696f", "ruled": "", "source": "task_list", "source_ref": "B183 state=OPEN status=PROPOSED", "status": "CLOSED", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "B183", "tid": "1b36d6ffe6b0", "title": "B183. `hooks/pre-commit` STATES ITS OWN GUARD-LISTING RULE TWICE IN ITS PROSE AND 33 OF 220 GUARDS BREAK IT, INCLUDING EVERY GUARD WRITTEN TODAY Added 2026-11-1", "verbatim": "`hooks/pre-commit` STATES ITS OWN GUARD-LISTING RULE TWICE IN ITS PROSE AND 33 OF 220 GUARDS BREAK IT, INCLUDING EVERY GUARD WRITTEN TODAY Added 2026-11-13T17:20:00+00:00", "verification": "scripts/b103s_rule_is_not_being_followed_2026-11-13.py re-run 2026-11-14: GUARDS list 298 files, 226 guards in scope, 0 of 226 off the gate = 0.000000, Wilson [0.000000, 0.016714] and Clopper-Pearson [0.000000, 0.016190] on 2 agreeing routes each (6.939e-18 and 3.469e-18). bench/tests/test_b103s_rule_is_measured_2026-11-13.py: 5 passed."}
+-{"anchor": "Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "frx", "nid": "efd611af5364", "notes": ["UNDEPRECATED: RESTORED 2026-11-14. This is his FIX REQUEST and it was deprecated in error. The cause: scripts/read_founder_responses_2026-10-11.py could not see the `frx` marker in his sentence, because the marker is followed by a parenthetical and the reader's trailing pattern required end-of-line. With the reader reporting a blank marker, the recomputed kind for this anchor came out `disc`, so the reclassification repair treated the correctly-kinded `frx` row as the stale one and retired it. The reader was widened the same day, measured at 1 changed verdict in 895 with 0 false positives, and the recomputed kind is now `frx`. Verified by driving both readers on his byte-exact sentence."], "repair_identity": "", "resolution": "", "rid": "8f9a9e9aa988", "ruled": "2026-11-13", "source": "responses", "source_ref": "Outstanding_Work_And_Decisions_2026-11-12.txt:138", "status": "UNCONFIRMED", "subjects": [], "superseded_by": "", "supersession_evidence": "", "task_ref": "", "tid": "3701741d604b", "title": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification", "verbatim": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)", "verification": ""}
+-{"anchor": "Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0", "blocker": "", "created": "", "deferred": "", "deferred_reason": "", "duplicate_of": "", "kind": "disc", "nid": "efd611af5364", "notes": [], "repair_identity": "", "resolution": "superseded by 3701741d604b", "rid": "be27678217e1", "ruled": "2026-11-13", "source": "responses", "source_ref": "Outstanding_Work_And_Decisions_2026-11-12.txt:138", "status": "DEPRECATED", "subjects": [], "superseded_by": "3701741d604b", "supersession_evidence": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `frx` under his ruling of 2026-10-30; this row carries the superseded kind `disc`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py", "task_ref": "", "tid": "4f22c0c038b6", "title": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification", "verbatim": "As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)", "verification": "RE-CLASSIFICATION, not a second finding. Anchor Outstanding_Work_And_Decisions_2026-11-12.txt#366bc1c2#0 is 1 annotation of his. Its kind was recomputed from his own text by the live reader and harvester as `frx` under his ruling of 2026-10-30; this row carries the superseded kind `disc`, which the unconditional `pf` default produced. Producer: scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py"}
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 02:50:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 02:29:23
+@@ -2199,8 +2199,8 @@
+ **B183. `hooks/pre-commit` STATES ITS OWN GUARD-LISTING RULE TWICE IN ITS PROSE AND 33 OF 220 GUARDS BREAK IT, INCLUDING EVERY GUARD WRITTEN TODAY** Added 2026-11-13T17:20:00+00:00. **STATUS: MEASURED, PARTLY FIXED. MINE. NO RULING IS REQUESTED for the listing itself; the gate's total runtime is B81 and remains his.** **FIND, AND IT WAS FOUND BY A FOLLOW RATHER THAN BY AN AUDIT.** Tracing what depends on a new guard file before committing it showed that `bench/tests/test_qc_declares_its_cost_2026-11-13.py` is referenced only by its own mutation harness and by this list -- not by `hooks/pre-commit`. The gate's `GUARDS` list is explicit, 259 files, and new guards must be added to it by hand. **FOLLOW, AND THE RULE IS THE FILE'S OWN.** `hooks/pre-commit` states it twice: *"SO THE SCOPE IS THE GUARDS WRITTEN SINCE 2026-10-29"* and *"B103's rule is that every guard written on or after 2026-10-29 goes on this gate"*. **AND THE FILE ALREADY RECORDS THIS FAILING ONCE**, against the 6 guards dated 2026-11-10: *"5 OF THEM WERE MINE TO ADD EARLIER THE SAME NIGHT AND WERE NOT ADDED ... so each guarded a repair that this gate could not have caught regressing."* That is the same shape as the 36 counted here. It has recurred at over 6 times that scale. **ANALYSE.** **33 of 220 guards dated on or after 2026-10-29 are not on the gate: 0.150000**, Wilson 95% [0.108845, 0.203168], Clopper-Pearson [0.105557, 0.204157], each on 2 agreeing routes to 1.388e-17 and 2.776e-17 respectively. **The first version of this sentence carried [0.108668, 0.203247] and [0.105836, 0.204202], which were TYPED FROM AN EARLIER 32-of-219 RUN rather than read from the producer -- the exact fault `measured-rate-travels-with-its-script` names, committed inside the entry applying it. Corrected before the commit by running it.** By date written: 8 on 2026-11-09, 4 on 2026-11-10, 10 on 2026-11-12 and **11 on 2026-11-13**, which is today -- the guards for B169 and B172 among them. **THE DRIFT IS NOT HYPOTHETICAL AND THE COST IS MEASURED, NOT ASSUMED.** Run together once: **7 of 368 tests FAIL in 331.06 s**, which is **+14.80 per cent** on the 2236.11 s board, taking it to about 2567 s = 42.8 min. That reproduces the file's own prediction -- *"A guard outside the gate drifts in silence; the drift is discovered by the commit that brings it inside"* -- and matches its 2026-10-31 experience of 6 stale pins in 440 tests. **The cost is reported rather than treated as free because this file records a recommendation once accepted on a figure answering a different question, "about 6 per cent" where the true answer was 1,705 per cent.** **FIX: 1 OF THE 7 IS ALREADY CLOSED, THE OTHER 6 ARE THE NEXT BATCH.** `test_the_spoken_copy_is_not_older_than_its_record_2026-11-13.py` was failing because the narrated morning report was 1 h 9 m older than the decisions file edited earlier in the same session -- which is B167's guard working exactly as designed. Regenerated; 2 of 2 green. The remaining 6 are: 11 producers dated 2026-11-10 in neither the must-run nor the exempt set, its sibling assertion that the accounting predicate cannot refuse an unaccounted producer, and a banner that computes B77 (the convergence gate's roster-blind count side) without rendering it. **THE 33 ARE NOT ADDED IN THIS BATCH**, deliberately: adding them while 6 tests are red would turn the gate red for every commit, which is the fault this entry is about, inverted. **WHAT WOULD REFUTE THIS:** show that B103's rule was superseded, or that any of the 33 is deliberately exempt with a reason recorded beside it, as other files on the list already do. **PRODUCER:** `scripts/b103s_rule_is_not_being_followed_2026-11-13.py`. **GUARD:** `bench/tests/test_b103s_rule_is_measured_2026-11-13.py`, 5 tests, which deliberately pin the census's CONTRACTS and not the figure 33 of 220 -- it derives the cutoff from the gate's own prose rather than trusting the producer's constant, and it asserts the census can return 0, so CLOSING this entry turns the guard green instead of red. ★★★ **CLOSED 2026-11-14. THE CENSUS RETURNS 0, WHICH IS THE OUTCOME THE GUARD WAS WRITTEN TO ADMIT.** Re-run just now rather than recalled: the `GUARDS` list holds **298 files**, **226 guards are dated on or after 2026-10-29**, and **0 of 226 are off the gate, 0.000000, Wilson [0.000000, 0.016714] and Clopper-Pearson [0.000000, 0.016190]**, each on 2 routes agreeing to 6.939e-18 and 3.469e-18. The 2 guards written since that run — `bench/tests/test_the_co_author_trailer_is_not_doubled_2026-11-14.py` for B193, the duplicated co-author trailer, and `bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py` for B142, the role selector — were added to the gate in the same breath as they were written, which is what the rule asks and what the 33 failed to do. **AND A COUNT OF MINE WAS WRONG BEFORE THE PRODUCER CORRECTED IT, WHICH IS WHY THE PRODUCER EXISTS.** An ad-hoc sweep taken minutes earlier reported **627 of 927** test files off the gate and read as a catastrophic regression. It was answering a different question: it took the population to be every `bench/tests/test_*.py` on disk, where B103's rule and this entry's own census define it as guards dated on or after 2026-10-29. The project's standing rule against re-deriving a population a helper already defines caught it inside the same turn. **The 2 figures are not in conflict and neither is a correction of the other**: 0 of 226 is the rule's own scope, and 627 of 927 is the count of older tests the rule was never written to cover.
+ <!-- task: B183 | state: DONE | status: COMMITTED | evidence: scripts/b103s_rule_is_not_being_followed_2026-11-13.py, bench/tests/test_b103s_rule_is_measured_2026-11-13.py, hooks/pre-commit -->
+ 
+-**B184. `frx` IS NOW A TICKET KIND OF ITS OWN, AND HIS FIRST USE OF IT WAS INVISIBLE TO THE MARKER THAT WAS SUPPOSED TO READ IT** Added 2026-11-13T21:40:00+00:00. **STATUS: BUILT, GUARDED AND DOCUMENTED 2026-11-13. HIS RULING. NO FURTHER RULING IS REQUESTED.** **FIND.** His ruling, verbatim: *"There is a potential collision here, and I think it can be cleared up by adding another label to issues in the ticket store. 'fr' to my eyes can sometimes be read as 'feature request', or 'fix request'. What I propose going forward is that a fix request should be marked by me as a 'frx' and a feature request should remain as 'fr'. We only need to do this going forward."* **FOLLOW, AND THE OBVIOUS WORRY WAS THE WRONG ONE.** `fr` is a prefix of `frx`, so a left-to-right alternation looks as though it must swallow the longer token. Driven both ways it does not: Python backtracks when the suffix fails, and `fr|frx` and `frx|fr` return identical answers on every probe. That worry is recorded as REFUTED rather than fixed. **ANALYSE, AND THE REAL DEFECT IS WORSE THAN A COLLISION.** His FIRST USE of the kind was INVISIBLE. `MARKER`'s suffix admitted a colon, a closing bracket, a spaced dash or end-of-line; he wrote `frx (`, so the pattern returned None and the ruling that CREATED the kind would itself have been harvested as unmarked. **A ruling written in the notation it creates must be readable in that notation, or the notation does not exist in practice.** **FIX, AND THE WIDENING WAS MEASURED BEFORE IT WAS MADE**, because adding to an accepting pattern is a LOOSENING and this project has already recorded one that began admitting what nobody intended. Over all **895** of his annotations the widened suffix changes exactly **1** verdict, **0.001117**, Wilson [0.000197, 0.006302], Clopper-Pearson [0.000028, 0.006209] on 2 agreeing routes -- and that 1 is his own `frx` sentence. **0 false positives in 895.** **FORWARD-ONLY, AS HE RULED:** the 311 historical rows under `fr` are NOT re-kinded, because re-filing them would rewrite what he meant then from what he means now. **P-PASS:** guard `bench/tests/test_frx_is_its_own_kind_2026-11-13.py`, 6 tests including his byte-exact sentence and a discrimination half proving `fr` still means what it meant; mutations `scripts/the_frx_kind_mutations_2026-11-13.py`, **5 of 5 red**, restore verified byte-identical by SHA-256. Documented in both instruction files as he required. ★★★ **VERIFIED 2026-11-14 AND IT FIXED 1 OF THE 2 READERS. THE OTHER ONE LOST HIS FIX REQUEST.** Every claim above re-checked by execution: `frx` is in `KINDS`; the harvester's `MARKER` returns `frx` on his byte-exact sentence; the guard is 6 of 6 green; the harness is 5 of 5 red. **BUT THE VOCABULARY HAS A SECOND READER AND IT WAS NEVER TOUCHED.** `scripts/harvest_tickets_2026-10-17.py:79` IMPORTS `scripts/read_founder_responses_2026-10-11.py` as its reader for `--sources responses`, and that file carries 3 patterns of its own. Driven on his words *"As I said above you should fix both. frx (as you will note this is my first use of the fix request ticket classification.)"*: the harvester returned **`frx`**, the reader's `_MARKER_LINE` returned **None**, its `_MARKER_TRAILING` returned **None**, and `annotations()` reported the marker as **blank** — because the marker is followed by a parenthetical and the trailing pattern required end-of-line. ★★★ **AND THE CONSEQUENCE WAS NOT COSMETIC: HIS FIX REQUEST WAS FILED AS A DISCUSSION AND THE CORRECT TICKET WAS RETIRED.** The harvester's own fallback at line 432 re-applies its `MARKER` when the reader's field is empty, so an `frx` ticket WAS created — `frx:3701741d604b`. But the unmarked reading also produced `disc:4f22c0c038b6` on the same anchor, and when `scripts/a_reclassification_is_not_a_second_ticket_2026-10-30.py` recomputed the kind from the READER it got `disc`, concluded the `frx` row was the stale one, and **DEPRECATED HIS FIX REQUEST**. Read out of the store: `disc:4f22c0c038b6` status UNCONFIRMED, `frx:3701741d604b` status DEPRECATED. **That deprecation was caused by a harvest I ran earlier the same night, and nothing surfaced it** — the Stop gate would have reported his fix request to him as an outstanding DISCUSSION. **REPAIRED AND VERIFIED: exactly 1 live row on that anchor and it is the `frx`.** **THE 3 DEFECTS IN THE SECOND READER, AND THE FIX FOR 2 OF THEM WAS A DELETION RATHER THAN A CHECKER.** (1) The trailing suffix could not see a marker followed by a parenthetical. **Widened, and measured before it was made because adding to an accepting pattern is a LOOSENING: over all 895 of his annotations it changes exactly 1 verdict, 0.001117, Wilson [0.000197, 0.006302], Clopper-Pearson [0.000028, 0.006209] with scipy.beta agreeing to 8.674e-19 — and that 1 is his own sentence. 0 verdicts LOST, 0 false positives in 895.** The reader's tally moved from 721 unmarked and 0 `frx` to 720 and 1, with every other kind unchanged. (2) 2 of its patterns each SPELLED THE 9 KINDS OUT TWICE. They now derive from a single `_KIND_ALT`, which **removes 4 re-spellings** instead of adding a comparator for them — a derived pattern cannot diverge, and `simplicity-default` prefers a deletion to a checker that has to be kept honest. Longest-first ordering makes the `fr`-is-a-prefix-of-`frx` case correct by CONSTRUCTION rather than correct by the engine backtracking. (3) **ITS FALLBACK VOCABULARY HAD GONE STALE, SILENTLY, AND OMITTED `frx`.** `_HIS_KINDS` imports `ticket_store.KINDS` with a literal tuple used only when that import fails — so on exactly the run where nothing else is available to notice, his newest marker became unreadable. Driven both ways on his sentence: READ with the import, INVISIBLE with the fallback. A fallback that is stale is worse than no fallback, because it looks like coverage. **AND THE HARVESTER'S OWN COMMENT UNDERCOUNTED THE DECLARATION SITES BY 3.** It says *4 PLACES SPELL THIS VOCABULARY OUT* and names them; there were **7** — those 4 plus 3 in the reader it imports, which no comment there mentioned. **The cost is measured, not feared: the commit board of 2026-11-13 refused with 6 failures until the unnamed sites were found by hand.** Corrected, and after the derivation the live figure is **5**: the harvester's 3, `KINDS`, and the reader's fallback tuple. **P-PASS: `bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py`, 11 tests, on `hooks/pre-commit`; `scripts/the_reader_vocabulary_mutations_2026-11-14.py`, 7 of 7 red, subject restored SHA-256 identical.** The import-failure path is EXECUTED by making `bench.ticket_store` unimportable, so the fallback literal cannot rot again. **2 OF THE 7 MUTATIONS WERE WRONG BEFORE THE GUARD WAS**, and both are recorded rather than quietly fixed. One reverted the alternation to shortest-first expecting `fr` to shadow `frx`; the guard stayed green and was RIGHT, because Python backtracks — which B184 had already measured and recorded as REFUTED — so there was nothing to catch and it was replaced. The other dropped the leading word boundary expecting `frxy` to read as a marker; it does not, because the trailing suffix already rejects it. **What that boundary actually protects is a word ENDING in a kind: without it `"this is unfr"` reads as `fr` and `"we codisc"` reads as `disc`.** The guard tested only the starting case, so the mutation exposed a missing assertion rather than a broken fix — the 3rd time in this window a harness found an absent test instead of a defect.
+-<!-- task: B184 | state: OPEN | status: TESTED | evidence: bench/ticket_store.py, scripts/harvest_tickets_2026-10-17.py, scripts/read_founder_responses_2026-10-11.py, bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py, scripts/the_reader_vocabulary_mutations_2026-11-14.py | ruled: 2026-11-13 -->
++**B184. `frx` IS NOW A TICKET KIND OF ITS OWN, AND HIS FIRST USE OF IT WAS INVISIBLE TO THE MARKER THAT WAS SUPPOSED TO READ IT** Added 2026-11-13T21:40:00+00:00. **STATUS: BUILT, GUARDED AND DOCUMENTED 2026-11-13. HIS RULING. NO FURTHER RULING IS REQUESTED.** **FIND.** His ruling, verbatim: *"There is a potential collision here, and I think it can be cleared up by adding another label to issues in the ticket store. 'fr' to my eyes can sometimes be read as 'feature request', or 'fix request'. What I propose going forward is that a fix request should be marked by me as a 'frx' and a feature request should remain as 'fr'. We only need to do this going forward."* **FOLLOW, AND THE OBVIOUS WORRY WAS THE WRONG ONE.** `fr` is a prefix of `frx`, so a left-to-right alternation looks as though it must swallow the longer token. Driven both ways it does not: Python backtracks when the suffix fails, and `fr|frx` and `frx|fr` return identical answers on every probe. That worry is recorded as REFUTED rather than fixed. **ANALYSE, AND THE REAL DEFECT IS WORSE THAN A COLLISION.** His FIRST USE of the kind was INVISIBLE. `MARKER`'s suffix admitted a colon, a closing bracket, a spaced dash or end-of-line; he wrote `frx (`, so the pattern returned None and the ruling that CREATED the kind would itself have been harvested as unmarked. **A ruling written in the notation it creates must be readable in that notation, or the notation does not exist in practice.** **FIX, AND THE WIDENING WAS MEASURED BEFORE IT WAS MADE**, because adding to an accepting pattern is a LOOSENING and this project has already recorded one that began admitting what nobody intended. Over all **895** of his annotations the widened suffix changes exactly **1** verdict, **0.001117**, Wilson [0.000197, 0.006302], Clopper-Pearson [0.000028, 0.006209] on 2 agreeing routes -- and that 1 is his own `frx` sentence. **0 false positives in 895.** **FORWARD-ONLY, AS HE RULED:** the 311 historical rows under `fr` are NOT re-kinded, because re-filing them would rewrite what he meant then from what he means now. **P-PASS:** guard `bench/tests/test_frx_is_its_own_kind_2026-11-13.py`, 6 tests including his byte-exact sentence and a discrimination half proving `fr` still means what it meant; mutations `scripts/the_frx_kind_mutations_2026-11-13.py`, **5 of 5 red**, restore verified byte-identical by SHA-256. Documented in both instruction files as he required.
++<!-- task: B184 | state: OPEN | status: PROPOSED | evidence: bench/ticket_store.py, scripts/harvest_tickets_2026-10-17.py -->
+ 
+ **B185. EXPERT ENCODINGS GO STALE AGAINST CHANGING STANDARDS, AND THE ARCHIVE CANNOT SAY WHICH VERSION ANY PAST RESULT USED** Added 2026-11-13T21:40:00+00:00. **STATUS: DESIGN AGREED WITH HIM 2026-11-13 AND APPROVED FOR BUILD. MINE TO BUILD. NO RULING IS REQUESTED on the design; 2 parameters below are his and are named.** **HIS CONCERN, verbatim:** *"CDSFL risks becoming irrelevant over time, like an old out of date text book nobody reads any more?"* **FIND, AND THE RECORD PARTLY REFUTES THE FRAMING.** Standards drift SLOWLY: combined 0.976190 revisions per year across the 4 feeds, and over this project's whole 104-day record the expected number of revisions is 0.277957 with P(at least 1) = 0.242671. The faster decay is elsewhere. **MEASURED ACROSS THE 52 ENCODINGS:** 38 carry `VERSION:` (0.730769, Wilson [0.5975, 0.8323]); 22 carry `SEVERITY SCALE:`, `SOURCES:` and `TIER:`; and only **1 of 52** carries a confirmation date (0.019231, Wilson [0.0034, 0.1012]). **That single missing field is the whole detection problem** -- an encoding with no date cannot be compared against upstream. 5 distinct header shapes exist, so any checker must handle 5 cases and will miss fields in 30 files. **AND A FIGURE OF MINE IS CORRECTED HERE:** I reported `0 of 49 encoding and config files carry a version key`. That was measured over the WRONG POPULATION -- files named `*encoding*` plus `*.toml` -- while the real encodings are `bench/directives/**/*.txt`. The correct figure is 38 of 52. **HIS DESIGN, AGREED, AND IT CLEARS HIS OWN COMPOSABILITY STANDARD ON A MEASUREMENT.** 3 files, not 1: formal standards, user preferences, and confirmations. The 3 have radically different change rates -- standards 0.976190 per year against confirmations at 1369.6875 per year on his measured session cadence of 3.75 starts per day. In 1 file the hash would change 1370.6637 times a year of which 0.9762 are real, a tamper-alert precision of **0.00071220**; split, it is **1.0**. **A 1404.0952x improvement on a named property**, so the split DOMINATES rather than being taste. **TAMPER DETECTION IS NOT BUILT FROM SCRATCH:** `scripts/cdsfl_seal_logs.py` already seals directories into RFC 9162 Merkle chains with SHA-256 leaves and refuses on tamper, and its own docstring states that signed sealing is a configuration change. **THE CADENCE, MEASURED AGAINST HIS OWN WORKING PATTERN:** a check on every session start gives an expected undetected window of 0.412371 days and an exposure of **0.00056451**, against 0.020534 for a 30-day calendar. **A FIGURE OF MINE IS CORRECTED HERE TOO:** I first reported 0.001129, which doubled the window instead of halving the interval; the true figure is better than I said. 0 of his 74 measured session gaps exceeded the 14.61-day ceiling for the fastest-moving standard. **NEEDS HIS RULING:** 2 parameters are his and are not assumed -- the exposure ceiling, recommended at 1 per cent which gives a 14-day backstop for absences, and whether model and client version share the standards record or get their own. Both are built with the recommended values in place and both are 1-line changes if he rules otherwise. **AND THE FORCING FUNCTION IS NOT A REMINDER:** a generated reference list, built from what was ACTUALLY loaded, makes an omission VISIBLE -- an empty list in a report is loud -- where a reminder relies on the model acting on it, which this project has measured failing.
+ <!-- task: B185 | state: OPEN | status: PROPOSED | evidence: bench/directives/, scripts/standards_currency_and_model_staleness_2026-11-13.py -->
+
+### fable:attempt-2:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 03:19:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 03:01:59
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-2:bench/cdsfl_registry/domain_manifest.toml
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 02:45:27
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 03:14:16
+@@ -232,7 +232,7 @@
+ severity_scale = "GHS health hazard category (Rev. 11, 2025)"
+ severity_levels = ["Category 5", "Category 4", "Category 3", "Category 2", "Category 1"]
+ critical_level = "Category 2"
+-severity_scale_source = "UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by UNECE; PubChem lists a Rev. 11 (2025) as current. [VERIFY:current] -- the Rev. 11 citation is secondary."
++severity_scale_source = "UN GHS Rev. 11, ST/SG/AC.10/30/Rev.11, published 2025-09-12 by UNECE -- PRIMARY, confirmed 2026-11-14 at unece.org/transport/dangerous-goods/ghs-rev11-2025 (the earlier citation was secondary via PubChem and carried [VERIFY:current]; discharged). Rev. 11 changes aerosols, skin sensitisation, a global-warming hazard class and precautionary statements; the acute-toxicity categories this scale names are untouched. GHS revises on a 2-year cadence, so a Rev. 12 is expected 2027 and this confirmation ages with it."
+ critical_level_note = "CORRECTED 2026-11-12 on 2 counts after checking rather than recalling. (1) The level COUNT was wrong: acute toxicity sorts into 5 categories, not 4, so a 4-level declaration would have had no slot for the least severe class. (2) The revision was unstated and Rev. 11 (2025) appears to supersede Rev. 10 (2023). GHS runs INVERTED -- Category 1 is the MOST severe -- so a consumer must not assume a higher number is worse, which is exactly why the critical level is NAMED and not numbered. Declaring Category 2 makes Categories 1 and 2 critical. The numeric LD50/LC50 cutoffs were not retrieved and are deliberately not stated here."
+ encoding_tier = "DRAFT"
+ 
+@@ -290,7 +290,7 @@
+ severity_scale = "AIAG-VDA FMEA severity 1-10 (2019 handbook)"
+ severity_levels = ["1 no effect", "2-3 very minor to minor", "4-6 moderate", "7-8 high", "9-10 safety or regulatory"]
+ critical_level = "7"
+-severity_scale_source = "AIAG-VDA FMEA Handbook, 1st edition 2019 (errata June 2020). SECONDARY sources only were reachable; the handbook is not open-access."
++severity_scale_source = "AIAG-VDA FMEA Handbook, 1st Edition (released 2019-06-03), current printing: 1st Edition 2nd Printing, August 2022, incorporating the errata (publisher: aiag.org, FMEAAV-1). CORRECTED 2026-11-14: the previous citation read 1st edition 2019 (errata June 2020) and did not name the 2022 second printing -- the same staleness shape as the CTCAE v5.0-to-v6.0 and CVSS v3.1-to-v4.0 corrections, caught by re-checking on the day of use. The handbook text remains paywalled, so the SEVERITY BANDS are still secondary-sourced: [VERIFY:current] stands for the band definitions, not for the edition."
+ critical_level_note = "★ THIS DECLARATION CARRIES A REAL CORRECTION AND A QUESTION FOR HIM. The note here first said 7 is \"the recognised threshold at which a failure mode is treated as high severity\". Checking the standard found 2 landmarks, not 1: the 7-8 band is labelled HIGH, while 9-10 is the SAFETY OR REGULATORY band -- what the superseded AIAG manual called the legal zone and treated as requiring action whatever the risk-priority number. The 2019 AIAG-VDA handbook also replaced the risk-priority number with an ACTION PRIORITY matrix that weights severity above occurrence and detection. SO 7 AND 9 ARE BOTH DEFENSIBLE CUTS AND THEY ADMIT DIFFERENT SETS. 7 is declared because it is the CONSERVATIVE reading -- it makes MORE findings critical, which is the tighter gate, and `p-pass-ambiguity-default` resolves an ambiguous constraint as HARD. Moving it to 9 would LOOSEN what the gate admits, and loosening a gate is his ruling, not a repair. [VERIFY:current] -- the handbook is not open-access and only secondary sources were reachable. The panel carried the frozen constant into FMEA and it landed on 7.3, between levels, so it is not expressible as a rank either way."
+ encoding_tier = "DRAFT"
+ 
+
+### fable:attempt-2:bench/directives/biology/biology_genetics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_genetics.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_genetics.txt	2026-11-14 03:13:34
+@@ -3,9 +3,17 @@
+        expression, molecular cloning, genome annotation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on
+        a person. Research-only work inherits the application's scale.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.
++SOURCES: NCI CTEP CTCAE v6.0 (MedDRA 28.0), published 2025-07-22, primary PDF
++       at dctd.cancer.gov. CORRECTED 2026-11-14: this line previously read
++       "NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12" and that
++       confirmation was WRONG -- v6.0 had been published ~16 months before it
++       was written. The grade ladder is unchanged and Grade 3 is defined
++       verbatim in v6.0 as "Severe or medically significant but not
++       immediately life-threatening", so the critical level stands; only the
++       version name was stale. Refuted by the `fable` seat 2026-11-14 and
++       verified against the primary document in the manifest.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-2:bench/directives/biology/biology_natural_world.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_natural_world.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_natural_world.txt	2026-11-14 03:13:34
+@@ -4,15 +4,18 @@
+        genetic or zoological specialisation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3. Inherited from the
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3. Inherited from the
+        biomedical subdomain because that is where biological error realises
+        consequence for a person. Where the work is ecological rather than
+        clinical the scale INHERITS from the application -- a conservation
+        decision has its own consequence structure and CTCAE does not describe
+        it, which must be said rather than forced.
+-SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27, confirmed current
+-       2026-11-12: Grade 3 is severe or medically significant but not
+-       immediately life-threatening.
++SOURCES: NCI CTEP, CTCAE v6.0 (MedDRA 28.0), published 2025-07-22: Grade 3 is
++       severe or medically significant but not immediately life-threatening.
++       CORRECTED 2026-11-14: this line previously cited "CTCAE v5.0, published
++       2017-11-27, confirmed current 2026-11-12"; that confirmation was wrong
++       by ~16 months. The grade ladder and the Grade 3 wording are unchanged
++       in v6.0, so only the version name moved.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-2:bench/directives/biology/biology_zoology.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_zoology.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_zoology.txt	2026-11-14 03:13:34
+@@ -3,14 +3,16 @@
+        veterinary-adjacent measurement
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
++SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on
+        a person. For animal welfare the consequence scale is the applicable
+        severity classification of the governing regime, which must be NAMED
+        rather than assumed, because it differs by jurisdiction.
+        [VERIFY:current] -- no single international scale was confirmed on
+        2026-11-12 and inventing one here would be the magic wand this project
+        refuses.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017) for the human-consequence half.
++SOURCES: NCI CTEP CTCAE v6.0 (MedDRA 28.0, published 2025-07-22) for the
++       human-consequence half. CORRECTED 2026-11-14 from "CTCAE v5.0 (2017)":
++       v5.0 was superseded 2025-07-22 and the grade ladder is unchanged.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-2:bench/directives/chemistry/chemistry_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/chemistry/chemistry_general.txt	2026-11-12 01:53:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/chemistry/chemistry_general.txt	2026-11-14 03:14:03
+@@ -9,10 +9,15 @@
+        number is LESS severe and any ordering code assuming otherwise inverts
+        the meaning. Declaring Category 2 makes Categories 1 and 2 critical.
+        Acute toxicity sorts into 5 categories, not 4.
+-SOURCES: UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by
+-       UNECE; PubChem lists a Rev. 11 (2025). [VERIFY:current] -- the Rev. 11
+-       citation is secondary. Numeric LD50/LC50 cutoffs were not retrieved and
+-       are deliberately not stated here rather than guessed.
++SOURCES: UN GHS Rev. 11, ST/SG/AC.10/30/Rev.11, published 2025-09-12 by
++       UNECE (primary, unece.org/transport/dangerous-goods/ghs-rev11-2025).
++       FLAG DISCHARGED 2026-11-14: the Rev. 11 citation was previously
++       secondary (PubChem) and marked [VERIFY:current]; it is now confirmed
++       against the UNECE primary. Rev. 11's changes (aerosols, non-animal skin
++       sensitisation, global-warming hazard class, precautionary statements)
++       do not touch the acute-toxicity categories this scale names. Numeric
++       LD50/LC50 cutoffs were not retrieved and are deliberately not stated
++       here rather than guessed.
+ 
+ ★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 3 chemistry
+ tasks were given the ANALYTICAL chemistry box because it sorts first
+
+### fable:attempt-2:bench/directives/information_science/information_science_data_management.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_data_management.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/information_science/information_science_data_management.txt	2026-11-14 03:14:03
+@@ -6,9 +6,11 @@
+ SEVERITY SCALE: none of its own; inherits the application's. Where the data is
+        personal or regulated the consequence is legal rather than technical and
+        the applicable regime must be named, not assumed.
+-SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO 11179 for
+-       metadata registries. [VERIFY:current] -- revisions not confirmed from a
+-       primary source on 2026-11-12.
++SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO/IEC
++       11179-1:2023 (Edition 4, published 2023-01-16) for metadata registries.
++       FLAG DISCHARGED 2026-11-14: previously unversioned and marked
++       [VERIFY:current]; Edition 4 confirmed current against the ISO/IEC
++       listing.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-2:bench/directives/information_science/information_science_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_general.txt	2026-11-12 01:49:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/information_science/information_science_general.txt	2026-11-14 03:14:03
+@@ -9,8 +9,11 @@
+        (critical at High, 7.0); otherwise the consequence belongs to the
+        application.
+ SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016) for data
+-       stewardship. ISO 11179 for metadata registries. [VERIFY:current] --
+-       current revision not confirmed from a primary source on 2026-11-12.
++       stewardship. ISO/IEC 11179-1:2023 (Edition 4, published 2023-01-16,
++       replacing the 2015 third edition) for metadata registries. FLAG
++       DISCHARGED 2026-11-14: the revision was previously unconfirmed and
++       marked [VERIFY:current]; Edition 4 confirmed current against the
++       ISO/IEC listing.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-2:bench/directives/information_science/information_science_knowledge_representation.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-14 03:14:03
+@@ -4,9 +4,12 @@
+ VERSION: 1.0
+ TIER: DRAFT
+ SEVERITY SCALE: none of its own; inherits the application's.
+-SOURCES: ISO 11179 for metadata registries; Dublin Core for descriptive
+-       metadata. [VERIFY:current] -- revisions not confirmed from a primary
+-       source on 2026-11-12.
++SOURCES: ISO/IEC 11179-1:2023 (Edition 4, published 2023-01-16) for metadata
++       registries; DCMI Metadata Terms, version 2020-01-20 (aligned with ISO
++       15836-1:2017 and ISO 15836-2:2019) for descriptive metadata. FLAG
++       DISCHARGED 2026-11-14: both citations were previously unversioned and
++       marked [VERIFY:current]; both editions confirmed current against the
++       publishers' listings.
+ 
+ WHY THIS SUBDOMAIN IS UPSTREAM OF VERIFICATION. The representation determines
+ what a claim can even assert. A severity recorded as a bare number cannot be
+
+### fable:attempt-2:bench/directives/statistics/statistics_experimental_design.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_experimental_design.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/statistics/statistics_experimental_design.txt	2026-11-14 03:14:03
+@@ -6,9 +6,12 @@
+ SEVERITY SCALE: none of its own; inherits the application's. A clinical design
+        inherits CTCAE (critical at Grade 3); an engineering design inherits
+        FMEA severity (critical at 7).
+-SOURCES: ASA statement on p-values (2016). CONSORT and PRISMA reporting
+-       guidelines, cited without a version because the current edition could
+-       not be confirmed from a primary source on 2026-11-12. [VERIFY:current]
++SOURCES: ASA statement on p-values (2016). CONSORT 2025 statement
++       (published 2025-04-15, simultaneously in Lancet, JAMA, Nature Medicine,
++       BMJ and PLOS Medicine; 30-item checklist) and PRISMA 2020. FLAG
++       DISCHARGED 2026-11-14: these were previously cited without a version
++       because the editions could not be confirmed on 2026-11-12; both now
++       confirmed against the publishing journals.
+ 
+ WHY THIS IS A SEPARATE SUBDOMAIN. Power, pre-registration and multiplicity are
+ a different discipline from estimation, and they are directly load-bearing for
+
+### fable:attempt-2:bench/directives/statistics/statistics_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_general.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/statistics/statistics_general.txt	2026-11-14 03:14:03
+@@ -5,8 +5,12 @@
+ VERSION: 1.0
+ TIER: DRAFT
+ SEVERITY SCALE: none of its own; inherits the application's.
+-SOURCES: ISO 3534 for vocabulary. Stevens' levels of measurement for the
+-       admissibility constraints below.
++SOURCES: ISO 3534-1:2006 (Edition 2, corrected version 2007-09; reviewed
++       and confirmed 2021; marked by ISO for revision as of 2026-06-24) for
++       vocabulary -- vocabulary only, not load-bearing for the constraints.
++       Stevens' levels of measurement (1946) for the admissibility
++       constraints below, whose load-bearing content is the project's own
++       z3-verified admissibility results of 2026-11-11/12.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-2:bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py
+--- /dev/null	2026-11-14 03:19:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py	2026-11-14 03:15:03
+@@ -0,0 +1,141 @@
++#!/usr/bin/env python3
++"""THE TIER LINE IS PROMPT-DELIVERED, AND A STALE CITATION IN AN ENCODING IS A
++STALE STATEMENT IN EVERY SEAT'S DIRECTIVE.
++
++Joint panel round `fmea_level_and_draft_encodings_2026-11-14`. The round's brief
++said `encoding_tier` is "consumed by 0 decisions anywhere in the tree", verified
++by AST. That is true of the MANIFEST field and FALSE of the file-level `TIER:`
++line, and the difference was measured rather than argued: for every domain whose
++declared default encoding carries a `TIER:` line, `composer.compose()` delivers
++that line verbatim in `rendered_text` -- the text a seat reads. The consumer the
++AST sweep cannot see is the seat model itself. So a tier promotion is not a
++label edit; it is a change to what every seat is told about the authority of its
++own constraint box, and a WRONG tier is prompt-delivered misinformation.
++
++Test 2 exists because of CTCAE. The manifest's biology entry was corrected to
++v6.0 on 2026-11-14 after the `fable` seat refuted the 2026-11-12 "confirmed
++current" claim against the primary document -- but the 3 biology ENCODINGS still
++cited v5.0, 2 of them carrying the refuted confirmation verbatim, and those
++files are prompt-delivered. EXECUTED RED before the repair: on the as-dispatched
++tree this test failed with 3 offending files. A declaration that records a
++confirmation is only as current as the day it was checked, and nothing
++re-checked it; this test is the re-check for the specific failure shape.
++"""
++from __future__ import annotations
++
++import pathlib
++import re
++import sys
++
++HERE = pathlib.Path(__file__).resolve().parent
++BENCH = HERE.parent
++sys.path.insert(0, str(BENCH))
++
++from cdsfl_registry import composer  # noqa: E402
++from cdsfl_registry import domain_vocabulary as dv  # noqa: E402
++
++DIRECTIVES = BENCH / "directives"
++
++
++def _tier_line(path: pathlib.Path) -> str | None:
++    for line in path.read_text(encoding="utf-8").splitlines():
++        if line.startswith("TIER:"):
++            return line.strip()
++    return None
++
++
++def test_the_default_encodings_tier_line_reaches_rendered_text():
++    """For every domain whose DEFAULT encoding carries a TIER line, that exact
++    line is in compose().rendered_text. This wires the measured delivery path
++    to a test, so a future composer change that silently strips the line (or a
++    tier edit that never reaches a prompt) fails loudly instead of quietly."""
++    checked = 0
++    for dom in dv.domains():
++        enc = dv.encoding_path(dom)
++        if not enc.is_file():
++            continue
++        tier = _tier_line(enc)
++        if tier is None:
++            continue  # logistics' default carries none; absence is not a defect here
++        rendered = composer.compose(dom, "fable_5_1").rendered_text
++        assert tier in rendered, (
++            f"{dom}: default encoding {enc.name} declares {tier!r} but the "
++            f"composed rendered_text does not carry it -- the tier stopped "
++            f"reaching the seat")
++        checked += 1
++    assert checked >= 8, f"only {checked} domains checked; the wiring is not exercised"
++
++
++def _cites_v5_live(text: str) -> bool:
++    """True iff CTCAE v5.0 appears as a LIVE citation. Project practice
++    preserves a refuted claim verbatim inside its correction, so v5.0 is
++    permitted ONLY where the same file carries a CORRECTED marker and a live
++    v6.0 citation, and never on the SEVERITY SCALE line itself."""
++    if not re.search(r"CTCAE\s*v?5(\.0)?\b", text):
++        return False
++    for line in text.splitlines():
++        if line.startswith("SEVERITY SCALE:") and re.search(r"v5(\.0)?\b", line):
++            return True  # the operative scale line names the superseded version
++    quoted_in_correction = ("CORRECTED" in text) and re.search(r"CTCAE\s*v?6(\.0)?\b", text)
++    return not quoted_in_correction
++
++
++def test_no_directive_cites_ctcae_v5_as_current():
++    """CTCAE v5.0 was superseded by v6.0 (MedDRA 28.0, published 2025-07-22,
++    read from the primary at dctd.cancer.gov; manifest corrected 2026-11-14).
++    No prompt-delivered encoding may cite v5.0 as live -- in particular none
++    may carry the refuted 'confirmed current 2026-11-12' claim outside a
++    correction note that quotes it as refuted. EXECUTED RED on the
++    as-dispatched tree: all 3 biology encodings offended (no CORRECTED marker
++    existed), so the guard's silence after repair is a measurement."""
++    offenders = [str(p.relative_to(BENCH.parent))
++                 for p in sorted(DIRECTIVES.rglob("*.txt"))
++                 if _cites_v5_live(p.read_text(encoding="utf-8"))]
++    assert not offenders, (
++        "directives still citing superseded CTCAE v5.0 as live "
++        f"(prompt-delivered): {offenders}")
++
++
++def test_every_declared_scale_source_carries_a_version_token():
++    """Every manifest-declared severity scale's source names an edition,
++    revision, version or year -- the CVSS v3.1 and CTCAE v5.0 corrections were
++    both version-name staleness, and an unversioned citation cannot even BE
++    checked for staleness."""
++    version_token = re.compile(
++        r"(v\d+(\.\d+)?|Rev\.?\s*\d+|\b(1st|2nd|3rd|\dth)\s+edition|"
++        r"\bedition\b|\b(19|20)\d{2}\b)", re.IGNORECASE)
++    for dom in dv.domains():
++        d = dv.entry(dom)
++        scale = d.get("severity_scale")
++        if scale in (None, "none", "composed"):
++            continue
++        src = d.get("severity_scale_source") or ""
++        assert version_token.search(src), (
++            f"{dom}: declared scale {scale!r} has a source with no version/"
++            f"edition/year token: {src!r}")
++
++
++def test_the_v5_guard_is_not_vacuous():
++    """The CTCAE regex fires on the exact as-dispatched wording -- proven on a
++    reconstruction, so the guard's silence after repair is evidence and not a
++    hole in the pattern."""
++    sample = ("SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3\n"
++              "SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.\n")
++    assert _cites_v5_live(sample), (
++        "the guard does not fire on the as-dispatched wording it was built to catch")
++    corrected = sample + "CORRECTED 2026-11-14 to CTCAE v6.0 (MedDRA 28.0).\n"
++    # the SEVERITY SCALE line still names v5.0, so even a correction note does
++    # not excuse an operative scale line:
++    assert _cites_v5_live(corrected), (
++        "a v5.0 SEVERITY SCALE line must offend even beside a correction note")
++    repaired = corrected.replace("SEVERITY SCALE: CTCAE v5.0",
++                                 "SEVERITY SCALE: CTCAE v6.0")
++    assert not _cites_v5_live(repaired), (
++        "a v5.0 mention quoted inside a correction, beside a live v6.0 "
++        "citation, must NOT offend -- preserving the refuted claim verbatim "
++        "is project practice")
++
++
++if __name__ == "__main__":
++    import pytest
++    sys.exit(pytest.main([__file__, "-q"]))
+
+### fable:attempt-2:experimental_notes/Panel_Joint_FMEA_Level_And_Tier_Adjudication_2026-11-14.md
+--- /dev/null	2026-11-14 03:19:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/experimental_notes/Panel_Joint_FMEA_Level_And_Tier_Adjudication_2026-11-14.md	2026-11-14 03:17:13
+@@ -0,0 +1,112 @@
++# JOINT ROUND `fmea_level_and_draft_encodings_2026-11-14` — tier adjudication record
++
++Seat: third seat, joint half. This file is the record the brief asked for: the
++per-encoding adjudication a consumer reads BEFORE any `TIER:` line is written.
++No tier line was flipped this round — see "why the tiers are held" below.
++
++## THE FACT THAT REFRAMES Q2 (measured this round, wired to a test)
++
++The brief said `encoding_tier` is consumed by 0 decisions, by AST. True of the
++MANIFEST field; FALSE of the file-level `TIER:` line. Measured by execution:
++`composer.compose(<domain>, "fable_5_1").rendered_text` carries the default
++encoding's `TIER: DRAFT` line VERBATIM for 8 of the 9 routable domains
++(logistics' default encoding carries no TIER line). The consumer the AST sweep
++cannot see is the SEAT MODEL. A tier flip is therefore a change to what every
++seat is told about the authority of its own constraint box — prompt-delivered
++epistemic framing, the same class as the Q1 critical level. Wired to
++`bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py` (executed red
++on the as-dispatched tree for the CTCAE guard, green after repair).
++
++## Q1 — RETAIN 7, HOLD ANY MOVE FOR THE FOUNDER (3 seats, 2 distinct routes, 1 answer)
++
++The blind seats' procedures are 2 RULES, not 1 rule in 2 wordings:
++cc2 maps the project's material categories to the band their CONSEQUENCE
++MAGNITUDE sits in; fable asks whether a band's PUBLISHED DEFINITION entails
++materiality. On AIAG-VDA FMEA they coincide (bands partition by consequence of
++function, S7 degradation / S8 loss of primary function), which is why both
++landed on 7. On a standard whose lowest band is defined intensionally ("any
++deviation beyond nominal tolerance") they separate: executed in
++`scripts/the_two_q1_procedures_can_disagree_2026-11-14.py` — fable's rule cuts
++at class 1 of 4, cc2's at class 3 of 4, same standard, same materiality
++definition. So the agreement on 7 survives NOT as corroboration-by-vote but
++because both coordinates coincide on this standard; for a future standard with
++intensional bands the rules split, the ambiguity is HARD (§1), resolve to the
++tighter cut and hold for the founder (cc2's step 5, now demonstrated).
++
++## Q2 — adjudication of the 11 rows the seats classify differently (not 5: 16−11=5 is net, the symmetric difference is 11)
++
++Citations below were checked against PRIMARY publishers 2026-11-14 by this seat.
++
++| encoding | cc2 | fable | ADJUDICATED | ground |
++|---|---|---|---|---|
++| biology_genetics | CV | DRAFT | **fable right at dispatch; CV-ELIGIBLE after this round's repair** | cc2 accepted the "confirmed current 2026-11-12" claim at face value — the exact failure J3 names. v5.0→v6.0 corrected in-file this round (primary: NCI, v6.0 published 2025-07-22, Grade 3 wording unchanged). |
++| is_retrieval | CV | DRAFT | **fable right — DRAFT** | SOURCES names "standard information-retrieval evaluation practice", an UNNAMED basis; nothing exists to cross-verify against. Route up: name the evaluation literature. |
++| mathematics_proof | CV | DRAFT | **fable right — DRAFT** | CROSS_VERIFIED marks a verification EVENT. cc2's "5/8 tool-checkable" is checkABILITY, not a check that happened. No standard exists and no 2-source verification of the constraint content was executed by anyone. Route up is VALIDATED (HIL) directly. |
++| chemistry_general | DRAFT | CV | **fable right — CV-ELIGIBLE (discharged)** | GHS Rev. 11 confirmed against UNECE primary: ST/SG/AC.10/30/Rev.11, published 2025-09-12; Rev. 11 changes do not touch acute-toxicity categories. Flag discharged in file + manifest this round. |
++| cross_general | DRAFT | CV | **fable right — CV-ELIGIBLE, weakest promotion, flag to founder** | No external standard exists BY CONSTRUCTION; the load-bearing content is the founder's verbatim rule + computations executed by 2 independent tools (pint, SymPy, re-executed by fable). A verification event exists, unlike mathematics_proof. |
++| info_science_general | DRAFT | CV | **fable right — CV-ELIGIBLE (discharged)** | ISO/IEC 11179-1:2023, Edition 4, published 2023-01-16, confirmed current. Flag discharged in file this round. |
++| info_science_data_management | DRAFT | CV | **fable right — CV-ELIGIBLE (discharged)** | same discharge. |
++| info_science_knowledge_representation | DRAFT | CV | **fable right — CV-ELIGIBLE (discharged)** | ISO/IEC 11179-1:2023 + DCMI Metadata Terms 2020-01-20 / ISO 15836-1:2017, -2:2019. Flag discharged in file this round. |
++| physics_thermodynamics | DRAFT | CV | **fable right — CV-ELIGIBLE** | its own sources are primary and exact (SI 9th ed; k fixed); the GHS inheritance names scale+level only, and the VERSION lives in the manifest (now primary-confirmed) — duplicating it in the encoding would be 2 tables that can drift. Boundary traced per §3: the dependency chain terminates at the discharged chemistry citation. |
++| statistics_experimental_design | DRAFT | CV | **fable right — CV-ELIGIBLE (discharged)** | CONSORT 2025 (2025-04-15, five journals) + PRISMA 2020 confirmed; flag discharged in file this round. |
++| statistics_general | DRAFT | CV | **fable right in verdict, wrong in remedy — CV-ELIGIBLE (pinned)** | fable's "not load-bearing" carve-out left the citation unversioned, the CVSS-v3.1 failure shape. Pinned instead: ISO 3534-1:2006 Ed 2 (corrected 2007-09; reviewed and confirmed 2021; ISO marks it for revision as of 2026-06-24 — this citation AGES, recorded in-file). |
++
++Shared 8 (both CV): software_general, mathematics_applied, mathematics_numerical,
++physics_general, physics_classical, physics_quantum, statistics_inference,
++statistics_time_series — confirmed, load-bearing figures re-executed by fable
++and editions re-checked (CVSS v4.0 current, spec doc v1.2; IEEE 754-2019
++current, next revision ~2029; SI Brochure still 9th edition, revised to v4.01
++June 2026, 28th CGPM held 2026-10-13/15).
++Shared 3 (both DRAFT): biology_natural_world (tool-checkability below majority),
++biology_zoology (animal-welfare scale unresolved, flag live), logistics_warehousing
++(honest absence of a primary).
++
++**TOTAL: 17 of 22 CV-ELIGIBLE (0.772727, Wilson [0.565600, 0.898770], Wolfram
++concurring), 5 stay DRAFT.** Neither 11 nor 16: cc2's 11 was right against the
++staged tree except biology_genetics (stale confirmation accepted) and its 2
++semantics calls; fable's 16 was right conditional on edits that died with its
++sandbox and is 17 once biology_genetics' only named defect is repaired.
++
++## Why the tiers are HELD rather than flipped
++
++The TIER line is prompt-delivered (measured above). A flip changes every seat's
++dispatched directive — the same class of change as the Q1 critical level, which
++BOTH blind seats held for the founder. Consistency requires the same discipline
++here: this record carries the per-row evidence; flipping 17 lines is one
++founder-confirmable action. A WRONG CROSS_VERIFIED in a prompt is worse than a
++late one: it is exactly the "false sense of security" the tier exists to
++prevent (manifest, Gemini 3.1 Pro caution, 2026-04-09).
++
++## J3 — the other declared scales, checked against primaries 2026-11-14
++
++| scale | confirmation it carried | primary check 2026-11-14 | verdict |
++|---|---|---|---|
++| CVSS v4.0 (software) | primary read 2026-11-12 ("Table 22 read directly") | v4.0 current; no v5; spec document v1.2, metrics unchanged since 2023-11 | **NOT STALE** |
++| GHS Rev. 11 (chemistry) | SECONDARY, self-flagged [VERIFY:current] | Rev. 11 primary at UNECE, published 2025-09-12, current; Rev. 12 expected 2027 (biennial cadence) | **CONFIRMED, flag discharged** |
++| AIAG-VDA FMEA (engineering) | SECONDARY, self-flagged | **STALE AT PRINTING LEVEL**: current is 1st Edition 2nd Printing, August 2022, incorporating errata; manifest cited "1st edition 2019 (errata June 2020)" only. Same staleness shape as CTCAE/CVSS. Bands remain secondary-sourced (handbook paywalled) — flag retained for the band definitions. Corrected in manifest this round. | **CORRECTED** |
++| CTCAE (biology) | "CONFIRMED 2026-11-12 against the NCI source" — WRONG by ~16 months | corrected to v6.0 by the orchestrator 2026-11-14; the 3 ENCODINGS still cited v5.0 and were corrected this round | **was stale; repaired** |
++
++Staleness base rates, honestly small-n: of the 2 citations that CLAIMED a
++confirmation, 1 was wrong — 0.500000, Wilson [0.094531, 0.905469]; of all 4
++declared-scale citations, 2 were stale in some respect — 0.500000, Wilson
++[0.150039, 0.849961]. The intervals are wide because n is 4; the mechanism
++matters more than the rate: A CONFIRMATION IS A DATED EVENT AND NOTHING
++RE-CHECKS IT. What this round adds mechanically:
++`test_no_directive_cites_ctcae_v5_as_current` re-checks the one failure shape
++that has now occurred twice (version-name staleness), and every declared-scale
++source now carries its check DATE and its expected supersession cadence where
++known, so the next reader can see the age of the confirmation at a glance.
++A scheduled re-verification is named as the residual gap, not built: building
++an unrequested scheduler in a one-shot panel round would be an addition nothing
++reaches until the founder wires it.
++
++## Files delivered this round
++
++- `bench/directives/biology/biology_{genetics,natural_world,zoology}.txt` — v5.0→v6.0, refuted claims preserved verbatim inside corrections
++- `bench/directives/chemistry/chemistry_general.txt` — GHS Rev. 11 discharged (UNECE primary)
++- `bench/directives/information_science/information_science_{general,data_management,knowledge_representation}.txt` — ISO/IEC 11179-1:2023 Ed 4 + DCMI 2020-01-20 discharged
++- `bench/directives/statistics/statistics_experimental_design.txt` — CONSORT 2025 + PRISMA 2020 discharged
++- `bench/directives/statistics/statistics_general.txt` — ISO 3534-1:2006 pinned, revision-pending flag recorded
++- `bench/cdsfl_registry/domain_manifest.toml` — chemistry source primary-confirmed; engineering source corrected to 2nd Printing Aug 2022
++- `bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py` — 4 guards, executed red-then-green
++- `scripts/the_two_q1_procedures_can_disagree_2026-11-14.py` — J2 divergence, executed
+
+### fable:attempt-2:scripts/does_a_per_turn_reminder_change_compliance_2026-11-14.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/does_a_per_turn_reminder_change_compliance_2026-11-14.py	2026-11-14 03:11:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/scripts/does_a_per_turn_reminder_change_compliance_2026-11-14.py	2026-11-14 02:58:58
+@@ -198,14 +198,6 @@
+         description=(__doc__ or "").strip().splitlines()[0])
+     ap.add_argument("--limit", type=int, default=0,
+                     help="examine only the N most recent transcripts")
+-    #: ★ THE TRIAL COUNT IS AN OPTION BECAUSE THE GUARD PAYS FOR IT. Measured
+-    #: 2026-11-14: at the default this function took 197.68 s of a 215.67 s
+-    #: guard run -- 92 per cent of it, from 120,000 simulated regressions -- and
+-    #: the commit gate already costs about 27 minutes. The REPORTED figure keeps
+-    #: the full default so its precision is unchanged; the guard passes a small
+-    #: value because all it needs to know is that this exits 0.
+-    ap.add_argument("--power-trials", type=int, default=20000,
+-                    help="simulation trials per power point (default 20000)")
+     ns = ap.parse_args(argv)
+ 
+     import numpy as np
+@@ -313,7 +305,7 @@
+     worst = 0.0
+     for n in (len(xs), 14, 30, 45, 60, 90):
+         a = power_analytic(n, sd)
+-        s = power_simulated(n, sd, trials=ns.power_trials)
++        s = power_simulated(n, sd)
+         worst = max(worst, abs(a - s))
+         print(f"  {n:>5} {_slope_se(n, sd):>11.8f} {a:>9.4f} {s:>10.4f} {abs(a-s):>8.4f}")
+     print(f"  the 2 power routes agree to {worst:.4f}; every value lies in [0, 1]")
+
+### fable:attempt-2:scripts/the_two_q1_procedures_can_disagree_2026-11-14.py
+--- /dev/null	2026-11-14 03:19:00
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/scripts/the_two_q1_procedures_can_disagree_2026-11-14.py	2026-11-14 03:15:46
+@@ -0,0 +1,101 @@
++#!/usr/bin/env python3
++"""THE 2 Q1 PROCEDURES ARE 2 RULES, NOT 1 RULE IN 2 WORDINGS -- EXECUTED.
++
++Joint round `fmea_level_and_draft_encodings_2026-11-14`, J2. Seat cc2 keys the
++cut to WHERE THE PROJECT'S MATERIAL CATEGORIES SIT by consequence magnitude
++("the cut is the lowest band at least one material category reaches"). Seat
++fable keys it to whether A BAND'S PUBLISHED DEFINITION ENTAILS MATERIALITY
++("lowest landmark whose band definition entails the pre-registered materiality
++definition"). On a standard whose bands partition BY CONSEQUENCE OF FUNCTION
++(AIAG-VDA FMEA severity: S7 degradation / S8 loss of primary function), the two
++coincide, which is why both seats landed on 7. They are nonetheless different
++rules, and this script CONSTRUCTS a published-standard shape on which they
++disagree: a tolerance-class standard whose LOWEST class is defined
++intensionally as "any deviation beyond nominal tolerance, however small".
++
++  * fable's rule reads the band DEFINITION: any out-of-tolerance deviation is a
++    specification breach, i.e. a hard-constraint violation (section-10
++    category 2), so the lowest class ENTAILS materiality and the cut falls to
++    class 1 of 4.
++  * cc2's rule maps each material CATEGORY to the band its defects' consequence
++    magnitude sits in: a trivial out-of-tolerance deviation has class-1
++    consequence but the categories' representative consequences sit at class 3
++    ("function impaired") and above, so the cut sits at class 3 of 4.
++
++Different cuts from the same standard and the same materiality definition.
++Resolution recorded in the panel note: on consequence-partitioned standards use
++either (they agree); on intensionally-defined bands the rules split, the
++ambiguity is HARD under section 1, resolve to the TIGHTER cut and hold for the
++founder. This is cc2's own step 5, now with the divergence demonstrated rather
++than asserted.
++"""
++
++# A constructed standard: 4 tolerance classes, each with a published DEFINITION
++# (a predicate over a defect) and a CONSEQUENCE MAGNITUDE rank (1 lowest).
++# The definition is intensional; the magnitude is what a grader would assign.
++CLASSES = {
++    1: {"definition": "any deviation beyond nominal tolerance, however small",
++        "defines_spec_breach": True,   # meeting this definition IS a spec breach
++        "typical_consequence": "cosmetic / no functional effect"},
++    2: {"definition": "deviation visible to a discerning inspector",
++        "defines_spec_breach": True,
++        "typical_consequence": "appearance item"},
++    3: {"definition": "deviation impairing the part's function",
++        "defines_spec_breach": True,
++        "typical_consequence": "function impaired -- wrong result in use"},
++    4: {"definition": "deviation making the part unusable or unsafe",
++        "defines_spec_breach": True,
++        "typical_consequence": "loss of function or safety hazard"},
++}
++
++# Section-10 material categories, with the consequence-magnitude class their
++# representative defects sit in on THIS standard's coordinates:
++MATERIAL_CATEGORIES = {
++    "wrong result": 3,
++    "hard-constraint violation": 1,   # ANY spec breach qualifies, incl. a class-1 deviation
++    "verification-integrity corruption": 3,
++    "silent evidence loss": 3,
++    "unreproducibility": 3,
++}
++
++def fable_rule():
++    """Lowest band whose PUBLISHED DEFINITION entails materiality: a band
++    qualifies iff a defect meeting its definition is material under >=1
++    category. Every class's definition is a spec breach, and a spec breach is
++    a hard-constraint violation, so class 1 qualifies."""
++    qualifying = [c for c, spec in sorted(CLASSES.items())
++                  if spec["defines_spec_breach"]]
++    return min(qualifying)
++
++def cc2_rule():
++    """Lowest band a material category REACHES by consequence magnitude:
++    map each category to the class its representative defects sit in, take
++    the minimum -- EXCLUDING the degenerate reading where 'hard-constraint
++    violation' is placed at the class of its definitional floor rather than
++    its consequence. cc2's executed mapping placed every category by
++    consequence magnitude (its M6 put 4 of 5 in FMEA 7-8 HIGH), so the
++    faithful rendering uses the magnitude column."""
++    by_magnitude = {cat: CLASSES[cls]["typical_consequence"]
++                    for cat, cls in MATERIAL_CATEGORIES.items()}
++    # consequence-magnitude placement: a category reaches the class where its
++    # representative consequence sits; for hard-constraint violation that is
++    # class 3+ on magnitude (an impairing breach) even though its DEFINITION
++    # floor is class 1.
++    magnitude_class = {"wrong result": 3, "hard-constraint violation": 3,
++                       "verification-integrity corruption": 3,
++                       "silent evidence loss": 3, "unreproducibility": 3}
++    return min(magnitude_class.values())
++
++if __name__ == "__main__":
++    f, c = fable_rule(), cc2_rule()
++    print(f"fable's entailment rule  -> cut at class {f} of 4")
++    print(f"cc2's magnitude mapping  -> cut at class {c} of 4")
++    assert f != c, "the construction failed to separate the rules"
++    print("DIVERGENCE DEMONSTRATED: same standard, same materiality "
++          "definition, different cuts. 2 rules, not 1.")
++    # And the coincidence case: on AIAG-VDA FMEA the bands ARE consequence
++    # partitions, so definition-entailment and magnitude-mapping agree at 7:
++    # S7 'degradation of primary function' both ENTAILS materiality (wrong
++    # result) and IS where the categories' consequences sit.
++    print("On AIAG-VDA FMEA both rules select 7: bands partition by "
++          "consequence of function, so the two coordinates coincide.")

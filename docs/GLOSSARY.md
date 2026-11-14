@@ -1011,7 +1011,15 @@ repository rather than inside it.
 The rule that prevents a run from CLOSING while a critical finding is still open,
 as distinct from the convergence gate, which decides whether the evidence has
 settled. A finding reaches it by carrying a severity at or above the frozen
-critical cut of 0.7. Promoting the appendix's own severity formula to this gate
+critical cut of 0.7. That describes the LIVE CODE, where
+`CRITICAL_SEVERITY_THRESHOLD` is still 0.7, and not the formal model: since
+2026-11-11 `bench/directives/universal/cdsfl_core_formal.md` states the guard as
+`critical_d(f) ⇔ c_d(f) ≽_d θ_d`, a comparison against a per-domain critical
+level rather than against a fixed value, and `bench/cdsfl_registry/domain_manifest.toml`
+declares a named external scale and critical level for each domain. The code has
+not yet been moved to the parametric form; B143, the entry on the severity
+formula, holds that for the founder because it changes what a release door
+admits. Promoting the appendix's own severity formula to this gate
 is refused today for a measured reason rather than a cautious one: the
 verification factor scores an unassessed claim at one half, so under the product
 form every finding nobody attached a falsifier to would fall BELOW the cut, and a
@@ -1033,3 +1041,7 @@ can catch.
 **Fold-back gate** — the check in the reference runner (`_apply_back_gate`) that decides whether a model's proposed fix may be overlaid onto the target artefact. A fix it refuses stays CLOSED in the registry and is never applied. Added to this glossary 2026-11-11, when B22's runway note needed to name it.
 
 **Ver(verification)** — the verification factor of the per-finding severity formula in `docs/MATHEMATICAL_APPENDIX.md` section 7.7: `Ver(True) = 1.0`, `Ver(None) = 0.5`, `Ver(False) = 0.0`, so a computationally disproved finding scores 0 whatever its confidence. **It was written `V` until 2026-11-11 and was renamed on the founder's instruction**, because `bench/directives/universal/cdsfl_core_formal.md:417` uses `V(f)` for MATERIALITY — the consequence if the defect ships — so one letter named a consequence in one canonical document and an evidence weight in the other. The 2 meanings are the 2 halves the severity work of 2026-11-11 is separating, which is why the collision mattered rather than merely read badly. The guards and the mutation harness that parse the section 7.7 table follow the new spelling and deliberately do NOT accept the old one, so a revert to the colliding name goes red.
+
+**Environment seam** — an environment variable a generator reads so that a test can redirect the generator's writes out of the live repository and into a scratch directory. Without one, a test that must run a producer to read its printed output also inherits that producer's unconditional file writes, so the measurement alters the tree it is measuring. Prepared for the morning-report and decisions generators on 2026-11-13 and P-passed at 12 checks of 12; named in this glossary 2026-11-14, when entry B175's decision needed to use the term in a document delivered to the founder.
+
+**Guard board** — the set of guard files the commit hook runs as a nested pytest session before it will allow a commit. It is a SUBSET of the full suite and must never be described as the suite: measured 2026-11-04, the board covered 2,569 of 15,431 tests, which is why a board that is green says nothing about the 12,862 it did not run. Named in this glossary 2026-11-14 for the same reason as the entry above.

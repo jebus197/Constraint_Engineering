@@ -1,0 +1,129 @@
+# BRIEF — the predicate that decides what the founder is told he owes, and a 4th formal standard he is considering
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `scripts/how_many_decisions_actually_need_him_2026-11-01.py` | `64a2d4175bdd834a` | 25742 | 2026-11-14T00:11:40+00:00 |
+| `scripts/how_much_of_this_is_actually_his_2026-11-12.py` | `4f21c671e2ebcf11` | 13518 | 2026-11-13T07:46:51+00:00 |
+| `hooks/task_list_pulse.py` | `0f80f1887d06d1df` | 4339 | 2026-11-14T03:34:54+00:00 |
+| `scripts/task_list_markers.py` | `be8765e09129c286` | 46661 | 2026-11-14T03:34:54+00:00 |
+| `experimental_notes/CDSFL_MASTER_TASK_LIST.md` | `1027fbf78adf7f39` | 2044927 | 2026-11-14T03:27:52+00:00 |
+| `bench/directives/universal/cdsfl_core_formal.md` | `9da304edb6c80a60` | 31909 | 2026-11-12T03:58:04+00:00 |
+| `bench/cdsfl_registry/composer.py` | `eb836387286a87a3` | 117190 | 2026-11-13T21:27:13+00:00 |
+
+## REQUIRED SECTION 1 — The question
+
+**2 questions. The second is the larger one and it governs the first.**
+
+**Q1. The figure printed to the founder every turn — how many open items await HIS decision — rests on a proxy that no sibling predicate for the same idea agrees with on any entry it applies to. Which predicate should replace it, or should nothing change?**
+
+**Q2. The founder is considering adopting a 4th formal project standard. His words, verbatim:** *"Another standard I am considering adopting is that of real world applicability, which should apply in circumstances where it involves a meaningful consequence for the HIL, which appears to be the case here? I would suggest that this is a standard we should adopt, with this 'HIL consequence' caveat."* **Should it be adopted; what exactly would it say; is it checkable by a mechanism; and does it change the answer to Q1?**
+
+His instruction that produced this brief, verbatim: *"Again ask the free panel what the best overall solution should be, in accordance with our established 3 formal project standards, of 'Simplest sufficient fix', 'additive' and composability (where applicable)."* His single quotation marks mark framing rather than exact prior wording, which is his stated convention. The 3 standards he names are, in the project's own keys, `simplicity-default`, `additive-standard` and `composability-requires-a-measurement`.
+
+**HIL means human in the loop — the founder himself, the only human participant in this project.** It is load-bearing here: the quantity Q1 governs is a number HE reads, and acting on a wrong one costs HIS time, which the project treats as a fixed resource alongside his 8-core, 8-GiB machine.
+
+### The artefacts under review, by path
+
+- `scripts/how_many_decisions_actually_need_him_2026-11-01.py` — `classify_text`, and the `_later` test inside it that is the proxy under review.
+- `scripts/how_much_of_this_is_actually_his_2026-11-12.py` — the producer that computes the 3 competing predicates side by side. Run it; the figures below come from it.
+- `hooks/task_list_pulse.py` and `scripts/task_list_markers.py` — the turn surface that prints the figure to him, and the roster it prints beside it.
+- `experimental_notes/CDSFL_MASTER_TASK_LIST.md` — the entries being classified.
+- `bench/directives/universal/cdsfl_core_formal.md` — where a 4th standard would have to reach every seat if it is adopted, and the route by which the other 3 already do.
+
+### The measured facts this round starts from
+
+**F1. The 3 predicates disagree on every entry they apply to, and the set is growing.** For an OPEN entry carrying a ruling of the founder's, the question is whether a question was raised AFTER that ruling and so cannot have been answered by it. 3 implementations of that single idea:
+
+- **A** — any date anywhere in the entry body later than the ruling date. This is the live classifier.
+- **B** — a later date inside the asking sentence itself.
+- **C** — a live asking sentence positioned after the first post-ruling date.
+
+Measured 2026-11-14 on the live task list: **5 of 5 ruled-and-OWED entries get a disagreement, 1.000000, Wilson [0.565518, 1.000000], Clopper-Pearson [0.478176, 1.000000]**, the 2 routes agreeing to 1.110e-16. Entry by entry: B77, the roster-blind convergence gate, is A-true B-false C-true; B84, the unfittable difficulty estimator, is A-true B-true C-false; B94, the verified-flag decisions, is A-true B-false C-false; B125, the joint round on a changed file, is A-true B-true C-false; B142, the settings-surface role selector, is A-true B-false C-false. **Not 1 of the 5 gets the same verdict from all 3.**
+
+★ **AND THE SET GREW BY 1 WHILE THIS BRIEF WAS BEING WRITTEN, WHICH IS A LIVE DEMONSTRATION OF THE PROBLEM RATHER THAN AN INCIDENTAL UPDATE.** B142 entered the group on 2026-11-14 for 1 reason: his ruling of 2026-11-12 was RECORDED in the entry that day, and recording a ruling is exactly what moves an entry into the population whose residue the 3 predicates cannot agree on. So the defect is not static — it grows each time he decides something.
+
+**F2. A's own comment states an intent its implementation does not test.** The intent is that a question raised after a ruling cannot have been answered by it. The implementation tests for a later DATE. A dated progress note is not a question, so A fires on an entry that was merely edited after he ruled.
+
+**F3. What the figure he reads is made of, measured today.** Of 47 open entries: **11 need a RULING he has never given; 6 need only PERMISSION, which is a word rather than a day; 5 carry his ruling with a residue the 3 predicates cannot agree on; and 25 are mine and movable without him.** The 4 groups partition all 47 exactly — 0 entries in 2 groups, 0 in none. The 5 undecidable entries are therefore 5 of the 22 the founder is told he owes, so the proxy moves the figure he reads by up to 5 in 22.
+
+**F4. No 4th predicate was written, deliberately.** This project's own rule is that a surface defeating 3 predicates is the point to STOP and raise it, rather than to ship a 5th attempt. That rule is why this is a brief and not a patch.
+
+**F5. The direction of the error matters and 2 of the 3 candidates move it the wrong way.** B and C would both REMOVE entries from his decision list. That suppression direction has already had to be withdrawn once, on 2026-11-09, after retiring asking sentences removed live questions from his list. A predicate that is right on average but silently drops a live question is worse for him than one that is noisy, because he can see noise and cannot see an omission.
+
+<!-- figure: predicates_disagree | scripts/how_much_of_this_is_actually_his_2026-11-12.py | ruled-and-OWED entries where the 3 predicates disagree: 5 of 5 = 1.000000 -->
+<!-- figure: disagree_interval | scripts/how_much_of_this_is_actually_his_2026-11-12.py | Wilson [0.565518, 1.000000]  Clopper-Pearson [0.478176, 1.000000] -->
+<!-- figure: partition_exact | scripts/how_much_of_this_is_actually_his_2026-11-12.py | the 4 groups partition all 47 open entries exactly: 0 in 2 groups, 0 in none -->
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form the answer by RUNNING the machinery, not by writing about it. A seat that returns prose without having executed anything has not answered.
+
+**The instruments that bear on these questions, and what each is expected to say.**
+
+- Run `python3 scripts/how_much_of_this_is_actually_his_2026-11-12.py` and report whether F1 and F3 reproduce. If a figure in this brief does not reproduce, that is a finding and outranks everything else in the reply.
+- **`severity`** and the two-sided gate: a misclassification here is not a code defect, it is a wrong number delivered to the human decision-maker. Establish, using the project's own severity apparatus, what consequence class this belongs to and on which domain's scale. `bench/cdsfl_registry/composer.py` now delivers a domain's scale and critical level into a directive, so a scale is available rather than invented. This is also the concrete test case for Q2: if a 4th standard about real-world consequence to the human cannot classify THIS defect, it is not yet a standard.
+- **Wilson** intervals on every proportion returned, with a second route agreeing. A bare 4 of 4 is not a measurement; its interval runs to 1.000000 from a lower bound near 0.51, and any recommendation resting on n equal to 4 must say so.
+- **`nu`** and the routing surface: establish by execution whether the classifier's verdict reaches anything OTHER than the turn banner. If it gates work, the stakes are higher than a printed figure; if it does not, say so, because that bounds the consequence.
+- **`rho`** or any agreement statistic of the seat's choosing on the 3 predicates pairwise, so that "they disagree" becomes a number rather than a list. If n equal to 4 is too small for the statistic, say that instead of computing one anyway.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. **A fix without a runnable falsifier that the seat has EXECUTED is a hypothesis, not a fix.** Report the exact command run and the output seen, pasted rather than summarised.
+
+**WHERE THE FIX MUST BE DELIVERED.** Write it INTO the sandbox repository tree at its real path, as a file — an edited `scripts/how_many_decisions_actually_need_him_2026-11-01.py`, a new guard under `bench/tests/`, a new producer under `scripts/`, or, for Q2, a proposed text for the standard written into `bench/directives/universal/cdsfl_core_formal.md`. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code.
+
+**THE CANDIDATE ANSWERS TO Q1, each needing its own verdict.**
+
+- **O1. Change nothing.** A is noisy in the safe direction: it over-reports what he owes, and he can see and dismiss a wrong entry but cannot see an absent one. This is the current recommendation and the panel should try to refute it.
+- **O2. Adopt B or C**, accepting that entries leave his list.
+- **O3. Report the DISAGREEMENT instead of a verdict** — show him the 4 undecidable entries as undecidable, rather than choosing for him.
+- **O4. Replace the text proxy with a RECORDED fact.** The project's own standing rule is that a ticket's state is recorded and never inferred. A question asked after a ruling could be recorded at the moment it is asked, rather than reconstructed from dates afterwards. State what that costs, what it requires at every raise surface, and whether it makes the text predicate unnecessary rather than merely better.
+
+**O4 IS THE STRONGEST FALSIFICATION OF THIS BRIEF'S OWN FRAMING AND IS STATED SO A SEAT DOES NOT HAVE TO FIND IT.** Q1 as posed asks which TEXT predicate is best. If the right answer is that no text predicate can be correct because the fact is not in the text, then the question is wrong and the brief should be refused on that ground. Say so if it is so.
+
+**ON Q2, WHAT A VERDICT MUST CONTAIN TO BE USABLE.** A judgement that real-world applicability is a good idea is not an answer. What is wanted is:
+
+1. A **stated text** for the standard, in 1 paragraph, with the `HIL consequence` caveat he names made precise enough to apply.
+2. A **decision procedure**: given a proposed fix, what question does this standard ask, and what answer makes the fix inadmissible?
+3. A **mechanism or an honest declaration that there is none.** The project's `additive-standard` holds in a symmetric form: an addition nothing reaches is not additive, and 11 confirmed defects in this project were additions that did nothing. A 4th standard that no gate, test or hook can check would be the 12th. If it cannot be mechanised, say that plainly and say whether it should still be adopted as a reported direction of travel, which is exactly how the project's depth-before-breadth ratio is held.
+4. A **test against the 3 existing standards**: does it ever CONTRADICT them? The hardest case is simplicity against real-world consequence, where the simplest sufficient fix may be the one that leaves a human exposed. Name a concrete case from this brief where the 2 pull apart, or state that none exists.
+5. A **test on this very defect**: apply the proposed standard to Q1 and say which of O1 to O4 it selects. If it selects none, it is not yet operational.
+
+**ON COMPOSABILITY, as the founder defines it.** Compose 2 repairs ONLY on a DEMONSTRATED advantage over each alone, where the demonstration is a MEASUREMENT and not a judgement, and prefer the single repair wherever it performs as well on the named property. Reporting that the repairs do not conflict is the weak non-interference form his definition excludes by name, and will be recorded as not having answered. O3 and O4 are the obvious composition candidate here and that pairing is exactly where a measurement is required rather than an opinion.
+
+**A HARD CONSTRAINT ON ANY ANSWER.** Q1 changes what the founder is told he owes and Q2 changes the project's formal standards. Both are his to rule. Deliver the analysis and any proposed text as files; state plainly in the verdict that each awaits his ruling. Do not install a changed predicate or a 4th standard as though it were settled.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before concluding, state what evidence would overturn the answer. A verdict with no stated refutation condition is an opinion, not a finding. Be concrete: name the file, the command, and the result that would change the verdict. For Q1, state what n of disagreeing entries would be needed before a recommendation rests on more than 4 cases. For Q2, state what a failed application of the proposed standard would look like.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, named, so replies can be compared without a parser guessing.
+
+- `verdict` — 1 row per option O1, O2, O3, O4 for Q1, plus 1 row ADOPT / REJECT / ADOPT-WITH-CHANGES for Q2, each with 1 sentence of reason.
+- `figures_reproduce` — whether F1 and F3 reproduce from their producer, with the pasted output. A figure that does not reproduce is the headline finding.
+- `q1_recommendation` — the single recommended option and the named property on which it dominates, measured.
+- `q2_text` — the proposed text of the 4th standard, 1 paragraph, ready to paste.
+- `q2_procedure` — the decision procedure it implies, stated as a question a reviewer can ask.
+- `q2_mechanism` — the gate, test or hook that could check it, or an explicit statement that none can, with the consequence of that for whether it should be adopted.
+- `q2_conflicts` — whether it ever contradicts `simplicity-default`, `additive-standard` or `composability-requires-a-measurement`, with a concrete case.
+- `q2_applied_to_q1` — which of O1 to O4 the proposed standard selects.
+- `falsifier` and `falsifier_result` — the runnable falsifier and its pasted executed output.
+- `reasoning` — the derivation, premises first.
+- `disagreement` — the strongest disagreement with this brief's own framing, including with F5's claim that over-reporting is the safe direction, and with O4's claim that the fact is not in the text. A concurring answer carries no information here, because there are no votes in this project.
+- `plain_english` — 1 paragraph a non-developer can act on. The founder is a non-developer and reads this answer directly.
+- `passes_run` — how many passes were run and what the last one added.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop at diminishing returns: when a further pass produces no new above-threshold finding, where above-threshold means missing it could cause a wrong number to reach the founder, a live question to vanish from his list, or a standard to be adopted that nothing can check. State how many passes were run. Do not pad with findings below that threshold.

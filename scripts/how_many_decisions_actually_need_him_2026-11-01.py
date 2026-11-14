@@ -128,6 +128,49 @@ STALE = re.compile(r"SENTENCE ABOVE IS STALE|ALREADY CONTAINS ITS OWN REFUTATION
 #: HIM, which is the opposite of the error this script exists to catch. The ask
 #: is therefore scoped to its own SENTENCE, and an entry is settled only when
 #: EVERY asking sentence in it is granted or retired.
+#: ★ THE BARE POSSESSIVE FORM, ADDED 2026-11-14, AND THE ENTRY IT WAS HIDING.
+#:
+#: `ASKS` requires "is his TO RULE", "so it is his", or one of the explicit
+#: NEEDS-HIS-RULING spellings. B175 -- the clean suite mutating the working tree
+#: -- says **"THE 17-MINUTE REDESIGN IS HIS, because it changes what a test
+#: asserts"**. The bare form was in none of them, so the entry classified as
+#: MINE with 0 asking sentences and appeared **0 times** in the generated
+#: decisions file. B189 reported 3 such entries; checked at the commit before it
+#: was written, 2 of the 3 (B81 and B103) were already DONE and COMMITTED and so
+#: correctly excluded. B175 is the 1 real case.
+#:
+#: THE SUBJECT MUST BE A DECISION NOUN. A bare "is his" fires on ordinary prose
+#: -- his machine, his own ruling, his words -- so the pattern demands a noun
+#: that names a thing to be decided immediately before it.
+_BARE_POSSESSIVE_ASK = re.compile(
+    r"\b(?:redesign|decision|choice|call|change|move|cut|level|mapping|question|"
+    r"ruling|trade|verdict|promotion|wording)\s+(?:is|are|remains)\s+(?:his|yours)\b",
+    re.I)
+
+#: ★ AND THE EXCLUSION THAT MAKES THE WIDENING SAFE: a sentence naming ANOTHER
+#: entry attributes the decision elsewhere rather than carrying one.
+#:
+#: Measured over every entry before either was applied. Widening alone adds 4 --
+#: B60, B80, B175 and B189 -- of which B189 is a FALSE POSITIVE: its sentence
+#: reads *"3 entries the task list itself marks as HIS..."* and names B81, B103,
+#: B175 and B183. That is the describing-read-as-carrying class B169 records,
+#: and B189 had already been reworded once for the same confusion in a different
+#: predicate. The exclusion discriminates all 4 of 4.
+#:
+#: ★ AND THIS IS A COMPOSED FIX WITH THE MEASUREMENT HIS 2026-10-02 STANDARD
+#: DEMANDS, not an assertion that 2 repairs coexist. Over the live task list,
+#: entries flagged as asking him something: **neither repair 60; widening alone
+#: 64, adding 3 true and 1 false, precision 0.750000; exclusion alone 60, which
+#: is INERT because there is nothing to exclude without the widening; both 63,
+#: adding the same 3 true and 0 false, precision 1.000000.** The composed form
+#: DOMINATES the widening on precision and the exclusion is no substitute for
+#: it, so the composition is justified rather than merely non-conflicting.
+_ATTRIBUTES_TO_ANOTHER_ENTRY = re.compile(r"\bB\d{1,4}\b")
+
+#: An entry body opens with its own code, e.g. `**B175. TITLE**`.
+_OWN_CODE = re.compile(r"\*{0,2}(B\d{1,4})\.")
+
+
 _SENT = re.compile(r"(?<=[.!?])\s+")
 
 
@@ -230,7 +273,21 @@ def classify_text(state: str, ruled: str | None, txt: str) -> dict:
         if STALE.search(sent):
             continue
         if not ASKS.search(sent):
-            continue
+            #: THE BARE POSSESSIVE FORM, admitted only when the sentence does
+            #: not hand the decision to another entry. See the 4-cell
+            #: measurement beside `_BARE_POSSESSIVE_ASK`.
+            if not _BARE_POSSESSIVE_ASK.search(sent):
+                continue
+            #: THE ENTRY'S OWN CODE IS DERIVED FROM ITS OWN TEXT, not taken
+            #: from a parameter: `classify_text` is a PURE function of one
+            #: entry's text and has no identifier argument, so adding one would
+            #: change a signature every caller uses.
+            _own = _OWN_CODE.match(txt.lstrip())
+            _mine = _own.group(1) if _own else None
+            _others = {x for x in _ATTRIBUTES_TO_ANOTHER_ENTRY.findall(sent)
+                       if x != _mine}
+            if _others:
+                continue
         one = re.sub(r"\s+", " ", sent).strip()
         free = bool(FREE.search(sent))
         retired = any(s > start for s in stale_at)

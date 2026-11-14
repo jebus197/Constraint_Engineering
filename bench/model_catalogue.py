@@ -53,10 +53,106 @@ def registry_models() -> list[dict]:
     return out
 
 
-def known_roles() -> list[str]:
+#: HIS RULING OF 2026-11-12, verbatim: *"Verdict. Yes do both. stm"*, against
+#: the item asking *"whether the 4 interface roles map onto the harness roles,
+#: and whether the credential store is built now or after the runway"*. That is
+#: the policy B21 recorded as owed by him and
+#: `test_the_functional_vocabulary_is_NOT_declared` refused to let me decide.
+#:
+#: ★ THE MAP LIVES HERE AND NOT IN THE ROLE FILES, because
+#: `bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py` enforces
+#: `keys <= {"name", "axis"}` on every role file -- the layer's mechanism is
+#: mine, its content is his -- so a `maps_to` key there would be refused, and
+#: correctly so.
+#:
+#: ★ 2 OF THE 4 MAP TO NOTHING, AND THAT IS MEASURED RATHER THAN MISSING. The
+#: panel round of 2026-10-31 found the structural and functional vocabularies
+#: are 2 DISTINCT DIMENSIONS whose reconciliation is lossy in both directions:
+#: `classifier` names no seat position in the structural enum, and `collator`
+#: names the HARNESS rather than a seat, so it has no functional counterpart
+#: either. `researcher` is newer than that round and has no counterpart
+#: measured. Forcing any of them onto `participant` would invent exactly the
+#: policy this layer exists not to invent, so the gap is DECLARED as None and
+#: a caller must handle it rather than receive a guess.
+#:
+#: ★ THIS MAP DOES NOT STEER DISPATCH, and that boundary is deliberate.
+#: `bench/dm/_role_assignment.py` scores models against the `Role` ENUM in
+#: `bench/dm/_types.py`, not against these files, so adding them changes which
+#: names the SELECTOR can offer and changes 0 dispatch decisions. Wiring a
+#: functional role into that scorer would change how a run selects models,
+#: which B21 records as his and which his settings-surface ruling does not
+#: cover.
+FUNCTIONAL_TO_STRUCTURAL: dict[str, str | None] = {
+    "orchestrator": "player_manager",
+    "worker": "participant",
+    "classifier": None,
+    "researcher": None,
+}
+
+#: The reverse direction, including the structural name his list has no word
+#: for. Declared rather than derived, because the 2 directions are not inverses:
+#: the map above is many-to-one with holes.
+STRUCTURAL_TO_FUNCTIONAL: dict[str, str | None] = {
+    "player_manager": "orchestrator",
+    "participant": "worker",
+    "collator": None,
+}
+
+
+def role_axis(role: str) -> str | None:
+    """The declared axis of `role`, or None when no such role file exists.
+
+    Read from the file rather than from a list in this module, so a role added
+    to the registry cannot be invisible here -- the defect `registry.py` records
+    at its layer walk, where a 3-item hardcoded list left layer 5 unvalidated.
+    """
+    import tomllib
+    path = ROLES_DIR / f"{role}.toml"
+    if not path.is_file():
+        return None
+    try:
+        cfg = tomllib.loads(path.read_text(encoding="utf-8"))
+    except Exception:                                              # noqa: BLE001
+        return None
+    axis = (cfg.get("role") or {}).get("axis")
+    return str(axis) if axis else None
+
+
+def known_roles(axis: str | None = None) -> list[str]:
+    """Every role the registry declares, or only those on one axis.
+
+    ★ THE DEFAULT IS UNCHANGED ON PURPOSE. `known_roles()` with no argument
+    still returns every role file's stem, so
+    `bench/tests/test_b21_steps_are_built_2026-11-09.py` keeps the meaning it
+    was written with. The filter is opt-in, which is what a caller wanting the
+    4 interface roles needs.
+
+    ★ AND MIXING THE AXES IS THE DEFECT THE FILTER EXISTS FOR. Before the
+    functional names were declared, every role file was structural and an
+    unfiltered list was unambiguous. It is not any more: 7 names from 2
+    vocabularies that do not reconcile would reach the selector as 1 list.
+    """
     if not ROLES_DIR.is_dir():
         return []
-    return sorted(p.stem for p in ROLES_DIR.glob("*.toml"))
+    stems = sorted(p.stem for p in ROLES_DIR.glob("*.toml"))
+    if axis is None:
+        return stems
+    return [s for s in stems if role_axis(s) == axis]
+
+
+def structural_for(functional: str) -> str | None:
+    """The structural role `functional` maps onto, or None where it maps to none.
+
+    RAISES `KeyError` for a name that is not one of his 4, because silently
+    returning None for a typo would be indistinguishable from the 2 genuine
+    holes -- and those 2 holes are a measurement this must not blur.
+    """
+    if functional not in FUNCTIONAL_TO_STRUCTURAL:
+        raise KeyError(
+            f"{functional!r} is not one of the 4 interface roles "
+            f"{sorted(FUNCTIONAL_TO_STRUCTURAL)}; a name outside that set has "
+            f"no ruling behind it")
+    return FUNCTIONAL_TO_STRUCTURAL[functional]
 
 
 def local_models(timeout: float = 0.5) -> list[dict]:
@@ -257,7 +353,10 @@ def never_dispatched_for_real(since: str = "",
 
 def render(rows: list[dict]) -> str:
     lines = [f"{len(rows)} selectable model(s). Local first, as he specified.",
-             f"roles available: {', '.join(known_roles()) or 'none'}", ""]
+             f"roles available -- structural: "
+             f"{', '.join(known_roles('structural')) or 'none'}; "
+             f"functional (the interface's): "
+             f"{', '.join(known_roles('functional')) or 'none'}", ""]
     for r in rows:
         tag = "LOCAL" if r["local"] else r["source"].upper()
         pol = "policy" if r["has_policy"] else "no policy"

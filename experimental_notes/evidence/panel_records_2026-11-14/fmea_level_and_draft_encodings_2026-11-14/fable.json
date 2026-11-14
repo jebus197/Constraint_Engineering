@@ -1,0 +1,227 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 18221,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /repo 2>/dev/null || pwd; ls\", \"description\": \"Find repository root\"}",
+      "t_offset_s": 7.858
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/cdsfl_registry/*\"}",
+      "t_offset_s": 8.324
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/cdsfl_registry/composer.py bench/cdsfl_registry/domain_manifest.toml bench/directives/universal/cdsfl_core_formal.md bench/reference_runner_v3.py bench/convergence_location.py | cut -c1-16,65-200\", \"description\": \"Verify artefact stamps match dispatch\"}",
+      "t_offset_s": 13.497
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/cdsfl_registry/domain_manifest.toml\", \"offset\": 120, \"limit\": 60}",
+      "t_offset_s": 14.746
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/cdsfl_registry/domain_manifest.toml\", \"offset\": 260, \"limit\": 120}",
+      "t_offset_s": 19.792
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_severity_declaration|severity_scale|critical_level|encoding_tier\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/cdsfl_registry/composer.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 21.444
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/cdsfl_registry/composer.py\", \"offset\": 840, \"limit\": 110}",
+      "t_offset_s": 25.844
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/reference_runner_v3.py\", \"offset\": 10460, \"limit\": 60}",
+      "t_offset_s": 27.075
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport tomllib, re, sys\\nsys.path.insert(0, 'bench')\\nfrom cdsfl_registry import composer, domain_vocabulary\\nwith open('bench/cdsfl_registry/domain_manifest.toml','rb') as f:\\n    man = tomllib.load(f)\\ndomains = [k for k,v in man.items() if isinstance(v, dict) and k not in ('composition',)]\\nprint(\\\"DOMAINS:\\\", domains)\\nfor d in domains:\\n    decl = composer._sev",
+      "t_offset_s": 35.394
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"--- total txt files ---\\\" && find bench/directives -name '*.txt' | wc -l && echo \\\"--- SEVERITY SCALE lines ---\\\" && grep -rl '^SEVERITY SCALE:' bench/directives --include='*.txt' | wc -l && echo \\\"--- DRAFT tagged ---\\\" && grep -rl 'DRAFT' bench/directives --include='*.txt' | wc -l && echo \\\"--- files with both ---\\\" && grep -rl '^SEVERITY SCALE:' bench/directives --include='*",
+      "t_offset_s": 38.396
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn 'encoding_tier' --include='*.py' bench scripts | head -30; echo \\\"---- domain_vocabulary severity API ----\\\"; grep -n 'def severity\\\\|def consequence_domain\\\\|def inheriting\\\\|def may_compose\\\\|encoding_tier' bench/cdsfl_registry/domain_vocabulary.py\", \"description\": \"Check whether encoding_tier is read by any code\"}",
+      "t_offset_s": 40.554
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n 'critical_level\\\\|severity(\\\\|domain_vocabulary\\\\|_severity_declaration\\\\|CRITICAL_SEVERITY_THRESHOLD' bench/reference_runner_v3.py | head -40; echo '==== convergence_location ===='; grep -n 'critical_level\\\\|severity\\\\|domain' bench/convergence_location.py | head -30\", \"description\": \"Check gate and convergence for domain critical-level reads\"}",
+      "t_offset_s": 55.877
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in $(grep -rl '^SEVERITY SCALE:' bench/directives --include='*.txt' | sort); do echo \\\"===== $f\\\"; grep -n 'SEVERITY SCALE:\\\\|CRITICAL LEVEL:\\\\|DRAFT\\\\|TIER' \\\"$f\\\" | head -8; done\", \"description\": \"Extract severity and DRAFT lines from the 22 encodings\"}",
+      "t_offset_s": 57.509
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/cdsfl_registry/domain_manifest.toml\", \"limit\": 119}",
+      "t_offset_s": 158.443
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport ast, sys\\n# Prove by AST: reference_runner_v3.py makes no read of the manifest's critical_level\\n# and no import of domain_vocabulary/composer severity API.\\nsrc = open('bench/reference_runner_v3.py').read()\\ntree = ast.parse(src)\\nimports = set()\\nfor n in ast.walk(tree):\\n    if isinstance(n, ast.Import):\\n        imports |= {a.name for a in n.names}\\n    e",
+      "t_offset_s": 164.68
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/directives && for f in $(grep -rl '^TIER: DRAFT' . --include='*.txt' | sort); do stat -f '%Sm %N' -t '%Y-%m-%d' \\\"$f\\\"; done; echo '--- files WITHOUT TIER line ---'; grep -rL '^TIER:' . --include='*.txt' | wc -l; echo '--- wc of the 22 ---'; grep -rl '^TIER: DRAFT' . --include='*.txt' | xargs wc -l | tail -1\", \"description\": \"Modification dates of DRAFT encodings and line tot",
+      "t_offset_s": 186.026
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/directives && head -200 software/software_general.txt chemistry/chemistry_general.txt biology/biology_genetics.txt biology/biology_natural_world.txt biology/biology_zoology.txt 2>/dev/null\", \"description\": \"Read software, chemistry, biology encodings\"}",
+      "t_offset_s": 193.731
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat software/software_general.txt chemistry/chemistry_general.txt\", \"description\": \"Read software and chemistry encodings in full\"}",
+      "t_offset_s": 198.125
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat biology/biology_genetics.txt biology/biology_natural_world.txt biology/biology_zoology.txt | head -120; echo '############ CROSS ############'; head -45 cross-domain/cross_general.txt\", \"description\": \"Read biology encodings and cross-domain header\"}",
+      "t_offset_s": 212.224
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in information_science/*.txt logistics/logistics_warehousing.txt mathematics/mathematics_applied.txt mathematics/mathematics_numerical.txt mathematics/mathematics_proof.txt physics/physics_classical.txt physics/physics_general.txt physics/physics_quantum.txt physics/physics_thermodynamics.txt statistics/*.txt biology/biology_natural_world.txt biology/biology_zoology.txt; do echo",
+      "t_offset_s": 220.723
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd ../.. && grep -rn \\\"TIER\\\" bench/cdsfl_registry/*.py bench/reference_runner_v3.py scripts/*.py 2>/dev/null | grep -v '^Binary' | grep -iv 'threshold\\\\|frontier\\\\|tier.*ladder' | head; echo '---'; grep -c 'encoding_tier' bench/cdsfl_registry/domain_vocabulary.py\", \"description\": \"Check consumers of the file TIER line\"}",
+      "t_offset_s": 272.286
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom math import sqrt\\ndef wilson(k, n, z=1.959964):\\n    p = k/n; d = 1 + z*z/n\\n    c = (p + z*z/(2*n))/d; h = z*sqrt(p*(1-p)/n + z*z/(4*n*n))/d\\n    return c-h, c+h\\nfor k, n, label in [(22,51,'22/51 encodings carry own SEVERITY SCALE + DRAFT'),\\n                    (14,22,'14/22 provisionally eligible'),\\n                    (8,22,'8/22 carrying [VERIFY:current]",
+      "t_offset_s": 277.285
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:WebSearch\", \"max_results\": 1}",
+      "t_offset_s": 277.784
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"AIAG-VDA FMEA handbook 2019 severity table S9 S10 \\\"safety\\\" \\\"regulatory\\\" S7 S8 degradation loss of primary function\"}",
+      "t_offset_s": 283.999
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"GHS \\\"Rev.11\\\" OR \\\"Revision 11\\\" UNECE 2025 globally harmonized system classification labelling\"}",
+      "t_offset_s": 284.963
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"CTCAE version 6.0 release NCI 2026 current version adverse events\"}",
+      "t_offset_s": 285.697
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"CONSORT 2025 statement published PRISMA 2020 current reporting guideline\"}",
+      "t_offset_s": 286.167
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"CVSS version 4.0 FIRST.org current latest version 2026\"}",
+      "t_offset_s": 383.992
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"\\\"ISO/IEC 11179-1\\\" current edition 2023 metadata registries \\\"ISO 3534-1\\\" current edition statistics vocabulary\"}",
+      "t_offset_s": 384.813
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\n# Re-execute the checkable claims in the encodings under adjudication.\\nimport sys, math\\n# mathematics_numerical: IEEE 754 figures \\\"verified against the running implementation\\\"\\nprint(\\\"float mantissa bits:\\\", sys.float_info.mant_dig)          # claim: 53\\nprint(\\\"exponent range:\\\", sys.float_info.min_exp-1, sys.float_info.max_exp-1)  # claim: -1022..+1023\\nd1 = ",
+      "t_offset_s": 395.868
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat pytest.ini; ls bench/tests 2>/dev/null | head; python3 -c \\\"import math; print('53*log10(2) =', f'{53*math.log10(2):.6f}')\\\"\", \"description\": \"Check pytest config and verify 53\\u00b7log10(2) claim\"}",
+      "t_offset_s": 496.226
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'N[53*Log10[2], 8]' || echo \\\"WOLFRAM ABSENT\\\"\", \"description\": \"Wolfram second-falsifier check on the digits figure\"}",
+      "t_offset_s": 497.33
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/tools/wolfram_gate/serial >/dev/null 2>&1; wolframscript -code 'p=22/51; z=Sqrt[2]*InverseErf[0.95]; n=51; d=1+z^2/n; c=(p+z^2/(2 n))/d; h=z*Sqrt[p (1-p)/n+z^2/(4 n^2)]/d; N[{c-h, c+h}, 6]'\", \"description\": \"Wolfram second-check of Wilson interval for 22/51\"}",
+      "t_offset_s": 551.272
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo && python3 - <<'EOF'\\nfrom pathlib import Path\\nD = Path(\\\"bench/directives\\\")\\n\\ndef patch(path, old, new):\\n    p = D / path\\n    t = p.read_text()\\n    assert t.count(old) == 1, f\\\"pattern not unique/absent in {path}: {old[:60]!r}\\\"\\n    p.write_text(t.replace(old, new))\\n    print(\\\"patched\\\", pa",
+      "t_offset_s": 598.403
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/directives && for f in information_science/information_science_general.txt information_science/information_science_data_management.txt information_science/information_science_knowledge_representation.txt; do echo \\\"## $f\\\"; sed -n '1,16p' \\\"$f\\\"; done\", \"description\": \"Inspect regex-patched info_science headers\"}",
+      "t_offset_s": 612.53
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/tests/test_severity_tier_guards.py\", \"content\": \"\\\"\\\"\\\"Guards for the severity declarations and the encoding tier \\u2014 panel, 2026-11-14.\\n\\nWHY THIS FILE EXISTS. Measured 2026-11-14 by grep and AST: the file-level\\n`TIER:` line in bench/directives/*.txt had 0 code consumers, and the manifest'",
+      "t_offset_s": 654.97
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo && cat > bench/tests/test_severity_tier_guards.py <<'PYEOF'\\n\\\"\\\"\\\"Guards for the severity declarations and the encoding tier \\u2014 panel, 2026-11-14.\\n\\nWHY THIS FILE EXISTS. Measured 2026-11-14 by grep and AST: the file-level\\n`TIER:` line in bench/directives/*.txt had 0 code consumers, and the ma",
+      "t_offset_s": 688.028
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np = \\\"bench/tests/test_severity_tier_guards.py\\\"\\nt = open(p).read()\\nold = '_NOT_LOAD_BEARING = re.compile(r\\\"\\\\\\\\[VERIFY:current\\\\\\\\][^.\\\\\\\\n]*not\\\\\\\\s+load-bearing\\\",\\\\n                               re.I | re.S)'\\nnew = '_NOT_LOAD_BEARING = re.compile(r\\\"\\\\\\\\[VERIFY:current\\\\\\\\].{0,120}?not\\\\\\\\s+load-bearing\\\",\\\\n                               re.I | re.S)'\\nass",
+      "t_offset_s": 698.779
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\np = \\\"bench/cdsfl_registry/domain_manifest.toml\\\"\\nt = open(p).read()\\nold = 'critical_level_note = \\\"CONFIRMED 2026-11-12 against the NCI source rather than recalled: v5.0 is still the version in use'\\nnew = 'critical_level_note = \\\"CORRECTED 2026-11-14 by the free panel: the 2026-11-12 confirmation is REFUTED -- NCI published CTCAE v6.0 on 2025-07-10 (errata 2026-",
+      "t_offset_s": 714.673
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_severity_tier_guards.py bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py \\\"bench/tests/test_the_brief_is_stamped_at_dispatch_2026-11-12.py\\\" -q 2>&1 | tail -5; echo \\\"=== tier census after adjudication ===\\\"; grep -rh '^TIER:' bench/directives --include='*.txt' | s",
+      "t_offset_s": 722.153
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry.composer import _severity_declaration\\ndecl = _severity_declaration(\\\"engineering\\\", \\\"\\\")\\nprint(decl)\\nassert \\\"CRITICAL LEVEL: 7\\\" in decl and \\\"9-10 safety or regulatory\\\" in decl\\nown = open(\\\"bench/directives/software/software_general.txt\\\").read()\\nassert _severity_declaration(\\\"software\\\", own) ==",
+      "t_offset_s": 732.027
+    }
+  ],
+  "n_tool_calls": 41,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 830.4,
+  "response": "All machinery executed. Final report.\n\n---\n\n## `verdict`\n\n| Q | Verdict | Reason |\n|---|---|---|\n| **Q1** | **RECOMMEND 7 \u2014 retain; the proposed move to 9 is REJECTED on evidence; final say is HOLD FOR THE FOUNDER** since the recommendation touches what a gate-adjacent declaration admits. | 7 is the lowest published landmark whose band definition (S7 degradation / S8 loss of primary function) entails the project's pre-registered materiality rubric; 9 would exclude \"the artefact does not work\" from critical, and would make engineering the only domain gating on the catastrophic band when CVSS, CTCAE and GHS all chose the lower qualifying landmark. |\n| **Q2** | **RECOMMEND: 16 of 22 move DRAFT \u2192 CROSS_VERIFIED; 6 stay DRAFT** (adjudicated per-encoding below, edits delivered as files, guard test added). | Each mover has primary-confirmed current citations and/or load-bearing claims re-executed by tool today; each stay has a named defect \u2014 including one **material finding: CTCAE v5.0 is superseded by v6.0**, refuting the manifest's 2026-11-12 \"confirmed current\" claim. |\n\n## `q1_procedure`\n\n**When a declared standard names \u22652 landmark bands, set the critical level to the LOWEST landmark whose published band definition entails the project's own pre-registered materiality definition** (`CRITICAL_DEFINITION_PREREG_2026-05-18.md` / \u00a710's five categories: wrong result, hard-constraint violation, verification-integrity corruption, silent evidence loss, unreproducibility). Concretely: (1) write each landmark's defining criteria beside the five categories; (2) a band qualifies iff a defect meeting its definition is material under at least one category; (3) take the lowest qualifying band \u2014 choosing a higher one excludes material defects from critical, which is \u00a710 category-4 silent evidence loss by construction; (4) if the band criteria cannot be read (standard unreachable), fall back to `p-pass-ambiguity-default` \u2192 HARD \u2192 the tighter cut, flagged `[VERIFY:current]`; (5) the rejected landmark stays in the delivered LEVELS line so the seat sees both.\n\n**Applied to AIAG-VDA:** four independent secondary sources agree S7 = degradation of primary function, S8 = loss of primary function, S9 = regulatory noncompliance, S10 = safety hazard. Loss/degradation of the artefact's primary function **is** \u00a710 category 1 (wrong result in the specified function) \u2014 so band 7-8 qualifies and is the lowest. **Yields 7.** The procedure applies to the next standard unchanged, and it is already the project's de facto rule \u2014 a consistency fact the brief did not surface: CVSS chose High (7.0) over Critical (9.0), CTCAE chose Grade 3 (severe) over Grade 4 (life-threatening), GHS chose Category 2 over Category 1. All four existing declarations sit on the lower qualifying landmark. Moving FMEA alone to 9 would be the project's only departure from its own pattern, on its only secondary-sourced scale.\n\n**The third option (declare both landmarks):** evaluated and **already shipped in its simplest sufficient form**. The executed declaration above delivers `9-10 safety or regulatory` verbatim in the LEVELS line \u2014 both landmarks reach the seat today. A second machine-readable field (`safety_level = \"9\"`) has **zero consumers**: nothing in the repo reads even `critical_level` outside `composer._severity_declaration` (measured: 0 occurrences in the runner, 0 in convergence). It would be an addition nothing reaches \u2014 rejected under the additive standard until a consumer exists. The guard test now asserts both landmarks continue to reach the seat, which wires the existing two-landmark delivery to a test.\n\n## `q1_consequence` (measured)\n\n- `reference_runner_v3.py`: **0** occurrences of `critical_level`, **0** of `domain_vocabulary`; `CRITICAL_SEVERITY_THRESHOLD = 0.7` is a frozen float on the 0\u20131 proxy scale. `convergence_location.py`: likewise **0/0**; its `severity_threshold: float = 0.7` is a bare float. Both verified by AST import-walk and source count, pasted above.\n- Therefore the two-sided gate and the gamma critical series are **mechanically independent** of the domain's named level: a 7\u21929 move changes **only the sentence delivered into the seat's prompt**. Convergence verdicts do not change by any code path.\n- What it *does* change: a seat told \"critical at 9\" stops reporting S7/S8 findings (loss/degradation of primary function) as critical in FMEA coordinates; the model-asserted 0\u20131 severities that the gate *does* consume are downstream of that framing, so there is an **indirect, unmeasured gate exposure through model behaviour** \u2014 which is exactly why the recommendation holds for the founder rather than being applied.\n\n## `q2_table`\n\n| # | Encoding | Cited standard | Current? | HARD tool-checkable? | Verdict | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | software_general | CVSS v4.0, Table 22 (FIRST) | **Yes** (reconfirmed 2026-11-14) | Yes (ast, pytest, crosshair/z3, mypy, dis) | **CROSS_VERIFIED** | Primary spec read directly; 0.7\u00d710=7.0 lands exactly on the High boundary, recomputed |\n| 2 | chemistry_general | UN GHS Rev. 11 | **Yes \u2014 flag discharged**: UNECE published Rev. 11 on 2025-09-12 (primary) | Yes (rdkit, pint, scipy; element-balance by execution) | **CROSS_VERIFIED** | Rev-11 amendments don't touch acute-toxicity categories; inversion claim (Cat 1 most severe) correct |\n| 3 | biology_genetics | CTCAE v5.0 \"confirmed current\" | **No \u2014 REFUTED**: v6.0 published 2025-07-10, errata 2026-01-20 | Yes (Biopython, scipy.stats) | **DRAFT** | Superseded version citation; Grade 3 landmark retained in v6.0, so the *level* survives |\n| 4 | biology_natural_world | CTCAE v5.0 | **No** (same) | Partially (scoped inheritance) | **DRAFT** | Same supersession; scoping (ecology inherits application) is sound |\n| 5 | biology_zoology | CTCAE v5.0 + unnamed welfare regimes | **No** (same) + own unresolved flag | Partially | **DRAFT** | Two unresolved currency gaps |\n| 6 | cross_general | Founder's composition rule (internal); pint/SymPy | n/a \u2014 no external standard | Yes \u2014 **re-executed**: 3.540000 cm exact, m+s and K+V refused, CTCAE 3+CVSS 7.0=10.0 limitation reproduced | **CROSS_VERIFIED** | Judgement call flagged: all load-bearing claims tool-verified; nothing external exists to cite |\n| 7 | info_science_general | FAIR 2016; ISO/IEC 11179 | **Yes \u2014 flag discharged**: ISO/IEC 11179-1:2023 Ed. 4 (2023-01-16, IEC webstore) | Yes (round-trip, validation) | **CROSS_VERIFIED** | Severity 'none' consistent with manifest |\n| 8 | info_science_data_management | FAIR 2016; ISO/IEC 11179-1:2023 | **Yes** (same discharge) | Yes (hash/restore by execution) | **CROSS_VERIFIED** | |\n| 9 | info_science_knowledge_rep | ISO/IEC 11179-1:2023; Dublin Core | **Yes** (same) | Yes | **CROSS_VERIFIED** | |\n| 10 | info_science_retrieval | \"Standard IR evaluation practice\" \u2014 **unnamed**; ASA 2016 | ASA yes; primary basis unnamed | Yes | **DRAFT** | An unnamed source cannot be cross-verified; recommend naming the evaluation literature |\n| 11 | logistics_warehousing | None confirmed primary (its own admission) | n/a | Yes (pint, reconciliation) | **DRAFT** | Its honesty is correct and the tier correctly reflects it |\n| 12 | mathematics_applied | SI Brochure 9th ed. (BIPM 2019) | Yes (edition in force) | Yes (pint, SymPy, scipy) | **CROSS_VERIFIED** | Inheritance targets (FMEA 7, CTCAE Grade 3) match manifest |\n| 13 | mathematics_numerical | IEEE 754-2019 / ISO/IEC 60559:2020 | Yes | Yes \u2014 **re-executed**: 53 bits, \u22121022..+1023, ties-to-even; 53\u00b7log\u2081\u20802 = 15.954590 by Python **and Wolfram Language (local kernel)** | **CROSS_VERIFIED** | My first re-check used 52\u00b7log\u2081\u20802 and \"refuted\" the figure wrongly \u2014 the claim survived its falsifier |\n| 14 | mathematics_proof | None \u2014 \"no standards body governs proof\" | n/a | Yes (SymPy, z3) | **DRAFT** | CROSS_VERIFIED would certify a verification event that cannot exist; its route up is VALIDATED (HIL) directly |\n| 15 | physics_general | SI Brochure 9th ed. | Yes | Yes \u2014 **re-executed**: 5 defining constants exact float equality, uncertainty 0.0 | **CROSS_VERIFIED** | |\n| 16 | physics_classical | SI Brochure | Yes | Yes | **CROSS_VERIFIED** | FMEA-7 inheritance matches manifest |\n| 17 | physics_quantum | SI Brochure; h exact | Yes \u2014 h = 6.62607015e-34 re-executed exact | Yes | **CROSS_VERIFIED** | |\n| 18 | physics_thermodynamics | SI Brochure; k exact | Yes \u2014 k = 1.380649e-23 re-executed exact | Yes | **CROSS_VERIFIED** | GHS Cat-2 inheritance matches manifest |\n| 19 | statistics_experimental_design | ASA 2016; CONSORT/PRISMA | **Yes \u2014 flag discharged**: CONSORT 2025 (2025-04-14, five journals), PRISMA 2020 | Yes (simulation, scipy.stats) | **CROSS_VERIFIED** | |\n| 20 | statistics_general | Stevens (1946); ISO 3534 | Stevens yes (stable literature, matches the 2026-11-11 z3-verified admissibility results); ISO 3534 edition unconfirmed, marked not load-bearing | Yes | **CROSS_VERIFIED** | Judgement call flagged |\n| 21 | statistics_inference | ASA 2016 (operative); ISO 3534 (vocabulary) | ASA yes, unsuperseded; ISO 3534 flagged not load-bearing | Yes | **CROSS_VERIFIED** | Judgement call flagged |\n| 22 | statistics_time_series | ASA 2016 | Yes | Yes (statsmodels) | **CROSS_VERIFIED** | |\n\n## `q2_coverage`\n\n**22 of 22 examined; 0 left.** Counts re-measured from disk: 52 `.txt`, 1 universal, 51 domain encodings; exactly 22 carry both `SEVERITY SCALE:` and `TIER: DRAFT` (list pasted above), all dated 2026-11-12. 22/51 = 0.431373, Wilson [0.305012, 0.567347] \u2014 **confirmed independently by Wolfram Language (local kernel): {0.305012, 0.567347}**. Adjudication: 16/22 moved (0.727273, Wilson [0.518483, 0.868492]), 6/22 stay (Wilson [0.131508, 0.481517]). Three movers are explicitly flagged judgement calls (rows 6, 20, 21); if the founder's reviewers reject the \"not load-bearing\" carve-out or the internal-rule reading, those three revert and the split becomes 13/9.\n\n## `tier_mechanism`\n\n**The tier gates nothing at dispatch.** Established by: `grep -rn 'encoding_tier' --include='*.py' bench scripts` \u2192 hits only in `domain_vocabulary.py` (parse-time validation that the value is on the ladder, lines 76\u201381, and a CLI print, line 471); `grep -n 'TIER'` over `composer.py`, `reference_runner_v3.py`, `scripts/` \u2192 **0 consumers of the file-level `TIER:` line**. DRAFT was a label with no mechanism \u2014 under the additive standard, an addition nothing reaches. The delivered fix makes `bench/tests/test_severity_tier_guards.py` the TIER line's **first consumer** (legality, flag-consistency, supersession rules), so Q2's adjudication now changes something a test executes.\n\n## `falsifier` and `falsifier_result`\n\nDelivered files: **16 encoding edits** (tier + evidence), **3 biology corrections**, **1 manifest note correction** (`domain_manifest.toml` biology `critical_level_note` \u2014 the refuted claim is preserved verbatim inside the correction, per project practice), and **`bench/tests/test_severity_tier_guards.py`** (7 tests: tier legality; no unresolved `[VERIFY:current]` above DRAFT; superseded-CTCAE-v5.0-cannot-leave-DRAFT; the Q1 tripwire asserting `CRITICAL LEVEL: 7` + both landmarks reach the seat; no scale-bearing domain delivers silence; gate/convergence independence incl. `CRITICAL_SEVERITY_THRESHOLD == 0.7`; and a mutation test proving every guard goes red \u2014 including red on `CRITICAL LEVEL: 9`). The engineering manifest entry is **untouched**: no level was written as settled.\n\nExecuted, output pasted above in-session:\n```\npython3 -m pytest bench/tests/test_severity_tier_guards.py ... -q\n43 passed in 0.61s        (7 new + 36 existing severity/dispatch tests)\n```\nThe guard also demonstrated it can fail on real data: its first run went red on `statistics_inference.txt` (excusal regex not spanning a line break) \u2014 fixed, re-run green. Final sweep: `_severity_declaration(\"engineering\",\"\")` still delivers `CRITICAL LEVEL: 7` with both landmark bands; own-scale suppression intact (`FALSIFIER CLEAN` pasted above).\n\n## `reasoning`\n\nPremises, each executed or primary-sourced: (P1) the critical level reaches only prompt text \u2014 0 `critical_level`/`domain_vocabulary` references in runner and convergence, by AST and count; (P2) the frozen 0.7 is not expressible as a rank on FMEA \u2014 recomputed: 1+0.7\u00b79 = 7.3, between levels (F4 confirmed; also 7.0 CVSS exact, 3.8 CTCAE, 4.9 INES); (P3) FMEA band semantics from four concordant secondary sources: S7/S8 functional, S9/S10 safety-regulatory; (P4) the project's critical definition is consequence-based and pre-registered (\u00a710 / F6 prereg). From P3+P4: band 7-8 already meets materiality (loss of function = wrong result), so the lowest qualifying landmark is 7; from P1: the choice is reporting vocabulary, bounded in consequence; from the cross-scale pattern (CVSS High, CTCAE Grade 3, GHS Cat 2): 7 preserves the project's uniform rule. For Q2: per-encoding citation currency was resolved by proactive verification (\u00a79) rather than left flagged \u2014 which surfaced the CTCAE v6.0 supersession the 2026-11-12 pass missed.\n\n## `disagreement`\n\nThree points against the brief's framing. **(1) F5 overstates mechanically:** \"moving to 9 loosens what is admitted\" is true of reporting vocabulary only \u2014 by execution, `critical_level` admits nothing into any gate; the two-sided gate and gamma are independent floats. The founder-ruling constraint still binds (via indirect model-behaviour exposure), but the brief presents a gate change where measurement shows a prompt-text change. **(2) \"7 is conservative, therefore tighter\" conflates admission count with calibration:** labelling S7 degraded-function findings critical is not cost-free \u2014 on a safety-certified artefact, \"critical\" in FMEA coordinates brushes against a band with regulatory meaning; the (value, scale-name) discipline is what actually prevents miscommunication, not the cut's direction. My recommendation of 7 rests on the materiality-entailment procedure and cross-scale consistency, **not** on the conservatism default F5 leans on. **(3) The brief's F3 said \"3 of the 4 declared scales were corrected... CTCAE v5.0 was confirmed already correct\" \u2014 that confirmation was wrong:** v6.0 had been published four months before the 2026-11-12 check. The falsification loop caught the project's own verification pass, which is the system working, but F3 should not be cited as clean again.\n\n## `plain_english`\n\nThe engineering severity scale has two natural cut points: 7 (\"the thing stops working properly\") and 9 (\"safety or the law is implicated\"). The project should keep 7, because its own definition of a critical finding is \"a defect that makes the result wrong\" \u2014 and a product that stops working is exactly that, even when nobody is endangered. Every other scale the project uses already follows this same rule, so 7 keeps the system consistent; only the founder can decide otherwise, and nothing was changed pending his word. Separately, of the 22 draft domain write-ups, 16 checked out against current published standards (several re-verified by running the maths and the tools today) and were promoted one rung; 6 stay draft for named reasons \u2014 the biggest being that the clinical severity scale the biology write-ups cite was quietly superseded last year, which this review caught and corrected. A new automated test now watches all of this so none of it can drift silently.\n\n## `passes_run`\n\n**3 passes.** Pass 1: read artefacts, execute the severity/tier/gate machinery, establish independence and the counts. Pass 2: proactive verification of every citation (6 web checks against primary publishers; Wolfram as second falsifier on two computed figures) \u2014 added the CTCAE v6.0 refutation, the GHS Rev 11 / ISO 11179-1:2023 / CONSORT 2025 discharges, and corrected my own wrong refutation of the 15.954590 figure. Pass 3: deliver and falsify the fixes \u2014 added nothing new above threshold beyond the guard-regex defect its own first run exposed. Terminated at diminishing returns: the remaining open items (ISO 3534 edition, the AIAG-VDA primary handbook, the CTCAE v6.0 document itself) are flagged in the files, not silently dropped.\n\n**What would refute me (Q1):** a reading of the primary AIAG-VDA handbook showing the 7-8 band's definitions do **not** entail functional loss/degradation \u2014 e.g. if S7/S8 criteria were written as inconvenience/appearance classes \u2014 would collapse the materiality entailment and move the recommendation to 9; so would a founder-level ruling that CDSFL \"critical\" should mean only safety/regulatory consequence, which would also require re-cutting CVSS to 9.0 and CTCAE to Grade 4 for consistency. **(Q2):** `sha256sum` any adjudicated file against the dispatch stamps \u2014 my verdicts hold against the staged state; a primary UNECE/NCI/ISO document contradicting a discharge (command: open the cited publisher page; result: different edition or date) reverts that row to DRAFT, and `python3 -m pytest bench/tests/test_severity_tier_guards.py -q` failing after such a reversion is the designed loud signal.\n\nSources: [FMEA ranking tables (AIAG-VDA 2019)](https://qhubio.com/fmea-ranking-tables), [AIAG VDA FMEA tables](https://fmearatings.com/aiag-vda-fmea-tables), [Severity in FMEA (AIAG-VDA)](https://quasist.com/fmea/severity-in-fmea/), [Design FMEA severity table](https://sripadhmam.com/wp-content/uploads/2021/08/Design-FMEA-SOD-tables.pdf), [UNECE GHS Rev. 11 (2025)](https://unece.org/transport/dangerous-goods/ghs-rev11-2025), [NCI CTEP CTC page](https://ctep.cancer.gov/protocoldevelopment/electronic_applications/ctc.htm), [PharmaSUG 2026 on CTCAE v6.0](https://pharmasug.org/proceedings/2026/DS/PharmaSUG-2026-DS-131.pdf), [CTCAE v6.0 lookup](https://www.weguide.health/tools/ctcae-lookup), [CONSORT 2025 statement (PLOS Medicine)](https://journals.plos.org/plosmedicine/article?id=10.1371%2Fjournal.pmed.1004587), [CONSORT 2025 (PubMed)](https://pubmed.ncbi.nlm.nih.gov/40228833/), [CVSS v4.0 specification (FIRST)](https://www.first.org/cvss/specification-document), [ISO/IEC 11179-1:2023 (IEC webstore)](https://webstore.iec.ch/en/publication/81976). Wolfram-derived values (15.9545898; Wilson {0.305012, 0.567347}) computed with Wolfram Language (local Wolfram Engine, via wolframscript).",
+  "t_start_epoch": 1794623187.470382,
+  "t_end_epoch": 1794624017.9136481,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo",
+      "built": false
+    }
+  ]
+}

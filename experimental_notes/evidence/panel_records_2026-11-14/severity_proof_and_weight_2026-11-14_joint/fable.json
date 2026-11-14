@@ -1,0 +1,207 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13449,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /; pwd; ls ~; \", \"description\": \"Locate the sandbox repository root\"}",
+      "t_offset_s": 32.107
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"**/bench/reference_runner_v3.py\"}",
+      "t_offset_s": 32.457
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/reference_runner_v3.py bench/evidence.py bench/tests/test_verified_true_ledger.py bench/audit_closing_window.py bench/convergence_location.py docs/MATHEMATICAL_APPENDIX.md scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py 2>&1\", \"description\": \"Compare current artefact digests against ",
+      "t_offset_s": 40.526
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -iE 'severity|critical_cut|ordinal' && ls scripts/ | grep -E '2026-11-14|2026-10-12'\", \"description\": \"List severity-related tests and scripts present in joint sandbox\"}",
+      "t_offset_s": 42.279
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py\"}",
+      "t_offset_s": 57.455
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def severity_is_proven\\\\|def compute_sev_f\\\\|CRITICAL_SEVERITY_THRESHOLD = \\\\|def effective_severity\\\\|def wire_module_mirrors\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Locate severity functions in the runner\"}",
+      "t_offset_s": 58.611
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/reference_runner_v3.py\", \"offset\": 10760, \"limit\": 290}",
+      "t_offset_s": 62.795
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity_is_proven\\\" bench/reference_runner_v3.py\", \"description\": \"Find all call sites of severity_is_proven\"}",
+      "t_offset_s": 67.063
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/reference_runner_v3.py\", \"offset\": 4400, \"limit\": 70}",
+      "t_offset_s": 70.459
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/reference_runner_v3.py\", \"offset\": 9710, \"limit\": 45}",
+      "t_offset_s": 71.601
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_is_demotion_eligible\\\\|severity_calibration_enabled\\\" bench/reference_runner_v3.py | head; grep -n -A25 \\\"def _is_demotion_eligible\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Read demotion eligibility predicate\"}",
+      "t_offset_s": 91.6
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/joint_measure.py <<'EOF'\\nimport json, pathlib, inspect, sys\\nsys.path.insert(0, \\\".\\\")\\nREPO = pathlib.Path(\\\".\\\")\\nLOGS = REPO/\\\"bench\\\"/\\\"logs\\\"\\nPROVEN = {\\\"PASS\\\",\\\"WARN\\\"}\\npairs = []\\nfor fp in LOGS.glob(\\\"**/runner_state.json\\\"):\\n    try: d = json.loads(fp.read_text(encoding=\\\"utf-8\\\", errors=\\\"ignore\\\"))\\n    except Exception: continue\\n    for e in ((d or {}).get",
+      "t_offset_s": 113.948
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\nls $H/cc2/attempt-1/files/bench/tests/ $H/cc2/attempt-1/files/scripts/ 2>/dev/null | head -30\\necho ---\\nls $H/fable/attempt-1/files/bench/tests/ $H/fable/attempt-1/files/scripts/ 2>/dev/null | head -30\\necho --- diff cc2 runner vs dispatch ---\\ndiff <(cat $H/cc2/attempt-1/files/bench/reference_runner_v3.py) bench/refe",
+      "t_offset_s": 136.977
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\ndiff <(cat $H/cc2/attempt-1/files/bench/reference_runner_v3.py) bench/reference_runner_v3.py | tail -20\\necho \\\"=== fable runner diff ===\\\"\\ndiff <(cat $H/fable/attempt-1/files/bench/reference_runner_v3.py) bench/reference_runner_v3.py\", \"description\": \"Finish cc2 runner diff; diff fable's runner edit\"}",
+      "t_offset_s": 141.622
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B3 -A12 \\\"wire_module_mirrors\\\" bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\", \"description\": \"Read the dispatched test's wire_module_mirrors assertion\"}",
+      "t_offset_s": 171.016
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\ncp bench/reference_runner_v3.py /tmp/runner_dispatch_backup.py\\ncp $H/cc2/attempt-1/files/bench/reference_runner_v3.py bench/reference_runner_v3.py\\npython3 -m pytest bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py -q 2>&1 | tail -8\\ncp /tmp/runner_dispatch_backup.py bench/reference_runner_v3.py\\",
+      "t_offset_s": 181.499
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\necho \\\"=== fable spelling test ===\\\"; cat $H/fable/attempt-1/files/bench/tests/test_critical_cut_single_spelling.py\\necho \\\"=== cc2 guard test (spelling part) ===\\\"; grep -n -A30 \\\"duplicate_spelling\\\\|every_duplicate\\\" $H/cc2/attempt-1/files/bench/tests/test_severity_is_ordinal_guards_2026-11-14.py | head -60\", \"descr",
+      "t_offset_s": 196.4
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\ncat $H/cc2/attempt-1/files/bench/tests/test_severity_is_ordinal_guards_2026-11-14.py\\necho \\\"=== fable's stamped-test extension ===\\\"\\ndiff bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py $H/fable/attempt-1/files/bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\", \"descriptio",
+      "t_offset_s": 239.684
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\ncp $H/fable/attempt-1/files/bench/reference_runner_v3.py bench/reference_runner_v3.py\\npython3 - <<'EOF'\\nfrom bench import reference_runner_v3 as rr\\nrr._PROOF_ABOUT_GATED_NUMBER[\\\"on\\\"] = True\\ne = {\\\"severity\\\": 0.97, \\\"severity_proof\\\": {\\\"status\\\": \\\"PASS\\\", \\\"recomputed_rk\\\": True}}\\nprint(\\\"fable impl, repointed",
+      "t_offset_s": 276.829
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport z3\\n# R2: product gate/order with 3 weights, order-preserving re-label flips finding order?\\n# weights w in {0.5, 0.8, 1.0} as class labels a<b<c re-labelled to a'<b'<c'\\na,b,cA,cB = z3.Reals('a b cA cB')\\n# 2-class flip (independent re-derivation of both seats' sat):\\ns = z3.Solver()\\ns.add(0 < a, a < b, 0 <= cA, cA <= 1, 0 <= cB, cB <= 1)\\ns.add(z3.RealVal(",
+      "t_offset_s": 286.185
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom bench import convergence_location as cl\\ntry:\\n    cl.hierarchical_novelty_series([{\\\"severity\\\": 0.8, \\\"round\\\": 1}], critical_threshold=\\\"High\\\")\\nexcept TypeError as ex:\\n    print(\\\"TypeError confirmed:\\\", ex)\\nexcept Exception as ex:\\n    print(\\\"other:\\\", type(ex).__name__, ex)\\nEOF\\nwhich wolframscript 2>/dev/null || echo \\\"wolframscript NOT on PATH\\\"\", ",
+      "t_offset_s": 288.59
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport inspect\\nfrom bench import convergence_location as cl\\nsig = inspect.signature(cl.hierarchical_novelty_series)\\nprint(sig)\\nEOF\", \"description\": \"Get the correct call signature\"}",
+      "t_offset_s": 298.684
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom bench import convergence_location as cl\\ne = [{\\\"severity\\\": 0.8, \\\"round\\\": 1, \\\"location\\\": \\\"bench/x.py:10\\\"}]\\ntry:\\n    r = cl.hierarchical_novelty_series(e, 2, {}, critical_threshold=\\\"High\\\")\\n    print(\\\"no error, returned:\\\", r)\\nexcept TypeError as ex:\\n    print(\\\"TypeError confirmed:\\\", ex)\\nEOF\\nPATH=\\\"/Users/georgejackson/Developer_Projects/Constr",
+      "t_offset_s": 305.674
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B5 -A40 \\\"def hierarchical_novelty_series\\\" bench/convergence_location.py | head -70\", \"description\": \"Read hierarchical_novelty_series to build an entry reaching the comparison\"}",
+      "t_offset_s": 313.549
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -B2 -A20 \\\"def _criticals\\\" bench/convergence_location.py\", \"description\": \"Read the _criticals filter where the threshold comparison happens\"}",
+      "t_offset_s": 317.563
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -A15 \\\"def _gate_population\\\" bench/convergence_location.py; grep -n -A6 \\\"def _round_of\\\" bench/convergence_location.py\", \"description\": \"Read the gate population filter\"}",
+      "t_offset_s": 323.311
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom bench import convergence_location as cl\\n# entry surviving _gate_population: needs open_since_round and non-terminal status\\ne = [{\\\"severity\\\": 0.8, \\\"round\\\": 1, \\\"open_since_round\\\": 1, \\\"status\\\": \\\"OPEN\\\",\\n      \\\"description\\\": \\\"x\\\", \\\"id\\\": \\\"C0001\\\"}]\\ntry:\\n    r = cl.hierarchical_novelty_series(e, 2, {}, critical_threshold=\\\"High\\\")\\n    print(\\\"no ",
+      "t_offset_s": 330.19
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\ndiff docs/MATHEMATICAL_APPENDIX.md $H/cc2/attempt-1/files/docs/MATHEMATICAL_APPENDIX.md | head -60\\necho \\\"=== fable appendix changed? ===\\\"\\nls $H/fable/attempt-1/files/docs/ 2>/dev/null || echo \\\"no docs in fable harvest\\\"\", \"description\": \"Diff cc2's appendix edit against dispatch\"}",
+      "t_offset_s": 349.958
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"H=bench/logs/severity_proof_and_weight_2026-11-14/sandbox_harvest\\ncp $H/cc2/attempt-1/files/bench/reference_runner_v3.py bench/reference_runner_v3.py\\ncp $H/cc2/attempt-1/files/bench/tests/test_severity_is_ordinal_guards_2026-11-14.py bench/tests/\\ncp $H/cc2/attempt-1/files/scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py scripts/\\ncp $H/cc2/attempt-1/files/docs/MATHEMA",
+      "t_offset_s": 360.73
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\", \"offset\": 200, \"limit\": 30}",
+      "t_offset_s": 363.081
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\", \"old_string\": \"            assert got == {\\\"severity_spec\\\": flag}, got\", \"new_string\": \"            # EXTENDED 2026-11-14 (joint panel, R1): `wire_module_mirrors` now\\n            # also wires `severity_pro",
+      "t_offset_s": 370.84
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\\\")\\ns = p.read_text()\\nold = '            assert got == {\\\"severity_spec\\\": flag}, got'\\nnew = '''            # EXTENDED 2026-11-14 (joint panel, R1): `wire_module_mirrors` now\\n            # also wires `severity_proof_matches_gated`, so this exact-equality\\n   ",
+      "t_offset_s": 377.006
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/scripts/the_door_populations_are_site_scoped_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The R1 headline figure is SITE-SCOPED, and both blind seats' numbers were\\nright about different doors.\\n\\nJOINT ROUND `severity_proof_and_weight_2026-11-14`. The blind half produced two\\nfigures for",
+      "t_offset_s": 405.848
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_door_populations_are_site_scoped_2026-11-14.py <<'SCRIPT_EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The R1 headline figure is SITE-SCOPED, and both blind seats' numbers were\\nright about different doors.\\n\\nJOINT ROUND `severity_proof_and_weight_2026-11-14`. The blind half produced two\\nfigures for \\\"how many archived entries stop releasing when the proof must be\\nabout the",
+      "t_offset_s": 428.732
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_severity_is_ordinal_guards_2026-11-14.py bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py bench/tests/test_verified_true_ledger.py bench/tests/test_the_door_does_not_override_the_severity_gate_2026-10-12.py bench/tests/test_severity_proof_2026-09-07.py bench/tests/test_the_severity_spec_annihilates_the_a4_severity_door_2026-10-2",
+      "t_offset_s": 437.147
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py 2>&1 | tail -14; echo \\\"---\\\"; sha256sum bench/reference_runner_v3.py docs/MATHEMATICAL_APPENDIX.md bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py | cut -c1-80\", \"description\": \"Execute cc2's producer in the merged tree; record final digests\"}",
+      "t_offset_s": 446.439
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"critical_level\\\\|severity_scale\\\" bench/reference_runner_v3.py bench/convergence_location.py bench/evidence.py bench/audit_closing_window.py bench/dm/_convergence.py 2>/dev/null | head -5; echo \\\"--- composer sites ---\\\"; grep -n \\\"critical_level\\\\|severity_scale\\\" bench/composer.py | head -12; echo \\\"--- pre-registration 2026-05-18 ---\\\"; grep -rn \\\"2026-05-18\\\" docs/*.md e",
+      "t_offset_s": 459.704
+    }
+  ],
+  "n_tool_calls": 37,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 543.5,
+  "response": "All verification complete. Final pass produced no new above-threshold finding \u2014 terminating. Here is my joint-round answer as seat `fable`.\n\n---\n\n## verdict\n\n| item | joint verdict | decided by |\n|---|---|---|\n| **R1** repoint `severity_is_proven` | **HOLD FOR THE FOUNDER** \u2014 built, wired, default OFF, **now merged into this tree as one implementation (cc2's), not two** | Both blind builds were the same semantic; execution found one measured difference (below) that selects cc2's |\n| **R2** 3rd weight in (\u00bd, 1) | **REJECT** \u2014 unchanged, and now corroborated by my own independent z3 encoding, cc2's encoding, and Wolfram | 3-weight product order-flip `sat`; agrees across 3 independent tools |\n| **R3** ordered pair | **RECOMMEND** \u2014 unchanged | lex pair `unsat` under order-preserving re-label (my re-derivation + cc2's + Wolfram `True` for the flip's existence on the product side) |\n| **cc2's blind delivery as shipped** | **DEFECTIVE, repaired in the merge** | Its runner fails the stamped `test_the_severity_spec_decides_when_promoted_2026-10-15.py::test_the_config_actually_moves_the_mirror` (exact-match line 217) \u2014 executed, 1 failed. cc2's \"122 passed\" was true of the suites it selected; the stamped file was not among them |\n| **my blind delivery's R1 implementation** | **DEFECTIVE, superseded in the merge** | It accepts `recomputed_rk=True` (`bool \u2282 int`) as the figure 1.0 \u2014 executed: `severity_is_proven` returns **True** at sev 0.97 with repoint ON. cc2's returns **False**. A malformed proof figure must not license |\n\n## J1 \u2014 disagreements, settled by measurement\n\n**Population (555/652 vs 422/519): both were right about different doors, and neither of us reported it per-site.** `severity_is_proven` has 3 live sites. The A4 door (~4442) and reasoned withdrawal (~9735) consult the proof only when `sev < 0.7` \u2014 my 519 is their population. But `_is_demotion_eligible`'s first clause is `severity >= CRITICAL_SEVERITY_THRESHOLD` (line 10662), so the calibration-demotion site (~10936) consults the proof on exactly the **133 criticals I excluded**. Measured (producer now in tree): release/withdrawal doors lose 422/519 = 81.31% Wilson [77.73%, 84.43%]; demotion door loses **133/133 = 100.00%** Wilson [97.19%, 100.00%] \u2014 under the repoint, no archived critical's proof agrees with its own severity, so proof-licensed demotion stops entirely. 555 = 422 + 133 exactly; all 97 keepers are sub-critical. My blind correction of cc2's headline was itself incomplete: I called the 133 \"never exempted\", which is true of the release doors and false of the demotion door. The founder-facing figures are the two per-site numbers.\n\n**Which R1 implementation:** settled by execution, above. cc2's also compares against `effective_severity(e)` where mine read raw `severity` \u2014 identical while `_SEVERITY_SPEC` is off (the default and only tested state); the divergence under both-flags-ON is recorded, not repaired, matching cc2's own scoped note, and my blind point stands that the tolerance form is interim: the terminal door under R3 is consequence-side (`c_d \u227a_d \u03b8_d` against the manifest), which no one built this round.\n\n**Spelling count:** cc2's **six** confirmed by import \u2014 4 `critical_threshold` defaults in `convergence_location` (`combined_novelty_series`, `hierarchical_novelty_series`, `location_only_series`, `novelty_rule_divergence`), plus `evidence.LEDGER_CRITICAL_SEVERITY` and `audit_closing_window.CRITICAL_SEVERITY_THRESHOLD`. The brief's \"four\" undercounts. My blind test claimed to enumerate \"every\" default via `inspect.signature` and it genuinely does \u2014 but my prose repeated the brief's framing of 3 unpinned spellings where there were 5.\n\n## J2 \u2014 agreements, re-examined against the other seat's route\n\n- **R2 REJECT survives, and the routes are genuinely independent.** cc2's route: z3 shows the cut stays a class-rescaled test on model-asserted confidence (unsat for the negation at 4 values of w3). My route: the product gate stays breakable under order-preserving re-labelling with 3 weights (`sat`). These are *different defects* \u2014 one epistemic (belief still decides), one measurement-theoretic (ordering not invariant) \u2014 each independently fatal. I re-derived the sat/unsat pair in my own z3 encoding this round (2-weight flip `sat`, witness b=4, a=1, cA=\u00be, cB=\u00bc; 3-weight `sat`; lex pair `unsat`) and Wolfram computed `True` for the flip's existence (local Wolfram Engine, exit 0). This is corroboration by independent instruments, not a vote.\n- **R1 HOLD survives.** Both routes used the same subset/conjunction derivation \u2014 so on its own that *would* be one route twice. What makes it survive J2 is the direction evidence: cc2's exhaustive 224-point grid (0 loosen) and my archive sweep (0 loosen) are independent executions of the monotonicity claim.\n- **F4 wording:** cc2 was right that \"operative\" overstates it. Verified in the merged tree: `grep critical_level|severity_scale` over the five gate-bearing modules \u2192 **zero hits**. The level reaches the prompt; no gate reads it. I confirm cc2's correction of my word choice; the substance (delivered-to-prompt, consumed-by-nothing) we never disagreed on.\n\n## J3 \u2014 the self-falsification\n\n**Confirmed, and with cc2's stronger reason adopted.** R2 and R3 are **exclusive, not composable**, and the brief's framing of R2 as \"a smaller R3\" is wrong twice over: (1) my blind redundancy argument \u2014 under R3 consequence is carried by `c_d`, so a 3rd weight decides nothing the pair gate reads \u2014 holds; (2) cc2's inadmissibility argument is stronger because it holds *even if* one disputes that the ordinal scale has taken the job: the 3-weight product is `sat` under order-preserving re-labelling on the project's own live criterion. A composition inherits that `sat` and is strictly worse than R3 alone on the named property. Recommending both would be incoherent; neither of us did, and the joint round confirms it with three tools.\n\n## The fact neither of us had \u2014 the 4 (actually 6) spellings under a per-domain cut\n\nThe count is six, measured above. What a per-domain cut does to them: **both blind accounts are partial and compose into one true statement, each half carried by its own measurement.** My half: the constants are not *wrong* today \u2014 0.7 is the pre-registered numeric proxy (`bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md`, FROZEN, verified present this round) that the `severity_scale = \"none\"` domains inherit as the application level; the defect pinning repairs is drift between spellings. cc2's half: the moment a domain's own ordinal level reaches these call sites, every float comparison is **type-incompatible, not merely stale** \u2014 reproduced this round with a gate-surviving entry: `hierarchical_novelty_series(..., critical_threshold=\"High\")` \u2192 `TypeError: '>=' not supported between instances of 'float' and 'str'`. One addition from my repro: with an entry that `_gate_population` drops, the same call returns `[0, 0, 0]` **silently** \u2014 so the failure mode is a crash only when a critical reaches the comparison, and a silently empty series otherwise, which is the worse half. **Verdict change: none** \u2014 R1/R2/R3 verdicts stand; the pinning fix is confirmed necessary-but-interim, and the comparison-site-takes-a-domain-and-an-ordering build stays named, out of scope, and now twice evidenced.\n\n## composability\n\n- **R2 \u2295 R3: refused** \u2014 composite inherits the product's `sat`; measured, not judged.\n- **R1 \u2295 R3: composes on measurement** (unchanged from blind): each alone fails the other's executed falsifier.\n- **The two blind R1 builds: NOT composed.** Two flags for one semantic is an addition nothing needs; one implementation merged, selected by the executed bool-guard difference. My `test_severity_proof_repointing.py` and flag names were **not** carried into the tree \u2014 superseded, per the committed measurement above, by cc2's implementation plus cc2's guard tests.\n\n## reasoning\n\nDispatch digests verified (all 8 match). Harvests inspected and both seats' runners diffed against dispatch. Decisive executions: (1) stamped mirror test fails on cc2's runner (1 failed, 13 passed) \u2014 so the merge must carry the test extension my blind round wrote, re-keyed to cc2's mirror name; (2) bool-guard difference executed both ways (`True` vs `False` on the same malformed entry) \u2014 selects cc2's implementation; (3) per-site populations measured, reconciling both blind figures exactly; (4) six spellings by import; (5) z3 re-derived independently; (6) Wolfram second falsifier computed (attribution: Wolfram Language, local Wolfram Engine); (7) TypeError reproduced with a gate-surviving entry, plus the silent-zeros variant.\n\n**Delivered into the tree** (final digests): `bench/reference_runner_v3.py` \u2190 cc2's R1 build (`8be3942ecc116b6b`); `bench/tests/test_severity_is_ordinal_guards_2026-11-14.py` (8 tests, includes the 6-spelling pin); `scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py`; `docs/MATHEMATICAL_APPENDIX.md` \u00a77.7 measurement block (`2b6611d8c4c7d3e1`); `bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py` line 217 extended to assert both mirrors (`9c63513c581ef896`) \u2014 no assertion loosened, skipped or deleted; **new** `scripts/the_door_populations_are_site_scoped_2026-11-14.py` (the joint round's own producer). **What did not work:** my first TypeError repro returned `[0,0,0]` because the entry lacked `open_since_round`/status and `_gate_population` dropped it before the comparison \u2014 kept, because the silent path is itself evidence; `timeout` is absent on this host's shell, so the Wolfram call ran unbounded (it returned in seconds).\n\n## falsifier / falsifier_result\n\n```\n$ python3 -m pytest bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py -q   # vs cc2's raw delivery\nFAILED ...::test_the_config_actually_moves_the_mirror        1 failed, 13 passed\n\nfable impl, repointed ON, rk=True (bool), sev=0.97 -> True     # my blind defect\ncc2  impl, repointed ON, rk=True (bool), sev=0.97 -> False    # selects cc2's\n\n2-weight product order-flip: sat [b = 4, a = 1, cA = 3/4, cB = 1/4]\n3-weight product order-flip: sat\nlex pair verdict-change under order-preserving re-label: unsat\nwolframscript: Reduce[Exists[...]] -> True   (Wolfram Language, local Engine, exit 0)\n\n$ python3 scripts/the_door_populations_are_site_scoped_2026-11-14.py\n  ALL entries: n=652 lose 555 (85.12%) Wilson [82.19%, 87.65%]\n  sev < threshold (A4 + withdrawal): n=519 lose 422 (81.31%) Wilson [77.73%, 84.43%]\n  sev >= threshold (demotion door):  n=133 lose 133 (100.00%) Wilson [97.19%, 100.00%]\n  reconciliation: 555 = 422 + 133; 0 critical keepers\n  merged guard: rk=True (bool) at sev 0.97 -> severity_is_proven = False\n\nTypeError confirmed: '>=' not supported between instances of 'float' and 'str'\n(and silently [0, 0, 0] when the entry does not survive _gate_population)\n\n$ python3 -m pytest <7 targeted suites incl. the stamped file> -q\n119 passed in 3.19s\n```\n\n## strongest_disagreement\n\n**cc2's claim: \"All nine dispatch digests verified unchanged before editing \u2026 122 regression tests pass\", presented as a clean delivery.** I reject the *completeness* of that regression claim, with executed evidence: cc2's delivered runner fails `bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py` \u2014 a file **stamped in cc2's own dispatch table** \u2014 at the exact-equality assertion on `wire_module_mirrors`' return (line 217; 1 failed on execution against its harvested runner). cc2 changed that function's return shape and did not run the stamped test that pins it. The defect class is the one this project's record names: a completion claim whose selected evidence set excludes the test that falsifies it. It was repairable in one edit and is repaired in the merge; the implementation itself is the better of the two, which is why it was adopted anyway. Secondary, smaller: cc2's `assert len(spellings) == 6` is an exact-count change-detector that will fail on any future *correct* seventh spelling \u2014 loud but noisy; acceptable today, noted for the record.\n\n## aims_check\n\nAdditive: nothing removed \u2014 `severity_is_proven`'s current behaviour is byte-identical with the flag OFF (asserted by an executed test), \u00a77.7 retained as credence, every new entry point (flag, mirror, predicate) wired through `wire_module_mirrors` and executed by tests. Simplest sufficient: one R1 implementation, not two; one spelling-pin test, not two; the stamped-test extension strengthens, never loosens. Democratisation aim: the TypeError/silent-zeros evidence is recorded precisely because the current gate only works on the 0\u20131 proxy \u2014 the named next build (comparison site takes a domain and an ordering) is what makes the harness work beyond code, and it is named, not smuggled in. No scoring key, manifest, or prior-round ground truth was read; all verdicts computed, none asserted.\n\n## passes_run\n\n**4.** (1) Digest verification, code reading of the 3 call sites + `_is_demotion_eligible`. (2) Joint measurements: per-site populations, 6 spellings by import. (3) Adversarial verification of both blind deliveries: stamped-test failure (cc2), bool gap (mine), independent z3 re-derivation, Wolfram second falsifier, TypeError repro. (4) Merge, 119-test regression, and final checks (F4 grep: zero gate reads; pre-registration file verified present) \u2014 pass 4 confirmed prior claims and produced **no new above-threshold finding**, so I stop here.",
+  "t_start_epoch": 1794617740.3424482,
+  "t_end_epoch": 1794618283.813807,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo",
+      "built": false
+    }
+  ]
+}

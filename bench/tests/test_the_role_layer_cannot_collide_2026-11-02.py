@@ -163,14 +163,53 @@ class TestAnUnknownRoleFailsLoudly:
 
 class TestWhatIsDeliberatelyAbsent:
 
-    def test_the_functional_vocabulary_is_NOT_declared(self):
-        """His worker/classifier/orchestrator mapping is POLICY and still his."""
+    def test_the_functional_vocabulary_IS_declared_now_that_he_has_ruled(self):
+        """★ OUTGROWN BY HIS RULING, RE-POINTED RATHER THAN DELETED.
+
+        This assertion read, until 2026-11-14, that `worker.toml`,
+        `classifier.toml` and `orchestrator.toml` must NOT exist, because which
+        declared member each of his functional names maps to is POLICY and B21
+        records it as owed by him. That was right for as long as he had not
+        ruled.
+
+        HE RULED ON 2026-11-12, verbatim: *"Verdict. Yes do both. stm"*,
+        against the item asking *"whether the 4 interface roles map onto the
+        harness roles, and whether the credential store is built now or after
+        the runway"*. So the condition the old assertion protected is spent,
+        and the guard now asserts the state his ruling produces. The protection
+        it actually gave -- that no role file invents policy -- is unchanged
+        and lives in `test_no_role_file_invents_policy` below, which still
+        refuses any key beyond `name` and `axis`.
+        """
         have = {f.stem for f in (REG / "roles").glob("*.toml")}
-        for his in ("worker", "classifier", "orchestrator"):
-            assert his not in have, (
-                f"roles/{his}.toml exists. Which declared member each of his "
-                f"functional names maps to is the definition B21 records as "
-                f"still owed by him; creating the file decides it for him.")
+        for his in ("worker", "classifier", "orchestrator", "researcher"):
+            assert his in have, (
+                f"roles/{his}.toml is missing. The 4 interface roles the UX "
+                f"brief specifies are Orchestrator, Worker, Researcher and "
+                f"Classifier, and he ruled on 2026-11-12 that they map onto "
+                f"the harness roles; without the file the selector cannot "
+                f"offer the role.")
+
+    def test_every_role_declares_an_axis_and_the_2_axes_partition(self):
+        """The 2 vocabularies must not merge, so every file must name its side.
+
+        EXECUTES the catalogue rather than reading the files a second time, so
+        a disagreement between the files and the accessor shows up here.
+        """
+        import sys as _sys
+        _sys.path.insert(0, str(REG.parent.parent))
+        from bench import model_catalogue as mc
+        allr = set(mc.known_roles())
+        structural = set(mc.known_roles("structural"))
+        functional = set(mc.known_roles("functional"))
+        assert structural | functional == allr, (
+            f"{sorted(allr - (structural | functional))} declare no axis, so "
+            f"they belong to neither vocabulary and would reach a selector "
+            f"as an unlabelled name")
+        assert not (structural & functional), (
+            f"{sorted(structural & functional)} claim both axes")
+        assert structural == {"collator", "participant", "player_manager"}
+        assert functional == {"classifier", "orchestrator", "researcher", "worker"}
 
     def test_no_role_file_invents_policy(self):
         for f in (REG / "roles").glob("*.toml"):

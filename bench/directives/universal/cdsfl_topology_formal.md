@@ -143,6 +143,29 @@ declared only when the last N stored booleans are all true. No single
 condition is windowed independently — the conjunction as a whole must be
 stable.
 
+> **★ `g_2` WAS RESTATED ON 2026-11-14 AND THE OLD FORM IS NAMED, NOT ERASED.**
+> It read `f.severity ≥ 0.7`, a comparison against a FIXED VALUE. The free-seat
+> round of 2026-11-11 established that a cut named by a fixed value is not
+> invariant under the admissible transformations of an ordinal scale, while a
+> cut named by a DISTINGUISHED ELEMENT of the ordering is: z3 returns `unsat`
+> for a counterexample to the distinguished-element form and `sat` for the
+> fixed-value form. `cdsfl_core_formal.md` was reformulated the same week;
+> this document was not, so the 2 universal directives disagreed about the
+> definition of the project's own blocking gate for 3 days.
+>
+> **THE OLD LINE IS KEPT BECAUSE THE ARCHIVE WAS GATED ON IT.** Every archived
+> run before this date was decided by `severity ≥ 0.7`, and rewriting the
+> definition out of existence would make those runs unreadable.
+>
+> **WHICH FILE IS CANONICAL FOR THE GATE: `cdsfl_core_formal.md`.** That is
+> stated here so the 2 cannot drift again without someone noticing. It is also
+> the only one of the 2 that a seat ever receives: measured 2026-11-14 by
+> calling `bench.cdsfl_registry.composer._load_universal_directive()`, the
+> composed universal body contains `critical_d(f)` and contains `0.7` 0 times,
+> and THIS FILE is read by 0 code paths -- 9 mentions across the Python tree,
+> all 9 prose comments citing its sections, 0 path-shaped reads. So no seat
+> ever received the contradiction; a human following those 9 citations did.
+
 **Formal:**
 ```
 Let G(r) be the gate evaluation at round r.
@@ -151,7 +174,9 @@ G(r) = g_1(r) ∧ g_2(r) ∧ g_3(r) ∧ g_4(r) ∧ g_5(r)
 
 where:
   g_1(r) ≡ r ≥ EARLIEST_STOP_ROUND
-  g_2(r) ≡ |{f ∈ B : f.status ∈ {OPEN, CONTESTED} ∧ f.severity ≥ 0.7}| = 0
+  g_2(r) ≡ |{f ∈ B : f.status ∈ {OPEN, CONTESTED} ∧ critical_d(f)}| = 0
+            where critical_d(f) ⇔ c_d(f) ≽_d θ_d   (cdsfl_core_formal.md)
+            SUPERSEDED FORM, kept for the archive: f.severity ≥ 0.7
   g_3(r) ≡ novel_count(r) ≤ MAX_NOVEL_FINDINGS
   g_4(r) ≡ contested_count(r) = 0
   g_5(r) ≡ gamma_gate(γ(r), r) = PASS

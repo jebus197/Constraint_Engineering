@@ -282,7 +282,33 @@ RULE_32_FROM = "2026-11-01"
 #: cannot be satisfied by waffle: "Entry B21 carries a ruling of yours dated 17
 #: October" has prose and names no subject, and that is the exact sentence he
 #: objected to.
-_ENTRY_IDENT = re.compile(r"\b((?:[A-Z]\d{1,4}|C00\d{2}|\d{1,2}\.\d{1,2}[a-z]?))\b")
+#: ★ THE DOTTED FORM EXCLUDES VERSION NUMBERS AND 3-COMPONENT SECTION
+#: REFERENCES, NARROWED 2026-11-14, AND THE NARROWING WAS MEASURED BEFORE IT
+#: WAS MADE because a narrowing risks FALSE NEGATIVES -- it stops the rule
+#: accusing, which is the whole job of the rule.
+#:
+#: THE DEFECT: `\d{1,2}\.\d{1,2}` matched `2.1` inside `2.1.220`, `3.13`
+#: inside `3.13.3` and `8.1` inside the section reference `8.1.9.2`,
+#: because `.` is a non-word character so `\b` holds on both sides. Over
+#: `experimental_notes/*.md`: **158 such fragments across 44 files**.
+#:
+#: WHAT THE NARROWING COSTS, measured over 29,864 matches: **159 dropped,
+#: 0.005324, Wilson [0.004560, 0.006216], Clopper-Pearson [0.004530,
+#: 0.006216]** -- and **0 of the 159 is a genuine entry reference**. 65 of
+#: them match a token the task list does define, and all 8 distinct such
+#: tokens were read by eye rather than trusted to a filter: every one is a
+#: dependency version (`2.1.220`, `1.3.4`, `3.2.3`, `1.1.408`, `3.3.0`,
+#: `7.2.0`) or a 3-component section reference (`8.1.9.2`, `6.7.1`). The 2
+#: remaining are `0.95` inside the numeric grid `{0.05..0.95}`.
+#:
+#: `(?<![.\d])` refuses a fragment preceded by a digit or a dot, `(?!\.?\d)`
+#: refuses one followed by another component, and `(?<![vV])` refuses `v4.0`.
+#: A genuine 2-component reference such as `10.2` still matches, including at
+#: the end of a sentence, because the lookahead demands a DIGIT after the dot
+#: rather than any character.
+_ENTRY_IDENT = re.compile(
+    r"\b((?:[A-Z]\d{1,4}|C00\d{2}"
+    r"|(?<![.\d])(?<![vV])\d{1,2}\.\d{1,2}[a-z]?(?!\.?\d)))\b")
 
 _SUBJ_STOP = frozenset("""the a an and or but if then of for to in on at by with
 from that this those these is are was were be been being it its their his her

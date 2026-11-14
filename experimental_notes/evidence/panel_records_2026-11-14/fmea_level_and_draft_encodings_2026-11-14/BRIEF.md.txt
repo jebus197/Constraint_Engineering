@@ -1,0 +1,114 @@
+# BRIEF — where the failure-mode critical level sits, and whether 22 draft encodings may leave DRAFT
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `bench/cdsfl_registry/composer.py` | `eb836387286a87a3` | 117190 | 2026-11-13T21:27:13+00:00 |
+| `bench/cdsfl_registry/domain_manifest.toml` | `501a257dbe67e8a5` | 25184 | 2026-11-12T03:47:08+00:00 |
+| `bench/directives/universal/cdsfl_core_formal.md` | `9da304edb6c80a60` | 31909 | 2026-11-12T03:58:04+00:00 |
+| `bench/reference_runner_v3.py` | `9f689c6505d36c49` | 1280002 | 2026-11-13T21:28:38+00:00 |
+| `experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md` | `097f8e02cefbf5f2` | 89373 | 2026-11-11T22:48:11+00:00 |
+| `bench/convergence_location.py` | `ea76b2852c07ee8d` | 65644 | 2026-09-01T12:24:12+00:00 |
+
+## REQUIRED SECTION 1 — The question
+
+**2 questions, each needing its own verdict.**
+
+**Q1. The engineering domain declares the AIAG-VDA FMEA severity scale and a critical level of 7. The published standard carries 2 landmarks, not 1: the 7-8 band is labelled HIGH, and the 9-10 band is SAFETY OR REGULATORY. Which of the 2 should the project's critical level be, and on what evidence?**
+
+**Q2. 22 of the 51 domain encodings carry their own `SEVERITY SCALE:` line and are tagged DRAFT. Adjudicate them: which may move from DRAFT to CROSS_VERIFIED, and which may not?**
+
+**WHY THESE 2 TRAVEL TOGETHER AND NOT SEPARATELY.** They share one cause — the encoding work of 2026-11-12 — and the founder has asked for the queue of decisions put to him to be kept small. Splitting them would put 2 items in his queue with identical context. His instruction, 2026-11-12: *"This should also be put to the free panel for resolution. Once run you should check with a, f, and sy before applying, as you should do with all panel suggested fixes."*
+
+**WHAT CHANGED BETWEEN HIS INSTRUCTION AND THIS BRIEF, AND IT CHANGES THE STAKES OF Q1.** On 2026-11-12 the critical level reached nothing. `bench/cdsfl_registry/composer.py` made 0 calls to any severity API, so the manifest's `severity_scale` and `critical_level` were recorded and never delivered. That was repaired on 2026-11-13. Executed just now rather than asserted, `_severity_declaration("engineering", ...)` returns:
+
+```
+SEVERITY SCALE FOR THIS DOMAIN, from the project's domain manifest rather than from this encoding:
+  SCALE: AIAG-VDA FMEA severity 1-10 (2019 handbook)
+  LEVELS: 1 no effect; 2-3 very minor to minor; 4-6 moderate; 7-8 high; 9-10 safety or regulatory
+  CRITICAL LEVEL: 7
+  Report a consequence as a (value, scale-name) pair. Never average, sum or interpolate across scales.
+```
+
+So **`CRITICAL LEVEL: 7` is now a sentence delivered into a working seat's directive**, not a line in a configuration file nobody reads. Q1 is therefore operative rather than documentary, and getting it wrong now changes what a seat reports.
+
+### The artefacts under review, by path
+
+- `bench/cdsfl_registry/domain_manifest.toml` — the `[engineering]` block at line 288 onward: `severity_scale` at line 290, `severity_levels` at line 291, `critical_level` at line 292, `severity_scale_source` at line 293, `critical_level_note` at line 294, `encoding_tier` at line 295. The tier ladder is declared at line 132.
+- `bench/cdsfl_registry/composer.py` — `_severity_declaration` and `_load_domain_directive`.
+- `bench/directives/` — the 51 domain encodings in the 14 domain directories, and `bench/directives/universal/cdsfl_core_formal.md`, which tells every seat *"The ordering and the critical level are the DOMAIN's, and both arrive in your directive. Do not invent either."*
+- `bench/reference_runner_v3.py` — `CRITICAL_SEVERITY_THRESHOLD` at line 10484, the live gate constant, which is a SEPARATE quantity from a domain's named critical level and must not be confused with it.
+
+### The measured facts this round starts from
+
+**F1. The counts, read from disk by execution rather than recalled.** 52 `.txt` files live under `bench/directives`, of which 1 is the universal layer, so **51 are domain encodings** across 14 domain directories: software 5; statistics, physics, mathematics, logistics, information_science, cross-domain and chemistry 4 each; structural, product-engineering, industrial, hardware, biomedical and biology 3 each. **22 of the 51 carry their own `SEVERITY SCALE:` line, and 22 carry DRAFT.** 10 manifest entries declare `encoding_tier`, and all 10 declare DRAFT.
+
+**F2. The tier ladder has 4 rungs and the panel can move an encoding exactly 1.** `DRAFT`, `CROSS_VERIFIED`, `VALIDATED`, `OPERATIONAL`. The manifest states that an encoding written against published standards reaches CROSS_VERIFIED and NEVER VALIDATED, because no human has checked it. A verdict of VALIDATED or OPERATIONAL is therefore out of this panel's gift and must not be returned.
+
+**F3. 3 of the 4 declared scales were corrected against their published standards on 2026-11-12**, which is what the research authorisation bought: CVSS v4.0 rather than v3.1; GHS Revision 11 with 5 acute-toxicity categories rather than 4; AIAG-VDA FMEA with both landmark bands named rather than 1. CTCAE v5.0 was confirmed already correct. The FMEA source is marked `[VERIFY:current]` in the manifest because the handbook is not open-access and only secondary sources were reachable — which is directly relevant to Q1 and is stated here rather than hidden.
+
+**F4. The frozen cut is not expressible as a rank on this scale.** The round of 2026-11-11 recorded in `experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md` carried the project's frozen 0.7 linearly into the 4 validated scales. On CVSS it lands exactly on the High boundary at 7.0. On FMEA it lands at 7.3 — BETWEEN levels — and likewise between levels on the clinical and nuclear scales. So no reading of the frozen constant settles Q1 either way, and an argument from the constant is not available.
+
+**F5. The direction of the change is known and it is the reason this is a question.** 7 is the CONSERVATIVE cut: it admits MORE findings as critical, which is the tighter gate. Moving to 9 LOOSENS what is admitted. Under the project's own rule, loosening a gate is the founder's ruling and not a repair to be taken from a reading of a standard. `p-pass-ambiguity-default` resolves an ambiguous constraint as HARD, which is why 7 was declared.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form the answer by RUNNING the machinery, not by writing about it. A seat that returns prose without having executed anything has not answered.
+
+**The instruments that bear on these questions, and what each is expected to say.**
+
+- **`severity`** is the subject of both questions. Call `bench.cdsfl_registry.composer._severity_declaration` for every domain in the manifest and paste what each seat would actually receive. It is expected to reveal which domains deliver a usable level and which deliver silence. A domain that delivers silence while `cdsfl_core_formal.md` forbids invention is a seat with no lawful move, and that is the defect class Q1 belongs to.
+- **The two-sided gate** and **`CRITICAL_SEVERITY_THRESHOLD`**: establish by execution whether a domain's named critical level and the gate's float are 2 distinct quantities or 1. If a change to the first propagates to the second, Q1 is a gate change and is strictly the founder's. If it does not, say what the named level actually governs. Do not assume either.
+- **`gamma`** and the critical-finding series in `bench/convergence_location.py`: run the series and say whether a domain's critical level enters it at all. If it does not, Q1 affects reporting and not convergence, and that bounds its consequence.
+- **`nu`** and the routing of a task to a domain: an encoding at DRAFT is still composed and still delivered. Establish whether the tier is read by anything at dispatch time, or whether DRAFT is a label with no mechanism. An addition nothing reaches is not additive, and if the tier gates nothing then Q2's answer changes nothing until it does.
+- **Wilson** intervals on any proportion returned. A bare count over 51 encodings without an interval is not a measurement.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. **A fix without a runnable falsifier that the seat has EXECUTED is a hypothesis, not a fix.** Report the exact command run and the output seen, pasted rather than summarised.
+
+**WHERE THE FIX MUST BE DELIVERED.** Write it INTO the sandbox repository tree at its real path, as a file — an edited `bench/cdsfl_registry/domain_manifest.toml`, an edited encoding under `bench/directives/`, a new guard under `bench/tests/`, or a new producer under `scripts/`. A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Rounds 5 and 6 on 2026-09-10 returned 0 source files for exactly that reason while both seats reported writing and running working code.
+
+**ON Q1, THE FIX MUST BE A MECHANISM AND NOT A NUMBER.** A verdict of "9" or "7" on its own is a vote, and there are no votes in this project. What is wanted is the DECISION PROCEDURE: on what evidence should a project set a critical level when a standard names 2 landmark bands, and does that procedure yield 7 or 9 here? A procedure that cannot be applied to the next standard is not a fix.
+
+**A THIRD OPTION IS AVAILABLE AND MUST BE EVALUATED RATHER THAN IGNORED:** declare BOTH landmarks — a HIGH level at 7 and a SAFETY OR REGULATORY level at 9 — and let the consumer say which it is gating on. State what that costs and whether anything in the harness can consume 2 levels today. If nothing can, say so, because then it is an addition nothing reaches.
+
+**ON Q2, AN ADJUDICATION MUST BE PER-ENCODING AND MUST NAME ITS EVIDENCE.** A blanket verdict on all 22 is not an adjudication. For each encoding examined, name the external standard it cites, say whether that citation is current, and say whether its HARD constraints are checkable by a tool. Where fewer than 22 can be examined in the pass budget, examine as many as can be done properly and SAY HOW MANY WERE LEFT, with which ones. A silent cap reads as full coverage.
+
+**ON COMPOSABILITY, as the founder defines it.** Compose 2 repairs ONLY on a DEMONSTRATED advantage over each alone, where the demonstration is a MEASUREMENT and not a judgement, and prefer the single repair wherever it performs as well on the named property. Reporting that the repairs do not conflict is the weak non-interference form his definition excludes by name, and will be recorded as not having answered.
+
+**AND THE ADDITIVE STANDARD BINDS BOTH DIRECTIONS.** Declaring a second landmark is an ADDITION and must be wired to a consumer and reached by a test. Removing the conservative level is a REMOVAL and needs a committed measurement that the replacement dominates on a named property.
+
+**A HARD CONSTRAINT ON ANY ANSWER.** Q1 may loosen a gate, which makes it the founder's ruling and not the panel's to apply. Deliver the analysis and the mechanism as files; state plainly in the verdict that the level change awaits his ruling. Do not write a changed level into the manifest as though it were settled.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before concluding, state what evidence would overturn the answer. A verdict with no stated refutation condition is an opinion, not a finding. Be concrete: name the file, the command, and the result that would change the verdict. For Q1, state what a reading of the primary AIAG-VDA handbook could say that would reverse the recommendation, since this brief has only secondary sources.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return these fields, named, so replies can be compared without a parser guessing.
+
+- `verdict` — 2 rows, Q1 and Q2, each RECOMMEND / REJECT / HOLD FOR THE FOUNDER with 1 sentence of reason.
+- `q1_procedure` — the decision procedure for setting a critical level from a standard that names more than 1 landmark, stated so it applies to the next standard as well as this one.
+- `q1_consequence` — measured: what a move from 7 to 9 would change, in what it admits and in what reaches a seat's prompt.
+- `q2_table` — 1 row per encoding examined: domain, cited standard, citation current yes or no, HARD constraints tool-checkable yes or no, verdict DRAFT or CROSS_VERIFIED, evidence.
+- `q2_coverage` — how many of the 22 were examined and which were not. A silent cap is a defect.
+- `tier_mechanism` — whether the tier is read by anything at dispatch time, with the command that establishes it.
+- `falsifier` and `falsifier_result` — the runnable falsifier and its pasted executed output.
+- `reasoning` — the derivation, premises first.
+- `disagreement` — the strongest disagreement with this brief's own framing, including with F5's claim that 9 loosens the gate. A concurring answer carries no information here, because there are no votes in this project.
+- `plain_english` — 1 paragraph a non-specialist can act on.
+- `passes_run` — how many passes were run and what the last one added.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop at diminishing returns: when a further pass produces no new above-threshold finding, where above-threshold means missing it could cause a real-world failure, an unsafe condition, or a wrong level reaching a working seat. State how many passes were run. Do not pad with findings below that threshold.

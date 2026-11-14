@@ -649,6 +649,26 @@ Enforcement is by construction and by audit, never by assent:
 
 ---
 
+## Drafted But Not In Force
+
+A block of this document carrying the CDSFL not-in-force sentinel is a DRAFT. It
+binds nothing, and `bench/cdsfl_registry/composer.py` removes it before any
+prompt is built, so a marked block MUST NEVER reach a working seat. The sentinel
+itself is defined in that module as `_NOT_IN_FORCE_MARKER` and is deliberately
+not spelled out here, because a block spelling the sentinel would be removed by
+the suppression it documents.
+
+An author adding an unratified rule to this document MUST put the sentinel on
+EVERY blank-line-separated block of the draft. It is per block and not a region:
+a region needs a closing marker, and an unbalanced region is a live failure mode
+in this project's own note linter. Without the sentinel, the half of a draft
+carrying MUST, NEVER or HARD is classified as a HARD constraint and is carried
+verbatim to every seat, while a header saying the draft is not in force carries
+none of those words, is classified SOFT, and is carried nowhere — so the binding
+sentence arrives and the warning does not. Found by the `cc2` seat on 2026-11-14
+and recorded as entry B194; guarded by
+`bench/tests/test_a_draft_block_binds_nothing_2026-11-14.py`.
+
 ## Classification Summary
 
 | Directive | Formal Structure | Formalisable |

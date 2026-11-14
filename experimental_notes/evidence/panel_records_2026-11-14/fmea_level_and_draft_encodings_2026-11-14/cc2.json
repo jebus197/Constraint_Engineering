@@ -1,0 +1,317 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 18280,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANONFS/anonymized && ls && git log --oneline -3 2>/dev/null | head -5\", \"description\": \"Orient in repo\"}",
+      "t_offset_s": 4.298
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANONFS/anonymized && sha256sum bench/cdsfl_registry/composer.py bench/cdsfl_registry/domain_manifest.toml bench/directives/universal/cdsfl_core_formal.md bench/reference_runner_v3.py bench/convergence_location.py 2>&1\", \"description\": \"Verify artefact digests\"}",
+      "t_offset_s": 5.833
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Find working directory\"}",
+      "t_offset_s": 7.199
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/cdsfl_registry/composer.py bench/cdsfl_registry/domain_manifest.toml bench/directives/universal/cdsfl_core_formal.md bench/reference_runner_v3.py bench/convergence_location.py experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md 2>&1\", \"description\": \"Verify artefact digests\"}",
+      "t_offset_s": 10.135
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '120,145p;280,300p' bench/cdsfl_registry/domain_manifest.toml\", \"description\": \"Read tier ladder and engineering block\"}",
+      "t_offset_s": 11.584
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/cdsfl_registry && grep -n \\\"_severity_declaration\\\\|severity_scale\\\\|critical_level\\\\|encoding_tier\\\" composer.py | head -60\", \"description\": \"Locate severity API in composer\"}",
+      "t_offset_s": 14.387
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Locate gate constant\"}",
+      "t_offset_s": 15.182
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo && pwd && grep -n \\\"CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v3.py\", \"description\": \"Locate gate constant uses\"}",
+      "t_offset_s": 18.348
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/cdsfl_registry/composer.py\", \"offset\": 845, \"limit\": 100}",
+      "t_offset_s": 19.685
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Survey 22 encoding severity lines\", \"subagent_type\": \"Explore\", \"prompt\": \"Repo root: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo\\n\\nFind every .txt file under bench/directives/ (excluding bench/directives/universal/) that contains a line starting with \\\"SEVERITY SCALE:\\\" at the start of a line. There should be about 22.\\n\\nFor EACH such file",
+      "t_offset_s": 33.03
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/directives/ && echo \\\"---ALL TXT---\\\" && find bench/directives -name '*.txt' | sort\", \"description\": \"List directives dir and all txt files\"}",
+      "t_offset_s": 35.505
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry import domain_vocabulary as dv, composer as C\\nimport tomllib\\nm=tomllib.load(open('bench/cdsfl_registry/domain_manifest.toml','rb'))\\ndoms=[k for k,v in m.items() if isinstance(v,dict) and ('title' in v or 'config' in v)]\\nprint('DOMAINS:',doms)\\nfor d in sorted(doms):\\n    try: s=dv.severity(d)\\n    except ",
+      "t_offset_s": 36.353
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort\", \"description\": \"Grep for SEVERITY SCALE lines\"}",
+      "t_offset_s": 36.959
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in $(grep -rln --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort); do echo \\\"===== $f\\\"; sed -n \\\"$(grep -n '^SEVERITY SCALE:' \\\"$f\\\" | cut -d: -f1),+6p\\\" \\\"$f\\\"; done\", \"description\": \"Extract SEVERITY SCALE blocks\"}",
+      "t_offset_s": 41.754
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in $(grep -rln --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort); do echo \\\"===== $f\\\"; grep -nE 'DRAFT|TIER|[Tt]ier|PROVISIONAL|EXPERIMENTAL|STATUS:|CRITICAL LEVEL' \\\"$f\\\" | head -20; done\", \"description\": \"Find DRAFT and tier words\"}",
+      "t_offset_s": 43.414
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/directives/biology/biology_zoology.txt bench/directives/software/software_general.txt bench/directives/chemistry/chemistry_general.txt bench/directives/biology/biology_natural_world.txt; do echo \\\"===== $f\\\"; sed -n \\\"$(grep -n '^SOURCES:' \\\"$f\\\" | head -1 | cut -d: -f1),+5p\\\" \\\"$f\\\"; done\", \"description\": \"Get SOURCES blocks for truncated files\"}",
+      "t_offset_s": 47.977
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"comm -23 <(find bench/directives -name '*.txt' | sort) <(grep -rl --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort)\", \"description\": \"List txt files without SEVERITY SCALE\"}",
+      "t_offset_s": 50.787
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rniE 'severity scale' bench/directives/biomedical bench/directives/structural bench/directives/hardware bench/directives/software/software_security.txt bench/directives/mathematics/mathematics_general.txt bench/directives/universal | head -30\", \"description\": \"Check for variant severity scale mentions\"}",
+      "t_offset_s": 53.836
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== critical_level consumers (py) ===\\\" && grep -rn \\\"critical_level\\\" --include=*.py bench/ scripts/ | grep -v \\\"critical_level_note\\\" | head -40 && echo \\\"=== encoding_tier consumers (py) ===\\\" && grep -rn \\\"encoding_tier\\\\|CROSS_VERIFIED\\\\|\\\\btiers\\\\b\\\" --include=*.py bench/ scripts/ | head -40\", \"description\": \"Find consumers of critical_level and encoding_tier\"}",
+      "t_offset_s": 84.434
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity_scale\\\\|severity(\\\" --include=*.py bench/cdsfl_registry/domain_vocabulary.py | head -30 && echo \\\"=== gamma / critical series in convergence_location ===\\\" && grep -n \\\"gamma\\\\|critical\\\" bench/convergence_location.py | head -40\", \"description\": \"Inspect domain_vocabulary and convergence_location\"}",
+      "t_offset_s": 86.599
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"critical_level|encoding_tier|CROSS_VERIFIED\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}",
+      "t_offset_s": 90.601
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' bench/cdsfl_registry/domain_vocabulary.py; echo \\\"=== severity fn ===\\\"; grep -n \\\"def severity\\\" -A 60 bench/cdsfl_registry/domain_vocabulary.py | head -80\", \"description\": \"Read domain_vocabulary severity\"}",
+      "t_offset_s": 91.877
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2120,2160p' bench/cdsfl_registry/composer.py; echo \\\"=== tier read anywhere in composer? ===\\\"; grep -n \\\"tier\\\" bench/cdsfl_registry/composer.py | head -20; echo \\\"=== tier read in runner? ===\\\"; grep -n \\\"encoding_tier\\\" bench/reference_runner_v3.py | head\", \"description\": \"Check tier use at compose/dispatch\"}",
+      "t_offset_s": 102.897
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '440,480p' bench/cdsfl_registry/domain_vocabulary.py; echo \\\"=== head of structural_building ===\\\"; grep -n \\\"SEVERITY SCALE\\\" bench/directives/structural/structural_building.txt || echo \\\"NO SEVERITY SCALE LINE in structural_building.txt\\\"\", \"description\": \"CLI tier print and engineering default encoding\"}",
+      "t_offset_s": 104.527
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/scripts/where_does_a_critical_level_land_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Where a domain's critical LEVEL lands, and what a tier word reaches.\\n\\nRUN:  python3 scripts/where_does_a_critical_level_land_2026-11-14.py\\n\\nWHAT THIS DECIDES, by execution rather than by reading.\\n\\n",
+      "t_offset_s": 202.332
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Check HARD constraint tool-checkability\", \"subagent_type\": \"Explore\", \"prompt\": \"Repo root: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo\\n\\nFor EACH of these 22 files, I need one specific determination: are the file's HARD constraints TOOL-CHECKABLE?\\n\\nFiles:\\nbench/directives/biology/biology_genetics.txt\\nbench/directives/biology/biology_nat",
+      "t_offset_s": 244.448
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la scripts/ | head -5; echo \\\"---\\\"; touch scripts/_perm_probe.py && echo \\\"WRITE OK\\\" && rm scripts/_perm_probe.py\", \"description\": \"Probe write permission in repo tree\"}",
+      "t_offset_s": 245.63
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/biology/biology_genetics.txt\\\"\", \"description\": \"Read sample directive file\"}",
+      "t_offset_s": 246.868
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/\\\"\", \"description\": \"List directives directory\"}",
+      "t_offset_s": 247.914
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in biology/biology_natural_world.txt biology/biology_zoology.txt chemistry/chemistry_general.txt cross-domain/cross_general.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"description\": \"Extract HARD sections batch 1\"}",
+      "t_offset_s": 252.146
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in information_science/information_science_data_management.txt information_science/information_science_general.txt information_science/information_science_knowledge_representation.txt information_science/information_science_retrieval.txt; do echo \\\"=== $f ===\\\"; awk '/^\\",
+      "t_offset_s": 254.131
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in logistics/logistics_warehousing.txt mathematics/mathematics_applied.txt mathematics/mathematics_numerical.txt mathematics/mathematics_proof.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"description\": \"Extract HARD sections batch ",
+      "t_offset_s": 257.194
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in physics/physics_classical.txt physics/physics_general.txt physics/physics_quantum.txt physics/physics_thermodynamics.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"description\": \"Extract HARD sections batch 4\"}",
+      "t_offset_s": 259.127
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in software/software_general.txt statistics/statistics_experimental_design.txt statistics/statistics_general.txt statistics/statistics_inference.txt statistics/statistics_time_series.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"des",
+      "t_offset_s": 261.828
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/where_does_a_critical_level_land_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Where a domain's critical LEVEL lands, and what a tier word reaches.\\n\\nRUN:  python3 scripts/where_does_a_critical_level_land_2026-11-14.py\\n\\nWHAT THIS DECIDES BY EXECUTION, for the panel question of 2026-11-14 on the\\nengineering critical level and on the 22 DRAFT encodings.\\n\\n  M",
+      "t_offset_s": 318.62
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^def \\\\|^    def \\\" bench/convergence_location.py | sed -n '1,40p'\", \"description\": \"List convergence_location public functions\"}",
+      "t_offset_s": 322.216
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport re,pathlib\\np=pathlib.Path(\\\"scripts/where_does_a_critical_level_land_2026-11-14.py\\\")\\ns=p.read_text()\\ns=s.replace('''    import convergence_location as CL\\n    ents = [{\\\"round\\\": 1, \\\"severity\\\": 0.80, \\\"text\\\": \\\"fault at bench/a.py:10 in foo()\\\"},\\n            {\\\"round\\\": 2, \\\"severity\\\": 0.80, \\\"text\\\": \\\"fault at bench/b.py:20 in bar()\\\"}]\\n    prin",
+      "t_offset_s": 333.246
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && timeout 120 wolframscript -code '2+2' 2>&1 | head -3 || echo \\\"WOLFRAM ABSENT\\\"\", \"description\": \"Check Wolfram availability\"}",
+      "t_offset_s": 349.293
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import z3; print('z3', z3.get_version_string())\\\" 2>&1; python3 -c \\\"import sympy; print('sympy', sympy.__version__)\\\" 2>&1\", \"description\": \"Check solver availability\"}",
+      "t_offset_s": 350.308
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Module[{bands={1,2,3,4,5},phi},phi=Function[x,x^3+x];{Ordering[bands]===Ordering[phi/@bands], Length[Select[bands,#>=4&]], Length[Select[phi/@bands,#>=4&]]}]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second-falsifier on ordinal relabel\"}",
+      "t_offset_s": 355.895
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport re,pathlib\\nD=pathlib.Path(\\\"bench/directives\\\")\\nfams={\\\"FMEA\\\":(r\\\"v?\\\\d|Rev\\\\.?\\\\s*\\\\d\\\",\\\"2019\\\"),\\\"CVSS\\\":(None,\\\"v4.0\\\"),\\\"CTCAE\\\":(None,\\\"v5.0\\\"),\\\"GHS\\\":(None,\\\"Rev. 11\\\")}\\ntok={\\\"FMEA\\\":r\\\"\\\\b(2019|1st edition)\\\\b\\\",\\\"CVSS\\\":r\\\"v4\\\\.0\\\",\\\"CTCAE\\\":r\\\"v5\\\\.0\\\",\\\"GHS\\\":r\\\"Rev\\\\.?\\\\s*1[01]\\\"}\\nprint(f\\\"{'file':62s} {'fam':6s} block_has_ver file_has_ve",
+      "t_offset_s": 390.056
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in biology/biology_genetics.txt biology/biology_natural_world.txt biology/biology_zoology.txt chemistry/chemistry_general.txt cross-domain/cross_general.txt information_science/information_science_data_management.txt information_science/information_science_general.txt in",
+      "t_offset_s": 408.177
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in chemistry/chemistry_general mathematics/mathematics_applied physics/physics_classical physics/physics_thermodynamics statistics/statistics_experimental_design statistics/statistics_inference software/software_general; do echo \\\"===== $f\\\"; grep -n \\\"FMEA\\\\|CTCAE\\\\|GHS health\\\" bench/directives/$f.txt; done\", \"description\": \"Exact citation sites to repair\"}",
+      "t_offset_s": 418.065
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in mathematics/mathematics_applied physics/physics_classical physics/physics_thermodynamics statistics/statistics_experimental_design statistics/statistics_inference; do echo \\\"===== $f\\\"; sed -n '5,13p' bench/directives/$f.txt | cat -A | sed 's/\\\\$$//' | head -12; done 2>&1 | head -70\", \"description\": \"Read exact declaration blocks\"}",
+      "t_offset_s": 430.348
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in mathematics/mathematics_applied physics/physics_classical physics/physics_thermodynamics statistics/statistics_experimental_design statistics/statistics_inference; do echo \\\"===== $f\\\"; sed -n '5,13p' bench/directives/$f.txt; done\", \"description\": \"Read declaration blocks\"}",
+      "t_offset_s": 432.832
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '7,16p' bench/directives/software/software_general.txt\", \"description\": \"Read software_general block\"}",
+      "t_offset_s": 445.873
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\nE = [\\n (\\\"chemistry/chemistry_general.txt\\\",\\n  \\\"SEVERITY SCALE: GHS health hazard category, critical at Category 2.\\\",\\n  \\\"SEVERITY SCALE: GHS health hazard category (Rev. 11), critical at Category 2.\\\"),\\n (\\\"mathematics/mathematics_applied.txt\\\",\\n  \\\"       another. Where the application is engineering, FMEA severity applies\\\\n\\\"\\n  \\\"      ",
+      "t_offset_s": 455.864
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The severity declaration a seat receives must be COMPLETE and NON-DEGENERATE.\\n\\nWritten for the panel question of 2026-11-14 on the engineering critical level\\nand the 22 DRAFT encodings. Two independent properties, one guard file because\\nboth are properties of the same",
+      "t_offset_s": 514.728
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py::test_the_edition_guard_is_not_vacuous -q 2>&1 | grep -A4 \\\"got \\\\|assert \\\\[\\\" | head -20\", \"description\": \"Inspect vacuity test failure\"}",
+      "t_offset_s": 528.75
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py::test_the_edition_guard_is_not_vacuous -q 2>&1 | tail -25\", \"description\": \"Inspect vacuity test failure\"}",
+      "t_offset_s": 532.932
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py\\\")\\ns=p.read_text()\\ns=s.replace('                bad.append((p.relative_to(ROOT).as_posix(), fam))',\\n'''                try:\\n                    name = p.relative_to(ROOT).as_posix()\\n                except ValueError:          # a copy under tmp, in the vacuity",
+      "t_offset_s": 544.516
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== A. GUARD AGAINST THE AS-DISPATCHED TREE (git HEAD) ===\\\"\\npython3 - <<'PYEOF'\\nimport pathlib,subprocess,sys,importlib.util,tempfile\\nspec=importlib.util.spec_from_file_location(\\\"g\\\",\\\"bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py\\\")\\ng=importlib.util.module_from_spec(spec); spec.loader.exec_module(g)\\nfiles=[\\\"bench/directives/chemistry/chemistry_gen",
+      "t_offset_s": 569.568
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib,tempfile,importlib.util\\nspec=importlib.util.spec_from_file_location(\\\"g\\\",\\\"bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py\\\")\\ng=importlib.util.module_from_spec(spec); spec.loader.exec_module(g)\\n# the exact repairs applied, reversed, to rebuild the AS-DISPATCHED text\\nREV=[(\\\"chemistry/chemistry_general.txt\\\",\\n \\\"SEVERITY SCA",
+      "t_offset_s": 592.082
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity\\\" bench/reference_runner_v3.py | grep -i \\\"float(\\\\|parse\\\\|0\\\\.0 and 1\\\\.0\\\\|between 0\\\\|scale_name\\\\|\\\\[0,1\\\\]\\\\|0-1\\\" | head -20; echo \\\"=== what the schema tells a seat severity is ===\\\"; grep -rn \\\"severity\\\" bench/reference_runner_v3.py | grep -i \\\"0.0.*1.0\\\\|SEVERITY:\\\" | head -10\", \"description\": \"How severity is parsed from a finding\"}",
+      "t_offset_s": 610.777
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity\\\" bench/reference_runner_v3.py | grep -iE \\\"0\\\\.0-1\\\\.0|0-1\\\\.0|\\\\b0\\\\.0 to 1\\\\.0|SEVERITY\\\\\\\"? *:|severity.*0\\\\.0.*1\\\\.0\\\" | head -8; echo \\\"--- the finding schema shown to a seat ---\\\"; grep -rn \\\"SEVERITY\\\" bench/reference_runner_v3.py | grep -v \\\"CRITICAL_SEVERITY\\\\|_SEVERITY_SPEC\\\" | head -12\", \"description\": \"Find the severity field spec given to seats\"}",
+      "t_offset_s": 615.009
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"conversion from a named ordinal rank to the [0,1] gate float, anywhere in product code:\\\"; grep -rniE \\\"def .*(to_severity|severity_from|rank_to|normali[sz]e_severity|scale_to_float)\\\" bench/*.py bench/cdsfl_registry/*.py | head; echo \\\"count: $(grep -rcniE 'def .*(to_severity|severity_from|rank_to|normali[sz]e_severity|scale_to_float)' bench/reference_runner_v3.py bench/cdsfl_",
+      "t_offset_s": 626.964
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport math\\ndef w(k,n,z=1.959963984540054):\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d; return (c-h,c+h)\\nfor k,n,lbl in [(11,22,'CROSS_VERIFIED of 22'),(11,22,'DRAFT of 22'),(115,152,'HARD constraints tool-checkable'),(11,51,'offenders repaired of 51'),(0,22,'edition offenders remaining')]:\\n    lo,hi=w(k,n); print(f'{lbl:36s} {k}",
+      "t_offset_s": 676.848
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > experimental_notes/Panel_Severity_Critical_Level_And_Draft_Adjudication_2026-11-14.md <<'MDEOF'\\n# Panel record \\u2014 where the FMEA critical level sits, and which of the 22 draft\\n# encodings may leave DRAFT\\n\\nSeat: single free-panel seat, one-shot dispatch, 2026-11-14.\\nArtefact digests verified against the dispatch stamps before any measurement:\\nall 6 matched.\\n\\nMeasureme",
+      "t_offset_s": 723.525
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py -q 2>&1 | tail -3; echo \\\"---\\\"; python3 scripts/where_does_a_critical_level_land_2026-11-14.py >/dev/null 2>&1 && echo \\\"measurement script exit 0\\\"; echo \\\"---\\\"; sha256sum bench/cdsfl_registry/domain_manifest.toml bench/reference_runner_v3.py bench/cdsfl_registry/composer.py\", \"description\": \"Fina",
+      "t_offset_s": 727.95
+    }
+  ],
+  "n_tool_calls": 59,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 816.9,
+  "response": "Manifest, runner and composer digests are unchanged from dispatch \u2014 I touched none of them.\n\n---\n\n## `verdict`\n\n| Q | verdict | reason |\n|---|---|---|\n| **Q1** | **RECOMMEND RETAIN 7** \u2014 the mechanism is applicable and delivered; the level itself needs no ruling because retaining changes nothing. **HOLD FOR THE FOUNDER** on any move to 9. | A cut at 9 would demote 4 of the project's own 5 \u00a710 material categories below critical, and would make engineering the only declared scale whose critical level is the maximal band. |\n| **Q2** | **RECOMMEND CROSS_VERIFIED for 11 of 22; the other 11 stay DRAFT.** Tier promotions **not applied** to the manifest. | The tier gates nothing at dispatch (`encoding_tier`: 0 occurrences in composer and runner), so writing promotions now would be an addition nothing reaches. |\n\n## `q1_procedure`\n\nGiven a standard naming landmarks B\u2081 \u227a \u2026 \u227a B\u2098:\n\n1. **Enumerate every landmark the standard labels**; record all of them in `severity_levels`. Do not collapse two into one.\n2. **Reject B\u2098 as a candidate cut** unless the standard says only the top band carries consequence. At the maximum, `c_d(f) \u227d_d \u03b8_d` is equivalent to `c_d(f) = max` \u2014 an identity test, not an ordinal threshold.\n3. **Map the *consuming project's* own material-defect categories onto the bands. The cut is the lowest band at least one material category reaches.** This is the operative step: it makes the cut a property of the consumer's materiality definition, not of the standard's vocabulary.\n4. **Check the rank from the top against the project's other declared scales.** Outside the observed range is not disqualifying but must be justified in the note.\n5. **Where 3 and 4 disagree, resolve toward the tighter cut** and record the disagreement \u2014 ambiguity is HARD by \u00a71.\n6. **Record which landmark was not chosen, and why.** Both landmarks keep reaching a seat on the `LEVELS:` line regardless.\n\nApplied here step 3 yields **7** and step 4 agrees. Run against the other three declared scales the procedure reproduces CVSS \u2192 High (7.0) and CTCAE \u2192 Grade 3, i.e. every existing declaration. That is the evidence it generalises.\n\n**Step 3 is the decisive ground and it is argued, not measured** \u2014 written out in full in the script's M6 so it can be disputed. \u00a710 names five material categories; only *hard-constraint violation*, and only its law/safety sub-case, reaches FMEA's 9-10 SAFETY OR REGULATORY band. Wrong result, verification-integrity corruption, silent evidence loss and unreproducibility all sit in 7-8 HIGH.\n\n**The third option \u2014 declare both landmarks \u2014 is REJECTED on measurement.** `severity()` returns exactly one `critical_level` key; `_severity_declaration` emits exactly one `CRITICAL LEVEL:` line; two product modules reference `critical_level`. Nothing can consume a second cut. And it is unnecessary: **both landmarks already reach the seat**, on the delivered `LEVELS:` line. A second field would add a second *cut*, not a second *landmark*.\n\n## `q1_consequence` (measured)\n\n- `CRITICAL_SEVERITY_THRESHOLD = 0.7` (**float**); `critical_level = '7'` (**str**, a rank on an external ordinal scale). Mutating the manifest 7\u21929 on a copy: declaration text changed `True`, runner threshold **unchanged at 0.7**. Two distinct quantities.\n- `convergence_location.py`: `critical_level` **0** occurrences, `severity_scale` **0**. All three novelty series take a float `critical_threshold` (default 0.7) and have **no `domain` parameter**. The named level does not enter convergence.\n- What a move changes is **one line in a seat's composed directive**. Q1 is a reporting question, and that bounds its consequence.\n- Rank from top of each declared critical level: software (CVSS v4.0/High) **2**, chemistry (GHS Rev. 11/Category 2) **2**, biology (CTCAE v5.0/Grade 3) **3**, engineering@7 **2**. Engineering@9 \u2192 **1**, outside the observed range [2,3] and the only maximal-band cut.\n\n## `q2_table` \u2014 22 of 22 examined\n\nTool-checkable = reduces to a determinate computation, a closed named vocabulary, or a stated numeric bound. Edition column is **post-repair**.\n\n| domain / file | cited standard | current? | HARD tool-checkable | verdict | evidence |\n|---|---|---|---|---|---|\n| biology_genetics | CTCAE v5.0 (2017) | yes | 4/7 | **CROSS_VERIFIED** | confirmed current 2026-11-12 |\n| biology_natural_world | CTCAE v5.0, 2017-11-27 | yes | 3/7 | DRAFT | below majority tool-checkable |\n| biology_zoology | CTCAE v5.0 (human half only) | partial | 1/7 | DRAFT | animal-welfare scale `[VERIFY:current]`, none confirmed |\n| chemistry_general | GHS Rev. 10 primary; Rev. 11 secondary | **no** | 7/8 | DRAFT | Rev. 11 currency is secondary-sourced |\n| cross_general | none (founder's rule) | n/a | 2/6 | DRAFT | cites no external standard |\n| is_data_management | FAIR 2016; ISO 11179 | **no** | 6/7 | DRAFT | ISO unversioned, `[VERIFY:current]` |\n| is_general | CVSS v4.0; ISO 11179 | mixed | 7/7 | DRAFT | ISO citation `[VERIFY:current]` |\n| is_knowledge_representation | ISO 11179; Dublin Core | **no** | 6/7 | DRAFT | both unversioned |\n| is_retrieval | ASA 2016 | yes | 5/7 | **CROSS_VERIFIED** | dated doc, no edition exists; scale honestly none |\n| logistics_warehousing | \"None confirmed primary\" | n/a | 6/6 | DRAFT | `[VERIFY:current]`, honest absence |\n| mathematics_applied | FMEA 2019 handbook; CTCAE v5.0; SI 9th ed | yes | 5/7 | **CROSS_VERIFIED** | editions added this round |\n| mathematics_numerical | IEEE 754-2019; ISO/IEC 60559:2020 | yes | 7/7 | **CROSS_VERIFIED** | figures verified against the running implementation |\n| mathematics_proof | none, with stated reason | n/a | 5/8 | **CROSS_VERIFIED** | honest none + majority checkable |\n| physics_classical | FMEA 2019 handbook; SI 9th ed 2019 | yes | 6/7 | **CROSS_VERIFIED** | edition added this round |\n| physics_general | SI 9th ed 2019; INES unversioned | partial | 6/6 | **CROSS_VERIFIED** | INES is an inheritance example, not the declared scale \u2014 see residual |\n| physics_quantum | SI 9th ed 2019 | yes | 5/7 | **CROSS_VERIFIED** | \u0127 exact by definition |\n| physics_thermodynamics | GHS Rev. 11; SI 9th ed | **no** | 6/6 | DRAFT | inherits chemistry's Rev. 11 currency defect |\n| software_general | CVSS v4.0, FIRST, Nov 2023, Table 22 | yes | 8/8 | **CROSS_VERIFIED** | strongest of the 22 |\n| statistics_experimental_design | CONSORT/PRISMA unversioned | **no** | 4/7 | DRAFT | \"cited without a version\", `[VERIFY:current]` |\n| statistics_general | ISO 3534; Stevens | **no** | 6/6 | DRAFT | ISO no edition |\n| statistics_inference | ASA 2016, \"not formally superseded\" | yes | 4/7 | **CROSS_VERIFIED** | supersession reasoned, not assumed |\n| statistics_time_series | ASA 2016 | yes | 6/7 | **CROSS_VERIFIED** | |\n\n11/22 = 50.0000%, Wilson [30.7221%, 69.2779%]. Tool-checkable overall 115/152 = 75.6579%, Wilson [68.2581%, 81.7928%].\n\n## `q2_coverage`\n\n**22 of 22 examined. None left.** The 29 encodings without a `SEVERITY SCALE:` line were not adjudicated \u2014 they are out of Q2's scope (22 of 51 carry one = 43.1373%, Wilson [30.5012%, 56.7347%]).\n\n## `tier_mechanism`\n\n**The tier gates nothing at dispatch.**\n\n```\ncomposer.py              'encoding_tier'=0  'CROSS_VERIFIED'=0  'DRAFT'=0\nreference_runner_v3.py   'encoding_tier'=0  'CROSS_VERIFIED'=0  'DRAFT'=1\nwith EVERY tier flipped DRAFT -> CROSS_VERIFIED on a copy:\n    composed declaration byte-identical= True\n```\n\nIt is validated for membership in `tiers` by `domain_vocabulary.load()` (fails closed) and printed by that module's CLI. Nothing else reads it. So I did **not** write the promotions into the manifest \u2014 that would be an addition nothing reaches, the failure class this project has shipped 11 times since 2026-08-01.\n\n## `falsifier`\n\nThree files, all in the repository tree:\n\n- `scripts/where_does_a_critical_level_land_2026-11-14.py` \u2014 M1\u2013M6. Points the vocabulary reader at a **copy** under tmp; never writes the artefact.\n- `bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py` \u2014 the fix, 6 tests, two of which exist only to prove the guards are not vacuous.\n- `experimental_notes/Panel_Severity_Critical_Level_And_Draft_Adjudication_2026-11-14.md` \u2014 the record.\n\n## `falsifier_result`\n\n```\n$ python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py -q\n......                                                                   [100%]\n6 passed in 0.41s\n\n$ python3 -m pytest bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py \\\n    bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py \\\n    bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py -q\n......................................                                   [100%]\n38 passed in 4.67s\n```\n\nThe guard fires on the as-dispatched text and is silent after repair:\n\n```\nOFFENDERS IN THE AS-DISPATCHED TEXT OF THOSE 7 FILES: 11\n   chemistry_general.txt                      cites GHS with no edition in its declaration block\n   mathematics_applied.txt                    cites CTCAE / FMEA with no edition\n   physics_classical.txt                      cites FMEA with no edition\n   physics_thermodynamics.txt                 cites GHS with no edition\n   software_general.txt                       cites CTCAE / FMEA with no edition\n   statistics_experimental_design.txt         cites CTCAE / FMEA with no edition\n   statistics_inference.txt                   cites CTCAE / FMEA with no edition\n\nOFFENDERS AFTER THE REPAIR, SAME 7 FILES            : 0\nOFFENDERS ACROSS ALL 22 ENCODINGS, AFTER THE REPAIR : 0\n```\n\nAdmissibility of the rank statistic, **z3**:\n\n```\nclaim 1  'an order-preserving relabel moves the rank' : unsat    (rank is INVARIANT = admissible)\nclaim 2  'a fixed-real cut can be broken by a relabel': sat      (INADMISSIBLE)\n         witness relabel: [11/4, 3, 13/4, 7/2, 15/4] -> count above 4 becomes 0, was 2\n```\n\n**Wolfram second falsifier** (computed on the local Wolfram Engine via `wolframscript`, exit 0, `Out` value returned):\n\n```\n$ wolframscript -code 'Module[{bands={1,2,3,4,5},phi},phi=Function[x,x^3+x];\n    {Ordering[bands]===Ordering[phi/@bands], Length[Select[bands,#>=4&]],\n     Length[Select[phi/@bands,#>=4&]]}]'\n{True, 2, 4}\n```\n\nAttribution: computed with **Wolfram Language** (local Wolfram Engine). \u03c6(x) = x\u00b3+x preserves `Ordering` (`True`) while the count clearing a **fixed** cut of 4 moves from 2 to 4 \u2014 independently reproducing \u00a7Objective's own proof that comparison to a fixed real is inadmissible, and that rank selection is.\n\n## `reasoning`\n\nPremises first.\n\n1. `cdsfl_core_formal.md` tells every seat the critical level \"arrives in your directive. Do not invent either.\" Since 2026-11-13 that is true: `_severity_declaration` delivers it.\n2. The delivered level and the gate float are separate quantities \u2014 proved by mutation on a copy (level 7\u21929, threshold stayed 0.7), by type (`str` rank vs `float` on [0,1]), and by absence (`convergence_location.py` holds 0 references to either `critical_level` or `severity_scale`). Therefore Q1 governs **what a seat is told**, not what the gate admits.\n3. Severity is ordinal, so any claim about the cut must survive re-labelling by a strictly increasing \u03c6. Rank-from-top is a selected order statistic and survives \u2014 z3 `unsat`, Wolfram concurring on the contrapositive. Comparison to a fixed real does not \u2014 z3 `sat` with a witness.\n4. On that admissible statistic, 7 places engineering at rank 2 from the top, matching CVSS and GHS exactly and sitting one band tighter than CTCAE. 9 places it at rank 1, where the up-set collapses to a single element and the predicate degenerates to equality with the maximum.\n5. Mapping \u00a710's five material categories onto the bands, four of five sit in 7-8 HIGH. A cut at 9 would make four-fifths of this project's own definition of material non-critical.\n6. Therefore retain 7. Since retaining loosens nothing, no ruling is required to retain; a move to 9 loosens and is his.\n7. For Q2, the manifest's own rule caps a standards-based encoding at CROSS_VERIFIED. Applying (a) current versioned citation or honest declared absence, (b) majority tool-checkable HARD constraints, (c) no `[VERIFY:current]` on a load-bearing citation, gives 11/11.\n8. While measuring (a) I found the suppression asymmetry: `_severity_declaration` yields to any encoding carrying its own `SEVERITY SCALE:` line on the ground that it is \"better-sourced\", and on version-carrying that ground was false for 11 citations in 7 files. Repaired; guarded.\n\n**Composability, under the founder's definition \u2014 the two repairs do NOT compose, and that is a measurement, not a judgement.** R1 (edition tokens + guard) and R2 (the maximal-band guard mechanising Q1) act on disjoint properties. Measured: R2's verdict is **invariant** to R1 \u2014 ranks `[2,2,2,3]`, 0 degenerate, before and after the encoding edits, because R1 touched no manifest entry (digest `501a257d\u2026` unchanged). R1's offender count is **invariant** to R2 \u2014 11\u21920 either way, because R2 touched no encoding. Neither improves the other's named property, so each is preferred **alone** on its own property and no composed fix is proposed. They are co-located in one test file for a reader's convenience, not composed: each test is independently deletable, and the module docstring names the single test to delete if the founder rules for 9.\n\n## `disagreement`\n\n**F5 is right in effect and wrong in mechanism, and the mechanism is what matters.** F5 says 9 \"LOOSENS what the gate admits\". Measured, the named level **never reaches the gate** \u2014 threshold unmoved under mutation, 0 references in the convergence module. So 9 cannot loosen the gate directly. It loosens *indirectly*: a seat told \"critical at 9\" assigns lower severities to loss-of-function defects, and those self-reported floats are what meet 0.7. **The loosening therefore passes through the model's own self-report, where no instrument records it.** The gate's shadow-severity diagnostic compares a *claimed* float to a *computed* float; nothing compares either to the FMEA rank the seat was told to use. So F5 understates the problem by locating it in the gate: a level change is a silent, unmeasured perturbation of seat behaviour, which is a worse property than a visible gate change, not a better one.\n\n**Second disagreement, with the brief's own \u00a72 expectation.** It anticipates that domains delivering silence are \"a seat with no lawful move\". Measured, that is not the current state: all six `scale = \"none\"` domains deliver an explicit instruction \u2014 `SCALE: none` plus a reason plus \"the consequence scale is INHERITED from the application\u2026 name it\". That is a lawful move. The unlawful case is narrower and different: a seat told to inherit **FMEA severity, critical at 7** with no edition, which is what I found and repaired.\n\n**Third, against my own Q1 answer.** Step 3 of the procedure is an argued mapping of \u00a710's categories onto FMEA bands. Nothing executed it. If that mapping is wrong \u2014 specifically if \"wrong result\" in a safety-bearing engineering artefact should map to 9-10 rather than 7-8 \u2014 then step 3 yields 9 and only the weaker arguments 2 and 4 survive. I have given the mapping in full rather than concealing that weakness.\n\n## `plain_english`\n\nTwo separate things were being confused. The *engineering severity level* (the number 7) is a sentence printed into a reviewer's instructions; the *gate* (0.7) is a piece of arithmetic the software does. I proved by experiment that changing the first does not touch the second, so this question is about what reviewers are told, not about what the software lets through \u2014 which limits how much is at stake. On the substance: the standard labels 7-8 \"high\" and 9-10 \"safety or regulatory\", and the project should keep **7**, because four of the five kinds of defect this project itself calls serious (a wrong answer, broken measurement machinery, lost evidence, unreproducible results) are \"high\" and not \"safety or regulatory\" \u2014 so moving to 9 would quietly stop treating most of them as serious. Declaring both numbers was considered and rejected: nothing in the software can use two, and both band labels already reach reviewers anyway. Separately, I found and fixed a real problem: seven instruction files named a safety standard without saying which edition \u2014 \"FMEA\", \"CTCAE\", \"GHS\" with no year or revision \u2014 which is exactly the mistake this project corrected last week when it found it was citing a superseded version of CVSS. Eleven such citations are now complete, and a test now fails if anyone reintroduces one. Half the draft files are ready to be marked checked-against-standards; the other half are not, each for a named reason. Nothing was promoted, because that label currently controls nothing.\n\n## `passes_run`\n\n**Seven.** P1 digest verification (all 6 matched). P2 severity dump for all 10 domains + consumer greps. P3 the M1\u2013M6 measurement script. P4 file-scope correction of M6 \u2014 which caught **two false positives of my own**, where `2019` matched the SI Brochure year rather than an FMEA edition; scope narrowed to the declaration block. P5 the guard test, which **failed twice on my own bugs** (`relative_to` on a tmp path; a docstring mention counted as a code reference \u2014 now checked by AST, with the incident recorded in the test's comment). P6 reconstruction of the as-dispatched text to prove the guard fires (11\u21920), plus z3 and Wolfram on admissibility, plus 38 regression tests. P7 searched for a conversion from a named ordinal rank to the gate's float: **0 definitions** across the runner, composer and vocabulary.\n\n**The last pass added the only thing I am leaving open**, and it is recorded in the panel note rather than claimed: a seat is told to report a rank on a 1-10 scale, the gate reads a float on [0,1], and no code defines the conversion. I state it as a measured absence, not a confirmed defect, because no falsifier I ran demonstrates a wrong outcome from it. It is the strongest candidate for the next round. Also named rather than repaired: `physics_general.txt` cites **INES** with no revision, and because INES is not manifest-declared there is no edition anywhere in the project to supply \u2014 inventing one would be the magic wand this project refuses.\n\nTerminating here: pass 7 produced no further above-threshold finding.",
+  "t_start_epoch": 1794623167.4601011,
+  "t_end_epoch": 1794623984.3666408,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo",
+      "built": false
+    }
+  ]
+}

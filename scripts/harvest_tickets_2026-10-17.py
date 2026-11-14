@@ -87,6 +87,17 @@ TRANSCRIPTS = (pathlib.Path.home() /
 #: token alone on its own line.
 #: ★ `stm` ADMITTED 2026-11-01. 4 PLACES SPELL THIS VOCABULARY OUT -- this
 #: pattern, CANDIDATE_LINE, CITATION and `KINDS` in bench/ticket_store.py --
+#: ★★★ AND THAT COUNT WAS WRONG BY 3, CORRECTED 2026-11-14. There were 7:
+#: the 4 named here plus 3 in `scripts/read_founder_responses_2026-10-11.py`,
+#: which this file IMPORTS as its reader for `--sources responses` and which
+#: no comment here mentioned. THE COST IS MEASURED: adding his `frx` on
+#: 2026-11-13 updated 2 of the 4 named sites, and the commit board refused
+#: with 6 failures until the rest were found by hand -- including the 2 in the
+#: reader, which the comment could not have pointed anyone at. 2 of those 3
+#: reader sites are now DERIVED from the kind set rather than re-spelled, so
+#: the live figure is 5: these 3, `KINDS`, and the reader's import-failure
+#: fallback tuple. That fallback had itself gone stale, omitting `frx`, and is
+#: held by `bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py`.
 #: and they already disagreed: `disc` is a live kind present in NONE of the 3
 #: regexes, working only because it is the unmarked DEFAULT. That is 4
 #: declarations of 1 vocabulary with no comparator, which is why his `stm`

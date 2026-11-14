@@ -609,6 +609,42 @@ def _co_author_trailer() -> Optional[str]:
     return None
 
 
+#: A line that looks like a git trailer: `Token: value`, token being letters,
+#: digits and hyphens. RFC-ish rather than exact, which is all this needs.
+_TRAILER_LINE = re.compile(r"^[A-Za-z][A-Za-z0-9-]*:\s")
+
+
+def _append_co_author(message: str, trailer: str) -> str:
+    """`message` with `trailer` appended, unless its trailer block already has it.
+
+    ★ WHY THIS EXISTS, with a live instance. The call site below appended the
+    trailer unconditionally. The harness's own attribution rule tells the
+    author to END a commit message with `Co-Authored-By: ...`, so following
+    that rule and committing through `sv` produced the trailer TWICE. Commit
+    `4a802768` of 2026-11-14 carries 2 identical trailers, which is how this
+    was found rather than supposed.
+
+    ★ AND WHY IT COMPARES THE TRAILER BLOCK AND NOT THE WHOLE MESSAGE. A
+    substring test (`trailer in message`) is defeated in the direction that
+    SUPPRESSES a real trailer: a commit message whose BODY quotes
+    `Co-Authored-By:` -- for example one describing this very defect -- would
+    match, and the commit would then carry no attribution at all. Losing an
+    attribution is worse than duplicating one, so the test is scoped to the
+    message's LAST paragraph, and only when every non-empty line in that
+    paragraph is trailer-shaped. A prose paragraph that merely mentions a
+    trailer is not a trailer block and does not suppress anything.
+    """
+    body = (message or "").rstrip()
+    if not trailer:
+        return body
+    para = body.rsplit("\n\n", 1)[-1] if "\n\n" in body else body
+    lines = [ln.strip() for ln in para.splitlines() if ln.strip()]
+    is_trailer_block = bool(lines) and all(_TRAILER_LINE.match(ln) for ln in lines)
+    if is_trailer_block and trailer.strip() in lines:
+        return body
+    return f"{body}\n\n{trailer}"
+
+
 #: Seconds `sv` will wait for a `git commit`, which runs the pre-commit hook.
 #: FLOOR, not the whole story -- `commit_timeout()` sizes it against the hook's
 #: own recorded duration.
@@ -1211,7 +1247,7 @@ def _commit_and_push(
         full_msg = message
         print("  NOTE: no AI co-author trailer — sv was not run from a Claude Code session.")
     else:
-        full_msg = f"{message}\n\n{trailer}"
+        full_msg = _append_co_author(message, trailer)
         print(f"  {trailer}")
         if not (os.environ.get("CDSFL_SV_CO_AUTHOR", "").strip()
                 or os.environ.get("ANTHROPIC_MODEL", "").strip()):

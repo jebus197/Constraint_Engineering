@@ -887,6 +887,91 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
     #: this project has measured what copies cost: 16 of one helper, and a
     #: crash no test reached. SPOKEN ONLY -- the markdown twin carries its own
     #: emphasis and his amendment is about what Read Aloud says out loud.
+    #: ★ THE REFERENCE LIST, ON HIS INSTRUCTION, AND IT IS WHY LAYER 3 HAS A
+    #: CALLER AT ALL. His words: *"There is a very strong argument that any
+    #: report generated for researchers should carry a list of accessed
+    #: references at the end of it... I don't trust the models exactly to do
+    #: this themselves, so perhaps this could be mechanised."*
+    #:
+    #: Measured 2026-11-14: the layer-3 researcher encoding built the day
+    #: before was read by 0 code paths, which `additive-standard` forbids. This
+    #: is that caller.
+    #:
+    #: ★ IT GOES ON THE FULL RENDERS AND NOT ON HIS SHORT COPY, because that
+    #: copy exists because he said 22,902 words was an almost impossible
+    #: workload, and appending to it would undo his own complaint. `detail` is
+    #: False exactly for the index-alone render.
+    #:
+    #: ★ A FAILURE HERE COSTS THE LIST AND NEVER THE FILE. If the encoding is
+    #: unreadable the report still renders, with a line saying the list could
+    #: not be derived -- which is louder than an absent section and cheaper
+    #: than a refused document.
+    if detail:
+        try:
+            import importlib.util as _ilu
+            _spec = _ilu.spec_from_file_location(
+                "_ref_list", REPO / "scripts" / "researcher_reference_list_2026-11-14.py")
+            _rl = _ilu.module_from_spec(_spec)
+            sys.modules.setdefault("_ref_list", _rl)
+            _spec.loader.exec_module(_rl)
+            _who = _rl.researchers()
+            #: ★ THE SPOKEN COPY GETS A SPEAKABLE RENDER, ADDED AFTER THE
+            #: COMMIT GATE REFUSED, 2026-11-14. The first wiring appended the
+            #: MARKDOWN block to both renders and 4 guards caught it at once:
+            #: the spoken file may carry no backticks, no em-dashes, no heading
+            #: hashes and no file paths. The spoken form names each encoding by
+            #: its DOMAIN and says the paths and digests are in the markdown
+            #: companion, so a listener keeps the substance and a reader keeps
+            #: the identifiers.
+            _render = _rl.render_spoken if spoken else _rl.render
+            if _who:
+                L.append("")
+                for _r in _who:
+                    #: ★ LINE BY LINE, NOT 1 ELEMENT, AND THE GUARD'S OWN
+                    #: MESSAGE NAMES WHY. `_mark_my_paragraphs` walks `L` per
+                    #: line, so a whole block in 1 list element is invisible to
+                    #: it -- the exact `L = [head]` state B105 records. On
+                    #: 2026-11-14 that left 5 prose paragraphs of this list
+                    #: unmarked in the spoken file while the rest of the
+                    #: document carried his asterisk.
+                    L.extend(_render(_rl.reference_list(_r)).split("\n"))
+            else:
+                L.append("")
+                if spoken:
+                    L.append("REFERENCES ACCESSED")
+                    L.append("")
+                    L.append("No layer 3 researcher encoding was found, so no "
+                             "reference list could be derived. That absence is "
+                             "reported rather than left as a missing section.")
+                else:
+                    L.append("## References accessed")
+                    L.append("")
+                    L.append("No layer-3 researcher encoding was found under "
+                             "`bench/directives/researchers`, so no reference list "
+                             "could be derived. That absence is reported rather than "
+                             "left as a missing section.")
+        except Exception as _exc:                              # noqa: BLE001
+            L.append("")
+            L.append("REFERENCES ACCESSED" if spoken else "## References accessed")
+            L.append("")
+            L.append(f"The reference list could not be derived: "
+                     f"{type(_exc).__name__}. Reported rather than omitted, "
+                     f"because a silently absent list is the fault this section "
+                     f"exists to prevent.")
+    #: ★ THE MARKER RUNS LAST, AFTER THE REFERENCE LIST, AND IT USED TO RUN
+    #: BEFORE IT. Found 2026-11-14 by `test_a_heading_is_recorded_not_guessed
+    #: _2026-11-10::test_every_prose_paragraph_in_the_spoken_file_is_marked`:
+    #: 5 reference-list paragraphs carried no asterisk because they were
+    #: appended after the walk had already run. `_hd` holds indices recorded
+    #: during the main render, all of them below the append point, so moving
+    #: the call cannot disturb them.
+    #:
+    #: ★ THE MARKER IS IMPORTED, NOT COPIED. `_mark_my_paragraphs` lives in
+    #: the morning-report generator, which this function already receives as
+    #: `mrb`. A second copy would be a 2nd definition of his convention and
+    #: this project has measured what copies cost: 16 of one helper, and a
+    #: crash no test reached. SPOKEN ONLY -- the markdown twin carries its own
+    #: emphasis and his amendment is about what Read Aloud says out loud.
     if spoken:
         _mark = getattr(mrb, "_mark_my_paragraphs", None)
         if _mark is None:                      # LOUD, not silent

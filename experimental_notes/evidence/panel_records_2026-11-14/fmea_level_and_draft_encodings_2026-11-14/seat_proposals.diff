@@ -1,0 +1,1742 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 02:40:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 02:26:07
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/directives/chemistry/chemistry_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/chemistry/chemistry_general.txt	2026-11-12 01:53:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/chemistry/chemistry_general.txt	2026-11-14 02:33:43
+@@ -4,7 +4,7 @@
+        or pharmaceutical specialisation
+ VERSION: 1.0
+ TIER: DRAFT
+-SEVERITY SCALE: GHS health hazard category, critical at Category 2.
++SEVERITY SCALE: GHS health hazard category (Rev. 11), critical at Category 2.
+        ★ THE SCALE IS INVERTED: Category 1 is the MOST severe, so a higher
+        number is LESS severe and any ordering code assuming otherwise inverts
+        the meaning. Declaring Category 2 makes Categories 1 and 2 critical.
+
+### cc2:attempt-1:bench/directives/mathematics/mathematics_applied.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/mathematics/mathematics_applied.txt	2026-11-12 01:48:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/mathematics/mathematics_applied.txt	2026-11-14 02:33:43
+@@ -6,8 +6,9 @@
+ SEVERITY SCALE: none of its own. Applied mathematics INHERITS the consequence
+        scale of the domain it is applied in, and that inheritance is the whole
+        point: the same model error is epistemic in one setting and lethal in
+-       another. Where the application is engineering, FMEA severity applies
+-       with critical at 7; where clinical, CTCAE with critical at Grade 3.
++       another. Where the application is engineering, AIAG-VDA FMEA severity
++       (2019 handbook) applies with critical at 7; where clinical, CTCAE v5.0
++       with critical at Grade 3.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019) for units.
+ 
+ [HARD constraints — non-negotiable]
+
+### cc2:attempt-1:bench/directives/physics/physics_classical.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_classical.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/physics/physics_classical.txt	2026-11-14 02:33:43
+@@ -5,8 +5,8 @@
+ TIER: DRAFT
+ SEVERITY SCALE: none of its own; inherits the application's. Where the work
+        bears on a structure or a machine the engineering scale applies
+-       (AIAG-VDA FMEA severity, critical at 7), because that is where the
+-       consequence is realised.
++       (AIAG-VDA FMEA severity, 2019 handbook, critical at 7), because that is
++       where the consequence is realised.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019) for units and constants.
+ 
+ [HARD constraints — non-negotiable]
+
+### cc2:attempt-1:bench/directives/physics/physics_thermodynamics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_thermodynamics.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/physics/physics_thermodynamics.txt	2026-11-14 02:33:43
+@@ -4,8 +4,8 @@
+ VERSION: 1.0
+ TIER: DRAFT
+ SEVERITY SCALE: none of its own; inherits the application's. Process-safety
+-       work inherits the chemistry scale (GHS health hazard category, critical
+-       at Category 2); equipment work inherits the engineering scale.
++       work inherits the chemistry scale (GHS health hazard category, Rev. 11,
++       critical at Category 2); equipment work inherits the engineering scale.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019). The kelvin is defined by fixing
+        the Boltzmann constant at 1.380 649e-23 J/K exactly, which is why
+        temperature differences and absolute temperatures are not
+
+### cc2:attempt-1:bench/directives/software/software_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/software/software_general.txt	2026-11-12 01:55:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/software/software_general.txt	2026-11-14 02:33:43
+@@ -8,8 +8,8 @@
+        ★ CVSS is the ONLY one of the 4 validated scales this project carried
+        the frozen 0.7 constant into that lands on a RECOGNISED boundary: High
+        begins at exactly 7.0, so here and only here the old cut is expressible
+-       as a rank. On FMEA it landed at 7.3, on CTCAE at 3.8 and on INES at 4.9,
+-       all between levels.
++       as a rank. On FMEA (2019 handbook) it landed at 7.3, on CTCAE v5.0 at
++       3.8 and on INES at 4.9, all between levels.
+        Where the finding is not security-bearing, CVSS does not describe it and
+        the consequence INHERITS the application's scale -- say so rather than
+        forcing a score.
+
+### cc2:attempt-1:bench/directives/statistics/statistics_experimental_design.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_experimental_design.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/statistics/statistics_experimental_design.txt	2026-11-14 02:33:43
+@@ -4,8 +4,8 @@
+ VERSION: 1.0
+ TIER: DRAFT
+ SEVERITY SCALE: none of its own; inherits the application's. A clinical design
+-       inherits CTCAE (critical at Grade 3); an engineering design inherits
+-       FMEA severity (critical at 7).
++       inherits CTCAE v5.0 (critical at Grade 3); an engineering design
++       inherits AIAG-VDA FMEA severity, 2019 handbook (critical at 7).
+ SOURCES: ASA statement on p-values (2016). CONSORT and PRISMA reporting
+        guidelines, cited without a version because the current edition could
+        not be confirmed from a primary source on 2026-11-12. [VERIFY:current]
+
+### cc2:attempt-1:bench/directives/statistics/statistics_inference.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_inference.txt	2026-11-12 01:44:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/statistics/statistics_inference.txt	2026-11-14 02:33:43
+@@ -5,8 +5,8 @@
+ TIER: DRAFT
+ SEVERITY SCALE: none. Statistics has no recognised consequence scale of its
+        own: a wrong interval is epistemic until something acts on it, so the
+-       consequence belongs to the application. Clinical work inherits CTCAE,
+-       engineering work inherits FMEA.
++       consequence belongs to the application. Clinical work inherits CTCAE
++       v5.0, engineering work inherits AIAG-VDA FMEA severity, 2019 handbook.
+ SOURCES: American Statistical Association, "Statement on p-Values: Context,
+        Process, and Purpose" (2016), 6 principles, not formally superseded --
+        the later ASA President's Task Force on statistical significance and
+
+### cc2:attempt-1:bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py
+--- /dev/null	2026-11-14 02:40:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py	2026-11-14 02:35:12
+@@ -0,0 +1,247 @@
++#!/usr/bin/env python3
++"""The severity declaration a seat receives must be COMPLETE and NON-DEGENERATE.
++
++Written for the panel question of 2026-11-14 on the engineering critical level
++and the 22 DRAFT encodings. Two independent properties, one guard file because
++both are properties of the same delivered declaration.
++
++★ WHY A GUARD AND NOT A PROSE RULE. `bench/directives/universal/
++cdsfl_core_formal.md` already instructs every seat: "Report a consequence as a
++(value, scale-name) pair, never a bare number. `CVSS v4.0: 7.0` is a report;
++`7.0` is not." Measured on 2026-11-14, 7 of the 22 encodings that carry their
++own `SEVERITY SCALE:` line named a manifest-declared scale family with NO
++edition token in the declaration block -- `FMEA severity applies with critical
++at 7`, `CTCAE with critical at Grade 3`, `GHS health hazard category`. The
++prose rule did not bind, in the same way the project's own record says a prose
++rule does not bind. So it is checked.
++
++★ AND WHY THE SECOND TEST IS THE Q1 PROCEDURE RATHER THAN A NUMBER. The panel
++was asked for a mechanism, not a vote between 7 and 9. The mechanism is:
++A DECLARED CRITICAL LEVEL MAY NOT BE THE MAXIMAL BAND OF ITS OWN SCALE.
++At the maximal band the predicate `c_d(f) >= theta_d` is equivalent to
++`c_d(f) == max`, an IDENTITY TEST rather than an ordinal threshold, and the
++ordering above the cut carries no information at all. `cdsfl_core_formal.md`
++defines theta_d as "a distinguished element OF that ordering"; the maximum
++distinguishes nothing, because every scale has one by construction.
++
++IF THE FOUNDER RULES FOR THE 9-10 SAFETY-OR-REGULATORY BAND, this test is the
++single place that has to change: delete `test_no_declared_critical_level_is_
++the_maximal_band` and record his ruling in its place. That is deliberate. A
++loosening of what counts as critical should cost exactly one visible edit to a
++named test, not a silent change to a data file.
++
++RUN:  python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py -q
++"""
++from __future__ import annotations
++
++import pathlib
++import re
++import sys
++
++import pytest
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(ROOT))
++
++from bench.cdsfl_registry import domain_vocabulary as V      # noqa: E402
++
++DIRECTIVES = ROOT / "bench" / "directives"
++
++#: The edition token each manifest-declared scale family must carry wherever it
++#: is named. DERIVED from the manifest at test time rather than transcribed, so
++#: a manifest correction (CVSS v3.1 -> v4.0 happened on 2026-11-12) cannot
++#: leave this table behind. The family NAME is the stable part; the pattern is
++#: what the manifest currently declares.
++_FAMILY_PATTERNS = {
++    "FMEA":  r"\b2019\b",
++    "CVSS":  r"v4\.0",
++    "CTCAE": r"v5\.0",
++    "GHS":   r"Rev\.?\s*11",
++}
++
++
++def _declared_families() -> dict[str, str]:
++    """Family -> the edition token the MANIFEST declares for it. Fails loudly
++    if the manifest's scale name stops containing the token this guard looks
++    for, because a silently stale guard is the failure mode it exists against."""
++    out: dict[str, str] = {}
++    for dom in V.domains():
++        scale = V.severity(dom)["scale"]
++        if not scale or scale in ("none", "composed"):
++            continue
++        for fam, pat in _FAMILY_PATTERNS.items():
++            if re.search(rf"\b{fam}\b", scale):
++                assert re.search(pat, scale, re.I), (
++                    f"manifest declares {dom} scale {scale!r} which no longer "
++                    f"matches this guard's edition pattern {pat!r} for {fam}. "
++                    f"Update _FAMILY_PATTERNS in the same commit as the scale.")
++                out[fam] = pat
++    return out
++
++
++def _encodings_with_a_scale_line() -> list[pathlib.Path]:
++    return [p for p in sorted(DIRECTIVES.rglob("*.txt"))
++            if p.parent.name != "universal"
++            and re.search(r"^SEVERITY SCALE:",
++                          p.read_text(encoding="utf-8", errors="ignore"), re.M)]
++
++
++def _scale_block(text: str) -> str:
++    """The SEVERITY SCALE declaration, up to the next ALL-CAPS section header.
++
++    Scoped to the DECLARATION and not the whole file on purpose: `SOURCES:` is
++    a bibliography, and a seat reporting a (value, scale-name) pair reads the
++    scale name off the declaration. Measured 2026-11-14, this distinction is
++    load-bearing -- `chemistry_general.txt` carried `Rev. 10` in SOURCES while
++    its declaration said a bare `GHS`."""
++    m = re.search(r"^SEVERITY SCALE:.*?(?=^[A-Z][A-Z ]{3,}:)", text, re.M | re.S)
++    return m.group(0) if m else ""
++
++
++def _offenders(files: list[pathlib.Path]) -> list[tuple[str, str]]:
++    fams = _declared_families()
++    bad: list[tuple[str, str]] = []
++    for p in files:
++        block = _scale_block(p.read_text(encoding="utf-8", errors="ignore"))
++        for fam, pat in fams.items():
++            if re.search(rf"\b{fam}\b", block) and not re.search(pat, block, re.I):
++                try:
++                    name = p.relative_to(ROOT).as_posix()
++                except ValueError:          # a copy under tmp, in the vacuity test
++                    name = p.name
++                bad.append((name, fam))
++    return bad
++
++
++def test_the_guard_table_matches_the_manifest():
++    fams = _declared_families()
++    assert set(fams) == {"FMEA", "CVSS", "CTCAE", "GHS"}, fams
++
++
++def test_every_named_scale_family_carries_its_edition():
++    """A scale name without its edition is not a scale name.
++
++    This project corrected CVSS v3.1 -> v4.0 and GHS Rev. 10 -> Rev. 11 on
++    2026-11-12 precisely because an unversioned citation names a superseded
++    standard without saying so."""
++    bad = _offenders(_encodings_with_a_scale_line())
++    assert not bad, (
++        "encodings naming a manifest-declared scale family with no edition "
++        "token in the declaration block:\n  " +
++        "\n  ".join(f"{f} cites {fam}" for f, fam in bad))
++
++
++def test_the_edition_guard_is_not_vacuous(tmp_path):
++    """Prove the guard CATCHES the defect, by reintroducing it on a copy.
++
++    An addition nothing reaches is not additive. A guard that passes because it
++    tests nothing is exactly that, so the defect is put back and the guard is
++    required to fire."""
++    src = DIRECTIVES / "software" / "software_general.txt"
++    dst = tmp_path / "software_general.txt"
++    text = src.read_text(encoding="utf-8")
++    assert "CVSS v4.0 base score" in text
++    dst.write_text(text.replace("CVSS v4.0 base score", "CVSS base score"),
++                   encoding="utf-8")
++    bad = _offenders([dst])
++    assert [fam for _f, fam in bad] == ["CVSS"], (
++        f"the guard did not fire on a deliberately unversioned CVSS "
++        f"citation; it is vacuous. got {bad!r}")
++
++
++def _band_index(levels: list[str], critical: str) -> int:
++    c = str(critical).strip().lower()
++    for i, b in enumerate(levels):
++        if c in re.findall(r"[A-Za-z0-9.]+", str(b).lower()):
++            return i
++    hits = [i for i, b in enumerate(levels) if c in str(b).strip().lower()]
++    assert hits, f"critical level {critical!r} names no band in {levels!r}"
++    return hits[0]
++
++
++#: Domains whose manifest declares a scale, with the rank of the declared
++#: critical level counted from the TOP of its own band list. Rank is a SELECTED
++#: order statistic, so it is invariant under every strictly increasing relabel
++#: of the scale -- admissible under `cdsfl_core_formal.md`'s own table, unlike
++#: a comparison to a fixed real. Verified 2026-11-14 on 2 independent tools:
++#: z3 finds no order-preserving relabel that changes a rank, and Wolfram
++#: Language showed phi(x) = x^3 + x preserving `Ordering` while changing the
++#: count clearing a FIXED cut of 4 from 2 to 4.
++def _ranks_from_top() -> dict[str, tuple[int, int, str]]:
++    out = {}
++    for dom in V.domains():
++        sev = V.severity(dom)
++        if sev["scale"] in (None, "none", "composed") or not sev["critical_level"]:
++            continue
++        lv = sev["levels"]
++        i = _band_index(lv, sev["critical_level"])
++        out[dom] = (len(lv) - i, len(lv), sev["critical_level"])
++    return out
++
++
++def test_no_declared_critical_level_is_the_maximal_band():
++    """THE Q1 PROCEDURE, MECHANISED. See the module docstring for the ruling
++    path if the founder decides for the 9-10 safety-or-regulatory band."""
++    ranks = _ranks_from_top()
++    assert ranks, "no domain declares a scale with a critical level"
++    degenerate = {d: v for d, v in ranks.items() if v[0] == 1}
++    assert not degenerate, (
++        "a critical level at the MAXIMAL band makes `c >= theta` equivalent to "
++        "`c == max`, an identity test rather than an ordinal threshold:\n  " +
++        "\n  ".join(f"{d}: critical={v[2]!r} is band {v[1]} of {v[1]}"
++                    for d, v in degenerate.items()))
++
++
++def test_the_maximal_band_guard_is_not_vacuous():
++    """Reintroduce the degenerate cut on a copy of the data and require the
++    predicate to fire."""
++    levels = ["1 no effect", "2-3 very minor to minor", "4-6 moderate",
++              "7-8 high", "9-10 safety or regulatory"]
++    assert len(levels) - _band_index(levels, "7") == 2, "7 is band 4 of 5"
++    assert len(levels) - _band_index(levels, "9") == 1, (
++        "9 must land in the MAXIMAL band for the guard to be meaningful")
++
++
++def test_a_named_critical_level_cannot_reach_the_numeric_gate():
++    """The 2 quantities are distinct, and the distinction bounds Q1.
++
++    `reference_runner_v3.CRITICAL_SEVERITY_THRESHOLD` is a float on [0,1]
++    compared against a model-asserted severity. A domain's `critical_level` is
++    a STRING naming a rank on an external ordinal scale. Nothing converts one
++    into the other, which is why changing the named level is a REPORTING
++    change and not a gate change."""
++    import ast
++    runner = (ROOT / "bench" / "reference_runner_v3.py").read_text(encoding="utf-8")
++    thr = None
++    for node in ast.parse(runner).body:
++        if isinstance(node, ast.Assign) and any(
++                isinstance(t, ast.Name) and t.id == "CRITICAL_SEVERITY_THRESHOLD"
++                for t in node.targets):
++            thr = ast.literal_eval(node.value)
++    assert isinstance(thr, float), thr
++    lvl = V.severity("engineering")["critical_level"]
++    assert isinstance(lvl, str), lvl
++    # The composer is the ONLY route from the named level to anything. Checked
++    # by AST and not by substring: the composer MENTIONS the gate constant once,
++    # in `_severity_declaration`'s docstring ("The live
++    # `CRITICAL_SEVERITY_THRESHOLD` is unchanged"), and a prose mention is not a
++    # reference. A substring count cannot tell those apart, and this guard
++    # failed on exactly that distinction when first run on 2026-11-14.
++    comp_src = (ROOT / "bench" / "cdsfl_registry" / "composer.py").read_text(
++        encoding="utf-8")
++    refs = [n for n in ast.walk(ast.parse(comp_src))
++            if isinstance(n, ast.Name) and n.id == "CRITICAL_SEVERITY_THRESHOLD"]
++    attrs = [n for n in ast.walk(ast.parse(comp_src))
++             if isinstance(n, ast.Attribute)
++             and n.attr == "CRITICAL_SEVERITY_THRESHOLD"]
++    assert not refs and not attrs, (
++        f"the composer now REFERENCES the numeric gate ({len(refs)} names, "
++        f"{len(attrs)} attributes); the 2 quantities may have been conflated")
++    conv = (ROOT / "bench" / "convergence_location.py").read_text(encoding="utf-8")
++    assert conv.count("critical_level") == 0 and conv.count("severity_scale") == 0, (
++        "a domain's named level now reaches the convergence series; Q1 would "
++        "then be a convergence change, not a reporting one")
++
++
++if __name__ == "__main__":
++    raise SystemExit(pytest.main([__file__, "-q"]))
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 02:29:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 00:57:35
+@@ -2041,7 +2041,7 @@
+ **B142. THE SETTINGS SURFACE: THE ROLE SELECTOR CANNOT OFFER THE 4 ROLES THE UX BRIEF SPECIFIES, AND HIS CREDENTIAL STORE IS NOT IN THE BRIEF AT ALL.** Added 2026-11-10T21:03:20+00:00. **MEASURED BY CALLING THE BACKEND against section 10 of `~/Developer_Projects/Responses/cdsfl_ux_BESTOF_2026-10-23/docs/CDSFL_UX_Design_Brief_AUTHORITATIVE_for_Orchestrator.md`, which the brief itself names as the single source of truth: SECTION 10 COVERAGE IS 3 OF 5.** Built: search across sources, add-from-3-sources, and a roster carrying model, source and role. **NOT built, and the first of the 2 is what blocks the interface:** `bench/model_catalogue.py:known_roles()` returns `['collator', 'participant', 'player_manager']`, read from `bench/cdsfl_registry/roles/*.toml`, while the brief and the mockup `html_sources/v6/08_settings.html` both specify **Orchestrator, Worker, Researcher, Classifier**. So the role half of the model-and-role selector cannot be populated as designed. Also absent is the peer catalogue the brief describes: aggregation by vendor and model version with the number available, expanding to instances sorted by latency and free resources, each showing latency, uptime, hardware class and availability. **THE FIX IS NOT A RENAME AND THAT IS WHY IT IS HIS.** A registry role carries a merge signature and an alpha vector that `bench/dm/_role_assignment.py` scores models against, so introducing 4 interface roles either MAPS them onto the 3 existing ones -- which changes how a run selects models, and B21 records that choice as his -- or adds a presentation layer the dispatcher ignores, which is honest but means the interface's roles do not reach the harness. `pf:ff29e68d9da1`. **AND THE STEP-COUNT QUESTION IS ANSWERED BY THE MOCKUPS RATHER THAN BY ME.** He recalls being asked whether the selection flow should stay a multi-step process or be consolidated into 1, and that no explanation followed. **That exchange cannot be located in the session record and none is invented here.** `html_sources/v6/08b_add_model.html` settles it: a single control reading *Add as Worker*, against an instance expanded from a vendor-and-version row. From the researcher's side the flow is **1 step** -- search, expand, add with the role chosen at that moment. The multi-step sequence the question probably meant is B21's 5 dependency-ordered BUILD steps, which the user never sees, and conflating a build order with a user flow is what made the question unanswerable. **HIS CREDENTIAL STORE, `fr:e8951f2ed269`, IS A NEW REQUIREMENT AND NOT UNBUILT WORK.** Section 12 of the brief lists the registry-tunable surface, schema-versus-experiment defaults and the donation matrix, and mentions credentials **0 times**; `html_sources/v6/10_advanced.html` is a stub carrying only a heading. His own words confirm it: *"The mock up screens are incomplete, because they don't contain any capacity to store credentials."* **ASSESSED SOUND, WITH 1 PART ARGUED, and the argued part is the only pushback.** Encrypting keys at rest behind a password he supplies is standard and strictly better than today, where 10 keys sit in a plain-text `.env`. 2 refinements: prefer the platform keychain over a bespoke file format, which is 1 small dependency and removes a class of mistakes; and **do not store account passwords for automatic sign-in** -- vendor command-line tools authenticate by device flow and hold short-lived session tokens, a stored password cannot pass a second factor, and automating a sign-in with one is fragile and probably outside vendor terms. Storing the OAuth **refresh token** the tool already issues achieves the same goal, exists for it, and is revocable. **Keys and refresh tokens yes; account passwords no.** **THE PROJECT'S EXISTING VAULT IS THE WRONG TOOL AND THAT IS WORTH SAYING BEFORE ANYONE REACHES FOR IT:** `bench/verification_chain.py` is a hash-chained Merkle structure with optional Ed25519 signing, which proves a record has not been altered. That is integrity, not secrecy. `cryptography` is already an optional dependency, so authenticated encryption needs nothing new installed. **[NEEDS HIS RULING]** on the role mapping, and on whether the credential store is built now or after the runway. ★★★ **THE SECOND HALF OF THAT ASK IS ANSWERED AND THE CREDENTIAL STORE IS BUILT, 2026-11-10T23:05:00+00:00. HIS WORDS:** *"The credentials store for the backend UX work is also something you can do before I respond to your tts output file."* **WHAT WAS BUILT:** `bench/credential_store.py`, 1 encrypted file at `~/.cdsfl/credentials.enc`, mode 0600 inside a 0700 directory, **outside the repository** because a credential store inside a git working tree is 1 careless `git add -A` from being committed and the save gate, the check that runs before every state save, carries a `no credential tracked` postcondition because that accident is real. **AES-256-GCM** behind a key derived by **Argon2id** at 65536 KiB, 3 iterations and 4 lanes, falling back to scrypt where the installed `cryptography` lacks Argon2id; the algorithm and its parameters are recorded IN the file so they can be raised later without orphaning an existing store. **THE ENVELOPE IS BOUND IN AS ADDITIONAL AUTHENTICATED DATA**, which is the property that stops a thief holding the file from swapping Argon2id for a cheap hash and attacking the passphrase at that lower cost. A fresh nonce is drawn on EVERY write, that being the single catastrophic misuse available with this cipher. **SECRETS NEVER REACH THE COMMAND LINE**, because `ps` shows another process's argv on this platform; values and passphrases come from a hidden prompt or from standard input, and a guard asserts no option can carry one. **WIRED TO A CALLER, per the additive standard's symmetric form:** `bench/ux_backend_2026-10-20.py:credentials()` reports the store's shape and its policy for the settings screen — existence, cipher, accepted kinds, refused kinds and the refusal's reason, all read from the store module rather than restated — plus per-entry metadata when unlocked, and **never a value**. **THE ACCOUNT-PASSWORD REFUSAL IS IMPLEMENTED AND NAMES ITS OWN ALTERNATIVE**, across 6 spellings a researcher might try, for the 3 reasons recorded above. He can overrule it in a word and the refusal says so rather than failing silently. **GUARD:** `bench/tests/test_the_credential_store_holds_nothing_in_plaintext_2026-11-10.py`, **39 tests, 9 of 9 mutations red** via `scripts/the_credential_store_mutations_2026-11-10.py`, now on the commit gate. **AND THE HARNESS FOUND 2 HOLES IN MY OWN GUARD, WHICH IS THE ARGUMENT FOR RUNNING IT.** The version test passed with the version check DELETED, because bumping the version also breaks the authenticated envelope, the plain header whose bytes the cipher also signs, so it was measuring the cipher rather than the check; it now asserts the refusal is NOT the authentication failure and names the version. And the key-derivation downgrade test passed with the envelope binding removed from BOTH sides, because editing the key-derivation function changes the derived key and the open fails for that reason alone — so a test was added that edits `cipher`, an envelope field that does NOT feed the key, which is the only edit the binding alone can catch. Both are instances of a verification passing for the wrong reason. **WHAT REMAINS ON THIS ENTRY IS THE ROLE MAPPING ALONE**, which is his because it changes how a run selects models. **AND IT IS ON THE RUNWAY, on his instruction:** *"B142 will require further discussion, but should probably be marked on the runway, with the other UX work already there as part of the overall UX work when we come to it."* ★★★ **THE ROLE HALF IS BUILT, 2026-11-14, ON HIS RULING OF 2026-11-12, AND THE CREDENTIAL HALF WAS ALREADY BUILT.** **HIS WORDS, verbatim:** *"Verdict. Yes do both. stm"*, against the item asking *"whether the 4 interface roles map onto the harness roles, and whether the credential store is built now or after the runway"*. **WHAT WAS BUILT:** 4 role files under `bench/cdsfl_registry/roles/` — `orchestrator.toml`, `worker.toml`, `researcher.toml`, `classifier.toml` — each declaring `axis = "functional"` beside the 3 existing files' `axis = "structural"`; an opt-in `axis` argument on `bench/model_catalogue.known_roles()` whose DEFAULT is unchanged so `bench/tests/test_b21_steps_are_built_2026-11-09.py:205` keeps the meaning it was written with; a `role_axis()` accessor that reads the axis FROM THE FILE rather than from a list in the module, which is the exact defect `registry.py` records at its layer walk where a 3-item hardcoded list left layer 5 unvalidated on the day it was created; and the renderer at `bench/model_catalogue.py` now reports the 2 vocabularies SEPARATELY, because 7 names from 2 non-reconciling vocabularies on 1 line is the defect rather than the count. **THE MAP, AND 2 OF THE 4 MAP TO NOTHING ON PURPOSE.** `orchestrator` -> `player_manager` and `worker` -> `participant`, which is what the panel round of 2026-10-31 measured. `classifier` -> None, because that round found it names no seat position. `researcher` -> None, and it is also NEWER than that round, which discussed only worker, classifier and orchestrator. `collator` -> None in the reverse direction, because it names the HARNESS and not a seat. **Forcing any of them onto `participant` would look tidier and would invent the policy this layer exists not to invent**, so a hole is declared as `None` and an unknown NAME raises `KeyError` instead, since None must mean *measured to have no counterpart* and never *I do not know that name*. **THE MAP LIVES IN `bench/model_catalogue.py` AND NOT IN THE ROLE FILES**, because `bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py` enforces `keys <= {"name", "axis"}` on every role file — the layer's mechanism is mine, its content is his — and a `maps_to` key there would be refused, correctly. **A GUARD WAS OUTGROWN BY HIS RULING AND IS RE-POINTED RATHER THAN DELETED.** That same file carried `test_the_functional_vocabulary_is_NOT_declared`, asserting those 3 files must NOT exist because the mapping was policy owed by him. His ruling spends that condition, so the assertion now holds the post-ruling state and the protection it actually gave — that no role file invents policy — is untouched in `test_no_role_file_invents_policy`. **DISPATCH IS UNCHANGED AND A TEST PINS THAT BOUNDARY.** `bench/dm/_role_assignment.py` scores models against the `Role` ENUM in `bench/dm/_types.py`, not against these files, so this changes which names the SELECTOR can offer and changes 0 dispatch decisions; a test asserts none of the 4 has entered that enum, because wiring a functional role into the scorer would change how a run selects models and B21 records that as his. **MEASURED: the 2 axes partition the 7 roles exactly** — 3 structural, 4 functional, union equal to the whole, intersection empty — verified by CALLING the accessor, and the partition property proved on z3, which returns `unsat` both for *a role on no axis* and for *a role on both axes*. **8 of 8 mutations turn the guard red, 1.000000, Wilson [0.675592, 1.000000], Clopper-Pearson [0.630583, 1.000000]**, statsmodels against a hand-rolled Wilson and against `scipy.stats.beta` agreeing to 0.000e+00, with a third mpmath route from the exact binomial tails returning the same 0.630583. **AND 1 OF THE 8 MUTATIONS WAS ITSELF BROKEN FIRST**, reported as a MISS when it had replaced a membership test with `if False:` and fallen through to a bare dict lookup that raises `KeyError` by itself — the probe was wrong, not the guard — and fixing it exposed a genuinely weak assertion, since `pytest.raises(KeyError)` could not tell the deliberate refusal from an accident; the message is now asserted. Guard: `bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py`, 12 tests, on `hooks/pre-commit`. Harness: `scripts/the_interface_role_mutations_2026-11-14.py`. **WHAT IS STILL OWED AND IS DELIBERATELY NOT DONE:** the peer catalogue the brief describes — aggregation by vendor and model version expanding to instances sorted by latency and free resources — remains unbuilt, and the entry says so rather than reading as though section 10 were now complete.
+ <!-- task: B142 | state: OPEN | status: BUILT | evidence: bench/tests/test_the_credential_store_holds_nothing_in_plaintext_2026-11-10.py, bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py, scripts/the_interface_role_mutations_2026-11-14.py | ruled: 2026-11-12 | responded: 2026-11-10 -->
+ 
+-**B143. THE APPENDIX'S SEVERITY FORMULA CANNOT BE COMPUTED BECAUSE ITS 2 INPUTS ARE READ BY 1 SITE EACH AND WRITTEN BY NONE THAT THE READER CAN SEE, AND THE ONE CONFIDENCE THE CODEBASE DOES COLLECT IS THE SELF-REPORT HIS OWN DIRECTIVE RULES INADMISSIBLE.** Added 2026-11-10T22:52:00+00:00. **STATUS: MEASURED ON 2 TOOLS. THE COLLECTION HALF IS MINE AND PROCEEDS; 2 NARROWER QUESTIONS ARE HIS.** **WHY IT IS A NEW ENTRY AND NOT A PARAGRAPH IN B87.** B87, the entry on the severity specification asking for an inadmissible quantity, is DONE and carries his ruling of 2026-11-08. Its own text states that *adding the HARD/SOFT field is separable and is not a decision*, because the directive already requires the classification — so that work is MINE, and B87 being DONE is exactly why it became invisible: a decision or a task recorded inside a closed entry reaches no surface, the same shape B94 records and the same shape found tonight in B71. **AND IT IS TRACKED NOWHERE ELSE:** `scripts/register.py --subject constraint_class` and `--subject compute_sev_f` each return **0 matches** against a register holding 185 severity tickets. **HE RAISED IT HIMSELF, 2026-11-10,** challenging whether severity had been abandoned in favour of a model vote; the answer is that it was not, and the honest finding is worse in a different direction. **THE ASSERTED NUMBER IS THE ORIGINAL DESIGN, NOT A REGRESSION.** `bench/cdsfl_finding_schema.json` has required the model to state `severity` since commit `8c1dacb3`, 2026-03-30 — 7 months before the first severity panel of 2026-09-07 — and commit `6c10fe41`, 2026-09-06, is titled *the model vote is out of the gate*, so displacing the vote was already under way. 12 panel rounds have been dispatched on severity measurement across 6 subjects, blind and joint, on free seats only. **THE MEASUREMENT, BY AST RATHER THAN BY GREP, because a substring is not a write.** In `bench/reference_runner_v3.py`: `constraint_class` has **1 reader (line 10917) and 0 writers**; `confidence` has **1 reader (line 10918) and 2 writers (lines 14640 and 20730) — and NEITHER WRITER WRITES THE OBJECT THE READER READS.** Line 14640 writes `stats["verdicts"][finding_id]`, a per-verdict telemetry dict; line 20730 writes `_sv_rows`, a separate telemetry list. The reader reads a REGISTRY ENTRY. Both fields are absent from the finding schema. So `compute_sev_f` defaults both inputs on every entry and `_SEVERITY_SPEC` stands at `{"on": False}` (line 10703). **THE TRAP IN "JUST COLLECT IT", AND IT IS THE REASON THIS ENTRY EXISTS RATHER THAN A SILENT FIX.** The single `confidence` the codebase does collect is `float(m.group(4)) if m.group(4) else 0.5` at line 14640 — parsed out of a model's own verdict text with a 0.5 default. That is a model's estimate of its own certainty, which his B87 ruling of 2026-11-08 made the directive declare INADMISSIBLE. **Pointing the formula at the value that already exists would reinstall exactly the vote he objected to**, which is why the collection must write a NEW tool-derived field and not reuse this one. **THE SHAPE THEOREM, VERIFIED HERE ON 2 INDEPENDENT TOOLS AND NOT TAKEN FROM THE PANEL RECORD.** For `Sev = W . B` with `W` in `{0.5, 1.0}` and `B` any composition of belief factors in `[0,1]`: z3 returns **unsat** for a counterexample to `Sev >= c <=> (W = 1.0 and B >= c)` over every `c` in `(0.5, 1.0]`; SymPy gives `sup(B/2) = 1/2` over `B` in `[0,1]`, so the SOFT branch can never reach any cut above 0.5, and at `W = 1` the test reduces to `B >= c` identically. **So no cut above 0.5 tests consequence MAGNITUDE at all** — magnitude enters only through `W`, and `W` has 2 values — and moving 0.7 to 0.8, 0.9 or 0.95 reclassifies 0 entries. SymPy gives the admissible range for a 3rd weight as strictly `(1/2, 1)`. This is already recorded as caution 3 of appendix section 7.7; what is NOT recorded is that **a 3rd weight was never put to any of the 12 rounds**. **THE PROOF MECHANISM PROVES THE WRONG QUANTITY, re-run tonight rather than cited.** `severity_is_proven` accepts a reproduction of `R_k` as evidence for a severity claim. Over **652** archived entries carrying a PASS or WARN proof the 2 correlate at **r = -0.5538, p = 1.152e-53, 95% CI [-0.6048, -0.4982]**, scipy and numpy agreeing to 1.11e-16, Spearman rho = -0.4716. The proof moves AGAINST the number it licenses, and at the proof's own 0.05 tolerance **555 of 652, 85.12%**, would stop being released. **AND THE SPECIFICATION'S KEY PROPERTY IS VIOLATED TODAY:** 27 of 32 disproved findings carry non-zero severity, **84.3750%, Wilson [68.2459%, 93.1356%], Clopper-Pearson [67.2121%, 94.7249%]**, where section 7.7 says a disproved finding scores 0. **HIS STANDING RULING IS TO BUILD IT:** 2026-11-01, *"So OK. Since I have already ruled on the severity change multiple times, and if this is the only thing that still needs to be done, then build it and implement it in full."* **RECOMMENDATION, IN DEPENDENCY ORDER, AND THE FIRST STEP NEEDS NOTHING FROM HIM.** 1. Collect the 2 fields — a NEW tool-derived confidence and the HARD/SOFT class — into the finding schema and the registration path, leaving the existing self-reported value untouched and unused, so `compute_sev_f` stops defaulting. That is carrying out his 2026-11-08 ruling and B87 already classes it as not a decision, so it proceeds by default. 2. **[NEEDS HIS RULING]** whether `severity_is_proven` is repointed at the gated quantity, since it currently licenses a release door on a proof of a different number; repointing it changes what that door admits, and loosening or tightening a gate is his. 3. **[NEEDS HIS RULING]** whether appendix section 7.7 gains a 3rd consequence weight in `(1/2, 1)`, which is the only change that makes any cut a magnitude test and is an edit to the mathematical model rather than to the code. **NOT COMPOSED:** steps 2 and 3 are independent of step 1 and of each other, and no measurement shows any pair dominating either part alone, so each stands on its own under his composability standard. **2 CAUTIONS ON ANY BUILD, both from the panel record and both verified above.** Promoting section 7.7 to the blocking gate, the rule that stops a run closing while a critical finding is open, releases criticals on falsifier OMISSION, because `V(None) = 0.5` makes every unresolved finding sub-critical; and 3 raw-severity partition readers gate rather than 1, so a repair reaching only the A4 door leaves 2 gating readers on the asserted float. Tracked as `pf:18582c4fed35`, the uncomputable severity formula. Producers, all re-run tonight: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py`. ★★★ **HIS CONDITIONAL OF 2026-11-12 WAS MEASURED BEFORE ANY PANEL WAS DISPATCHED, AND IT DOES NOT FIRE FOR THE 3 ISSUES HE NAMED.** **HIS WORDS, verbatim:** *"Again you will need to explain this in plain English. We recently did extensive work on severity and how this is measured and we recently did a panel review too. We identified that the maths model sits at a higher level of abstention, that the 0.7 cut was effectively meaningless and that the real measure of severity is entirely domain dependent. Why weren't these issues resolved the last panel review? If you didn't ask them, you should run another fresh free panel review to resolve these questions. stm"* (His *abstention* is *abstraction*.) **ALL 3 REACHED THE BRIEF OF THE 2026-11-11 FREE-SEAT ROUND**, recorded in `experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md`: the abstraction question is its **Q6**, named there as *THE FOUNDER'S OWN QUESTION, and it is the one he most wants answered*; the frozen cut is its **Q4**, asking whether 0.7 can be expressed as a RANK on each validated scale; and domain-dependence is the whole subject of the round. Measured by splitting every seat-structured panel record at its first `## Seat:` heading so that *the question was PUT* is distinguishable from *a seat raised it unprompted*: **75 of 110 `Panel_*.md` files carry a reply section**, and the 2026-11-11 record carries all 5 of the questions tested. **AND 3 OF THE 4 REPAIRS THAT ROUND PUT IN PLAY ARE LIVE IN THE TREE**, verified by reading the files rather than the record: the ordinal reformulation at `bench/directives/universal/cdsfl_core_formal.md:418` onward, the per-domain scale table in `bench/cdsfl_registry/domain_manifest.toml`, and the credence finding written into `docs/MATHEMATICAL_APPENDIX.md:1473` with the ordered-pair form at `:1479`. **THE 4TH IS NOT:** `bench/reference_runner_v3.py:10784` still returns `severity_proof_status(entry) in _RK_PROOF_ACCEPTED`, so a reproduction of `R_k` is still accepted as evidence for a severity claim. **WHAT GENUINELY WAS NEVER ASKED, AND IT IS MINE.** That round's brief carried the 2-value weight as measurement 3.5 — z3 `unsat` for 4 distinct severities from `W` in `{0.5, 1.0}`, `sat` for 2 — handed to the seats as ESTABLISHED. **No question asked them whether a 3rd weight should be added, and no seat was asked to rule on it.** So the honest answer to him is that the issues were asked and largely applied, and that the gap is a FACT put without a QUESTION attached. **A FRESH FREE ROUND IS DISPATCHED 2026-11-14 ANYWAY**, narrowed to the 2 genuinely undecided parts and to the self-falsification that the 2 may be exclusive rather than composable — if the domain's ordinal scale now carries consequence magnitude, adding a 3rd weight to a product already renamed a credence repairs a quantity with no job. Brief: `bench/logs/severity_proof_and_weight_2026-11-14/BRIEF.md`, 8 of 8 required sections, 3 declared figures re-executed by the validator. **AND THE FROZEN CUT IS SPELLED 4 TIMES OUTSIDE ITS CANONICAL CONSTANT, 3 OF THEM UNPINNED**, read by importing the modules rather than by searching text: `bench/evidence.py::LEDGER_CRITICAL_SEVERITY` pinned by `bench/tests/test_verified_true_ledger.py`, `bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD` pinned by nothing, and `bench/convergence_location.py`'s `critical_threshold` defaults on `hierarchical_novelty_series` and `novelty_rule_divergence`, also unpinned. All 4 are 0.7 today. That is in the brief. ★★★ **THE FREE ROUND RAN 2026-11-14, BLIND THEN JOINT, AND IT CORRECTED 2 ERRORS OF MINE AS WELL AS ANSWERING THE QUESTION. 2 of 2 seats responded in both halves; 0 paid dispatches.** Blind round wall 588.2 s, joint round wall 678.9 s. Records: `bench/logs/severity_proof_and_weight_2026-11-14/` and `..._joint/`. **R2, THE 3rd CONSEQUENCE WEIGHT, IS REJECTED BY BOTH SEATS ON 2 INDEPENDENT AND SEPARATELY FATAL GROUNDS.** One is EPISTEMIC — z3 shows the cut stays a class-rescaled test on model-asserted `confidence`, so belief still decides. The other is MEASUREMENT-THEORETIC — the comparison `W . B >= c`, which is the old product form tested against a fixed real cut, stays breakable by an order-preserving relabelling with 3 weights exactly as with 2, z3 `sat` both times, corroborated on a third tool. A 3rd weight repairs the ARITY of `W` and leaves the inadmissibility untouched. **R1, REPOINTING THE PROOF DOOR, IS HELD FOR HIM, AND THE FIGURE TO PUT TO HIM IS NOT THE ONE EITHER BLIND SEAT GAVE.** `severity_is_proven` has 3 live call sites that do NOT share a population. The A4 release door at about line 4442 and the reasoned withdrawal at about 9735 are each conjoined with `severity < 0.7`; the calibration-demotion site at about 10936 is not, because `_is_demotion_eligible` REQUIRES `severity >= CRITICAL_SEVERITY_THRESHOLD` at line 10662. So the 2 blind headline figures answer DIFFERENT DOORS. **Re-derived independently here rather than taken from either seat: 652 archived PASS or WARN entries; release and withdrawal doors lose 422 of 519 = 0.813102, Wilson [0.777308, 0.844295], Clopper-Pearson [0.776851, 0.845741]; the demotion door loses 133 of 133 = 1.000000, Wilson [0.971928, 1.000000], Clopper-Pearson [0.972645, 1.000000]; and 555 = 422 + 133 exactly, with 0 critical keepers.** Every interval on 2 agreeing routes to 0.000e+00. **The direction is monotone TIGHTENING at every site** — the repointed predicate is a conjunction and therefore a subset — but it reverses most of his 2026-10-06 proven-sub-critical convergence repair, which is why it is his and why both seats shipped it with the flag OFF. **A caveat the measurement owes itself:** site A reads `effective_severity(e)` while sites B and C read the raw float; with `_SEVERITY_SPEC["on"]` False, which is the default, the 2 agree, so the partition is exact today and would need redoing with that flag on. **R3, THE ORDERED PAIR, IS RECOMMENDED IN DIRECTION AND IS INCOMPLETE AS RECORDED — a NEW finding, and the sharpest thing the round produced.** `docs/MATHEMATICAL_APPENDIX.md` already writes `severity_d(f) = ( c_d(f) , credence(f) )` and keeps section 7.7 as the definition of `credence`. **But a pair is compared LEXICOGRAPHICALLY, and the second coordinate still carries the consequence weight `W`.** When `c_d` ties, the decision falls through to `credence`, and `credence` ranks by `W`. So the consequence weight has not left the gate; it has moved to the tiebreak. ★★★ **AND THAT REFUTES A SENTENCE I WROTE IN THE BRIEF ITSELF.** The brief offered as its own strongest self-falsification that R2 and R3 are EXCLUSIVE because *if consequence magnitude is now carried by the domain's ordinal scale under R3, adding a 3rd weight repairs a quantity with no job*. **The conclusion is right and the reason is false**, and both blind seats inherited the false reason from me — fable restated it as *a 3rd weight decides nothing the ordered-pair comparison reads*. **Re-derived on 2 tools here rather than accepted from a seat:** SymPy in exact rationals, with `c_d` tied and belief terms 9/10 and 8/10, gives credence 9/10 against 4/5 under 2 weights, so A outranks B, and 18/25 against 4/5 under 3 weights, so B outranks A — **the ordering FLIPS**. z3 returns **sat** for the existence of such a flip with `w3` strictly inside (1/2, 1), witness `bA = 1/2, bB = 3/8, w3 = 5/8`, and **unsat** for its negation. **A 3rd weight therefore DOES change orderings under R3. R2 stays rejected on the 2 grounds above, not on the one the brief gave.** ★★★ **AND THE BRIEF UNDERCOUNTED THE FROZEN CUT'S SPELLINGS: it says 4, the true figure is 6.** Found by fable and **verified here by ENUMERATING every function in `bench/convergence_location.py` whose signature carries a `critical_threshold` parameter, rather than by searching text for the 2 functions B191 happened to name**: `combined_novelty_series`, `hierarchical_novelty_series`, `location_only_series` and `novelty_rule_divergence` — 4, not 2 — plus `bench/evidence.py::LEDGER_CRITICAL_SEVERITY` and `bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD`. **6 spellings outside the canonical constant, 5 of them unpinned, all 7 values 0.7 today.** This is the `execute-do-not-grep` rule, and I broke it inside a brief that states it. **BOTH BLIND DELIVERIES WERE DEFECTIVE AND THE JOINT ROUND FOUND IT, which is the argument for running the joint half rather than stopping at 2 agreeing blind answers.** cc2's runner failed a stamped guard its own selected suites did not include; fable's accepted `recomputed_rk=True` as the figure 1.0, because `bool` is a subclass of `int`, so `severity_is_proven` returned True at severity 0.97 with the repoint ON — a malformed proof figure licensing a release. **NOTHING FROM EITHER SEAT IS ADOPTED INTO THE LIVE RUNNER**, under the standing rule that a panel's fixes go to the human and are never auto-applied; the repair sits in the harvested sandboxes at `bench/logs/severity_proof_and_weight_2026-11-14_joint/sandbox_harvest/` for him to rule on.
++**B143. THE APPENDIX'S SEVERITY FORMULA CANNOT BE COMPUTED BECAUSE ITS 2 INPUTS ARE READ BY 1 SITE EACH AND WRITTEN BY NONE THAT THE READER CAN SEE, AND THE ONE CONFIDENCE THE CODEBASE DOES COLLECT IS THE SELF-REPORT HIS OWN DIRECTIVE RULES INADMISSIBLE.** Added 2026-11-10T22:52:00+00:00. **STATUS: MEASURED ON 2 TOOLS. THE COLLECTION HALF IS MINE AND PROCEEDS; 2 NARROWER QUESTIONS ARE HIS.** **WHY IT IS A NEW ENTRY AND NOT A PARAGRAPH IN B87.** B87, the entry on the severity specification asking for an inadmissible quantity, is DONE and carries his ruling of 2026-11-08. Its own text states that *adding the HARD/SOFT field is separable and is not a decision*, because the directive already requires the classification — so that work is MINE, and B87 being DONE is exactly why it became invisible: a decision or a task recorded inside a closed entry reaches no surface, the same shape B94 records and the same shape found tonight in B71. **AND IT IS TRACKED NOWHERE ELSE:** `scripts/register.py --subject constraint_class` and `--subject compute_sev_f` each return **0 matches** against a register holding 185 severity tickets. **HE RAISED IT HIMSELF, 2026-11-10,** challenging whether severity had been abandoned in favour of a model vote; the answer is that it was not, and the honest finding is worse in a different direction. **THE ASSERTED NUMBER IS THE ORIGINAL DESIGN, NOT A REGRESSION.** `bench/cdsfl_finding_schema.json` has required the model to state `severity` since commit `8c1dacb3`, 2026-03-30 — 7 months before the first severity panel of 2026-09-07 — and commit `6c10fe41`, 2026-09-06, is titled *the model vote is out of the gate*, so displacing the vote was already under way. 12 panel rounds have been dispatched on severity measurement across 6 subjects, blind and joint, on free seats only. **THE MEASUREMENT, BY AST RATHER THAN BY GREP, because a substring is not a write.** In `bench/reference_runner_v3.py`: `constraint_class` has **1 reader (line 10917) and 0 writers**; `confidence` has **1 reader (line 10918) and 2 writers (lines 14640 and 20730) — and NEITHER WRITER WRITES THE OBJECT THE READER READS.** Line 14640 writes `stats["verdicts"][finding_id]`, a per-verdict telemetry dict; line 20730 writes `_sv_rows`, a separate telemetry list. The reader reads a REGISTRY ENTRY. Both fields are absent from the finding schema. So `compute_sev_f` defaults both inputs on every entry and `_SEVERITY_SPEC` stands at `{"on": False}` (line 10703). **THE TRAP IN "JUST COLLECT IT", AND IT IS THE REASON THIS ENTRY EXISTS RATHER THAN A SILENT FIX.** The single `confidence` the codebase does collect is `float(m.group(4)) if m.group(4) else 0.5` at line 14640 — parsed out of a model's own verdict text with a 0.5 default. That is a model's estimate of its own certainty, which his B87 ruling of 2026-11-08 made the directive declare INADMISSIBLE. **Pointing the formula at the value that already exists would reinstall exactly the vote he objected to**, which is why the collection must write a NEW tool-derived field and not reuse this one. **THE SHAPE THEOREM, VERIFIED HERE ON 2 INDEPENDENT TOOLS AND NOT TAKEN FROM THE PANEL RECORD.** For `Sev = W . B` with `W` in `{0.5, 1.0}` and `B` any composition of belief factors in `[0,1]`: z3 returns **unsat** for a counterexample to `Sev >= c <=> (W = 1.0 and B >= c)` over every `c` in `(0.5, 1.0]`; SymPy gives `sup(B/2) = 1/2` over `B` in `[0,1]`, so the SOFT branch can never reach any cut above 0.5, and at `W = 1` the test reduces to `B >= c` identically. **So no cut above 0.5 tests consequence MAGNITUDE at all** — magnitude enters only through `W`, and `W` has 2 values — and moving 0.7 to 0.8, 0.9 or 0.95 reclassifies 0 entries. SymPy gives the admissible range for a 3rd weight as strictly `(1/2, 1)`. This is already recorded as caution 3 of appendix section 7.7; what is NOT recorded is that **a 3rd weight was never put to any of the 12 rounds**. **THE PROOF MECHANISM PROVES THE WRONG QUANTITY, re-run tonight rather than cited.** `severity_is_proven` accepts a reproduction of `R_k` as evidence for a severity claim. Over **652** archived entries carrying a PASS or WARN proof the 2 correlate at **r = -0.5538, p = 1.152e-53, 95% CI [-0.6048, -0.4982]**, scipy and numpy agreeing to 1.11e-16, Spearman rho = -0.4716. The proof moves AGAINST the number it licenses, and at the proof's own 0.05 tolerance **555 of 652, 85.12%**, would stop being released. **AND THE SPECIFICATION'S KEY PROPERTY IS VIOLATED TODAY:** 27 of 32 disproved findings carry non-zero severity, **84.3750%, Wilson [68.2459%, 93.1356%], Clopper-Pearson [67.2121%, 94.7249%]**, where section 7.7 says a disproved finding scores 0. **HIS STANDING RULING IS TO BUILD IT:** 2026-11-01, *"So OK. Since I have already ruled on the severity change multiple times, and if this is the only thing that still needs to be done, then build it and implement it in full."* **RECOMMENDATION, IN DEPENDENCY ORDER, AND THE FIRST STEP NEEDS NOTHING FROM HIM.** 1. Collect the 2 fields — a NEW tool-derived confidence and the HARD/SOFT class — into the finding schema and the registration path, leaving the existing self-reported value untouched and unused, so `compute_sev_f` stops defaulting. That is carrying out his 2026-11-08 ruling and B87 already classes it as not a decision, so it proceeds by default. 2. **[NEEDS HIS RULING]** whether `severity_is_proven` is repointed at the gated quantity, since it currently licenses a release door on a proof of a different number; repointing it changes what that door admits, and loosening or tightening a gate is his. 3. **[NEEDS HIS RULING]** whether appendix section 7.7 gains a 3rd consequence weight in `(1/2, 1)`, which is the only change that makes any cut a magnitude test and is an edit to the mathematical model rather than to the code. **NOT COMPOSED:** steps 2 and 3 are independent of step 1 and of each other, and no measurement shows any pair dominating either part alone, so each stands on its own under his composability standard. **2 CAUTIONS ON ANY BUILD, both from the panel record and both verified above.** Promoting section 7.7 to the blocking gate, the rule that stops a run closing while a critical finding is open, releases criticals on falsifier OMISSION, because `V(None) = 0.5` makes every unresolved finding sub-critical; and 3 raw-severity partition readers gate rather than 1, so a repair reaching only the A4 door leaves 2 gating readers on the asserted float. Tracked as `pf:18582c4fed35`, the uncomputable severity formula. Producers, all re-run tonight: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py`. ★★★ **HIS CONDITIONAL OF 2026-11-12 WAS MEASURED BEFORE ANY PANEL WAS DISPATCHED, AND IT DOES NOT FIRE FOR THE 3 ISSUES HE NAMED.** **HIS WORDS, verbatim:** *"Again you will need to explain this in plain English. We recently did extensive work on severity and how this is measured and we recently did a panel review too. We identified that the maths model sits at a higher level of abstention, that the 0.7 cut was effectively meaningless and that the real measure of severity is entirely domain dependent. Why weren't these issues resolved the last panel review? If you didn't ask them, you should run another fresh free panel review to resolve these questions. stm"* (His *abstention* is *abstraction*.) **ALL 3 REACHED THE BRIEF OF THE 2026-11-11 FREE-SEAT ROUND**, recorded in `experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md`: the abstraction question is its **Q6**, named there as *THE FOUNDER'S OWN QUESTION, and it is the one he most wants answered*; the frozen cut is its **Q4**, asking whether 0.7 can be expressed as a RANK on each validated scale; and domain-dependence is the whole subject of the round. Measured by splitting every seat-structured panel record at its first `## Seat:` heading so that *the question was PUT* is distinguishable from *a seat raised it unprompted*: **75 of 110 `Panel_*.md` files carry a reply section**, and the 2026-11-11 record carries all 5 of the questions tested. **AND 3 OF THE 4 REPAIRS THAT ROUND PUT IN PLAY ARE LIVE IN THE TREE**, verified by reading the files rather than the record: the ordinal reformulation at `bench/directives/universal/cdsfl_core_formal.md:418` onward, the per-domain scale table in `bench/cdsfl_registry/domain_manifest.toml`, and the credence finding written into `docs/MATHEMATICAL_APPENDIX.md:1473` with the ordered-pair form at `:1479`. **THE 4TH IS NOT:** `bench/reference_runner_v3.py:10784` still returns `severity_proof_status(entry) in _RK_PROOF_ACCEPTED`, so a reproduction of `R_k` is still accepted as evidence for a severity claim. **WHAT GENUINELY WAS NEVER ASKED, AND IT IS MINE.** That round's brief carried the 2-value weight as measurement 3.5 — z3 `unsat` for 4 distinct severities from `W` in `{0.5, 1.0}`, `sat` for 2 — handed to the seats as ESTABLISHED. **No question asked them whether a 3rd weight should be added, and no seat was asked to rule on it.** So the honest answer to him is that the issues were asked and largely applied, and that the gap is a FACT put without a QUESTION attached. **A FRESH FREE ROUND IS DISPATCHED 2026-11-14 ANYWAY**, narrowed to the 2 genuinely undecided parts and to the self-falsification that the 2 may be exclusive rather than composable — if the domain's ordinal scale now carries consequence magnitude, adding a 3rd weight to a product already renamed a credence repairs a quantity with no job. Brief: `bench/logs/severity_proof_and_weight_2026-11-14/BRIEF.md`, 8 of 8 required sections, 3 declared figures re-executed by the validator. **AND THE FROZEN CUT IS SPELLED 4 TIMES OUTSIDE ITS CANONICAL CONSTANT, 3 OF THEM UNPINNED**, read by importing the modules rather than by searching text: `bench/evidence.py::LEDGER_CRITICAL_SEVERITY` pinned by `bench/tests/test_verified_true_ledger.py`, `bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD` pinned by nothing, and `bench/convergence_location.py`'s `critical_threshold` defaults on `hierarchical_novelty_series` and `novelty_rule_divergence`, also unpinned. All 4 are 0.7 today. That is in the brief.
+ <!-- task: B143 | state: OPEN | status: PROPOSED | evidence: scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py -->
+ 
+ **B144. THE CRITICAL CUT OF 0.7 IS NOT A SEVERITY MEASUREMENT, BECAUSE NOTHING IT DECIDES SURVIVES A CHANGE OF UNITS -- AND THE DOMAIN THAT WOULD SUPPLY THE UNITS IS A COMMAND-LINE FLAG WITH NO CLASSIFIER AND NO RECORD.** Added 2026-11-11T21:33:44+00:00. **STATUS: MEASURED ON 2 INDEPENDENT TOOLS AT EVERY STEP. NO RULING IS REQUESTED FOR THE MEASUREMENT; THE DESIGN CONSEQUENCE IS HIS AND IS HELD UNDER HIS `d`.** **HE RAISED IT, 2026-11-11, and the measurement agrees with him rather than with the position this entry replaces.** He asked whether pinning an exact number on severity is an arbitrary and vacuous exercise once severity is accepted as a quantity each domain already measures on its own scale, and whether the harness and the models must therefore be told which scale and which cut to use per domain. **THE ANSWER IS YES ON BOTH, AND IT IS NOW A THEOREM AND A COUNT RATHER THAN A JUDGEMENT.** **(1) THE CUT IS NOT ORDINAL-ADMISSIBLE.** z3 returns **sat** for a strictly increasing re-scaling that preserves every pairwise order and still changes `count(severity >= 0.7)`; it returns **unsat** for the same attack on a cut named by a DISTINGUISHED ELEMENT of the ordering, so a transported cut is invariant and a frozen number is not. **(2) THE ARCHIVE CONSEQUENCE IS TOTAL.** Over **3,170** archived severities the affine map `phi(x) = 0.6993 * x` -- strictly increasing, Spearman rho exactly **1.0000000000**, every pairwise order preserved on an exhaustive 400-sample sign check -- destroys **1,416 of 1,416 CRITICAL calls, 1.000000**, Wilson [0.997294, 1.000000], Clopper-Pearson [0.997398, 1.000000], both intervals on 2 routes agreeing to 2.220e-16 and 3.139e-17, and the counts taken on 2 routes (NumPy and pure Python) agreeing exactly. **So 100 per cent of the gate's CRITICAL decisions can be erased by a transformation that changes no ordering whatsoever.** **(3) THE PANEL MEASURED THE SAME THING FROM THE OTHER SIDE.** The free round `severity_is_ordinal_2026-11-11` carried the cut into the 4 validated scales by `x -> lo + 0.7 * (hi - lo)` and executed it: **CVSS lands on 7.0, exactly the High boundary and therefore expressible as a rank; FMEA on 7.3, CTCAE on 3.8 and INES on 4.9, all BETWEEN levels.** 1 of 4 can receive the frozen cut as a rank; 3 cannot. **(4) THE ROUTING HALF, WHICH IS HIS OWN QUESTION AND IS A DIFFERENT ONE FROM B140'S MODEL ROUTING.** By AST over `bench/reference_runner_v3.py` rather than by grep: exactly **1** command-line domain argument, at line 22972, `--domain` with a hardcoded default of `'software'`; **0** functions that classify a domain from task content; and across **67** de-duplicated archived `runner_state.json` files, **0** record any domain key at any depth, so the domain a run was conducted under is not preserved anywhere. **0 of 20** domain config files declare a severity scale or a critical cut, Wilson [0.000000, 0.161125], Clopper-Pearson [0.000000, 0.168433]. **So the quantity that would supply the units exists in no config, is chosen by no classifier, and is recorded in no run state.** **WHAT IS ALREADY FIXED, because he instructed it and it is design-independent.** 2 of the 3 naming collisions named in that round's brief are repaired in `docs/MATHEMATICAL_APPENDIX.md`: the verification factor is renamed `V` to **`Ver`** throughout section 7.7, ending the collision with `V(f)` for MATERIALITY at `cdsfl_core_formal.md:417` where the same letter named a consequence in one canonical document and an evidence weight in the other; and the dead citation to a section 10 of `cdsfl_core.txt` enumerating 5 material-defect categories is replaced, that file being **39 lines long with no section 10 and no such categories**, and nothing in `bench/` or `docs/` enumerating them either. **3 PARSING SITES FOLLOWED THE RENAME RATHER THAN BEING LOOSENED TO ACCEPT BOTH SPELLINGS**, because accepting both would let a revert to the colliding name pass unnoticed: 2 guard files and the mutation harness `scripts/the_folded_back_seat_guards_mutations_2026-11-06.py`, which still reports **4 of 4 mutations red** against the new anchor, with 85 tests passing across the 5 severity guards. **THE 3RD COLLISION IS NOT FIXED AND IS DELIBERATELY HELD**: the word *severity* still names 3 distinct objects -- the real-world consequence, the credence product of section 7.7, and the model-asserted float the running code compares against the frozen constant -- and separating them IS the design decision under his `d`. **RESIDUE, NAMED RATHER THAN SWEPT:** 4 committed producers of October and early November still print the old `V(...)` spelling in their output prose. All 4 are pinned by guards that read that output, their computations are unaffected, and the authoritative document now records the rename, so they are left under `p-pass-anti-nitpick` rather than churned at commit time. **HIS CORRECTION ON HOW THE CONSTANT IS WRITTEN, 2026-11-11, AND IT IS ADOPTED HERE.** He objected that this entry repeats the number as though it still meant something: *"you again appear to be pinning 0.7 as a meaningful cut point. Haven't we just established that it isn't and that the cut point will vary on a per-domain basis and the convention that is usually applied in that domain to establish the cut point?"* **HE IS RIGHT AND THE DISTINCTION IS NOW STATED RATHER THAN LEFT TO THE READER.** The figure is named in this entry for exactly 1 reason: it is the constant the live code compares against, and a finding about a specific constant that refuses to name it is unlocatable. It is named as the ARTEFACT UNDER REFUTATION and carries no standing as a severity level -- the measurements above are the argument that it has none. **Everywhere else it is written as the frozen constant rather than as a quantity**, and the sharpest reason for that is in the measurement itself: the value the gate actually compares against is not 0.7 at all but 0.699999999999999955591, the nearest double, which is strictly BELOW the real number, and 174 of the 1,416 critical calls are decided by a tie at that boundary. A number that is not even itself in the reals cannot be a level. **RECOMMENDATION, 1 ONLY, under `additive-standard` and `simplicity-default`:** declare the scale and the critical LEVEL in each domain config, where 0 of 20 declare either today, and record the resolved domain in the run state, where 0 of 67 do -- both additive, neither removing the existing cut, and both prior to any change to what the gate admits. **NOT COMPOSED:** the declaration and the recording are independent and no measurement shows the pair dominating either alone, so each stands on its own under his composability standard. Tracked as `pf:d9cc6568cd70`, the critical cut of 0.7 not being a severity measurement. Producer: `scripts/the_cut_is_a_domain_property_not_a_constant_2026-11-11.py`.
+
+### cc2:attempt-1:experimental_notes/Panel_Severity_Critical_Level_And_Draft_Adjudication_2026-11-14.md
+--- /dev/null	2026-11-14 02:40:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/experimental_notes/Panel_Severity_Critical_Level_And_Draft_Adjudication_2026-11-14.md	2026-11-14 02:38:11
+@@ -0,0 +1,165 @@
++# Panel record — where the FMEA critical level sits, and which of the 22 draft
++# encodings may leave DRAFT
++
++Seat: single free-panel seat, one-shot dispatch, 2026-11-14.
++Artefact digests verified against the dispatch stamps before any measurement:
++all 6 matched.
++
++Measurement script: `scripts/where_does_a_critical_level_land_2026-11-14.py`
++Guard: `bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py`
++
++## Q1 — RECOMMEND RETAIN 7; the level change itself is the founder's
++
++Four independent grounds, three of them executed.
++
++1. **The project's own materiality definition.** `cdsfl_core_formal.md` §10
++   names five material-defect categories. Only one of them — hard-constraint
++   violation, and only its law/safety sub-case — reaches FMEA's 9-10 SAFETY OR
++   REGULATORY band. Wrong result, verification-integrity corruption, silent
++   evidence loss and unreproducibility all sit in 7-8 HIGH. A cut at 9 would
++   demote **4 of the project's own 5 material categories** below critical.
++   This is an argued mapping, written out in full in the script's M6 so it can
++   be disputed. It is the decisive ground, and it is about this project's
++   definition of material, not about the handbook.
++
++2. **Cross-scale rank consistency, measured.** Rank of the declared critical
++   level counted from the top of its own band list: software (CVSS v4.0 /
++   High) = 2, chemistry (GHS Rev. 11 / Category 2) = 2, biology (CTCAE v5.0 /
++   Grade 3) = 3, engineering at 7 = 2. Engineering at 9 = 1. Nine would make
++   engineering the only scale whose critical level is the MAXIMAL band,
++   outside the observed range [2, 3].
++
++3. **Degeneracy.** At the maximal band the predicate `c_d(f) ≽_d θ_d` is
++   equivalent to `c_d(f) = max` — an identity test, not an ordinal threshold.
++   The up-set collapses to one element and the ordering above the cut carries
++   no information. `cdsfl_core_formal.md` defines θ_d as "a distinguished
++   element OF that ordering"; the maximum distinguishes nothing, since every
++   scale has one by construction.
++
++4. **Ambiguity direction.** `p-pass-ambiguity-default` resolves an ambiguous
++   HARD constraint toward the tighter reading. The sources are secondary and
++   the handbook names two landmarks, so the ambiguity is real and resolves
++   to 7.
++
++### The decision procedure, stated so it applies to the next standard
++
++Given a standard naming landmark bands B_1 ≺ … ≺ B_m:
++
++1. **Enumerate the landmarks the standard itself labels.** Do not collapse
++   two into one; record both in `severity_levels`.
++2. **Reject B_m as a candidate cut** unless the standard states that only the
++   top band carries consequence. A cut at the maximum is an identity test.
++3. **Map the consuming project's own material-defect categories onto the
++   bands.** The cut is the LOWEST band that at least one material category
++   reaches. This is the operative step and it makes the cut a property of the
++   consumer's materiality definition, not of the standard's vocabulary.
++4. **Check the rank from the top against the project's other declared
++   scales.** A rank outside the observed range is not disqualifying but must
++   be justified in `critical_level_note`.
++5. **Where steps 3 and 4 disagree, resolve toward the tighter cut** and record
++   the disagreement. Ambiguity is HARD by §1.
++6. **Record which landmark was NOT chosen, and why**, in the note. Both
++   landmarks continue to reach a seat on the `LEVELS:` line regardless.
++
++Applied here, step 3 yields **7** and step 4 agrees. For CVSS the same
++procedure yields High (7.0), which is what the manifest declares. For CTCAE it
++yields Grade 3. The procedure reproduces all three existing declarations.
++
++### The third option — declare both landmarks — is REJECTED, measured
++
++`domain_vocabulary.severity()` returns exactly one `critical_level` key.
++`composer._severity_declaration` emits exactly one `CRITICAL LEVEL:` line.
++Product modules referencing `critical_level`: two (`composer.py`,
++`domain_vocabulary.py`). **Nothing in the harness can consume a second cut**,
++so declaring one is an addition nothing reaches — the failure class this
++project has shipped 11 times since 2026-08-01.
++
++And it is unnecessary: **both landmarks already reach the seat**, on the
++`LEVELS:` line of the delivered declaration —
++`1 no effect; 2-3 very minor to minor; 4-6 moderate; 7-8 high; 9-10 safety or
++regulatory`. What a second field would add is a second CUT, not a second
++landmark.
++
++### Consequence of a move to 9, measured
++
++- `reference_runner_v3.CRITICAL_SEVERITY_THRESHOLD` = `0.7` (float). Mutating
++  the manifest level 7 → 9 on a copy left it at `0.7`. **Two distinct
++  quantities.**
++- `convergence_location.py` contains `critical_level` 0 times and
++  `severity_scale` 0 times. All three novelty series take a float
++  `critical_threshold` (default 0.7) and have no `domain` parameter. **The
++  named level does not enter convergence.**
++- What changes is the one `CRITICAL LEVEL:` line in a seat's composed
++  directive. So the move is a REPORTING change, and that bounds it.
++
++## Q2 — 11 of 22 may move to CROSS_VERIFIED; 11 may not
++
++Criteria applied, stated before use: (a) the cited standard is named with
++edition/version and confirmed current, or the encoding honestly declares no
++scale with a stated reason; (b) a majority of its HARD constraints are
++tool-checkable; (c) no `[VERIFY:current]` sits on a load-bearing citation.
++
++11 of 22 = 50.0000%, Wilson [30.7221%, 69.2779%]. Coverage: 22 of 22 examined.
++Across the 22, 115 of 152 HARD constraints are tool-checkable = 75.6579%,
++Wilson [68.2581%, 81.7928%].
++
++**Recommended CROSS_VERIFIED (11):** biology_genetics,
++information_science_retrieval, mathematics_applied, mathematics_numerical,
++mathematics_proof, physics_classical, physics_general, physics_quantum,
++software_general, statistics_inference, statistics_time_series.
++
++**Must stay DRAFT (11), with the blocking reason:**
++biology_natural_world (3/7 tool-checkable, below majority);
++biology_zoology (1/7; animal-welfare scale `[VERIFY:current]`, no scale
++confirmed); chemistry_general (Rev. 11 currency is SECONDARY-sourced);
++cross_general (cites no published standard — the rule is the founder's, which
++is authoritative but is not an external standard);
++information_science_data_management (ISO 11179 unversioned,
++`[VERIFY:current]`); information_science_general (same ISO citation);
++information_science_knowledge_representation (ISO 11179 and Dublin Core
++unversioned); logistics_warehousing ("None confirmed primary");
++physics_thermodynamics (inherits chemistry's Rev. 11 currency defect);
++statistics_experimental_design (CONSORT/PRISMA explicitly cited without a
++version, `[VERIFY:current]`); statistics_general (ISO 3534 no edition).
++
++**The tier promotions are NOT applied to the manifest.** `encoding_tier`
++appears 0 times in `composer.py` and 0 times in `reference_runner_v3.py`;
++flipping every tier DRAFT → CROSS_VERIFIED on a copy left the composed
++declaration byte-identical. The tier is validated for membership in `tiers`
++and printed by the `domain_vocabulary` CLI, and gates nothing. Writing
++promotions now would be an addition nothing reaches. Promote when a consumer
++exists.
++
++## The one material defect found, and it is repaired
++
++`_severity_declaration` returns `""` whenever the composed text already
++matches `^SEVERITY SCALE:`, on the stated ground that the encoding is "the
++narrower, better-sourced statement". **Tested on version-carrying — the exact
++property the CVSS v3.1 → v4.0 and GHS Rev. 10 → Rev. 11 corrections were
++about — that ground was false for 11 citations across 7 of the 22 files.**
++A seat was told to report a `(value, scale-name)` pair and handed
++`FMEA severity applies with critical at 7`, `CTCAE with critical at Grade 3`,
++`GHS health hazard category` — scale names with no edition — while the
++manifest held the edition and the suppression rule prevented it arriving.
++
++Repaired by adding the edition to each citation (no level changed, no gate
++touched): chemistry_general, mathematics_applied, physics_classical,
++physics_thermodynamics, statistics_experimental_design, statistics_inference,
++software_general. Offenders 11 → 0.
++
++## Residual, named rather than left silent
++
++`physics_general.txt` cites **INES** with no revision. INES is not declared in
++the manifest, so the new guard's family table does not cover it, and no
++manifest entry holds its edition to supply. This is a real gap and it is
++recorded rather than repaired, because inventing an INES revision is the
++failure this project calls a magic wand.
++
++A seat is told to report a `(value, scale-name)` pair on a 1-10 ordinal scale.
++The gate reads `float(entry["severity"])` and compares it to `0.7`. Searched
++for a conversion from a named ordinal rank to that float: **0 definitions** in
++`reference_runner_v3.py`, `composer.py` and `domain_vocabulary.py`. The route
++from the delivered declaration to the field the gate reads is undefined. This
++is the strongest candidate for the next round; it is stated as a measured
++absence and not claimed as a confirmed defect, because no falsifier here
++demonstrates a wrong outcome from it.
+
+### cc2:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-14 02:30:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/hooks/pre-commit	2026-11-14 00:58:59
+@@ -574,7 +574,6 @@
+ bench/tests/test_the_co_author_trailer_is_not_doubled_2026-11-14.py
+ bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py
+ bench/tests/test_the_parked_boundary_is_honoured_2026-11-14.py
+-bench/tests/test_the_credence_coordinate_carries_consequence_2026-11-14.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### cc2:attempt-1:scripts/read_founder_responses_2026-10-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/read_founder_responses_2026-10-11.py	2026-11-14 02:39:42
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/scripts/read_founder_responses_2026-10-11.py	2026-11-13 23:17:56
+@@ -265,39 +265,11 @@
+     _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+     from bench.ticket_store import KINDS as _HIS_KINDS
+ except Exception:                                         # noqa: BLE001
+-    #: ★ THIS LITERAL WENT STALE AND THE STALENESS WAS SILENT, found 2026-11-14.
+-    #: It omitted `frx`, so on any run where the import above fails his newest
+-    #: marker became UNREADABLE -- and that is precisely the run where nothing
+-    #: else is available to notice. Driven both ways on his own sentence
+-    #: "you should fix both. frx": READ with the import, INVISIBLE with the
+-    #: fallback. A fallback that is stale is worse than no fallback, because it
+-    #: looks like coverage. `bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py`
+-    #: now asserts this literal equals `KINDS` exactly, so it cannot go stale again.
+-    _HIS_KINDS = ("fr", "frx", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
++    _HIS_KINDS = ("fr", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
+ _ENDS_IN_HIS_MARKER = re.compile(
+     r"\b(?:" + "|".join(sorted(_HIS_KINDS, key=len, reverse=True)) + r")\b\s*$",
+     re.IGNORECASE)
+ 
+-#: ★ ONE ALTERNATION, DERIVED, USED BY EVERY PATTERN BELOW THAT NEEDS IT.
+-#:
+-#: 2 patterns in this file -- `_MARKER_LINE` and `_MARKER_TRAILING` -- each
+-#: SPELLED THE VOCABULARY OUT TWICE, so the 9 kinds appeared 4 more times in
+-#: this module alone. The cost is measured rather than feared: adding his `frx`
+-#: on 2026-11-13 needed every site updated, the harvester's own comment names
+-#: only 4 of them and none of them is in this file, and the commit board refused
+-#: with 6 failures until they were found by hand.
+-#:
+-#: `_ENDS_IN_HIS_MARKER` above already did it the right way. These now do too,
+-#: which REMOVES 4 re-spellings rather than adding a comparator for them -- a
+-#: derived pattern cannot diverge, and under `simplicity-default` a deletion
+-#: beats a checker that has to be kept honest.
+-#:
+-#: LONGEST FIRST is load-bearing, not cosmetic: `fr` is a prefix of `frx`, so a
+-#: shorter-first alternation relies on the engine backtracking out of a failed
+-#: suffix. It does backtrack, measured both ways -- but the ordering makes the
+-#: pattern correct by construction instead of correct by accident.
+-_KIND_ALT = "|".join(sorted(_HIS_KINDS, key=len, reverse=True))
+-
+ #: Where this project's own generated TTS reports live. An annotated response
+ #: file is a COPY of one of these with his '#' insertions, so the original is an
+ #: EXACT oracle for which lines are the report's and which are his -- better
+@@ -554,7 +526,7 @@
+ #: own. Without it, `stm` would have been readable by the harvester and
+ #: invisible to the reader that actually parses his annotations.
+ _MARKER_LINE = re.compile(
+-    r"^\s*(" + _KIND_ALT + r")(?:\s*,\s*(?:" + _KIND_ALT + r"))*\s*$", re.I)
++    r"^\s*(frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*\s*$", re.I)
+ 
+ 
+ #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
+@@ -584,28 +556,9 @@
+ #: THE TEXT IS NOT ALTERED. Only this field is filled. `tid_of` digests a
+ #: ticket's verbatim, so stripping the marker out of the annotation would move
+ #: every identity derived from it -- a far larger change than the defect.
+-#: ★ THE SUFFIX ADMITS A FOLLOWING PARENTHETICAL, WIDENED 2026-11-14, AND THE
+-#: DEFECT IT CLOSES IS HIS OWN FIRST USE OF `frx` -- AGAIN, IN THE SECOND
+-#: READER. B184 widened the HARVESTER's suffix for exactly this sentence and
+-#: stopped there; this file carries the other reader of the same vocabulary and
+-#: was never touched. Driven on his words, "you should fix both. frx (as you
+-#: will note this is my first use of the fix request ticket classification.)":
+-#: the harvester returned `frx`, `_MARKER_LINE` returned None and this pattern
+-#: returned None, so `annotations()` reported the marker as blank.
+-#:
+-#: ★ IT WAS MASKED, NOT HARMLESS. `scripts/harvest_tickets_2026-10-17.py:432`
+-#: re-applies its own MARKER when this field is empty, so the TICKET was filed
+-#: correctly and the blind spot never surfaced there. 3 other production
+-#: consumers read this field directly and saw his fix request as unmarked.
+-#:
+-#: ★ MEASURED BEFORE IT WAS MADE, because adding to an accepting pattern is a
+-#: LOOSENING: over all 895 of his annotations the widened suffix changes
+-#: exactly 1 verdict, 0.001117, Wilson [0.000197, 0.006302], Clopper-Pearson
+-#: [0.000028, 0.006209] -- and that 1 is his own `frx` sentence. 0 verdicts
+-#: LOST, 0 false positives in 895.
+-_MARKER_TRAILING = re.compile(
+-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:" + _KIND_ALT + r")(?:\s*,\s*(?:" + _KIND_ALT + r"))*)"
+-    r"(?:[\s.!?]*$|\s*[(\[][^\n]*$)", re.I)
++_MARKER_TRAILING = re.compile(
++    r"(?:^|[\s.,;:!?)\]\"'’”])((?:frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*)"
++    r"[\s.!?]*$", re.I)
+ 
+ 
+ #: ★ THE OTHER 5 SEATS, so a trailing `ds` that is the DeepSeek seat is not
+
+### cc2:attempt-1:scripts/where_does_a_critical_level_land_2026-11-14.py
+--- /dev/null	2026-11-14 02:40:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/scripts/where_does_a_critical_level_land_2026-11-14.py	2026-11-14 02:31:40
+@@ -0,0 +1,333 @@
++#!/usr/bin/env python3
++"""Where a domain's critical LEVEL lands, and what a tier word reaches.
++
++RUN:  python3 scripts/where_does_a_critical_level_land_2026-11-14.py
++
++WHAT THIS DECIDES BY EXECUTION, for the panel question of 2026-11-14 on the
++engineering critical level and on the 22 DRAFT encodings.
++
++  M1  Is a domain's named `critical_level` the SAME quantity as the live
++      `reference_runner_v3.CRITICAL_SEVERITY_THRESHOLD`?  Mutate the first,
++      re-read, and see whether the second moves.
++  M2  Where does each declared critical level sit in its own band list,
++      counted from the TOP?  That rank is invariant under every strictly
++      increasing relabel of the scale, so it is an admissible statistic under
++      `cdsfl_core_formal.md` ("max, min, any SELECTED order statistic: YES").
++  M3  Can anything in this repository consume TWO critical levels for one
++      domain?  Count the fields `severity()` returns and the `CRITICAL LEVEL`
++      lines `_severity_declaration` emits.
++  M4  Does `encoding_tier` gate anything at dispatch?  Count its occurrences
++      in the composer and the runner, and compose with the tier flipped.
++  M5  Coverage over the 51 encodings, with Wilson intervals.
++  M6  THE SUPPRESSION ASYMMETRY.  `_severity_declaration` returns "" whenever
++      the composed text already matches `^SEVERITY SCALE:`, on the stated
++      ground that the encoding is "the narrower, better-sourced statement".
++      Measure whether that is true on the one property this project has
++      already been burned by: does the encoding's scale line carry the
++      standard's VERSION?
++
++THE MANIFEST IS NOT MUTATED IN PLACE.  M1 and M4 point the vocabulary reader
++at a COPY under the system temp directory.  The artefact under review is
++opened read-only, which is also what the panel's falsifier-integrity rule
++requires: a measurement must not write where a later reader looks.
++"""
++from __future__ import annotations
++
++import ast
++import math
++import pathlib
++import re
++import shutil
++import sys
++import tempfile
++
++HERE = pathlib.Path(__file__).resolve().parent
++ROOT = HERE.parent
++sys.path.insert(0, str(ROOT))
++sys.path.insert(0, str(ROOT / "bench"))
++
++from bench.cdsfl_registry import composer as C                 # noqa: E402
++from bench.cdsfl_registry import domain_vocabulary as V        # noqa: E402
++
++MANIFEST = ROOT / "bench" / "cdsfl_registry" / "domain_manifest.toml"
++RUNNER = ROOT / "bench" / "reference_runner_v3.py"
++DIRECTIVES = ROOT / "bench" / "directives"
++
++
++def wilson(k: int, n: int, z: float = 1.959963984540054) -> tuple[float, float]:
++    """Wilson score interval, written out so the arithmetic is visible:
++    centre (p + z^2/2n)/(1 + z^2/n), half-width
++    z*sqrt(p(1-p)/n + z^2/4n^2)/(1 + z^2/n)."""
++    if n == 0:
++        return (0.0, 1.0)
++    p = k / n
++    d = 1.0 + z * z / n
++    centre = (p + z * z / (2 * n)) / d
++    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
++    return (max(0.0, centre - half), min(1.0, centre + half))
++
++
++def runner_threshold() -> float:
++    """Read CRITICAL_SEVERITY_THRESHOLD by AST, without importing the runner.
++    The runner is 1.28 MB with a large dependency set; an AST read gets the
++    committed literal with no import side effects."""
++    tree = ast.parse(RUNNER.read_text(encoding="utf-8"))
++    for node in tree.body:
++        if isinstance(node, ast.Assign):
++            for t in node.targets:
++                if isinstance(t, ast.Name) and t.id == "CRITICAL_SEVERITY_THRESHOLD":
++                    return float(ast.literal_eval(node.value))
++    raise AssertionError("CRITICAL_SEVERITY_THRESHOLD not found in the runner")
++
++
++def _reload():
++    V.load.cache_clear()
++    for fn in ("entry", "domains", "alias_map", "resolve", "subdomains",
++               "default_subdomain", "tiers"):
++        f = getattr(V, fn, None)
++        if hasattr(f, "cache_clear"):
++            f.cache_clear()
++
++
++class ManifestCopy:
++    """Point the ONE reader at a COPY, so the artefact is never written."""
++
++    def __init__(self, transform):
++        self.transform = transform
++
++    def __enter__(self):
++        self.tmp = pathlib.Path(tempfile.mkdtemp(prefix="cdsfl_manifest_"))
++        dst = self.tmp / "domain_manifest.toml"
++        dst.write_text(self.transform(MANIFEST.read_text(encoding="utf-8")),
++                       encoding="utf-8")
++        self.saved = V.MANIFEST
++        V.MANIFEST = dst
++        _reload()
++        return dst
++
++    def __exit__(self, *exc):
++        V.MANIFEST = self.saved
++        _reload()
++        shutil.rmtree(self.tmp, ignore_errors=True)
++        return False
++
++
++def band_index(levels, critical):
++    """Index of the band the declared critical level names, in the declared
++    ascending-severity band list."""
++    c = str(critical).strip().lower()
++    for i, b in enumerate(levels):
++        toks = re.findall(r"[A-Za-z0-9.]+", str(b).lower())
++        if c in toks:
++            return i
++    hits = [i for i, b in enumerate(levels) if c in str(b).strip().lower()]
++    return hits[0] if hits else None
++
++
++def main() -> int:
++    bad = 0
++    print("=" * 78)
++    print("WHERE A CRITICAL LEVEL LANDS  --  executed")
++    print("=" * 78)
++    print(f"manifest sha-read from : {MANIFEST}")
++    print(f"manifest writable here : {MANIFEST.stat().st_mode & 0o200 != 0} "
++          f"(this script still does not write it)")
++
++    # ---------------------------------------------------------------- M1
++    print("\nM1. IS THE NAMED LEVEL THE SAME QUANTITY AS THE GATE FLOAT?")
++    before_thr = runner_threshold()
++    lvl = V.severity("engineering")["critical_level"]
++    before_decl = C._severity_declaration("engineering", "")
++    print(f"  runner CRITICAL_SEVERITY_THRESHOLD  = {before_thr!r}  "
++          f"({type(before_thr).__name__})")
++    print(f"  manifest engineering critical_level = {lvl!r}  "
++          f"({type(lvl).__name__})")
++    print("  NOTE THE TYPES. One is a float on [0,1] attached to a model-asserted")
++    print("  severity; the other is a STRING naming a rank on an external ordinal")
++    print("  scale. There is no arithmetic relation between them to break.")
++
++    with ManifestCopy(lambda s: s.replace('\ncritical_level = "7"\n',
++                                          '\ncritical_level = "9"\n', 1)):
++        after_lvl = V.severity("engineering")["critical_level"]
++        after_thr = runner_threshold()
++        after_decl = C._severity_declaration("engineering", "")
++    print(f"  with the level mutated 7 -> 9 on a COPY:")
++    print(f"    manifest level now                = {after_lvl!r}")
++    print(f"    runner threshold now              = {after_thr!r}")
++    print(f"    composed declaration text changed = {before_decl != after_decl}")
++    print(f"  artefact level after, unchanged     = "
++          f"{V.severity('engineering')['critical_level']!r}")
++    if after_thr != before_thr:
++        print("  !! the named level REACHED the gate float"); bad += 1
++    if before_decl == after_decl:
++        print("  !! the named level reached NOTHING at all"); bad += 1
++    if V.severity("engineering")["critical_level"] != "7":
++        print("  !! artefact disturbed"); bad += 1
++    print("  VERDICT: 2 DISTINCT QUANTITIES. The named level moved; the gate")
++    print("           float did not. The named level reaches the PROMPT only.")
++
++    import inspect
++
++    import convergence_location as CL
++    ents = [{"round": 1, "severity": 0.80,
++             "description": "missing bound check at bench/a.py:10 in foo()"},
++            {"round": 2, "severity": 0.80,
++             "description": "missing bound check at bench/b.py:20 in bar()"}]
++    syms = frozenset({"foo", "bar"})
++    for fname in ("combined_novelty_series", "hierarchical_novelty_series",
++                  "location_only_series"):
++        fn = getattr(CL, fname)
++        sig = inspect.signature(fn)
++        out = fn(ents, 2, syms)
++        print(f"  CL.{fname:28s} -> {out if not isinstance(out, dict) else list(out)[:4]}")
++        print(f"     params: {list(sig.parameters)}")
++        print(f"     has a `domain` parameter : {'domain' in sig.parameters}")
++        print(f"     has a `critical_threshold`: {'critical_threshold' in sig.parameters}"
++              f"  default={sig.parameters['critical_threshold'].default if 'critical_threshold' in sig.parameters else None!r}")
++    src = (ROOT / "bench/convergence_location.py").read_text(encoding="utf-8")
++    print(f"  'critical_level' occurrences in convergence_location.py = "
++          f"{src.count('critical_level')}")
++    print(f"  'severity_scale' occurrences                            = "
++          f"{src.count('severity_scale')}")
++    print("  The series takes a FLOAT severity_threshold. No domain name and no")
++    print("  named level enter it. Q1 is a REPORTING question, not a convergence")
++    print("  one, and that BOUNDS its consequence.")
++
++    # ---------------------------------------------------------------- M2
++    print("\nM2. RANK OF EACH DECLARED CRITICAL LEVEL, COUNTED FROM THE TOP")
++    print("    (invariant under every strictly increasing relabel -> admissible)")
++    rows = []
++    for dom in V.domains():
++        sev = V.severity(dom)
++        if sev["scale"] in (None, "none", "composed") or not sev["critical_level"]:
++            continue
++        lv = sev["levels"]
++        i = band_index(lv, sev["critical_level"])
++        rows.append((dom, sev["scale"], sev["critical_level"], len(lv), len(lv) - i))
++    for dom, scale, cl, n, ft in rows:
++        print(f"  {dom:14s} {scale[:36]:36s} critical={cl!r:14s} bands={n} "
++              f"rank_from_top={ft} upset={ft}")
++    others = sorted(r[4] for r in rows if r[0] != "engineering")
++    eng = [r[4] for r in rows if r[0] == "engineering"][0]
++    print(f"\n  engineering at 7 -> rank_from_top = {eng}, upset = {eng}")
++    print(f"  the other declared scales            = {others} "
++          f"(min {min(others)}, max {max(others)})")
++    print("  engineering at 9 -> rank_from_top = 1, upset = 1")
++    print("  A cut at the MAXIMAL band makes the predicate `c >= theta` equal to")
++    print("  `c == max`: an IDENTITY TEST, not an ordinal threshold, and the")
++    print("  ordering above the cut then carries no information. No other declared")
++    print(f"  scale does this. 9 puts engineering outside the observed range "
++          f"[{min(others)}, {max(others)}].")
++
++    # ---------------------------------------------------------------- M3
++    print("\nM3. CAN ANYTHING CONSUME A SECOND CRITICAL LEVEL?")
++    keys = sorted(V.severity("engineering").keys())
++    lvl_keys = [k for k in keys if "critical" in k and not k.endswith("note")]
++    decl = C._severity_declaration("engineering", "")
++    n_lines = len(re.findall(r"^\s*CRITICAL LEVEL:", decl, re.M))
++    print(f"  severity() keys                            = {keys}")
++    print(f"  keys carrying a critical level             = {lvl_keys} "
++          f"-> {len(lvl_keys)}")
++    print(f"  CRITICAL LEVEL lines reaching the prompt   = {n_lines}")
++    prod = []
++    for p in sorted(ROOT.glob("bench/**/*.py")) + sorted(ROOT.glob("scripts/**/*.py")):
++        rel = p.relative_to(ROOT).as_posix()
++        if rel.startswith(("bench/logs/", "bench/tests/")) or "seat_evidence" in rel:
++            continue
++        if "critical_level" in p.read_text(encoding="utf-8", errors="ignore"):
++            prod.append(rel)
++    print(f"  product modules mentioning critical_level  = {prod}")
++    if len(lvl_keys) != 1 or n_lines != 1:
++        print("  !! more than one level is already carried"); bad += 1
++    print("  VERDICT: the surface carries EXACTLY 1 level and emits EXACTLY 1")
++    print("           line. A SECOND declared cut is an addition nothing reaches.")
++    print("  AND THE SECOND LANDMARK ALREADY REACHES THE SEAT ANYWAY, on LEVELS:")
++    for ln in decl.splitlines():
++        if ln.strip().startswith("LEVELS:"):
++            print(f"    {ln.strip()}")
++
++    # ---------------------------------------------------------------- M4
++    print("\nM4. DOES `encoding_tier` GATE ANYTHING AT DISPATCH?")
++    for name, path in (("composer.py", ROOT / "bench/cdsfl_registry/composer.py"),
++                       ("reference_runner_v3.py", RUNNER)):
++        t = path.read_text(encoding="utf-8", errors="ignore")
++        print(f"  {name:24s} 'encoding_tier'={t.count('encoding_tier')}  "
++              f"'CROSS_VERIFIED'={t.count('CROSS_VERIFIED')}  "
++              f"'DRAFT'={t.count('DRAFT')}")
++    a = C._severity_declaration("engineering", "")
++    with ManifestCopy(lambda s: s.replace('encoding_tier = "DRAFT"',
++                                          'encoding_tier = "CROSS_VERIFIED"')):
++        b = C._severity_declaration("engineering", "")
++        tier_now = V.entry("engineering")["encoding_tier"]
++    print(f"  with EVERY tier flipped DRAFT -> CROSS_VERIFIED on a copy:")
++    print(f"    manifest tier now                  = {tier_now!r}")
++    print(f"    composed declaration byte-identical= {a == b}")
++    print(f"  artefact tier after, unchanged       = "
++          f"{V.entry('engineering')['encoding_tier']!r}")
++    if a != b:
++        print("  !! the tier DOES change the composed text"); bad += 1
++    print("  VERDICT: the tier is VALIDATED for membership in `tiers` and PRINTED")
++    print("           by the module CLI. It gates NO dispatch. Q2's answer changes")
++    print("           no run until a consumer is wired.")
++
++    # ---------------------------------------------------------------- M5
++    print("\nM5. COVERAGE, WITH INTERVALS")
++    txts = sorted(DIRECTIVES.rglob("*.txt"))
++    dom_txts = [p for p in txts if p.parent.name != "universal"]
++    with_scale = [p for p in dom_txts
++                  if re.search(r"^SEVERITY SCALE:",
++                               p.read_text(encoding="utf-8", errors="ignore"), re.M)]
++    k, n = len(with_scale), len(dom_txts)
++    lo, hi = wilson(k, n)
++    print(f"  .txt under bench/directives            = {len(txts)}")
++    print(f"  domain encodings (universal excluded)  = {n}")
++    print(f"  carrying their own SEVERITY SCALE line = {k} of {n} = {k/n:.4%}, "
++          f"Wilson [{lo:.4%}, {hi:.4%}]")
++    tiered = [d for d in V.domains() if V.entry(d).get("encoding_tier")]
++    drafts = [d for d in tiered if V.entry(d)["encoding_tier"] == "DRAFT"]
++    lo2, hi2 = wilson(len(drafts), len(tiered))
++    print(f"  manifest domains declaring a tier      = {len(tiered)}")
++    print(f"  of those at DRAFT                      = {len(drafts)} of "
++          f"{len(tiered)} = {len(drafts)/len(tiered):.4%}, "
++          f"Wilson [{lo2:.4%}, {hi2:.4%}]")
++
++    # ---------------------------------------------------------------- M6
++    print("\nM6. THE SUPPRESSION ASYMMETRY -- is the encoding really better-sourced?")
++    print("    `_severity_declaration` returns '' when the text matches")
++    print("    ^SEVERITY SCALE:, on the ground that the encoding is 'the narrower,")
++    print("    better-sourced statement'. Tested on VERSION-CARRYING, the property")
++    print("    the CVSS v3.1 -> v4.0 correction was about.")
++    # the version token the manifest carries for each declared scale
++    manifest_tokens = {
++        "FMEA": "2019", "CVSS": "v4.0", "CTCAE": "v5.0", "GHS": "Rev. 11",
++    }
++    offenders = []
++    for p in sorted(with_scale):
++        txt = p.read_text(encoding="utf-8", errors="ignore")
++        m = re.search(r"^SEVERITY SCALE:.*?(?=^[A-Z][A-Z ]{3,}:)", txt,
++                      re.M | re.S)
++        block = m.group(0) if m else ""
++        for fam, tok in manifest_tokens.items():
++            if re.search(rf"\b{fam}\b", block) and tok.lower() not in block.lower():
++                # does ANY version token for that family appear in the block?
++                if not re.search(r"v\d|Rev\.?\s*\d|\b(19|20)\d\d\b", block):
++                    offenders.append((p.relative_to(ROOT).as_posix(), fam, tok))
++    print(f"\n  encodings naming a manifest-declared scale with NO version token")
++    print(f"  anywhere in their SEVERITY SCALE block: {len(offenders)}")
++    for rel, fam, tok in offenders:
++        print(f"    {rel:62s} cites {fam} (manifest has {tok!r})")
++    ko, no = len(offenders), len(with_scale)
++    lo3, hi3 = wilson(ko, no)
++    print(f"  {ko} of {no} = {ko/no:.4%}, Wilson [{lo3:.4%}, {hi3:.4%}]")
++    print("  Each of these is a seat told to report a (value, scale-name) pair and")
++    print("  handed a scale name with no edition, while the manifest HOLDS the")
++    print("  edition and the suppression rule prevents it from arriving.")
++
++    print("\n" + "=" * 78)
++    print(f"internal consistency checks failed: {bad}")
++    print("=" * 78)
++    return 1 if bad else 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 02:40:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 02:26:27
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/cdsfl_registry/domain_manifest.toml
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/cdsfl_registry/domain_manifest.toml	2026-11-12 03:47:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/cdsfl_registry/domain_manifest.toml	2026-11-14 02:38:22
+@@ -261,7 +261,7 @@
+ severity_levels = ["Grade 1 mild", "Grade 2 moderate", "Grade 3 severe", "Grade 4 life-threatening", "Grade 5 death"]
+ critical_level = "Grade 3"
+ severity_scale_source = "NCI CTEP, Common Terminology Criteria for Adverse Events v5.0, published 2017-11-27 (ctep.cancer.gov)"
+-critical_level_note = "CONFIRMED 2026-11-12 against the NCI source rather than recalled: v5.0 is still the version in use and Grade 3 is defined as severe or medically significant but not immediately life-threatening, with hospitalisation, disability or loss of self-care as its criteria. That is the recognised severity threshold, so the declared critical level stands. The panel carried the frozen constant into CTCAE and it landed on 3.8 -- BETWEEN grades, so not expressible as a rank."
++critical_level_note = "CORRECTED 2026-11-14 by the free panel: the 2026-11-12 confirmation is REFUTED -- NCI published CTCAE v6.0 on 2025-07-10 (errata 2026-01-20; CTEP/DCP adoption for newly-opened studies from 2026-01-01), so v5.0 is SUPERSEDED though still governing protocols that specify it. The Grade 1-5 structure and the Grade 3 = severe landmark are RETAINED in v6.0, so the critical LEVEL stands while the version citation does not; updating the scale string to v6.0 awaits his review because confirmation here is from secondary sources. [VERIFY:current] The superseded text read: v5.0 is still the version in use and Grade 3 is defined as severe or medically significant but not immediately life-threatening, with hospitalisation, disability or loss of self-care as its criteria. That is the recognised severity threshold, so the declared critical level stands. The panel carried the frozen constant into CTCAE and it landed on 3.8 -- BETWEEN grades, so not expressible as a rank."
+ encoding_tier = "DRAFT"
+ 
+ [biology.subdomains.natural_world]
+
+### fable:attempt-1:bench/directives/biology/biology_genetics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_genetics.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/biology/biology_genetics.txt	2026-11-14 02:36:25
+@@ -5,7 +5,13 @@
+ TIER: DRAFT
+ SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on
+        a person. Research-only work inherits the application's scale.
+-SOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.
++SOURCES: NCI CTEP CTCAE v5.0 (2017). ★ CORRECTED 2026-11-14: v5.0 is
++       SUPERSEDED -- NCI published CTCAE v6.0 on 2025-07-10 (errata
++       2026-01-20; CTEP/DCP adoption for newly-opened studies from
++       2026-01-01). The Grade 1-5 structure and the Grade 3 = severe landmark
++       are RETAINED in v6.0, so the critical level stands while the version
++       citation does not. [VERIFY:current] -- confirmed from secondary
++       sources; the v6.0 document itself was not opened.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/biology/biology_natural_world.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_natural_world.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/biology/biology_natural_world.txt	2026-11-14 02:36:25
+@@ -10,9 +10,11 @@
+        clinical the scale INHERITS from the application -- a conservation
+        decision has its own consequence structure and CTCAE does not describe
+        it, which must be said rather than forced.
+-SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27, confirmed current
+-       2026-11-12: Grade 3 is severe or medically significant but not
+-       immediately life-threatening.
++SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27. Grade 3 is severe or
++       medically significant but not immediately life-threatening.
++       ★ CORRECTED 2026-11-14: v5.0 is SUPERSEDED by CTCAE v6.0, published
++       2025-07-10 (errata 2026-01-20). The Grade 3 = severe landmark is
++       RETAINED in v6.0. [VERIFY:current] -- secondary confirmation only.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/biology/biology_zoology.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/biology/biology_zoology.txt	2026-11-12 01:52:56
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/biology/biology_zoology.txt	2026-11-14 02:36:25
+@@ -11,6 +11,9 @@
+        2026-11-12 and inventing one here would be the magic wand this project
+        refuses.
+ SOURCES: NCI CTEP CTCAE v5.0 (2017) for the human-consequence half.
++       ★ CORRECTED 2026-11-14: v5.0 is SUPERSEDED by CTCAE v6.0 (2025-07-10,
++       errata 2026-01-20); the Grade 3 = severe landmark is retained.
++       [VERIFY:current] -- secondary confirmation only.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/chemistry/chemistry_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/chemistry/chemistry_general.txt	2026-11-12 01:53:36
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/chemistry/chemistry_general.txt	2026-11-14 02:36:25
+@@ -3,15 +3,18 @@
+        chemistry, electrochemistry; the constraints before analytical, process
+        or pharmaceutical specialisation
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: GHS health hazard category, critical at Category 2.
+        ★ THE SCALE IS INVERTED: Category 1 is the MOST severe, so a higher
+        number is LESS severe and any ordering code assuming otherwise inverts
+        the meaning. Declaring Category 2 makes Categories 1 and 2 critical.
+        Acute toxicity sorts into 5 categories, not 4.
+ SOURCES: UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by
+-       UNECE; PubChem lists a Rev. 11 (2025). [VERIFY:current] -- the Rev. 11
+-       citation is secondary. Numeric LD50/LC50 cutoffs were not retrieved and
++       UNECE. Rev. 11 CONFIRMED PRIMARY 2026-11-14: UNECE published the 11th
++       revised edition on 2025-09-12 (unece.org/transport/dangerous-goods/
++       ghs-rev11-2025); its amendments (aerosols, non-animal skin
++       sensitisation, Annex 11 asphyxiants) do not touch the acute-toxicity
++       category structure. Numeric LD50/LC50 cutoffs were not retrieved and
+        are deliberately not stated here rather than guessed.
+ 
+ ★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 3 chemistry
+
+### fable:attempt-1:bench/directives/cross-domain/cross_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/cross-domain/cross_general.txt	2026-11-12 01:54:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/cross-domain/cross_general.txt	2026-11-14 02:36:25
+@@ -3,7 +3,7 @@
+        about method, protocol and calibration. The general box for composing
+        the constraints and the scales of 2 or more declared domains.
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: composed. By construction a cross-domain finding carries 2 or
+        more scales.
+ SOURCES: The composition rule below is the founder's, 2026-11-12, and is
+@@ -27,7 +27,9 @@
+   this case either. (The only exception being where a valid conversion between
+   any two quantities may already formally exist.)"
+ 
+-VERIFIED WITH pint, 2026-11-12. Where a formal conversion exists it composes:
++VERIFIED WITH pint, 2026-11-12, and RE-EXECUTED 2026-11-14 by the panel:
++3.540000 cm with SymPy exact agreement, m+s and K+V refused, and the
++dimensionless CTCAE 3 + CVSS 7.0 = 10.0 limitation reproduced. Where a formal conversion exists it composes:
+ 1 inch + 1 cm = 3.540000 cm, with SymPy's exact 127/50 and pint agreeing to
+ 0.000e+00. Where none exists it is refused: 1 m + 1 s and 1 K + 1 V both raise.
+ BUT THE SEVERITY CASE IS NOT COVERED BY pint, and this is the operative
+
+### fable:attempt-1:bench/directives/information_science/information_science_data_management.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_data_management.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/information_science/information_science_data_management.txt	2026-11-14 02:36:25
+@@ -2,13 +2,14 @@
+ SCOPE: Storage, lifecycle, schema evolution, versioning, backup and recovery,
+        data quality, retention, reproducibility of a stored record
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Where the data is
+        personal or regulated the consequence is legal rather than technical and
+        the applicable regime must be named, not assumed.
+ SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016). ISO 11179 for
+-       metadata registries. [VERIFY:current] -- revisions not confirmed from a
+-       primary source on 2026-11-12.
++       metadata registries. ISO/IEC 11179-1:2023 (Edition 4,
++       2023-01-16) CONFIRMED PRIMARY 2026-11-14 via the IEC webstore
++       and ISO committee listing.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/information_science/information_science_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_general.txt	2026-11-12 01:49:55
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/information_science/information_science_general.txt	2026-11-14 02:36:25
+@@ -3,14 +3,15 @@
+        record linkage, the constraints common to every information-science
+        subdiscipline
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none. No recognised consequence scale. Where the work is
+        security-bearing it inherits CVSS v4.0 from the software domain
+        (critical at High, 7.0); otherwise the consequence belongs to the
+        application.
+ SOURCES: FAIR Guiding Principles (Wilkinson et al., 2016) for data
+-       stewardship. ISO 11179 for metadata registries. [VERIFY:current] --
+-       current revision not confirmed from a primary source on 2026-11-12.
++       stewardship. ISO 11179 for metadata registries. ISO/IEC 11179-1:2023 (Edition 4,
++       2023-01-16) CONFIRMED PRIMARY 2026-11-14 via the IEC webstore
++       and ISO committee listing.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/information_science/information_science_knowledge_representation.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-12 01:51:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/information_science/information_science_knowledge_representation.txt	2026-11-14 02:36:25
+@@ -2,11 +2,12 @@
+ SCOPE: Ontologies, taxonomies, controlled vocabularies, identity and
+        reference, reasoning over represented knowledge, naming
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+ SOURCES: ISO 11179 for metadata registries; Dublin Core for descriptive
+-       metadata. [VERIFY:current] -- revisions not confirmed from a primary
+-       source on 2026-11-12.
++       metadata. ISO/IEC 11179-1:2023 (Edition 4,
++       2023-01-16) CONFIRMED PRIMARY 2026-11-14 via the IEC webstore
++       and ISO committee listing.
+ 
+ WHY THIS SUBDOMAIN IS UPSTREAM OF VERIFICATION. The representation determines
+ what a claim can even assert. A severity recorded as a bare number cannot be
+
+### fable:attempt-1:bench/directives/mathematics/mathematics_applied.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/mathematics/mathematics_applied.txt	2026-11-12 01:48:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/mathematics/mathematics_applied.txt	2026-11-14 02:36:25
+@@ -2,13 +2,15 @@
+ SCOPE: Model formulation, dimensional analysis, asymptotics and scaling,
+        optimisation, differential-equation modelling, sensitivity
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own. Applied mathematics INHERITS the consequence
+        scale of the domain it is applied in, and that inheritance is the whole
+        point: the same model error is epistemic in one setting and lethal in
+        another. Where the application is engineering, FMEA severity applies
+        with critical at 7; where clinical, CTCAE with critical at Grade 3.
+-SOURCES: SI Brochure 9th edition (BIPM, 2019) for units.
++SOURCES: SI Brochure 9th edition (BIPM, 2019) for units, the edition in
++       force. Cross-verified 2026-11-14: pint composition and refusal
++       behaviour re-executed; inheritance targets match the manifest.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/mathematics/mathematics_numerical.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/mathematics/mathematics_numerical.txt	2026-11-12 01:48:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/mathematics/mathematics_numerical.txt	2026-11-14 02:36:25
+@@ -2,13 +2,17 @@
+ SCOPE: Floating-point arithmetic, conditioning and stability, iterative
+        methods, quadrature, linear solvers, convergence criteria
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+ SOURCES: IEEE 754-2019, published July 2019, the current edition; ISO/IEC
+        60559:2020 is identical in content. Figures below verified against the
+        running implementation on 2026-11-12 rather than quoted: mantissa 53
+        bits, exponent range -1022 to +1023, 15.954590 decimal digits by 2
+        routes agreeing exactly, default rounding roundTiesToEven.
++       Re-verified by execution 2026-11-14: mantissa 53 bits, exponents
++       -1022..+1023, 53*log10(2) = 15.954590 by Python and by Wolfram
++       Language (local kernel) agreeing to 6 figures, ties-to-even on
++       round(0.5)/round(2.5).
+ 
+ ★ A DECIMAL LITERAL IS NOT THE REAL NUMBER IT SPELLS. This is the HARDEST
+ constraint in this box, because it is invisible and it decides outcomes. The
+
+### fable:attempt-1:bench/directives/physics/physics_classical.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_classical.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/physics/physics_classical.txt	2026-11-14 02:36:25
+@@ -2,12 +2,14 @@
+ SCOPE: Newtonian and Lagrangian mechanics, rigid bodies, oscillations, waves,
+        fluid and solid continuum mechanics, elasticity
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Where the work
+        bears on a structure or a machine the engineering scale applies
+        (AIAG-VDA FMEA severity, critical at 7), because that is where the
+        consequence is realised.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019) for units and constants.
++       Cross-verified 2026-11-14: constants exact in scipy.constants;
++       inheritance target (FMEA, critical at 7) matches the manifest.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/physics/physics_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_general.txt	2026-11-12 01:41:31
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/physics/physics_general.txt	2026-11-14 02:36:25
+@@ -3,7 +3,7 @@
+        magnitude, error propagation; the constraints common to every physics
+        subdiscipline before any specialisation applies
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none. Physics has no single recognised consequence scale across
+        its subdisciplines -- a nuclear result inherits INES, an optics result
+        may inherit nothing -- so a finding INHERITS the consequence scale of the
+@@ -14,6 +14,8 @@
+        Defining-constant values cross-checked against scipy.constants on
+        2026-11-12: exact float equality on all 5 and uncertainty 0.0 for each,
+        confirming they are exact BY DEFINITION rather than measured.
++       Re-executed 2026-11-14: all 5 defining constants exact float equality
++       in scipy.constants, uncertainty 0.0 each.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/physics/physics_quantum.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_quantum.txt	2026-11-12 01:43:26
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/physics/physics_quantum.txt	2026-11-14 02:36:25
+@@ -2,13 +2,14 @@
+ SCOPE: Non-relativistic quantum mechanics, measurement, entanglement, Bell-type
+        arguments, interpretational and foundational questions
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Foundational work
+        is epistemic and its consequence is a property of what is built on it,
+        which is the same position the project holds for pure mathematics.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019); the Planck constant is exact at
+        6.626 070 15e-34 J s by definition since 2019, so hbar is exact too and
+-       carries no uncertainty.
++       carries no uncertainty. Re-executed 2026-11-14: h = 6.62607015e-34
++       exact in scipy.constants, uncertainty 0.0.
+ 
+ WHY THIS ENCODING EXISTS. The one physics task in the project's frontier set is
+ a superdeterminism and quantum-mechanics question, and the March 2026 analysis
+
+### fable:attempt-1:bench/directives/physics/physics_thermodynamics.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/physics/physics_thermodynamics.txt	2026-11-12 01:42:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/physics/physics_thermodynamics.txt	2026-11-14 02:36:25
+@@ -2,14 +2,15 @@
+ SCOPE: Equilibrium thermodynamics, heat transfer, phase behaviour, kinetic
+        theory, statistical ensembles, entropy and the thermodynamic laws
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. Process-safety
+        work inherits the chemistry scale (GHS health hazard category, critical
+        at Category 2); equipment work inherits the engineering scale.
+ SOURCES: SI Brochure 9th edition (BIPM, 2019). The kelvin is defined by fixing
+        the Boltzmann constant at 1.380 649e-23 J/K exactly, which is why
+        temperature differences and absolute temperatures are not
+-       interchangeable.
++       interchangeable. Re-executed 2026-11-14: k = 1.380649e-23 exact in
++       scipy.constants, uncertainty 0.0.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/software/software_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/software/software_general.txt	2026-11-12 01:55:24
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/software/software_general.txt	2026-11-14 02:36:25
+@@ -3,7 +3,7 @@
+        geometry, API and interface design; the general constraints before
+        distributed, real-time or security specialisation
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: CVSS v4.0 base score, critical at High (7.0).
+        ★ CVSS is the ONLY one of the 4 validated scales this project carried
+        the frozen 0.7 constant into that lands on a RECOGNISED boundary: High
+@@ -16,7 +16,8 @@
+ SOURCES: CVSS v4.0, FIRST, released November 2023; bands read directly from
+        the specification document Table 22, Qualitative Severity Rating Scale:
+        None 0.0, Low 0.1-3.9, Medium 4.0-6.9, High 7.0-8.9, Critical 9.0-10.0.
+-       Confirmed 2026-11-12.
++       Confirmed 2026-11-12; reconfirmed still the current
++       version 2026-11-14 (first.org).
+ 
+ ★ WHY THIS ENCODING EXISTS. The March 2026 analysis found all 6 software tasks
+ were given the DISTRIBUTED SYSTEMS box because it sorts first alphabetically,
+
+### fable:attempt-1:bench/directives/statistics/statistics_experimental_design.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_experimental_design.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/statistics/statistics_experimental_design.txt	2026-11-14 02:36:25
+@@ -2,13 +2,14 @@
+ SCOPE: Power and sample size, randomisation, blinding, pre-registration,
+        blocking, factorial and crossover designs, stopping rules
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's. A clinical design
+        inherits CTCAE (critical at Grade 3); an engineering design inherits
+        FMEA severity (critical at 7).
+-SOURCES: ASA statement on p-values (2016). CONSORT and PRISMA reporting
+-       guidelines, cited without a version because the current edition could
+-       not be confirmed from a primary source on 2026-11-12. [VERIFY:current]
++SOURCES: ASA statement on p-values (2016). CONSORT 2025 statement
++       (published 2025-04-14, simultaneously in BMJ, JAMA, Lancet, Nature
++       Medicine and PLOS Medicine; 30-item checklist) and PRISMA 2020,
++       CONFIRMED CURRENT PRIMARY 2026-11-14.
+ 
+ WHY THIS IS A SEPARATE SUBDOMAIN. Power, pre-registration and multiplicity are
+ a different discipline from estimation, and they are directly load-bearing for
+
+### fable:attempt-1:bench/directives/statistics/statistics_general.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_general.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/statistics/statistics_general.txt	2026-11-14 02:36:25
+@@ -3,10 +3,12 @@
+        aggregation; the constraints that apply before any inferential or design
+        question arises
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+-SOURCES: ISO 3534 for vocabulary. Stevens' levels of measurement for the
+-       admissibility constraints below.
++SOURCES: ISO 3534 for vocabulary ([VERIFY:current] on the edition -- not
++       load-bearing). Stevens' levels of measurement (Science, 1946) for the
++       admissibility constraints below, the same admissibility results the
++       2026-11-11 panel verified with z3 and SymPy.
+ 
+ [HARD constraints — non-negotiable]
+ 
+
+### fable:attempt-1:bench/directives/statistics/statistics_inference.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_inference.txt	2026-11-12 01:44:46
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/statistics/statistics_inference.txt	2026-11-14 02:36:25
+@@ -2,7 +2,7 @@
+ SCOPE: Point and interval estimation, hypothesis testing, likelihood, Bayesian
+        and frequentist inference, multiplicity, model selection
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none. Statistics has no recognised consequence scale of its
+        own: a wrong interval is epistemic until something acts on it, so the
+        consequence belongs to the application. Clinical work inherits CTCAE,
+@@ -11,7 +11,9 @@
+        Process, and Purpose" (2016), 6 principles, not formally superseded --
+        the later ASA President's Task Force on statistical significance and
+        replicability gave broad pointers to practice rather than restating
+-       them. ISO 3534 for vocabulary.
++       them. ISO 3534 for vocabulary ([VERIFY:current] on the
++       edition -- not load-bearing; the operative source is the ASA
++       statement, primary and unsuperseded, reconfirmed 2026-11-14).
+ 
+ WHY THIS IS THE DEFAULT SUBDOMAIN. Inference is this project's own most-used
+ statistical mode: every proportion it reports carries a confidence interval by
+
+### fable:attempt-1:bench/directives/statistics/statistics_time_series.txt
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/statistics/statistics_time_series.txt	2026-11-12 01:46:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/directives/statistics/statistics_time_series.txt	2026-11-14 02:36:25
+@@ -2,10 +2,10 @@
+ SCOPE: Autocorrelation, stationarity, trend and seasonality, unit roots,
+        forecasting, change-point detection, state-space models
+ VERSION: 1.0
+-TIER: DRAFT
++TIER: CROSS_VERIFIED
+ SEVERITY SCALE: none of its own; inherits the application's.
+ SOURCES: ASA statement on p-values (2016) for the inferential constraints that
+-       carry over.
++       carry over; primary, unsuperseded, reconfirmed 2026-11-14.
+ 
+ WHY THIS IS A SEPARATE SUBDOMAIN. Autocorrelation and non-stationarity
+ invalidate the independence assumption every constraint in the inference box
+
+### fable:attempt-1:bench/tests/test_severity_tier_guards.py
+--- /dev/null	2026-11-14 02:40:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/bench/tests/test_severity_tier_guards.py	2026-11-14 02:38:06
+@@ -0,0 +1,190 @@
++"""Guards for the severity declarations and the encoding tier — panel, 2026-11-14.
++
++WHY THIS FILE EXISTS. Measured 2026-11-14 by grep and AST: the file-level
++`TIER:` line in bench/directives/*.txt had 0 code consumers, and the manifest's
++`encoding_tier` was read only by the loader's validation and a CLI print. A
++label nothing reads is an addition nothing reaches. This module is the TIER
++line's first consumer, and it is also the tripwire that makes any change to the
++engineering critical level a LOUD, reviewed act rather than a quiet edit:
++moving `critical_level` off 7, or dropping either landmark band from what a
++seat receives, fails a test.
++
++THE INDEPENDENCE FACT IT PINS, measured by execution 2026-11-14: the live gate
++`CRITICAL_SEVERITY_THRESHOLD` (reference_runner_v3.py) and the convergence
++series (convergence_location.py) contain 0 occurrences of `critical_level` and
++0 of `domain_vocabulary` — a domain's named critical level reaches ONLY the
++composed prompt text via `composer._severity_declaration`. If someone couples
++them later, the coupling must arrive together with a deliberate edit here.
++
++Every check is a plain function over parsed data so the mutation test below can
++feed it broken data and confirm the guard goes red — a guard that cannot fail
++is not a guard (software_general.txt, HARD constraints).
++"""
++from __future__ import annotations
++
++import re
++import tomllib
++from pathlib import Path
++
++import pytest
++
++REPO = Path(__file__).resolve().parents[2]
++MANIFEST = REPO / "bench" / "cdsfl_registry" / "domain_manifest.toml"
++DIRECTIVES = REPO / "bench" / "directives"
++RUNNER = REPO / "bench" / "reference_runner_v3.py"
++CONVERGENCE = REPO / "bench" / "convergence_location.py"
++
++#: The non-DRAFT [VERIFY:current] carve-out: a promoted encoding may carry the
++#: flag ONLY on a claim its own text marks "not load-bearing" in the same
++#: sentence. Anything else is an unresolved verification under a tier that
++#: asserts verification happened.
++_NOT_LOAD_BEARING = re.compile(r"\[VERIFY:current\].{0,120}?not\s+load-bearing",
++                               re.I | re.S)
++
++
++def _manifest() -> dict:
++    with open(MANIFEST, "rb") as fh:
++        return tomllib.load(fh)
++
++
++def _encodings() -> dict[Path, str]:
++    return {p: p.read_text() for p in sorted(DIRECTIVES.rglob("*.txt"))
++            if p.parent.name != "universal"}
++
++
++def _header(text: str) -> str:
++    """Everything before the first bracketed section — DOMAIN through SOURCES."""
++    m = re.search(r"^\[", text, re.M)
++    return text[: m.start()] if m else text
++
++
++def _tier(text: str) -> str | None:
++    m = re.search(r"^TIER:\s*(\S+)", text, re.M)
++    return m.group(1) if m else None
++
++
++# ---------------------------------------------------------------- checks
++
++
++def check_tier_legal(name: str, text: str, allowed: list[str]) -> None:
++    t = _tier(text)
++    if t is not None and t not in allowed:
++        raise AssertionError(f"{name}: TIER {t!r} not in the manifest ladder {allowed}")
++
++
++def check_no_unresolved_verify_above_draft(name: str, text: str) -> None:
++    t = _tier(text)
++    if t in (None, "DRAFT"):
++        return
++    head = _header(text)
++    flags = head.count("[VERIFY:current]")
++    excused = len(_NOT_LOAD_BEARING.findall(head))
++    if flags > excused:
++        raise AssertionError(
++            f"{name}: TIER {t} with {flags - excused} unresolved [VERIFY:current] "
++            "flag(s) in its header — a tier asserting verification cannot carry "
++            "an unverified load-bearing citation"
++        )
++
++
++def check_engineering_declaration(decl: str) -> None:
++    """The Q1 tripwire. Both published landmarks must reach the seat, and the
++    critical level must be 7 — the lowest landmark whose band definition
++    (S7 degradation / S8 loss of primary function) entails the project's
++    pre-registered materiality rubric. Changing the level is the founder's
++    ruling; this test makes the change loud, it does not forbid his making it —
++    whoever applies his ruling edits this assertion in the same commit."""
++    for needle in ("CRITICAL LEVEL: 7", "7-8 high", "9-10 safety or regulatory"):
++        if needle not in decl:
++            raise AssertionError(
++                f"engineering severity declaration lost {needle!r}; a seat is "
++                "no longer told both landmarks and the declared level"
++            )
++
++
++def check_gate_independence(runner_src: str, convergence_src: str) -> None:
++    for label, src in (("reference_runner_v3.py", runner_src),
++                       ("convergence_location.py", convergence_src)):
++        for token in ("critical_level", "domain_vocabulary"):
++            if token in src:
++                raise AssertionError(
++                    f"{label} now references {token!r}: the domain critical "
++                    "level and the live gate were independent quantities on "
++                    "2026-11-14 — if this coupling is deliberate, it is a gate "
++                    "change and needs the founder's ruling recorded here"
++                )
++    m = re.search(r"^CRITICAL_SEVERITY_THRESHOLD\s*=\s*([0-9.]+)", runner_src, re.M)
++    if not m or float(m.group(1)) != 0.7:
++        raise AssertionError("CRITICAL_SEVERITY_THRESHOLD moved off the frozen 0.7")
++
++
++# ---------------------------------------------------------------- tests
++
++
++def test_tier_values_are_on_the_manifest_ladder():
++    allowed = _manifest()["tiers"]
++    for p, text in _encodings().items():
++        check_tier_legal(p.name, text, allowed)
++
++
++def test_no_unresolved_verify_flag_above_draft():
++    for p, text in _encodings().items():
++        check_no_unresolved_verify_above_draft(p.name, text)
++
++
++def test_superseded_scale_version_cannot_leave_draft():
++    """CTCAE v5.0 was superseded by v6.0 (published 2025-07-10, errata
++    2026-01-20). An encoding naming v5.0 as its scale stays DRAFT until the
++    citation is reconciled against the primary v6.0 document."""
++    for p, text in _encodings().items():
++        if re.search(r"^SEVERITY SCALE:.*CTCAE v5\.0", text, re.M):
++            assert _tier(text) == "DRAFT", (
++                f"{p.name}: cites superseded CTCAE v5.0 as its scale but is "
++                f"tiered {_tier(text)}"
++            )
++
++
++def test_engineering_seat_receives_both_landmarks_and_level_7():
++    from bench.cdsfl_registry.composer import _severity_declaration
++    check_engineering_declaration(_severity_declaration("engineering", ""))
++
++
++def test_every_scale_bearing_domain_delivers_a_declaration():
++    """No seat may be forbidden to invent a level and then given none: every
++    manifest domain with a declared scale (or an honest none-with-reason) must
++    produce non-empty text when its encoding is silent."""
++    from bench.cdsfl_registry.composer import _severity_declaration
++    man = _manifest()
++    for dom, entry in man.items():
++        if not isinstance(entry, dict) or "severity_scale" not in entry:
++            continue
++        decl = _severity_declaration(dom, "")
++        assert decl.strip(), f"{dom}: declares a scale yet delivers silence"
++
++
++def test_gate_and_convergence_independent_of_domain_critical_level():
++    check_gate_independence(RUNNER.read_text(), CONVERGENCE.read_text())
++
++
++def test_guards_go_red_on_mutation():
++    """A guard that cannot fail is not a guard: each check must reject the
++    defect it exists to catch."""
++    with pytest.raises(AssertionError):
++        check_tier_legal("x", "TIER: GOLD\n", ["DRAFT", "CROSS_VERIFIED"])
++    with pytest.raises(AssertionError):
++        check_no_unresolved_verify_above_draft(
++            "x", "TIER: CROSS_VERIFIED\nSOURCES: foo. [VERIFY:current]\n\n[HARD]")
++    # the excused form passes
++    check_no_unresolved_verify_above_draft(
++        "x", "TIER: CROSS_VERIFIED\nSOURCES: foo ([VERIFY:current] on the "
++             "edition -- not load-bearing).\n\n[HARD]")
++    with pytest.raises(AssertionError):
++        check_engineering_declaration(
++            "SCALE: AIAG-VDA FMEA severity 1-10\n  CRITICAL LEVEL: 9\n"
++            "  LEVELS: 7-8 high; 9-10 safety or regulatory")
++    with pytest.raises(AssertionError):
++        check_gate_independence("CRITICAL_SEVERITY_THRESHOLD = 0.7\n"
++                                "x = manifest['critical_level']",
++                                "clean")
++    with pytest.raises(AssertionError):
++        check_gate_independence("CRITICAL_SEVERITY_THRESHOLD = 0.9", "clean")
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 02:29:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 00:57:35
+@@ -2041,7 +2041,7 @@
+ **B142. THE SETTINGS SURFACE: THE ROLE SELECTOR CANNOT OFFER THE 4 ROLES THE UX BRIEF SPECIFIES, AND HIS CREDENTIAL STORE IS NOT IN THE BRIEF AT ALL.** Added 2026-11-10T21:03:20+00:00. **MEASURED BY CALLING THE BACKEND against section 10 of `~/Developer_Projects/Responses/cdsfl_ux_BESTOF_2026-10-23/docs/CDSFL_UX_Design_Brief_AUTHORITATIVE_for_Orchestrator.md`, which the brief itself names as the single source of truth: SECTION 10 COVERAGE IS 3 OF 5.** Built: search across sources, add-from-3-sources, and a roster carrying model, source and role. **NOT built, and the first of the 2 is what blocks the interface:** `bench/model_catalogue.py:known_roles()` returns `['collator', 'participant', 'player_manager']`, read from `bench/cdsfl_registry/roles/*.toml`, while the brief and the mockup `html_sources/v6/08_settings.html` both specify **Orchestrator, Worker, Researcher, Classifier**. So the role half of the model-and-role selector cannot be populated as designed. Also absent is the peer catalogue the brief describes: aggregation by vendor and model version with the number available, expanding to instances sorted by latency and free resources, each showing latency, uptime, hardware class and availability. **THE FIX IS NOT A RENAME AND THAT IS WHY IT IS HIS.** A registry role carries a merge signature and an alpha vector that `bench/dm/_role_assignment.py` scores models against, so introducing 4 interface roles either MAPS them onto the 3 existing ones -- which changes how a run selects models, and B21 records that choice as his -- or adds a presentation layer the dispatcher ignores, which is honest but means the interface's roles do not reach the harness. `pf:ff29e68d9da1`. **AND THE STEP-COUNT QUESTION IS ANSWERED BY THE MOCKUPS RATHER THAN BY ME.** He recalls being asked whether the selection flow should stay a multi-step process or be consolidated into 1, and that no explanation followed. **That exchange cannot be located in the session record and none is invented here.** `html_sources/v6/08b_add_model.html` settles it: a single control reading *Add as Worker*, against an instance expanded from a vendor-and-version row. From the researcher's side the flow is **1 step** -- search, expand, add with the role chosen at that moment. The multi-step sequence the question probably meant is B21's 5 dependency-ordered BUILD steps, which the user never sees, and conflating a build order with a user flow is what made the question unanswerable. **HIS CREDENTIAL STORE, `fr:e8951f2ed269`, IS A NEW REQUIREMENT AND NOT UNBUILT WORK.** Section 12 of the brief lists the registry-tunable surface, schema-versus-experiment defaults and the donation matrix, and mentions credentials **0 times**; `html_sources/v6/10_advanced.html` is a stub carrying only a heading. His own words confirm it: *"The mock up screens are incomplete, because they don't contain any capacity to store credentials."* **ASSESSED SOUND, WITH 1 PART ARGUED, and the argued part is the only pushback.** Encrypting keys at rest behind a password he supplies is standard and strictly better than today, where 10 keys sit in a plain-text `.env`. 2 refinements: prefer the platform keychain over a bespoke file format, which is 1 small dependency and removes a class of mistakes; and **do not store account passwords for automatic sign-in** -- vendor command-line tools authenticate by device flow and hold short-lived session tokens, a stored password cannot pass a second factor, and automating a sign-in with one is fragile and probably outside vendor terms. Storing the OAuth **refresh token** the tool already issues achieves the same goal, exists for it, and is revocable. **Keys and refresh tokens yes; account passwords no.** **THE PROJECT'S EXISTING VAULT IS THE WRONG TOOL AND THAT IS WORTH SAYING BEFORE ANYONE REACHES FOR IT:** `bench/verification_chain.py` is a hash-chained Merkle structure with optional Ed25519 signing, which proves a record has not been altered. That is integrity, not secrecy. `cryptography` is already an optional dependency, so authenticated encryption needs nothing new installed. **[NEEDS HIS RULING]** on the role mapping, and on whether the credential store is built now or after the runway. ★★★ **THE SECOND HALF OF THAT ASK IS ANSWERED AND THE CREDENTIAL STORE IS BUILT, 2026-11-10T23:05:00+00:00. HIS WORDS:** *"The credentials store for the backend UX work is also something you can do before I respond to your tts output file."* **WHAT WAS BUILT:** `bench/credential_store.py`, 1 encrypted file at `~/.cdsfl/credentials.enc`, mode 0600 inside a 0700 directory, **outside the repository** because a credential store inside a git working tree is 1 careless `git add -A` from being committed and the save gate, the check that runs before every state save, carries a `no credential tracked` postcondition because that accident is real. **AES-256-GCM** behind a key derived by **Argon2id** at 65536 KiB, 3 iterations and 4 lanes, falling back to scrypt where the installed `cryptography` lacks Argon2id; the algorithm and its parameters are recorded IN the file so they can be raised later without orphaning an existing store. **THE ENVELOPE IS BOUND IN AS ADDITIONAL AUTHENTICATED DATA**, which is the property that stops a thief holding the file from swapping Argon2id for a cheap hash and attacking the passphrase at that lower cost. A fresh nonce is drawn on EVERY write, that being the single catastrophic misuse available with this cipher. **SECRETS NEVER REACH THE COMMAND LINE**, because `ps` shows another process's argv on this platform; values and passphrases come from a hidden prompt or from standard input, and a guard asserts no option can carry one. **WIRED TO A CALLER, per the additive standard's symmetric form:** `bench/ux_backend_2026-10-20.py:credentials()` reports the store's shape and its policy for the settings screen — existence, cipher, accepted kinds, refused kinds and the refusal's reason, all read from the store module rather than restated — plus per-entry metadata when unlocked, and **never a value**. **THE ACCOUNT-PASSWORD REFUSAL IS IMPLEMENTED AND NAMES ITS OWN ALTERNATIVE**, across 6 spellings a researcher might try, for the 3 reasons recorded above. He can overrule it in a word and the refusal says so rather than failing silently. **GUARD:** `bench/tests/test_the_credential_store_holds_nothing_in_plaintext_2026-11-10.py`, **39 tests, 9 of 9 mutations red** via `scripts/the_credential_store_mutations_2026-11-10.py`, now on the commit gate. **AND THE HARNESS FOUND 2 HOLES IN MY OWN GUARD, WHICH IS THE ARGUMENT FOR RUNNING IT.** The version test passed with the version check DELETED, because bumping the version also breaks the authenticated envelope, the plain header whose bytes the cipher also signs, so it was measuring the cipher rather than the check; it now asserts the refusal is NOT the authentication failure and names the version. And the key-derivation downgrade test passed with the envelope binding removed from BOTH sides, because editing the key-derivation function changes the derived key and the open fails for that reason alone — so a test was added that edits `cipher`, an envelope field that does NOT feed the key, which is the only edit the binding alone can catch. Both are instances of a verification passing for the wrong reason. **WHAT REMAINS ON THIS ENTRY IS THE ROLE MAPPING ALONE**, which is his because it changes how a run selects models. **AND IT IS ON THE RUNWAY, on his instruction:** *"B142 will require further discussion, but should probably be marked on the runway, with the other UX work already there as part of the overall UX work when we come to it."* ★★★ **THE ROLE HALF IS BUILT, 2026-11-14, ON HIS RULING OF 2026-11-12, AND THE CREDENTIAL HALF WAS ALREADY BUILT.** **HIS WORDS, verbatim:** *"Verdict. Yes do both. stm"*, against the item asking *"whether the 4 interface roles map onto the harness roles, and whether the credential store is built now or after the runway"*. **WHAT WAS BUILT:** 4 role files under `bench/cdsfl_registry/roles/` — `orchestrator.toml`, `worker.toml`, `researcher.toml`, `classifier.toml` — each declaring `axis = "functional"` beside the 3 existing files' `axis = "structural"`; an opt-in `axis` argument on `bench/model_catalogue.known_roles()` whose DEFAULT is unchanged so `bench/tests/test_b21_steps_are_built_2026-11-09.py:205` keeps the meaning it was written with; a `role_axis()` accessor that reads the axis FROM THE FILE rather than from a list in the module, which is the exact defect `registry.py` records at its layer walk where a 3-item hardcoded list left layer 5 unvalidated on the day it was created; and the renderer at `bench/model_catalogue.py` now reports the 2 vocabularies SEPARATELY, because 7 names from 2 non-reconciling vocabularies on 1 line is the defect rather than the count. **THE MAP, AND 2 OF THE 4 MAP TO NOTHING ON PURPOSE.** `orchestrator` -> `player_manager` and `worker` -> `participant`, which is what the panel round of 2026-10-31 measured. `classifier` -> None, because that round found it names no seat position. `researcher` -> None, and it is also NEWER than that round, which discussed only worker, classifier and orchestrator. `collator` -> None in the reverse direction, because it names the HARNESS and not a seat. **Forcing any of them onto `participant` would look tidier and would invent the policy this layer exists not to invent**, so a hole is declared as `None` and an unknown NAME raises `KeyError` instead, since None must mean *measured to have no counterpart* and never *I do not know that name*. **THE MAP LIVES IN `bench/model_catalogue.py` AND NOT IN THE ROLE FILES**, because `bench/tests/test_the_role_layer_cannot_collide_2026-11-02.py` enforces `keys <= {"name", "axis"}` on every role file — the layer's mechanism is mine, its content is his — and a `maps_to` key there would be refused, correctly. **A GUARD WAS OUTGROWN BY HIS RULING AND IS RE-POINTED RATHER THAN DELETED.** That same file carried `test_the_functional_vocabulary_is_NOT_declared`, asserting those 3 files must NOT exist because the mapping was policy owed by him. His ruling spends that condition, so the assertion now holds the post-ruling state and the protection it actually gave — that no role file invents policy — is untouched in `test_no_role_file_invents_policy`. **DISPATCH IS UNCHANGED AND A TEST PINS THAT BOUNDARY.** `bench/dm/_role_assignment.py` scores models against the `Role` ENUM in `bench/dm/_types.py`, not against these files, so this changes which names the SELECTOR can offer and changes 0 dispatch decisions; a test asserts none of the 4 has entered that enum, because wiring a functional role into the scorer would change how a run selects models and B21 records that as his. **MEASURED: the 2 axes partition the 7 roles exactly** — 3 structural, 4 functional, union equal to the whole, intersection empty — verified by CALLING the accessor, and the partition property proved on z3, which returns `unsat` both for *a role on no axis* and for *a role on both axes*. **8 of 8 mutations turn the guard red, 1.000000, Wilson [0.675592, 1.000000], Clopper-Pearson [0.630583, 1.000000]**, statsmodels against a hand-rolled Wilson and against `scipy.stats.beta` agreeing to 0.000e+00, with a third mpmath route from the exact binomial tails returning the same 0.630583. **AND 1 OF THE 8 MUTATIONS WAS ITSELF BROKEN FIRST**, reported as a MISS when it had replaced a membership test with `if False:` and fallen through to a bare dict lookup that raises `KeyError` by itself — the probe was wrong, not the guard — and fixing it exposed a genuinely weak assertion, since `pytest.raises(KeyError)` could not tell the deliberate refusal from an accident; the message is now asserted. Guard: `bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py`, 12 tests, on `hooks/pre-commit`. Harness: `scripts/the_interface_role_mutations_2026-11-14.py`. **WHAT IS STILL OWED AND IS DELIBERATELY NOT DONE:** the peer catalogue the brief describes — aggregation by vendor and model version expanding to instances sorted by latency and free resources — remains unbuilt, and the entry says so rather than reading as though section 10 were now complete.
+ <!-- task: B142 | state: OPEN | status: BUILT | evidence: bench/tests/test_the_credential_store_holds_nothing_in_plaintext_2026-11-10.py, bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py, scripts/the_interface_role_mutations_2026-11-14.py | ruled: 2026-11-12 | responded: 2026-11-10 -->
+ 
+-**B143. THE APPENDIX'S SEVERITY FORMULA CANNOT BE COMPUTED BECAUSE ITS 2 INPUTS ARE READ BY 1 SITE EACH AND WRITTEN BY NONE THAT THE READER CAN SEE, AND THE ONE CONFIDENCE THE CODEBASE DOES COLLECT IS THE SELF-REPORT HIS OWN DIRECTIVE RULES INADMISSIBLE.** Added 2026-11-10T22:52:00+00:00. **STATUS: MEASURED ON 2 TOOLS. THE COLLECTION HALF IS MINE AND PROCEEDS; 2 NARROWER QUESTIONS ARE HIS.** **WHY IT IS A NEW ENTRY AND NOT A PARAGRAPH IN B87.** B87, the entry on the severity specification asking for an inadmissible quantity, is DONE and carries his ruling of 2026-11-08. Its own text states that *adding the HARD/SOFT field is separable and is not a decision*, because the directive already requires the classification — so that work is MINE, and B87 being DONE is exactly why it became invisible: a decision or a task recorded inside a closed entry reaches no surface, the same shape B94 records and the same shape found tonight in B71. **AND IT IS TRACKED NOWHERE ELSE:** `scripts/register.py --subject constraint_class` and `--subject compute_sev_f` each return **0 matches** against a register holding 185 severity tickets. **HE RAISED IT HIMSELF, 2026-11-10,** challenging whether severity had been abandoned in favour of a model vote; the answer is that it was not, and the honest finding is worse in a different direction. **THE ASSERTED NUMBER IS THE ORIGINAL DESIGN, NOT A REGRESSION.** `bench/cdsfl_finding_schema.json` has required the model to state `severity` since commit `8c1dacb3`, 2026-03-30 — 7 months before the first severity panel of 2026-09-07 — and commit `6c10fe41`, 2026-09-06, is titled *the model vote is out of the gate*, so displacing the vote was already under way. 12 panel rounds have been dispatched on severity measurement across 6 subjects, blind and joint, on free seats only. **THE MEASUREMENT, BY AST RATHER THAN BY GREP, because a substring is not a write.** In `bench/reference_runner_v3.py`: `constraint_class` has **1 reader (line 10917) and 0 writers**; `confidence` has **1 reader (line 10918) and 2 writers (lines 14640 and 20730) — and NEITHER WRITER WRITES THE OBJECT THE READER READS.** Line 14640 writes `stats["verdicts"][finding_id]`, a per-verdict telemetry dict; line 20730 writes `_sv_rows`, a separate telemetry list. The reader reads a REGISTRY ENTRY. Both fields are absent from the finding schema. So `compute_sev_f` defaults both inputs on every entry and `_SEVERITY_SPEC` stands at `{"on": False}` (line 10703). **THE TRAP IN "JUST COLLECT IT", AND IT IS THE REASON THIS ENTRY EXISTS RATHER THAN A SILENT FIX.** The single `confidence` the codebase does collect is `float(m.group(4)) if m.group(4) else 0.5` at line 14640 — parsed out of a model's own verdict text with a 0.5 default. That is a model's estimate of its own certainty, which his B87 ruling of 2026-11-08 made the directive declare INADMISSIBLE. **Pointing the formula at the value that already exists would reinstall exactly the vote he objected to**, which is why the collection must write a NEW tool-derived field and not reuse this one. **THE SHAPE THEOREM, VERIFIED HERE ON 2 INDEPENDENT TOOLS AND NOT TAKEN FROM THE PANEL RECORD.** For `Sev = W . B` with `W` in `{0.5, 1.0}` and `B` any composition of belief factors in `[0,1]`: z3 returns **unsat** for a counterexample to `Sev >= c <=> (W = 1.0 and B >= c)` over every `c` in `(0.5, 1.0]`; SymPy gives `sup(B/2) = 1/2` over `B` in `[0,1]`, so the SOFT branch can never reach any cut above 0.5, and at `W = 1` the test reduces to `B >= c` identically. **So no cut above 0.5 tests consequence MAGNITUDE at all** — magnitude enters only through `W`, and `W` has 2 values — and moving 0.7 to 0.8, 0.9 or 0.95 reclassifies 0 entries. SymPy gives the admissible range for a 3rd weight as strictly `(1/2, 1)`. This is already recorded as caution 3 of appendix section 7.7; what is NOT recorded is that **a 3rd weight was never put to any of the 12 rounds**. **THE PROOF MECHANISM PROVES THE WRONG QUANTITY, re-run tonight rather than cited.** `severity_is_proven` accepts a reproduction of `R_k` as evidence for a severity claim. Over **652** archived entries carrying a PASS or WARN proof the 2 correlate at **r = -0.5538, p = 1.152e-53, 95% CI [-0.6048, -0.4982]**, scipy and numpy agreeing to 1.11e-16, Spearman rho = -0.4716. The proof moves AGAINST the number it licenses, and at the proof's own 0.05 tolerance **555 of 652, 85.12%**, would stop being released. **AND THE SPECIFICATION'S KEY PROPERTY IS VIOLATED TODAY:** 27 of 32 disproved findings carry non-zero severity, **84.3750%, Wilson [68.2459%, 93.1356%], Clopper-Pearson [67.2121%, 94.7249%]**, where section 7.7 says a disproved finding scores 0. **HIS STANDING RULING IS TO BUILD IT:** 2026-11-01, *"So OK. Since I have already ruled on the severity change multiple times, and if this is the only thing that still needs to be done, then build it and implement it in full."* **RECOMMENDATION, IN DEPENDENCY ORDER, AND THE FIRST STEP NEEDS NOTHING FROM HIM.** 1. Collect the 2 fields — a NEW tool-derived confidence and the HARD/SOFT class — into the finding schema and the registration path, leaving the existing self-reported value untouched and unused, so `compute_sev_f` stops defaulting. That is carrying out his 2026-11-08 ruling and B87 already classes it as not a decision, so it proceeds by default. 2. **[NEEDS HIS RULING]** whether `severity_is_proven` is repointed at the gated quantity, since it currently licenses a release door on a proof of a different number; repointing it changes what that door admits, and loosening or tightening a gate is his. 3. **[NEEDS HIS RULING]** whether appendix section 7.7 gains a 3rd consequence weight in `(1/2, 1)`, which is the only change that makes any cut a magnitude test and is an edit to the mathematical model rather than to the code. **NOT COMPOSED:** steps 2 and 3 are independent of step 1 and of each other, and no measurement shows any pair dominating either part alone, so each stands on its own under his composability standard. **2 CAUTIONS ON ANY BUILD, both from the panel record and both verified above.** Promoting section 7.7 to the blocking gate, the rule that stops a run closing while a critical finding is open, releases criticals on falsifier OMISSION, because `V(None) = 0.5` makes every unresolved finding sub-critical; and 3 raw-severity partition readers gate rather than 1, so a repair reaching only the A4 door leaves 2 gating readers on the asserted float. Tracked as `pf:18582c4fed35`, the uncomputable severity formula. Producers, all re-run tonight: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py`. ★★★ **HIS CONDITIONAL OF 2026-11-12 WAS MEASURED BEFORE ANY PANEL WAS DISPATCHED, AND IT DOES NOT FIRE FOR THE 3 ISSUES HE NAMED.** **HIS WORDS, verbatim:** *"Again you will need to explain this in plain English. We recently did extensive work on severity and how this is measured and we recently did a panel review too. We identified that the maths model sits at a higher level of abstention, that the 0.7 cut was effectively meaningless and that the real measure of severity is entirely domain dependent. Why weren't these issues resolved the last panel review? If you didn't ask them, you should run another fresh free panel review to resolve these questions. stm"* (His *abstention* is *abstraction*.) **ALL 3 REACHED THE BRIEF OF THE 2026-11-11 FREE-SEAT ROUND**, recorded in `experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md`: the abstraction question is its **Q6**, named there as *THE FOUNDER'S OWN QUESTION, and it is the one he most wants answered*; the frozen cut is its **Q4**, asking whether 0.7 can be expressed as a RANK on each validated scale; and domain-dependence is the whole subject of the round. Measured by splitting every seat-structured panel record at its first `## Seat:` heading so that *the question was PUT* is distinguishable from *a seat raised it unprompted*: **75 of 110 `Panel_*.md` files carry a reply section**, and the 2026-11-11 record carries all 5 of the questions tested. **AND 3 OF THE 4 REPAIRS THAT ROUND PUT IN PLAY ARE LIVE IN THE TREE**, verified by reading the files rather than the record: the ordinal reformulation at `bench/directives/universal/cdsfl_core_formal.md:418` onward, the per-domain scale table in `bench/cdsfl_registry/domain_manifest.toml`, and the credence finding written into `docs/MATHEMATICAL_APPENDIX.md:1473` with the ordered-pair form at `:1479`. **THE 4TH IS NOT:** `bench/reference_runner_v3.py:10784` still returns `severity_proof_status(entry) in _RK_PROOF_ACCEPTED`, so a reproduction of `R_k` is still accepted as evidence for a severity claim. **WHAT GENUINELY WAS NEVER ASKED, AND IT IS MINE.** That round's brief carried the 2-value weight as measurement 3.5 — z3 `unsat` for 4 distinct severities from `W` in `{0.5, 1.0}`, `sat` for 2 — handed to the seats as ESTABLISHED. **No question asked them whether a 3rd weight should be added, and no seat was asked to rule on it.** So the honest answer to him is that the issues were asked and largely applied, and that the gap is a FACT put without a QUESTION attached. **A FRESH FREE ROUND IS DISPATCHED 2026-11-14 ANYWAY**, narrowed to the 2 genuinely undecided parts and to the self-falsification that the 2 may be exclusive rather than composable — if the domain's ordinal scale now carries consequence magnitude, adding a 3rd weight to a product already renamed a credence repairs a quantity with no job. Brief: `bench/logs/severity_proof_and_weight_2026-11-14/BRIEF.md`, 8 of 8 required sections, 3 declared figures re-executed by the validator. **AND THE FROZEN CUT IS SPELLED 4 TIMES OUTSIDE ITS CANONICAL CONSTANT, 3 OF THEM UNPINNED**, read by importing the modules rather than by searching text: `bench/evidence.py::LEDGER_CRITICAL_SEVERITY` pinned by `bench/tests/test_verified_true_ledger.py`, `bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD` pinned by nothing, and `bench/convergence_location.py`'s `critical_threshold` defaults on `hierarchical_novelty_series` and `novelty_rule_divergence`, also unpinned. All 4 are 0.7 today. That is in the brief. ★★★ **THE FREE ROUND RAN 2026-11-14, BLIND THEN JOINT, AND IT CORRECTED 2 ERRORS OF MINE AS WELL AS ANSWERING THE QUESTION. 2 of 2 seats responded in both halves; 0 paid dispatches.** Blind round wall 588.2 s, joint round wall 678.9 s. Records: `bench/logs/severity_proof_and_weight_2026-11-14/` and `..._joint/`. **R2, THE 3rd CONSEQUENCE WEIGHT, IS REJECTED BY BOTH SEATS ON 2 INDEPENDENT AND SEPARATELY FATAL GROUNDS.** One is EPISTEMIC — z3 shows the cut stays a class-rescaled test on model-asserted `confidence`, so belief still decides. The other is MEASUREMENT-THEORETIC — the comparison `W . B >= c`, which is the old product form tested against a fixed real cut, stays breakable by an order-preserving relabelling with 3 weights exactly as with 2, z3 `sat` both times, corroborated on a third tool. A 3rd weight repairs the ARITY of `W` and leaves the inadmissibility untouched. **R1, REPOINTING THE PROOF DOOR, IS HELD FOR HIM, AND THE FIGURE TO PUT TO HIM IS NOT THE ONE EITHER BLIND SEAT GAVE.** `severity_is_proven` has 3 live call sites that do NOT share a population. The A4 release door at about line 4442 and the reasoned withdrawal at about 9735 are each conjoined with `severity < 0.7`; the calibration-demotion site at about 10936 is not, because `_is_demotion_eligible` REQUIRES `severity >= CRITICAL_SEVERITY_THRESHOLD` at line 10662. So the 2 blind headline figures answer DIFFERENT DOORS. **Re-derived independently here rather than taken from either seat: 652 archived PASS or WARN entries; release and withdrawal doors lose 422 of 519 = 0.813102, Wilson [0.777308, 0.844295], Clopper-Pearson [0.776851, 0.845741]; the demotion door loses 133 of 133 = 1.000000, Wilson [0.971928, 1.000000], Clopper-Pearson [0.972645, 1.000000]; and 555 = 422 + 133 exactly, with 0 critical keepers.** Every interval on 2 agreeing routes to 0.000e+00. **The direction is monotone TIGHTENING at every site** — the repointed predicate is a conjunction and therefore a subset — but it reverses most of his 2026-10-06 proven-sub-critical convergence repair, which is why it is his and why both seats shipped it with the flag OFF. **A caveat the measurement owes itself:** site A reads `effective_severity(e)` while sites B and C read the raw float; with `_SEVERITY_SPEC["on"]` False, which is the default, the 2 agree, so the partition is exact today and would need redoing with that flag on. **R3, THE ORDERED PAIR, IS RECOMMENDED IN DIRECTION AND IS INCOMPLETE AS RECORDED — a NEW finding, and the sharpest thing the round produced.** `docs/MATHEMATICAL_APPENDIX.md` already writes `severity_d(f) = ( c_d(f) , credence(f) )` and keeps section 7.7 as the definition of `credence`. **But a pair is compared LEXICOGRAPHICALLY, and the second coordinate still carries the consequence weight `W`.** When `c_d` ties, the decision falls through to `credence`, and `credence` ranks by `W`. So the consequence weight has not left the gate; it has moved to the tiebreak. ★★★ **AND THAT REFUTES A SENTENCE I WROTE IN THE BRIEF ITSELF.** The brief offered as its own strongest self-falsification that R2 and R3 are EXCLUSIVE because *if consequence magnitude is now carried by the domain's ordinal scale under R3, adding a 3rd weight repairs a quantity with no job*. **The conclusion is right and the reason is false**, and both blind seats inherited the false reason from me — fable restated it as *a 3rd weight decides nothing the ordered-pair comparison reads*. **Re-derived on 2 tools here rather than accepted from a seat:** SymPy in exact rationals, with `c_d` tied and belief terms 9/10 and 8/10, gives credence 9/10 against 4/5 under 2 weights, so A outranks B, and 18/25 against 4/5 under 3 weights, so B outranks A — **the ordering FLIPS**. z3 returns **sat** for the existence of such a flip with `w3` strictly inside (1/2, 1), witness `bA = 1/2, bB = 3/8, w3 = 5/8`, and **unsat** for its negation. **A 3rd weight therefore DOES change orderings under R3. R2 stays rejected on the 2 grounds above, not on the one the brief gave.** ★★★ **AND THE BRIEF UNDERCOUNTED THE FROZEN CUT'S SPELLINGS: it says 4, the true figure is 6.** Found by fable and **verified here by ENUMERATING every function in `bench/convergence_location.py` whose signature carries a `critical_threshold` parameter, rather than by searching text for the 2 functions B191 happened to name**: `combined_novelty_series`, `hierarchical_novelty_series`, `location_only_series` and `novelty_rule_divergence` — 4, not 2 — plus `bench/evidence.py::LEDGER_CRITICAL_SEVERITY` and `bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD`. **6 spellings outside the canonical constant, 5 of them unpinned, all 7 values 0.7 today.** This is the `execute-do-not-grep` rule, and I broke it inside a brief that states it. **BOTH BLIND DELIVERIES WERE DEFECTIVE AND THE JOINT ROUND FOUND IT, which is the argument for running the joint half rather than stopping at 2 agreeing blind answers.** cc2's runner failed a stamped guard its own selected suites did not include; fable's accepted `recomputed_rk=True` as the figure 1.0, because `bool` is a subclass of `int`, so `severity_is_proven` returned True at severity 0.97 with the repoint ON — a malformed proof figure licensing a release. **NOTHING FROM EITHER SEAT IS ADOPTED INTO THE LIVE RUNNER**, under the standing rule that a panel's fixes go to the human and are never auto-applied; the repair sits in the harvested sandboxes at `bench/logs/severity_proof_and_weight_2026-11-14_joint/sandbox_harvest/` for him to rule on.
++**B143. THE APPENDIX'S SEVERITY FORMULA CANNOT BE COMPUTED BECAUSE ITS 2 INPUTS ARE READ BY 1 SITE EACH AND WRITTEN BY NONE THAT THE READER CAN SEE, AND THE ONE CONFIDENCE THE CODEBASE DOES COLLECT IS THE SELF-REPORT HIS OWN DIRECTIVE RULES INADMISSIBLE.** Added 2026-11-10T22:52:00+00:00. **STATUS: MEASURED ON 2 TOOLS. THE COLLECTION HALF IS MINE AND PROCEEDS; 2 NARROWER QUESTIONS ARE HIS.** **WHY IT IS A NEW ENTRY AND NOT A PARAGRAPH IN B87.** B87, the entry on the severity specification asking for an inadmissible quantity, is DONE and carries his ruling of 2026-11-08. Its own text states that *adding the HARD/SOFT field is separable and is not a decision*, because the directive already requires the classification — so that work is MINE, and B87 being DONE is exactly why it became invisible: a decision or a task recorded inside a closed entry reaches no surface, the same shape B94 records and the same shape found tonight in B71. **AND IT IS TRACKED NOWHERE ELSE:** `scripts/register.py --subject constraint_class` and `--subject compute_sev_f` each return **0 matches** against a register holding 185 severity tickets. **HE RAISED IT HIMSELF, 2026-11-10,** challenging whether severity had been abandoned in favour of a model vote; the answer is that it was not, and the honest finding is worse in a different direction. **THE ASSERTED NUMBER IS THE ORIGINAL DESIGN, NOT A REGRESSION.** `bench/cdsfl_finding_schema.json` has required the model to state `severity` since commit `8c1dacb3`, 2026-03-30 — 7 months before the first severity panel of 2026-09-07 — and commit `6c10fe41`, 2026-09-06, is titled *the model vote is out of the gate*, so displacing the vote was already under way. 12 panel rounds have been dispatched on severity measurement across 6 subjects, blind and joint, on free seats only. **THE MEASUREMENT, BY AST RATHER THAN BY GREP, because a substring is not a write.** In `bench/reference_runner_v3.py`: `constraint_class` has **1 reader (line 10917) and 0 writers**; `confidence` has **1 reader (line 10918) and 2 writers (lines 14640 and 20730) — and NEITHER WRITER WRITES THE OBJECT THE READER READS.** Line 14640 writes `stats["verdicts"][finding_id]`, a per-verdict telemetry dict; line 20730 writes `_sv_rows`, a separate telemetry list. The reader reads a REGISTRY ENTRY. Both fields are absent from the finding schema. So `compute_sev_f` defaults both inputs on every entry and `_SEVERITY_SPEC` stands at `{"on": False}` (line 10703). **THE TRAP IN "JUST COLLECT IT", AND IT IS THE REASON THIS ENTRY EXISTS RATHER THAN A SILENT FIX.** The single `confidence` the codebase does collect is `float(m.group(4)) if m.group(4) else 0.5` at line 14640 — parsed out of a model's own verdict text with a 0.5 default. That is a model's estimate of its own certainty, which his B87 ruling of 2026-11-08 made the directive declare INADMISSIBLE. **Pointing the formula at the value that already exists would reinstall exactly the vote he objected to**, which is why the collection must write a NEW tool-derived field and not reuse this one. **THE SHAPE THEOREM, VERIFIED HERE ON 2 INDEPENDENT TOOLS AND NOT TAKEN FROM THE PANEL RECORD.** For `Sev = W . B` with `W` in `{0.5, 1.0}` and `B` any composition of belief factors in `[0,1]`: z3 returns **unsat** for a counterexample to `Sev >= c <=> (W = 1.0 and B >= c)` over every `c` in `(0.5, 1.0]`; SymPy gives `sup(B/2) = 1/2` over `B` in `[0,1]`, so the SOFT branch can never reach any cut above 0.5, and at `W = 1` the test reduces to `B >= c` identically. **So no cut above 0.5 tests consequence MAGNITUDE at all** — magnitude enters only through `W`, and `W` has 2 values — and moving 0.7 to 0.8, 0.9 or 0.95 reclassifies 0 entries. SymPy gives the admissible range for a 3rd weight as strictly `(1/2, 1)`. This is already recorded as caution 3 of appendix section 7.7; what is NOT recorded is that **a 3rd weight was never put to any of the 12 rounds**. **THE PROOF MECHANISM PROVES THE WRONG QUANTITY, re-run tonight rather than cited.** `severity_is_proven` accepts a reproduction of `R_k` as evidence for a severity claim. Over **652** archived entries carrying a PASS or WARN proof the 2 correlate at **r = -0.5538, p = 1.152e-53, 95% CI [-0.6048, -0.4982]**, scipy and numpy agreeing to 1.11e-16, Spearman rho = -0.4716. The proof moves AGAINST the number it licenses, and at the proof's own 0.05 tolerance **555 of 652, 85.12%**, would stop being released. **AND THE SPECIFICATION'S KEY PROPERTY IS VIOLATED TODAY:** 27 of 32 disproved findings carry non-zero severity, **84.3750%, Wilson [68.2459%, 93.1356%], Clopper-Pearson [67.2121%, 94.7249%]**, where section 7.7 says a disproved finding scores 0. **HIS STANDING RULING IS TO BUILD IT:** 2026-11-01, *"So OK. Since I have already ruled on the severity change multiple times, and if this is the only thing that still needs to be done, then build it and implement it in full."* **RECOMMENDATION, IN DEPENDENCY ORDER, AND THE FIRST STEP NEEDS NOTHING FROM HIM.** 1. Collect the 2 fields — a NEW tool-derived confidence and the HARD/SOFT class — into the finding schema and the registration path, leaving the existing self-reported value untouched and unused, so `compute_sev_f` stops defaulting. That is carrying out his 2026-11-08 ruling and B87 already classes it as not a decision, so it proceeds by default. 2. **[NEEDS HIS RULING]** whether `severity_is_proven` is repointed at the gated quantity, since it currently licenses a release door on a proof of a different number; repointing it changes what that door admits, and loosening or tightening a gate is his. 3. **[NEEDS HIS RULING]** whether appendix section 7.7 gains a 3rd consequence weight in `(1/2, 1)`, which is the only change that makes any cut a magnitude test and is an edit to the mathematical model rather than to the code. **NOT COMPOSED:** steps 2 and 3 are independent of step 1 and of each other, and no measurement shows any pair dominating either part alone, so each stands on its own under his composability standard. **2 CAUTIONS ON ANY BUILD, both from the panel record and both verified above.** Promoting section 7.7 to the blocking gate, the rule that stops a run closing while a critical finding is open, releases criticals on falsifier OMISSION, because `V(None) = 0.5` makes every unresolved finding sub-critical; and 3 raw-severity partition readers gate rather than 1, so a repair reaching only the A4 door leaves 2 gating readers on the asserted float. Tracked as `pf:18582c4fed35`, the uncomputable severity formula. Producers, all re-run tonight: `scripts/severity_was_never_computed_from_the_model_2026-10-12.py`, `scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py`. ★★★ **HIS CONDITIONAL OF 2026-11-12 WAS MEASURED BEFORE ANY PANEL WAS DISPATCHED, AND IT DOES NOT FIRE FOR THE 3 ISSUES HE NAMED.** **HIS WORDS, verbatim:** *"Again you will need to explain this in plain English. We recently did extensive work on severity and how this is measured and we recently did a panel review too. We identified that the maths model sits at a higher level of abstention, that the 0.7 cut was effectively meaningless and that the real measure of severity is entirely domain dependent. Why weren't these issues resolved the last panel review? If you didn't ask them, you should run another fresh free panel review to resolve these questions. stm"* (His *abstention* is *abstraction*.) **ALL 3 REACHED THE BRIEF OF THE 2026-11-11 FREE-SEAT ROUND**, recorded in `experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md`: the abstraction question is its **Q6**, named there as *THE FOUNDER'S OWN QUESTION, and it is the one he most wants answered*; the frozen cut is its **Q4**, asking whether 0.7 can be expressed as a RANK on each validated scale; and domain-dependence is the whole subject of the round. Measured by splitting every seat-structured panel record at its first `## Seat:` heading so that *the question was PUT* is distinguishable from *a seat raised it unprompted*: **75 of 110 `Panel_*.md` files carry a reply section**, and the 2026-11-11 record carries all 5 of the questions tested. **AND 3 OF THE 4 REPAIRS THAT ROUND PUT IN PLAY ARE LIVE IN THE TREE**, verified by reading the files rather than the record: the ordinal reformulation at `bench/directives/universal/cdsfl_core_formal.md:418` onward, the per-domain scale table in `bench/cdsfl_registry/domain_manifest.toml`, and the credence finding written into `docs/MATHEMATICAL_APPENDIX.md:1473` with the ordered-pair form at `:1479`. **THE 4TH IS NOT:** `bench/reference_runner_v3.py:10784` still returns `severity_proof_status(entry) in _RK_PROOF_ACCEPTED`, so a reproduction of `R_k` is still accepted as evidence for a severity claim. **WHAT GENUINELY WAS NEVER ASKED, AND IT IS MINE.** That round's brief carried the 2-value weight as measurement 3.5 — z3 `unsat` for 4 distinct severities from `W` in `{0.5, 1.0}`, `sat` for 2 — handed to the seats as ESTABLISHED. **No question asked them whether a 3rd weight should be added, and no seat was asked to rule on it.** So the honest answer to him is that the issues were asked and largely applied, and that the gap is a FACT put without a QUESTION attached. **A FRESH FREE ROUND IS DISPATCHED 2026-11-14 ANYWAY**, narrowed to the 2 genuinely undecided parts and to the self-falsification that the 2 may be exclusive rather than composable — if the domain's ordinal scale now carries consequence magnitude, adding a 3rd weight to a product already renamed a credence repairs a quantity with no job. Brief: `bench/logs/severity_proof_and_weight_2026-11-14/BRIEF.md`, 8 of 8 required sections, 3 declared figures re-executed by the validator. **AND THE FROZEN CUT IS SPELLED 4 TIMES OUTSIDE ITS CANONICAL CONSTANT, 3 OF THEM UNPINNED**, read by importing the modules rather than by searching text: `bench/evidence.py::LEDGER_CRITICAL_SEVERITY` pinned by `bench/tests/test_verified_true_ledger.py`, `bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD` pinned by nothing, and `bench/convergence_location.py`'s `critical_threshold` defaults on `hierarchical_novelty_series` and `novelty_rule_divergence`, also unpinned. All 4 are 0.7 today. That is in the brief.
+ <!-- task: B143 | state: OPEN | status: PROPOSED | evidence: scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py -->
+ 
+ **B144. THE CRITICAL CUT OF 0.7 IS NOT A SEVERITY MEASUREMENT, BECAUSE NOTHING IT DECIDES SURVIVES A CHANGE OF UNITS -- AND THE DOMAIN THAT WOULD SUPPLY THE UNITS IS A COMMAND-LINE FLAG WITH NO CLASSIFIER AND NO RECORD.** Added 2026-11-11T21:33:44+00:00. **STATUS: MEASURED ON 2 INDEPENDENT TOOLS AT EVERY STEP. NO RULING IS REQUESTED FOR THE MEASUREMENT; THE DESIGN CONSEQUENCE IS HIS AND IS HELD UNDER HIS `d`.** **HE RAISED IT, 2026-11-11, and the measurement agrees with him rather than with the position this entry replaces.** He asked whether pinning an exact number on severity is an arbitrary and vacuous exercise once severity is accepted as a quantity each domain already measures on its own scale, and whether the harness and the models must therefore be told which scale and which cut to use per domain. **THE ANSWER IS YES ON BOTH, AND IT IS NOW A THEOREM AND A COUNT RATHER THAN A JUDGEMENT.** **(1) THE CUT IS NOT ORDINAL-ADMISSIBLE.** z3 returns **sat** for a strictly increasing re-scaling that preserves every pairwise order and still changes `count(severity >= 0.7)`; it returns **unsat** for the same attack on a cut named by a DISTINGUISHED ELEMENT of the ordering, so a transported cut is invariant and a frozen number is not. **(2) THE ARCHIVE CONSEQUENCE IS TOTAL.** Over **3,170** archived severities the affine map `phi(x) = 0.6993 * x` -- strictly increasing, Spearman rho exactly **1.0000000000**, every pairwise order preserved on an exhaustive 400-sample sign check -- destroys **1,416 of 1,416 CRITICAL calls, 1.000000**, Wilson [0.997294, 1.000000], Clopper-Pearson [0.997398, 1.000000], both intervals on 2 routes agreeing to 2.220e-16 and 3.139e-17, and the counts taken on 2 routes (NumPy and pure Python) agreeing exactly. **So 100 per cent of the gate's CRITICAL decisions can be erased by a transformation that changes no ordering whatsoever.** **(3) THE PANEL MEASURED THE SAME THING FROM THE OTHER SIDE.** The free round `severity_is_ordinal_2026-11-11` carried the cut into the 4 validated scales by `x -> lo + 0.7 * (hi - lo)` and executed it: **CVSS lands on 7.0, exactly the High boundary and therefore expressible as a rank; FMEA on 7.3, CTCAE on 3.8 and INES on 4.9, all BETWEEN levels.** 1 of 4 can receive the frozen cut as a rank; 3 cannot. **(4) THE ROUTING HALF, WHICH IS HIS OWN QUESTION AND IS A DIFFERENT ONE FROM B140'S MODEL ROUTING.** By AST over `bench/reference_runner_v3.py` rather than by grep: exactly **1** command-line domain argument, at line 22972, `--domain` with a hardcoded default of `'software'`; **0** functions that classify a domain from task content; and across **67** de-duplicated archived `runner_state.json` files, **0** record any domain key at any depth, so the domain a run was conducted under is not preserved anywhere. **0 of 20** domain config files declare a severity scale or a critical cut, Wilson [0.000000, 0.161125], Clopper-Pearson [0.000000, 0.168433]. **So the quantity that would supply the units exists in no config, is chosen by no classifier, and is recorded in no run state.** **WHAT IS ALREADY FIXED, because he instructed it and it is design-independent.** 2 of the 3 naming collisions named in that round's brief are repaired in `docs/MATHEMATICAL_APPENDIX.md`: the verification factor is renamed `V` to **`Ver`** throughout section 7.7, ending the collision with `V(f)` for MATERIALITY at `cdsfl_core_formal.md:417` where the same letter named a consequence in one canonical document and an evidence weight in the other; and the dead citation to a section 10 of `cdsfl_core.txt` enumerating 5 material-defect categories is replaced, that file being **39 lines long with no section 10 and no such categories**, and nothing in `bench/` or `docs/` enumerating them either. **3 PARSING SITES FOLLOWED THE RENAME RATHER THAN BEING LOOSENED TO ACCEPT BOTH SPELLINGS**, because accepting both would let a revert to the colliding name pass unnoticed: 2 guard files and the mutation harness `scripts/the_folded_back_seat_guards_mutations_2026-11-06.py`, which still reports **4 of 4 mutations red** against the new anchor, with 85 tests passing across the 5 severity guards. **THE 3RD COLLISION IS NOT FIXED AND IS DELIBERATELY HELD**: the word *severity* still names 3 distinct objects -- the real-world consequence, the credence product of section 7.7, and the model-asserted float the running code compares against the frozen constant -- and separating them IS the design decision under his `d`. **RESIDUE, NAMED RATHER THAN SWEPT:** 4 committed producers of October and early November still print the old `V(...)` spelling in their output prose. All 4 are pinned by guards that read that output, their computations are unaffected, and the authoritative document now records the rename, so they are left under `p-pass-anti-nitpick` rather than churned at commit time. **HIS CORRECTION ON HOW THE CONSTANT IS WRITTEN, 2026-11-11, AND IT IS ADOPTED HERE.** He objected that this entry repeats the number as though it still meant something: *"you again appear to be pinning 0.7 as a meaningful cut point. Haven't we just established that it isn't and that the cut point will vary on a per-domain basis and the convention that is usually applied in that domain to establish the cut point?"* **HE IS RIGHT AND THE DISTINCTION IS NOW STATED RATHER THAN LEFT TO THE READER.** The figure is named in this entry for exactly 1 reason: it is the constant the live code compares against, and a finding about a specific constant that refuses to name it is unlocatable. It is named as the ARTEFACT UNDER REFUTATION and carries no standing as a severity level -- the measurements above are the argument that it has none. **Everywhere else it is written as the frozen constant rather than as a quantity**, and the sharpest reason for that is in the measurement itself: the value the gate actually compares against is not 0.7 at all but 0.699999999999999955591, the nearest double, which is strictly BELOW the real number, and 174 of the 1,416 critical calls are decided by a tie at that boundary. A number that is not even itself in the reals cannot be a level. **RECOMMENDATION, 1 ONLY, under `additive-standard` and `simplicity-default`:** declare the scale and the critical LEVEL in each domain config, where 0 of 20 declare either today, and record the resolved domain in the run state, where 0 of 67 do -- both additive, neither removing the existing cut, and both prior to any change to what the gate admits. **NOT COMPOSED:** the declaration and the recording are independent and no measurement shows the pair dominating either alone, so each stands on its own under his composability standard. Tracked as `pf:d9cc6568cd70`, the critical cut of 0.7 not being a severity measurement. Producer: `scripts/the_cut_is_a_domain_property_not_a_constant_2026-11-11.py`.
+
+### fable:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-14 02:30:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/hooks/pre-commit	2026-11-14 00:58:59
+@@ -574,7 +574,6 @@
+ bench/tests/test_the_co_author_trailer_is_not_doubled_2026-11-14.py
+ bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py
+ bench/tests/test_the_parked_boundary_is_honoured_2026-11-14.py
+-bench/tests/test_the_credence_coordinate_carries_consequence_2026-11-14.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### fable:attempt-1:scripts/read_founder_responses_2026-10-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/read_founder_responses_2026-10-11.py	2026-11-14 02:40:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_hzq9z4pm/repo/scripts/read_founder_responses_2026-10-11.py	2026-11-13 23:17:56
+@@ -265,39 +265,11 @@
+     _sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+     from bench.ticket_store import KINDS as _HIS_KINDS
+ except Exception:                                         # noqa: BLE001
+-    #: ★ THIS LITERAL WENT STALE AND THE STALENESS WAS SILENT, found 2026-11-14.
+-    #: It omitted `frx`, so on any run where the import above fails his newest
+-    #: marker became UNREADABLE -- and that is precisely the run where nothing
+-    #: else is available to notice. Driven both ways on his own sentence
+-    #: "you should fix both. frx": READ with the import, INVISIBLE with the
+-    #: fallback. A fallback that is stale is worse than no fallback, because it
+-    #: looks like coverage. `bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py`
+-    #: now asserts this literal equals `KINDS` exactly, so it cannot go stale again.
+-    _HIS_KINDS = ("fr", "frx", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
++    _HIS_KINDS = ("fr", "pf", "qs", "wr", "stm", "disc", "dis", "ds")
+ _ENDS_IN_HIS_MARKER = re.compile(
+     r"\b(?:" + "|".join(sorted(_HIS_KINDS, key=len, reverse=True)) + r")\b\s*$",
+     re.IGNORECASE)
+ 
+-#: ★ ONE ALTERNATION, DERIVED, USED BY EVERY PATTERN BELOW THAT NEEDS IT.
+-#:
+-#: 2 patterns in this file -- `_MARKER_LINE` and `_MARKER_TRAILING` -- each
+-#: SPELLED THE VOCABULARY OUT TWICE, so the 9 kinds appeared 4 more times in
+-#: this module alone. The cost is measured rather than feared: adding his `frx`
+-#: on 2026-11-13 needed every site updated, the harvester's own comment names
+-#: only 4 of them and none of them is in this file, and the commit board refused
+-#: with 6 failures until they were found by hand.
+-#:
+-#: `_ENDS_IN_HIS_MARKER` above already did it the right way. These now do too,
+-#: which REMOVES 4 re-spellings rather than adding a comparator for them -- a
+-#: derived pattern cannot diverge, and under `simplicity-default` a deletion
+-#: beats a checker that has to be kept honest.
+-#:
+-#: LONGEST FIRST is load-bearing, not cosmetic: `fr` is a prefix of `frx`, so a
+-#: shorter-first alternation relies on the engine backtracking out of a failed
+-#: suffix. It does backtrack, measured both ways -- but the ordering makes the
+-#: pattern correct by construction instead of correct by accident.
+-_KIND_ALT = "|".join(sorted(_HIS_KINDS, key=len, reverse=True))
+-
+ #: Where this project's own generated TTS reports live. An annotated response
+ #: file is a COPY of one of these with his '#' insertions, so the original is an
+ #: EXACT oracle for which lines are the report's and which are his -- better
+@@ -554,7 +526,7 @@
+ #: own. Without it, `stm` would have been readable by the harvester and
+ #: invisible to the reader that actually parses his annotations.
+ _MARKER_LINE = re.compile(
+-    r"^\s*(" + _KIND_ALT + r")(?:\s*,\s*(?:" + _KIND_ALT + r"))*\s*$", re.I)
++    r"^\s*(frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*\s*$", re.I)
+ 
+ 
+ #: ★ A TRAILING MARKER, WRITTEN AT THE END OF THE ANNOTATION ITSELF. Added
+@@ -584,27 +556,8 @@
+ #: THE TEXT IS NOT ALTERED. Only this field is filled. `tid_of` digests a
+ #: ticket's verbatim, so stripping the marker out of the annotation would move
+ #: every identity derived from it -- a far larger change than the defect.
+-#: ★ THE SUFFIX ADMITS A FOLLOWING PARENTHETICAL, WIDENED 2026-11-14, AND THE
+-#: DEFECT IT CLOSES IS HIS OWN FIRST USE OF `frx` -- AGAIN, IN THE SECOND
+-#: READER. B184 widened the HARVESTER's suffix for exactly this sentence and
+-#: stopped there; this file carries the other reader of the same vocabulary and
+-#: was never touched. Driven on his words, "you should fix both. frx (as you
+-#: will note this is my first use of the fix request ticket classification.)":
+-#: the harvester returned `frx`, `_MARKER_LINE` returned None and this pattern
+-#: returned None, so `annotations()` reported the marker as blank.
+-#:
+-#: ★ IT WAS MASKED, NOT HARMLESS. `scripts/harvest_tickets_2026-10-17.py:432`
+-#: re-applies its own MARKER when this field is empty, so the TICKET was filed
+-#: correctly and the blind spot never surfaced there. 3 other production
+-#: consumers read this field directly and saw his fix request as unmarked.
+-#:
+-#: ★ MEASURED BEFORE IT WAS MADE, because adding to an accepting pattern is a
+-#: LOOSENING: over all 895 of his annotations the widened suffix changes
+-#: exactly 1 verdict, 0.001117, Wilson [0.000197, 0.006302], Clopper-Pearson
+-#: [0.000028, 0.006209] -- and that 1 is his own `frx` sentence. 0 verdicts
+-#: LOST, 0 false positives in 895.
+ _MARKER_TRAILING = re.compile(
+-    r"(?:^|[\s.,;:!?)\]\"'’”])((?:" + _KIND_ALT + r")(?:\s*,\s*(?:" + _KIND_ALT + r"))*)"
++    r"(?:^|[\s.,;:!?)\]\"'’”])((?:frx|fr|pf|qs|wr|stm|disc|dis|ds)(?:\s*,\s*(?:frx|fr|pf|qs|wr|stm|disc|dis|ds))*)"
+     r"[\s.!?]*$", re.I)
+ 
+ 

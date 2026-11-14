@@ -1,0 +1,182 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 14265,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && sha256sum bench/reference_runner_v3.py bench/cdsfl_registry/domain_manifest.toml docs/MATHEMATICAL_APPENDIX.md bench/evidence.py bench/audit_closing_window.py bench/convergence_location.py scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py bench/directives/universal/cdsfl_core_formal.md bench/cdsfl_registry/composer.py 2>&1 | head -20\", \"description\": \"Verify",
+      "t_offset_s": 11.42
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import z3, sympy, scipy, numpy; print('tools ok')\\\" 2>&1\", \"description\": \"Check z3, sympy, scipy, numpy availability\"}",
+      "t_offset_s": 12.342
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py 2>&1 | tail -40\", \"description\": \"Reproduce F1 polarity measurement\"}",
+      "t_offset_s": 19.118
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10740,10830p' bench/reference_runner_v3.py\", \"description\": \"Read severity_is_proven region of runner\"}",
+      "t_offset_s": 20.477
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"compute_sev_f\\\\|CRITICAL_SEVERITY_THRESHOLD\\\\|severity_is_proven\\\\|_RK_PROOF_ACCEPTED\\\" bench/reference_runner_v3.py | head -40\", \"description\": \"Locate severity machinery call sites in runner\"}",
+      "t_offset_s": 27.81
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10440,10540p' bench/reference_runner_v3.py\", \"description\": \"Read compute_sev_f and threshold region\"}",
+      "t_offset_s": 28.626
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"compute_sev_f\\\" bench/reference_runner_v3.py docs/MATHEMATICAL_APPENDIX.md | head\", \"description\": \"Find compute_sev_f definition\"}",
+      "t_offset_s": 34.472
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4400,4460p' bench/reference_runner_v3.py && echo ===== && sed -n '9700,9745p' bench/reference_runner_v3.py\", \"description\": \"Read the two gate call sites of severity_is_proven\"}",
+      "t_offset_s": 35.388
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10960,11070p' bench/reference_runner_v3.py\", \"description\": \"Read compute_sev_f and effective_severity\"}",
+      "t_offset_s": 40.911
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '9690,9740p' bench/reference_runner_v3.py\", \"description\": \"Read second severity_is_proven gate site\"}",
+      "t_offset_s": 41.091
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1253,1300p' docs/MATHEMATICAL_APPENDIX.md; echo ---; sed -n '1397,1500p' docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Read appendix 7.7, 7.7.1 and credence annotation\"}",
+      "t_offset_s": 56.575
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '400,470p' bench/directives/universal/cdsfl_core_formal.md; echo ---MANIFEST---; head -80 bench/cdsfl_registry/domain_manifest.toml\", \"description\": \"Read reformulated guard and domain manifest\"}",
+      "t_offset_s": 57.801
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py\", \"description\": \"Read F1 producer script\"}",
+      "t_offset_s": 108.563
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity_proof\\\\b\\\\|\\\\\\\"severity_proof\\\\\\\"\\\\|'severity_proof'\\\" bench/reference_runner_v3.py | head -20; echo ---; grep -n \\\"def .*severity_proof\\\\|_check_severity_proof\\\\|recompute\\\" bench/reference_runner_v3.py | grep -i proof | head\", \"description\": \"Find severity proof record creation and fields\"}",
+      "t_offset_s": 110.151
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity\\\" bench/cdsfl_registry/composer.py | head -20; echo ---EVID---; sed -n '790,805p' bench/evidence.py; echo ---AUDIT---; sed -n '95,110p' bench/audit_closing_window.py; echo ---CONV---; sed -n '1030,1095p' bench/convergence_location.py\", \"description\": \"Check composer severity delivery and the three unpinned cut spellings\"}",
+      "t_offset_s": 112.069
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, time\\nt0=time.time()\\nsys.path.insert(0,'bench')\\nimport importlib.util\\nspec = importlib.util.spec_from_file_location(\\\"rr3\\\", \\\"bench/reference_runner_v3.py\\\")\\nrr3 = importlib.util.module_from_spec(spec)\\nspec.loader.exec_module(rr3)\\nprint(f\\\"import ok in {time.time()-t0:.1f}s\\\")\\nf = rr3.compute_sev_f\\n# M1: live values across the full factor grid\\n",
+      "t_offset_s": 171.613
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"import\\\" bench/tests/test_verified_true_ledger.py | head -12\", \"description\": \"See how tests import the runner\"}",
+      "t_offset_s": 176.654
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, time\\nt0=time.time()\\nsys.path.insert(0, \\\".\\\")\\nfrom bench import reference_runner_v3 as rr3\\nprint(f\\\"import ok in {time.time()-t0:.1f}s\\\")\\nf = rr3.compute_sev_f\\nprint(\\\"M1 compute_sev_f live values:\\\")\\nfor cls, conf, v in [(\\\"HARD\\\",0.9,\\\"CONFIRMED\\\"),(\\\"HARD\\\",0.9,\\\"REFUTED\\\"),(\\\"HARD\\\",0.9,None),\\n                     (\\\"SOFT\\\",1.0,\\\"CONFIRMED\\\")",
+      "t_offset_s": 186.875
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"scripts/severity_door_and_weight_after_the_ordinal_repair_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"After the ordinal repair: what is left of `severity_is_proven` and of W?\\n\\nPanel round 2026-11-14. Three measurements, each refutable by re-running this\\nfile. All three decide the round's question rather than describe it.\\n\\nM-A  THE WEIGHT'S EXPRESSIVITY (F2, re-der",
+      "t_offset_s": 258.214
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/severity_door_and_weight_after_the_ordinal_repair_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"After the ordinal repair: what is left of `severity_is_proven` and of W?\\n\\nPanel round 2026-11-14. Three measurements, each refutable by re-running this\\nfile. All three decide the round's question rather than describe it.\\n\\nM-A  THE WEIGHT'S EXPRESSIVITY (F2, re-de",
+      "t_offset_s": 294.848
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'With[{phi = Function[x, x^2]}, {Simplify[phi[a] + phi[b] - phi[a + b]], Reduce[Exists[{b}, 0 <= b <= 1 && w*b >= 7/10], w] /. w -> 1/2, Max[1/2*1, 1/2*1*1]}]' 2>&1\", \"description\": \"Wolfram second falsifier on sum inadmissibility and SOFT branch sup\", \"timeout\": 120000}",
+      "t_offset_s": 308.657
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head; python3 - <<'EOF'\\nimport json, pathlib\\nLOGS = pathlib.Path(\\\"bench/logs\\\")\\nbest=None\\nfor fp in LOGS.glob(\\\"**/runner_state.json\\\"):\\n    try: d=json.loads(fp.read_text(errors=\\\"ignore\\\"))\\n    except Exception: continue\\n    ents=((d or {}).get(\\\"registry\\\") or {}).get(\\\"entries\\\",{})\\n    if ents and (best is None or len(ents)>best[1]):\\n        best=(fp,len",
+      "t_offset_s": 311.28
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def combined_novelty_series\\\\|def _criticals\\\\|symbols\\\" bench/convergence_location.py | head -12; python3 - <<'EOF'\\nimport json, pathlib, sys\\nsys.path.insert(0,\\\".\\\")\\nfrom bench.convergence_location import hierarchical_novelty_series, novelty_rule_divergence\\nd=json.loads(pathlib.Path(\\\"bench/logs/exp40_gate_20260514T020550Z/runner_state.json\\\").read_text(errors=\\\"ignore",
+      "t_offset_s": 326.533
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10830,10900p' bench/reference_runner_v3.py; grep -n \\\"severity_spec_enabled\\\\|sev_f_enabled\\\" bench/reference_runner_v3.py | head\", \"description\": \"Read wire_module_mirrors body and config flags\"}",
+      "t_offset_s": 351.333
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2155,2170p' bench/reference_runner_v3.py\", \"description\": \"Read RunnerConfig around severity_spec_enabled\"}",
+      "t_offset_s": 359.566
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"bench/reference_runner_v3.py\", \"old_string\": \"    severity_spec_enabled: bool = False\\n    # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).\", \"new_string\": \"    severity_spec_enabled: bool = False\\n    # R1 (panel 2026-11-14): when True, `severity_is_proven` additionally\\n    # requires the proof to be ABOUT the gated number --",
+      "t_offset_s": 369.619
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport io\\np = \\\"bench/reference_runner_v3.py\\\"\\nsrc = io.open(p, encoding=\\\"utf-8\\\").read()\\n\\n# --- Edit 1: RunnerConfig flag ---\\nold1 = \\\"\\\"\\\"    severity_spec_enabled: bool = False\\n    # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).\\\"\\\"\\\"\\nnew1 = \\\"\\\"\\\"    severity_spec_enabled: bool = False\\n    # R1 (panel 2026-11-14): when",
+      "t_offset_s": 392.729
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"wire_module_mirrors\\\" bench/tests/*.py | head; mkdir -p bench/tests\\ncat > bench/tests/test_severity_proof_repointing.py <<'PYEOF'\\n\\\"\\\"\\\"R1 (panel 2026-11-14): `severity_is_proven` repointed at the gated number.\\n\\nThe defect: the release doors test `severity < CRITICAL_SEVERITY_THRESHOLD and\\nseverity_is_proven(e)`, but the proof reproduces R_k without reading `severity`\\",
+      "t_offset_s": 426.922
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py bench/tests/test_the_severity_spec_annihilates_the_a4_severity_door_2026-10-28.py -q 2>&1 | tail -4; grep -rln \\\"severity_is_proven\\\" bench/tests/*.py\", \"description\": \"Run existing mirror tests and find severity_is_proven tests\", \"timeout\": 300000}",
+      "t_offset_s": 435.023
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '200,230p' bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\", \"description\": \"Read the failing mirror assertion\"}",
+      "t_offset_s": 440.479
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport io\\np = \\\"bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py\\\"\\nsrc = io.open(p, encoding=\\\"utf-8\\\").read()\\nold = '''            assert got == {\\\"severity_spec\\\": flag}, got'''\\nnew = '''            # EXTENDED 2026-11-14 (panel R1): `wire_module_mirrors` now also\\n            # wires `severity_proof_about_gated_number`, so the exact-equal",
+      "t_offset_s": 458.691
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_panel_found_severity_defects_2026-09-07.py bench/tests/test_severity_calibration.py bench/tests/test_the_severity_predictions_can_fail_2026-11-02.py -q 2>&1 | tail -2; git status --short | head; git diff --stat | tail -4\", \"description\": \"Run remaining severity tests and show tree delta\", \"timeout\": 420000}",
+      "t_offset_s": 471.413
+    }
+  ],
+  "n_tool_calls": 32,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 568.2,
+  "response": "All affected tests pass (184 across the severity/mirror/threshold set). The sandbox is not a git repo; the fixes live at their real paths in the tree. One final falsification pass on my own edits found and repaired the one change-detector the extension legitimately broke (stated openly below). Terminating at diminishing returns.\n\n---\n\n# SEAT VERDICT \u2014 the door and the weight, after the ordinal repair\n\n## verdict\n\n| repair | verdict | reason |\n|---|---|---|\n| **R1** repoint `severity_is_proven` | **HOLD FOR THE FOUNDER** \u2014 built, default OFF, in tree | The defect is real and reproduced (r = \u22120.5538; the door releases a 0.45 on a proven 0.95). But the repointing strips the exemption from 422 of 519 archived escapees (81.31%), reversing most of his 2026-10-06 proven-sub-critical convergence repair. Direction is provably tighten-only (the repointed predicate is a conjunction, hence a subset). That trade is his to rule. |\n| **R2** add a 3rd weight in (\u00bd, 1) | **REJECT** | z3: the product gate `W\u00b7B \u2265 c` with a fixed real cut is **breakable by an order-preserving re-labelling with 3 weights exactly as with 2** (`sat` both times). R2 enlarges the inadmissible formula; it does not repair the proven defect. And under R3 the consequence verdict `c_d \u227d_d \u03b8_d` contains no `W` term, so a 3rd weight changes **zero** consequence verdicts. |\n| **R3** retire the product for the ordered pair | **RECOMMEND the already-recorded form; no further removal needed** | \u00a77.7.1 (appendix line ~1473) already states the pair and explicitly keeps \u00a77.7 as the **credence** definition \u2014 so R3 correctly executed removes a *role*, not a formula, and the additive standard's removal clause is satisfied by measurement: pair gate `unsat` (admissible), product gate `sat` (breakable), named property = invariance under order-preserving re-parameterisation. The remaining work is the runner-side wiring (the gate still reads the 0\u20131 proxy), which is a build, not a ruling. |\n\n## r1_measurement\n\nOver the archive (re-derived, not quoted): 652 entries carry a PASS/WARN proof; **519 of them escape the blocking door today** (sev < 0.7 \u2227 proven). Requiring the proof to be about the gated number at the proof's own WARN tolerance (|severity \u2212 recomputed R_k| \u2264 0.05): **97/519 = 18.69%, Wilson [15.57%, 22.27%] keep the exemption; 422/519 = 81.31%, Wilson [77.73%, 84.43%] lose it.** The brief's 555/652 (85.12%) is correct arithmetic on the wrong population: 133 of the 652 have sev \u2265 0.7 and never held the exemption, so the door-relevant figure is 81.31% of 519. Evidence required under R1 as built: PASS/WARN **and** a recomputed number that *is* the gated number within 0.05; a proof carrying no reproducible number no longer counts.\n\n## r2_vs_r3\n\n**Mutually exclusive competing designs, and R3 dominates.** The deciding measurements (producer in tree, output pasted below): (a) product gate breakability under order-preserving \u03c6: `sat` with W \u2208 {0.5, 1.0} **and** `sat` with W \u2208 {0.5, 0.8, 1.0} \u2014 R2 leaves the proven defect intact; (b) pair gate with transported \u03b8_d: `unsat` \u2014 admissible; (c) under R3, `W` lives in the credence coordinate and the consequence verdict reads no `W`, so a 3rd weight decides nothing the pair gate reads. The brief's self-falsification is **right**: consequence magnitude is carried by `c_d` under R3, so R2 repairs a quantity that no longer has the job. Composing them would add a dead value to a renamed belief formula \u2014 fails the founder's composability rule (no measurable advantage over R3 alone) and the additive standard (an addition nothing reaches).\n\n**R1 + R3, by contrast, do compose on measurement:** R1 alone leaves F2 (product gate still `sat`); R3 alone leaves F1 (the door still accepts an R_k proof \u2014 the live module returned `severity_is_proven = True` for sev 0.45 / proven R_k 0.95). Each single repair fails the other's executed falsifier; the composed state passes both. That is the demonstrated-advantage form of composition, not coexistence.\n\n## f3_duplicates\n\nThe duplicates are **live, not inert**: on `exp40_gate_20260514T020550Z` (296 entries, 28 rounds), `hierarchical_novelty_series` totals **30 / 26 / 20** novel criticals at cuts 0.65 / 0.70 / 0.75 \u2014 a drifted default changes the gamma-side series and therefore verdicts. Fix delivered: `bench/tests/test_critical_cut_single_spelling.py` pins `audit_closing_window.CRITICAL_SEVERITY_THRESHOLD` and **every** `critical_threshold` default in `convergence_location` (by import and `inspect.signature`, enumerating functions so future spellings are caught) against the runner's constant. `evidence.py` was already pinned. A per-domain \u03b8_d does **not** make the module constant wrong: it is the APPLICATION level that the 6 `severity_scale = \"none\"` domains inherit, and the 2026-05-18 pre-registration forbids moving the numeric. What it forbids \u2014 and what the test now fails loud on \u2014 is drift between spellings. The genuine residual, named not fixed: a domain that declares its own scale (e.g. AIAG-VDA FMEA) has **no path into the runner's gate**, which reads only the 0\u20131 proxy; the composer now delivers \u03b8_d to prompts (F4 confirmed, call site composer.py:2140) but no gate consumes it.\n\n## falsifier / falsifier_result\n\nProducer (in tree): `scripts/severity_door_and_weight_after_the_ordinal_repair_2026-11-14.py`. Executed output, pasted:\n\n```\nM-A  weight expressivity (z3):\n  W in (0.5, 1.0):  2 distinct severities -> sat   3 distinct -> unsat\n  W in (0.5, 0.8, 1.0): 3 distinct severities -> sat   4 distinct -> unsat\n  SymPy: sup over the SOFT branch of W*B (B<=1, Ver<=1) = 1/2 ... at W=1, (Sev >= c) == (B >= c) identically: True\n\nM-B  invariance under order-preserving re-labelling (z3):\n  product gate, W in (0.5, 1.0):      breakable -> sat   (sat = defect present)\n  product gate, W in (0.5, 0.8, 1.0): breakable -> sat   (sat = R2 does NOT repair it)\n  pair gate c_d >= theta_d, theta transported: breakable -> unsat   (unsat = admissible)\n\nM-C  the door (R1), measured on the door's own population:\n  archived entries with a PASS/WARN proof:             652\n  of those, escaping the blocking door (sev < 0.7):   519\n  still escaping when the proof must be ABOUT the gated number (|sev - R_k| <= 0.05): 97/519 = 18.69%  Wilson [15.57%, 22.27%]\n  entries LOSING the exemption: 422/519 = 81.31% -- the door TIGHTENS, and only tightens\n```\n\nSecond falsifier, Wolfram Language (local Wolfram Engine via wolframscript, attribution per terms): `{-2*a*b, False, 1/2}` \u2014 the sum fails \u03c6-admissibility by exactly \u22122ab, the SOFT branch can never reach 0.7 (`Reduce` \u2192 `False`), and its supremum is \u00bd. Agrees with SymPy and z3.\n\nF1 reproduction: `python3 scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py` \u2192 `r = -0.5538, p = 1.152e-53, CI [-0.6048, -0.4982], 555 of 652 (85.12%)` \u2014 the brief's figures reproduce exactly. Live-module check: `severity_is_proven({\"severity\": 0.45, \"severity_proof\": {\"status\": \"PASS\", \"recomputed_rk\": 0.95}})` \u2192 `True` on the dispatched runner.\n\nTests delivered and run: `bench/tests/test_severity_proof_repointing.py` (5 tests: default-off byte-identical, repointed semantics, subset proof over constructed entries, mirror wiring, config field default) and `bench/tests/test_critical_cut_single_spelling.py` (3 tests). Full affected set: **184 passed, 0 failed** (`pytest bench/tests/test_the_severity_spec_*.py test_severity_proof*.py test_the_door*.py test_an_unserved*.py test_a_ruled*.py test_verified_true_ledger.py test_critical_cut_single_spelling.py test_panel_found_severity_defects*.py test_severity_calibration.py test_the_severity_predictions*.py -q`).\n\n## Files changed/added in the tree\n\n- `bench/reference_runner_v3.py` \u2014 3 anchored edits: `RunnerConfig.severity_proof_about_gated_number: bool = False`; `_PROOF_ABOUT_GATED_NUMBER = {\"on\": False, \"tol\": 0.05}` module mirror + repointed branch in `severity_is_proven` (byte-identical behaviour while off); mirror wired in `wire_module_mirrors`. **Awaits the founder's ruling to enable.**\n- `bench/tests/test_severity_proof_repointing.py` \u2014 new, 5 tests.\n- `bench/tests/test_critical_cut_single_spelling.py` \u2014 new, 3 tests.\n- `scripts/severity_door_and_weight_after_the_ordinal_repair_2026-11-14.py` \u2014 new producer.\n- `bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py` \u2014 **one assertion extended, stated openly**: it exact-matched `wire_module_mirrors`' return dict, whose documented contract is \"the values it set\"; the extension now asserts *both* mirrors, which is strictly stronger. No assertion was loosened, skipped, or deleted.\n\n## reasoning\n\nPremises: (P1) the release doors (runner lines ~4442 and ~9734) test `severity < CRITICAL_SEVERITY_THRESHOLD \u2227 severity_is_proven`; (P2) `severity_is_proven` reads only the proof *status*, and the proof recomputes R_k without reading `severity` \u2014 verified by executing the live function on a constructed entry; (P3) the two quantities anticorrelate over the archive (r = \u22120.5538). From P1\u2013P3: the proof is a side-condition on a different number, so the door's epistemic warrant is void \u2014 F1 confirmed. For F2: executed `compute_sev_f` gives SOFT-branch sup = 0.5 and `Sev \u2265 c \u21d4 B \u2265 c` at W = 1; z3 gives exactly |W| distinct severities \u2014 consequence enters as one bit. The 2026-11-12 ordinal proof supplies the admissibility criterion (survival of strictly increasing \u03c6); applying it to each candidate: R2 `sat` (fails), R3 `unsat` (passes), R1 is orthogonal to \u03c6 (it fixes provenance, not scale) and is subset-monotone, hence safe to build and gate behind the founder's ruling.\n\n## disagreement\n\nThree points against the brief's framing. **(1) The headline figure is measured on the wrong population.** 555/652 (85.12%) counts 133 entries with sev \u2265 0.7 that the door never exempted; the door-relevant figure is 422/519 (81.31%). Materially the same conclusion, but the number that should reach the founder is 81.31%. **(2) \"How many of the 652 still release\" presupposes the tolerance form of R1 is the end state. It is not.** Demanding |severity \u2212 R_k| \u2264 0.05 forces numeric coincidence between two quantities the appendix now says are *different in kind* (consequence-pair vs residual risk). The tolerance form is the correct *interim* door on today's schema \u2014 it is what I built \u2014 but the terminal door under R3 is consequence-side: `c_d \u227a_d \u03b8_d` checked against the manifest, plus harness-computed credence (`compute_sev_f` / \u00a77.8 S_v), with no coincidence requirement. The brief's R1, taken as final, would fossilise a category error at 0.05 tolerance. **(3) The brief's \u00a72 asks whether the live code \"does what the directive now asserts\" and the answer is no, in one specific place:** nothing in `convergence_location.py` or the two-sided gate computes the directive's `\u0394_d(K) = max` term \u2014 the gate counts criticals above a *fixed* 0.7, which the directive's own admissibility table marks inadmissible unless the level is read as the application scale's transported level. That reading is coherent today only because every archived severity is on the single 0\u20131 proxy; the moment a domain's own scale carries a consequence into the registry, the gate has no admissible comparison to make. That is the next build, and it belongs in the record now.\n\n## plain_english\n\nTwo leftovers from the old severity design were examined. First, the \"proof door\": a finding can stop blocking release if its severity is \"proven\" \u2014 but the thing being proven is a different number from the severity being released, and across 652 archived cases the two actually move in opposite directions. I built the repair \u2014 the proof must now be about the released number itself \u2014 but left it switched OFF, because turning it on would make releases much stricter (about 4 in 5 currently-exempt findings would lose the exemption), and reversing your earlier convergence repair is your call, not the panel's. Second, the old severity formula can only say \"serious\" or \"half-serious\" \u2014 two levels. Adding a third level was proposed, but the maths shows that patches a formula whose job has already moved: under the new design the *domain's own scale* (CVSS for software, CTCAE for clinical, etc.) carries how bad a finding is, and the old formula survives only as a measure of how much we *believe* the finding. So: reject the third weight, keep the pair design already written in the appendix, and I also added a test that stops the 0.7 critical cut's four separate copies from silently drifting apart \u2014 I measured that a drifted copy really does change verdicts.\n\n## passes_run\n\n**4 passes.** Pass 1: stamp verification, F1 reproduction, code reading. Pass 2: live `compute_sev_f` grid, z3/SymPy/Wolfram derivations, archive door measurement \u2014 added the population correction (519 vs 652). Pass 3: novelty-series sensitivity run, fixes written, 8 new tests passing. Pass 4 (falsifying my own fix): swept every test touching `severity_is_proven`/`wire_module_mirrors`/the threshold \u2014 found one exact-equality change-detector my extension legitimately broke, strengthened it, re-ran the full affected set (184 passed), and confirmed the default-off path is behaviour-identical. Pass 4 added no new above-threshold finding beyond that repair \u2192 converged, declared per \u00a710 with the evidence above: hard assumptions (door semantics, weight expressivity, cut-sensitivity, wiring) each tested by execution; residual findings (the gate's missing per-domain path) named and below this round's threshold because no domain scale yet reaches the registry.\n\n**What would refute me:** (1) re-running `scripts/severity_door_and_weight_after_the_ordinal_repair_2026-11-14.py` and getting `unsat` for the 3-weight product breakability \u2014 R2 would then repair the defect and my REJECT falls; (2) a z3 model showing the pair gate `sat` under transported \u03b8_d \u2014 R3's admissibility falls; (3) `pytest bench/tests/test_severity_proof_repointing.py` failing on `test_default_off_is_byte_identical_behaviour` \u2014 my claim that the tree is behaviour-unchanged pending the founder's ruling falls; (4) an archived registry where the repointed door *loosens* (any entry proven under the new predicate but not the old) \u2014 impossible by the subset derivation, so finding one would void my direction claim and the derivation both.",
+  "t_start_epoch": 1794616943.769446,
+  "t_end_epoch": 1794617511.998091,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_lk7nmsj7/repo",
+      "built": false
+    }
+  ]
+}

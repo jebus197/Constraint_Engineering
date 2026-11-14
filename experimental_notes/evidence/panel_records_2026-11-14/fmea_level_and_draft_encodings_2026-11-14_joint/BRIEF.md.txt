@@ -1,0 +1,356 @@
+# PANEL BRIEF — JOINT ROUND on `fmea_level_and_draft_encodings_2026-11-14`
+
+This is the JOINT half of the blind round `fmea_level_and_draft_encodings_2026-11-14`. In the blind half each of the 2 seats answered WITHOUT seeing the others. Both replies are reproduced BELOW IN FULL, verbatim. Read the other seat's actual words before you answer.
+
+**Disagreement is INFORMATION and is preserved. There is no compelled convergence: do NOT move toward the other seat to be agreeable. Change your position only where its EVIDENCE moves you, and say which evidence did. Where you still disagree, say so and say what would settle it.**
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `bench/cdsfl_registry/composer.py` | `eb836387286a87a3` | 117190 | 2026-11-13T21:27:13+00:00 |
+| `bench/reference_runner_v3.py` | `9f689c6505d36c49` | 1280002 | 2026-11-13T21:28:38+00:00 |
+| `bench/cdsfl_registry/registry.py` | `8d37e067ebdc0757` | 19691 | 2026-11-09T05:09:06+00:00 |
+| `bench/cdsfl_registry/domain_vocabulary.py` | `f27c7b6cb0a63f56` | 21926 | 2026-11-12T21:03:50+00:00 |
+| `bench/convergence_location.py` | `ea76b2852c07ee8d` | 65644 | 2026-09-01T12:24:12+00:00 |
+| `bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py` | `c8e3b4f0a7069046` | 5112 | 2026-11-13T21:28:00+00:00 |
+| `bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py` | `87cd7b882b5adb06` | 10118 | 2026-11-12T03:45:47+00:00 |
+| `bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py` | `234bf2710b6f7c54` | 12970 | 2026-11-12T21:03:40+00:00 |
+| `bench/directives/universal/cdsfl_core_formal.md` | `9da304edb6c80a60` | 31909 | 2026-11-12T03:58:04+00:00 |
+| `bench/directives/physics/physics_general.txt` | `1891ab2a94cdc379` | 7571 | 2026-11-12T01:41:31+00:00 |
+| `bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md` | `14a5b7fa2949b134` | 3739 | 2026-07-28T12:27:32+00:00 |
+| `bench/cdsfl_registry/domain_manifest.toml` | `d71c5d47ef9e3e67` | 26575 | 2026-11-14T02:45:27+00:00 |
+| `bench/directives/statistics/statistics_inference.txt` | `ead4e211ef3660d6` | 6946 | 2026-11-12T01:44:46+00:00 |
+
+## THE PROJECT, ITS AIMS, AND ITS SPECIFICATIONS — read before answering
+
+CDSFL is a falsification harness. Its aim is the democratisation of science for every kind of intelligence, so a mechanism that only works on code, or only on this machine, is a mechanism that misses the point. The 3 formal standards below are exacting and are not loose English.
+
+1. **ADDITIVE** — work adds to reliability, functionality, accuracy, robustness and the project's stated aims. A feature is never disabled or removed; removal only where a COMMITTED MEASUREMENT shows the replacement dominates on a NAMED property. Symmetrically, an addition nothing reaches is not additive either: every new flag, gate or entry point must be wired to a caller and executed by a test.
+2. **SIMPLEST SUFFICIENT** — the smallest change addressing the ROOT CAUSE and the downstream consequences traced before the fix.
+3. **COMPOSABILITY** — the founder, verbatim, 2026-10-02: "Composability doesn't mean composing two solutions just because they can be composed. It means this principle should be applied where two composed solutions demonstrably provide a better, more robust and/or more efficient solution than either fix in isolation. Where a single fix out performs a composed one, that fix should continue to be preferred. In all cases any fix should also take the first two conditions fully into consideration also." So a composed fix needs a MEASUREMENT showing it dominates either part alone. "They do not conflict" is the weak sense his wording excludes.
+
+Work under `a` (analyse dispassionately), `f` (FFAFP: Find, Follow, Analyse with tools, Fix, P-pass) and `sy` (use the STEM tools; every computational claim cross-verified by 2 independent tools; every proportion carries a confidence interval). The tool output IS the evidence. **Findings are confirmed programmatically or by the founder — there is no model voting.**
+
+## REQUIRED SECTION 1 — The question
+
+**The blind half asked 2 things: where the engineering domain's FMEA critical level should sit when the published standard names 2 landmark bands, and which of the 22 DRAFT encodings may move to CROSS_VERIFIED. You each answered without seeing the other. Both replies landed.**
+
+**YOU AGREED ON Q1 AND DISAGREED ON Q2, AND THE DISAGREEMENT IS A NUMBER: 11 against 16.**
+
+**J1. Q2, SETTLED BY ADJUDICATION AND NOT BY SPLITTING THE DIFFERENCE.** One of you recommends 11 of 22 move to CROSS_VERIFIED, the other 16 of 22. Go encoding by encoding over the 5 you classify differently and say, for each, which verdict is right and on what evidence. A midpoint is not an answer. Where you cannot settle one, name the single check that would.
+
+**J2. Q1, RE-EXAMINED RATHER THAN CONFIRMED.** You both recommend RETAINING 7 and both derived a decision procedure. Say whether your agreement SURVIVES seeing the other's procedure — 2 seats reaching 1 answer by 1 flawed route is not corroboration, and there are no votes in CDSFL. In particular: one procedure keys the cut to the consuming project's own material-defect categories, the other to whether a band's published definition ENTAILS the project's pre-registered materiality definition. State whether those are the same rule in different words or 2 rules that can disagree, and construct a standard on which they WOULD disagree.
+
+**J3. THE CTCAE FINDING IS CONFIRMED AND IT CHANGES THE GROUND UNDER Q2.** The `fable` seat found that CTCAE v5.0 is superseded. That has now been verified against the PRIMARY document, not taken from the reply: **CTCAE v6.0 (MedDRA 28.0), published 2025-07-22**, 312 pages, with implementation for trials planned 2026-01-01. The grade ladder is UNCHANGED — v6.0 defines Grade 3 verbatim as *"Severe or medically significant but not immediately life-threatening; hospitalization or prolongation of hospitalization indicated; disabling; limiting self-care ADL"* — so only the version NAME was stale and `critical_level = "Grade 3"` stands. The manifest has been corrected to v6.0 with the primary citation. **NOW ANSWER THIS: the manifest's previous note said CTCAE was "CONFIRMED 2026-11-12 against the NCI source rather than recalled", and that confirmation was WRONG BY ABOUT 16 MONTHS. How many of the OTHER declared scales carry a confirmation of the same kind, and what is the chance each is also stale? Check them against primary sources and report per scale. A confirmation is only as current as the day it was made and nothing re-checks it.**
+
+**AND 1 FACT NEITHER OF YOU HAD, WHICH BEARS DIRECTLY ON Q2.** `encoding_tier` is consumed by **0 decisions anywhere in the tree**. Verified by AST over `bench/cdsfl_registry/composer.py`, `bench/reference_runner_v3.py`, `bench/cdsfl_registry/registry.py` and `bench/cdsfl_registry/domain_vocabulary.py`: 0 references in the first 3, and the 4 in `domain_vocabulary.py` are a VALIDATION that the field is one of the 4 declared tiers plus a `print` in that module's own `main()`. So a promotion from DRAFT to CROSS_VERIFIED changes a validated string and a printed line and nothing else. Say what that does to your Q2 recommendation, and whether the adjudication should be RECORDED somewhere a consumer will read before any tier is written.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Read and RUN the code. Do not reason from the brief alone. Do not invoke pytest across the whole tree: the heavy-process budget on this machine is 1, and a full board is already cached. Targeted test files are fine.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+Where you find a defect, deliver the fix and the executed evidence that it works, including what you tried that did NOT work. **WRITE YOUR FIX INTO THE SANDBOX REPOSITORY TREE AT ITS REAL PATH.** A fix left in prose, or written to scratch space, is destroyed when the sandbox is torn down and has not been delivered. Supply a runnable falsifier, EXECUTE it, and quote its output.
+
+## REQUIRED SECTION 4 — What would refute you
+
+State, for each position you hold, the observation that would overturn it. A position with no falsifier is not a finding.
+
+## REQUIRED SECTION 5 — Output shape
+
+`verdict`, `composability`, `reasoning`, `falsifier`, `falsifier_result`, `strongest_disagreement`, `aims_check`. In `strongest_disagreement` name the specific claim of the OTHER SEAT you reject, and why, with evidence.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when a pass produces no new above-threshold finding. State how many passes you ran.
+
+---
+
+# THE BLIND HALF — all 2 replies, verbatim and in full
+
+## SEAT `cc2` — its blind reply, verbatim
+
+<!-- verbatim-begin -->
+
+Manifest, runner and composer digests are unchanged from dispatch — I touched none of them.
+
+---
+
+## `verdict`
+
+| Q | verdict | reason |
+|---|---|---|
+| **Q1** | **RECOMMEND RETAIN 7** — the mechanism is applicable and delivered; the level itself needs no ruling because retaining changes nothing. **HOLD FOR THE FOUNDER** on any move to 9. | A cut at 9 would demote 4 of the project's own 5 §10 material categories below critical, and would make engineering the only declared scale whose critical level is the maximal band. |
+| **Q2** | **RECOMMEND CROSS_VERIFIED for 11 of 22; the other 11 stay DRAFT.** Tier promotions **not applied** to the manifest. | The tier gates nothing at dispatch (`encoding_tier`: 0 occurrences in composer and runner), so writing promotions now would be an addition nothing reaches. |
+
+## `q1_procedure`
+
+Given a standard naming landmarks B₁ ≺ … ≺ Bₘ:
+
+1. **Enumerate every landmark the standard labels**; record all of them in `severity_levels`. Do not collapse two into one.
+2. **Reject Bₘ as a candidate cut** unless the standard says only the top band carries consequence. At the maximum, `c_d(f) ≽_d θ_d` is equivalent to `c_d(f) = max` — an identity test, not an ordinal threshold.
+3. **Map the *consuming project's* own material-defect categories onto the bands. The cut is the lowest band at least one material category reaches.** This is the operative step: it makes the cut a property of the consumer's materiality definition, not of the standard's vocabulary.
+4. **Check the rank from the top against the project's other declared scales.** Outside the observed range is not disqualifying but must be justified in the note.
+5. **Where 3 and 4 disagree, resolve toward the tighter cut** and record the disagreement — ambiguity is HARD by §1.
+6. **Record which landmark was not chosen, and why.** Both landmarks keep reaching a seat on the `LEVELS:` line regardless.
+
+Applied here step 3 yields **7** and step 4 agrees. Run against the other three declared scales the procedure reproduces CVSS → High (7.0) and CTCAE → Grade 3, i.e. every existing declaration. That is the evidence it generalises.
+
+**Step 3 is the decisive ground and it is argued, not measured** — written out in full in the script's M6 so it can be disputed. §10 names five material categories; only *hard-constraint violation*, and only its law/safety sub-case, reaches FMEA's 9-10 SAFETY OR REGULATORY band. Wrong result, verification-integrity corruption, silent evidence loss and unreproducibility all sit in 7-8 HIGH.
+
+**The third option — declare both landmarks — is REJECTED on measurement.** `severity()` returns exactly one `critical_level` key; `_severity_declaration` emits exactly one `CRITICAL LEVEL:` line; two product modules reference `critical_level`. Nothing can consume a second cut. And it is unnecessary: **both landmarks already reach the seat**, on the delivered `LEVELS:` line. A second field would add a second *cut*, not a second *landmark*.
+
+## `q1_consequence` (measured)
+
+- `CRITICAL_SEVERITY_THRESHOLD = 0.7` (**float**); `critical_level = '7'` (**str**, a rank on an external ordinal scale). Mutating the manifest 7→9 on a copy: declaration text changed `True`, runner threshold **unchanged at 0.7**. Two distinct quantities.
+- `convergence_location.py`: `critical_level` **0** occurrences, `severity_scale` **0**. All three novelty series take a float `critical_threshold` (default 0.7) and have **no `domain` parameter**. The named level does not enter convergence.
+- What a move changes is **one line in a seat's composed directive**. Q1 is a reporting question, and that bounds its consequence.
+- Rank from top of each declared critical level: software (CVSS v4.0/High) **2**, chemistry (GHS Rev. 11/Category 2) **2**, biology (CTCAE v5.0/Grade 3) **3**, engineering@7 **2**. Engineering@9 → **1**, outside the observed range [2,3] and the only maximal-band cut.
+
+## `q2_table` — 22 of 22 examined
+
+Tool-checkable = reduces to a determinate computation, a closed named vocabulary, or a stated numeric bound. Edition column is **post-repair**.
+
+| domain / file | cited standard | current? | HARD tool-checkable | verdict | evidence |
+|---|---|---|---|---|---|
+| biology_genetics | CTCAE v5.0 (2017) | yes | 4/7 | **CROSS_VERIFIED** | confirmed current 2026-11-12 |
+| biology_natural_world | CTCAE v5.0, 2017-11-27 | yes | 3/7 | DRAFT | below majority tool-checkable |
+| biology_zoology | CTCAE v5.0 (human half only) | partial | 1/7 | DRAFT | animal-welfare scale `[VERIFY:current]`, none confirmed |
+| chemistry_general | GHS Rev. 10 primary; Rev. 11 secondary | **no** | 7/8 | DRAFT | Rev. 11 currency is secondary-sourced |
+| cross_general | none (founder's rule) | n/a | 2/6 | DRAFT | cites no external standard |
+| is_data_management | FAIR 2016; ISO 11179 | **no** | 6/7 | DRAFT | ISO unversioned, `[VERIFY:current]` |
+| is_general | CVSS v4.0; ISO 11179 | mixed | 7/7 | DRAFT | ISO citation `[VERIFY:current]` |
+| is_knowledge_representation | ISO 11179; Dublin Core | **no** | 6/7 | DRAFT | both unversioned |
+| is_retrieval | ASA 2016 | yes | 5/7 | **CROSS_VERIFIED** | dated doc, no edition exists; scale honestly none |
+| logistics_warehousing | "None confirmed primary" | n/a | 6/6 | DRAFT | `[VERIFY:current]`, honest absence |
+| mathematics_applied | FMEA 2019 handbook; CTCAE v5.0; SI 9th ed | yes | 5/7 | **CROSS_VERIFIED** | editions added this round |
+| mathematics_numerical | IEEE 754-2019; ISO/IEC 60559:2020 | yes | 7/7 | **CROSS_VERIFIED** | figures verified against the running implementation |
+| mathematics_proof | none, with stated reason | n/a | 5/8 | **CROSS_VERIFIED** | honest none + majority checkable |
+| physics_classical | FMEA 2019 handbook; SI 9th ed 2019 | yes | 6/7 | **CROSS_VERIFIED** | edition added this round |
+| physics_general | SI 9th ed 2019; INES unversioned | partial | 6/6 | **CROSS_VERIFIED** | INES is an inheritance example, not the declared scale — see residual |
+| physics_quantum | SI 9th ed 2019 | yes | 5/7 | **CROSS_VERIFIED** | ħ exact by definition |
+| physics_thermodynamics | GHS Rev. 11; SI 9th ed | **no** | 6/6 | DRAFT | inherits chemistry's Rev. 11 currency defect |
+| software_general | CVSS v4.0, FIRST, Nov 2023, Table 22 | yes | 8/8 | **CROSS_VERIFIED** | strongest of the 22 |
+| statistics_experimental_design | CONSORT/PRISMA unversioned | **no** | 4/7 | DRAFT | "cited without a version", `[VERIFY:current]` |
+| statistics_general | ISO 3534; Stevens | **no** | 6/6 | DRAFT | ISO no edition |
+| statistics_inference | ASA 2016, "not formally superseded" | yes | 4/7 | **CROSS_VERIFIED** | supersession reasoned, not assumed |
+| statistics_time_series | ASA 2016 | yes | 6/7 | **CROSS_VERIFIED** | |
+
+11/22 = 50.0000%, Wilson [30.7221%, 69.2779%]. Tool-checkable overall 115/152 = 75.6579%, Wilson [68.2581%, 81.7928%].
+
+## `q2_coverage`
+
+**22 of 22 examined. None left.** The 29 encodings without a `SEVERITY SCALE:` line were not adjudicated — they are out of Q2's scope (22 of 51 carry one = 43.1373%, Wilson [30.5012%, 56.7347%]).
+
+## `tier_mechanism`
+
+**The tier gates nothing at dispatch.**
+
+```
+composer.py              'encoding_tier'=0  'CROSS_VERIFIED'=0  'DRAFT'=0
+reference_runner_v3.py   'encoding_tier'=0  'CROSS_VERIFIED'=0  'DRAFT'=1
+with EVERY tier flipped DRAFT -> CROSS_VERIFIED on a copy:
+    composed declaration byte-identical= True
+```
+
+It is validated for membership in `tiers` by `domain_vocabulary.load()` (fails closed) and printed by that module's CLI. Nothing else reads it. So I did **not** write the promotions into the manifest — that would be an addition nothing reaches, the failure class this project has shipped 11 times since 2026-08-01.
+
+## `falsifier`
+
+Three files, all in the repository tree:
+
+- `scripts/where_does_a_critical_level_land_2026-11-14.py` — M1–M6. Points the vocabulary reader at a **copy** under tmp; never writes the artefact.
+- `bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py` — the fix, 6 tests, two of which exist only to prove the guards are not vacuous.
+- `experimental_notes/Panel_Severity_Critical_Level_And_Draft_Adjudication_2026-11-14.md` — the record.
+
+## `falsifier_result`
+
+```
+$ python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py -q
+......                                                                   [100%]
+6 passed in 0.41s
+
+$ python3 -m pytest bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py \
+    bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py \
+    bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py -q
+......................................                                   [100%]
+38 passed in 4.67s
+```
+
+The guard fires on the as-dispatched text and is silent after repair:
+
+```
+OFFENDERS IN THE AS-DISPATCHED TEXT OF THOSE 7 FILES: 11
+   chemistry_general.txt                      cites GHS with no edition in its declaration block
+   mathematics_applied.txt                    cites CTCAE / FMEA with no edition
+   physics_classical.txt                      cites FMEA with no edition
+   physics_thermodynamics.txt                 cites GHS with no edition
+   software_general.txt                       cites CTCAE / FMEA with no edition
+   statistics_experimental_design.txt         cites CTCAE / FMEA with no edition
+   statistics_inference.txt                   cites CTCAE / FMEA with no edition
+
+OFFENDERS AFTER THE REPAIR, SAME 7 FILES            : 0
+OFFENDERS ACROSS ALL 22 ENCODINGS, AFTER THE REPAIR : 0
+```
+
+Admissibility of the rank statistic, **z3**:
+
+```
+claim 1  'an order-preserving relabel moves the rank' : unsat    (rank is INVARIANT = admissible)
+claim 2  'a fixed-real cut can be broken by a relabel': sat      (INADMISSIBLE)
+         witness relabel: [11/4, 3, 13/4, 7/2, 15/4] -> count above 4 becomes 0, was 2
+```
+
+**Wolfram second falsifier** (computed on the local Wolfram Engine via `wolframscript`, exit 0, `Out` value returned):
+
+```
+$ wolframscript -code 'Module[{bands={1,2,3,4,5},phi},phi=Function[x,x^3+x];
+    {Ordering[bands]===Ordering[phi/@bands], Length[Select[bands,#>=4&]],
+     Length[Select[phi/@bands,#>=4&]]}]'
+{True, 2, 4}
+```
+
+Attribution: computed with **Wolfram Language** (local Wolfram Engine). φ(x) = x³+x preserves `Ordering` (`True`) while the count clearing a **fixed** cut of 4 moves from 2 to 4 — independently reproducing §Objective's own proof that comparison to a fixed real is inadmissible, and that rank selection is.
+
+## `reasoning`
+
+Premises first.
+
+1. `cdsfl_core_formal.md` tells every seat the critical level "arrives in your directive. Do not invent either." Since 2026-11-13 that is true: `_severity_declaration` delivers it.
+2. The delivered level and the gate float are separate quantities — proved by mutation on a copy (level 7→9, threshold stayed 0.7), by type (`str` rank vs `float` on [0,1]), and by absence (`convergence_location.py` holds 0 references to either `critical_level` or `severity_scale`). Therefore Q1 governs **what a seat is told**, not what the gate admits.
+3. Severity is ordinal, so any claim about the cut must survive re-labelling by a strictly increasing φ. Rank-from-top is a selected order statistic and survives — z3 `unsat`, Wolfram concurring on the contrapositive. Comparison to a fixed real does not — z3 `sat` with a witness.
+4. On that admissible statistic, 7 places engineering at rank 2 from the top, matching CVSS and GHS exactly and sitting one band tighter than CTCAE. 9 places it at rank 1, where the up-set collapses to a single element and the predicate degenerates to equality with the maximum.
+5. Mapping §10's five material categories onto the bands, four of five sit in 7-8 HIGH. A cut at 9 would make four-fifths of this project's own definition of material non-critical.
+6. Therefore retain 7. Since retaining loosens nothing, no ruling is required to retain; a move to 9 loosens and is his.
+7. For Q2, the manifest's own rule caps a standards-based encoding at CROSS_VERIFIED. Applying (a) current versioned citation or honest declared absence, (b) majority tool-checkable HARD constraints, (c) no `[VERIFY:current]` on a load-bearing citation, gives 11/11.
+8. While measuring (a) I found the suppression asymmetry: `_severity_declaration` yields to any encoding carrying its own `SEVERITY SCALE:` line on the ground that it is "better-sourced", and on version-carrying that ground was false for 11 citations in 7 files. Repaired; guarded.
+
+**Composability, under the founder's definition — the two repairs do NOT compose, and that is a measurement, not a judgement.** R1 (edition tokens + guard) and R2 (the maximal-band guard mechanising Q1) act on disjoint properties. Measured: R2's verdict is **invariant** to R1 — ranks `[2,2,2,3]`, 0 degenerate, before and after the encoding edits, because R1 touched no manifest entry (digest `501a257d…` unchanged). R1's offender count is **invariant** to R2 — 11→0 either way, because R2 touched no encoding. Neither improves the other's named property, so each is preferred **alone** on its own property and no composed fix is proposed. They are co-located in one test file for a reader's convenience, not composed: each test is independently deletable, and the module docstring names the single test to delete if the founder rules for 9.
+
+## `disagreement`
+
+**F5 is right in effect and wrong in mechanism, and the mechanism is what matters.** F5 says 9 "LOOSENS what the gate admits". Measured, the named level **never reaches the gate** — threshold unmoved under mutation, 0 references in the convergence module. So 9 cannot loosen the gate directly. It loosens *indirectly*: a seat told "critical at 9" assigns lower severities to loss-of-function defects, and those self-reported floats are what meet 0.7. **The loosening therefore passes through the model's own self-report, where no instrument records it.** The gate's shadow-severity diagnostic compares a *claimed* float to a *computed* float; nothing compares either to the FMEA rank the seat was told to use. So F5 understates the problem by locating it in the gate: a level change is a silent, unmeasured perturbation of seat behaviour, which is a worse property than a visible gate change, not a better one.
+
+**Second disagreement, with the brief's own §2 expectation.** It anticipates that domains delivering silence are "a seat with no lawful move". Measured, that is not the current state: all six `scale = "none"` domains deliver an explicit instruction — `SCALE: none` plus a reason plus "the consequence scale is INHERITED from the application… name it". That is a lawful move. The unlawful case is narrower and different: a seat told to inherit **FMEA severity, critical at 7** with no edition, which is what I found and repaired.
+
+**Third, against my own Q1 answer.** Step 3 of the procedure is an argued mapping of §10's categories onto FMEA bands. Nothing executed it. If that mapping is wrong — specifically if "wrong result" in a safety-bearing engineering artefact should map to 9-10 rather than 7-8 — then step 3 yields 9 and only the weaker arguments 2 and 4 survive. I have given the mapping in full rather than concealing that weakness.
+
+## `plain_english`
+
+Two separate things were being confused. The *engineering severity level* (the number 7) is a sentence printed into a reviewer's instructions; the *gate* (0.7) is a piece of arithmetic the software does. I proved by experiment that changing the first does not touch the second, so this question is about what reviewers are told, not about what the software lets through — which limits how much is at stake. On the substance: the standard labels 7-8 "high" and 9-10 "safety or regulatory", and the project should keep **7**, because four of the five kinds of defect this project itself calls serious (a wrong answer, broken measurement machinery, lost evidence, unreproducible results) are "high" and not "safety or regulatory" — so moving to 9 would quietly stop treating most of them as serious. Declaring both numbers was considered and rejected: nothing in the software can use two, and both band labels already reach reviewers anyway. Separately, I found and fixed a real problem: seven instruction files named a safety standard without saying which edition — "FMEA", "CTCAE", "GHS" with no year or revision — which is exactly the mistake this project corrected last week when it found it was citing a superseded version of CVSS. Eleven such citations are now complete, and a test now fails if anyone reintroduces one. Half the draft files are ready to be marked checked-against-standards; the other half are not, each for a named reason. Nothing was promoted, because that label currently controls nothing.
+
+## `passes_run`
+
+**Seven.** P1 digest verification (all 6 matched). P2 severity dump for all 10 domains + consumer greps. P3 the M1–M6 measurement script. P4 file-scope correction of M6 — which caught **two false positives of my own**, where `2019` matched the SI Brochure year rather than an FMEA edition; scope narrowed to the declaration block. P5 the guard test, which **failed twice on my own bugs** (`relative_to` on a tmp path; a docstring mention counted as a code reference — now checked by AST, with the incident recorded in the test's comment). P6 reconstruction of the as-dispatched text to prove the guard fires (11→0), plus z3 and Wolfram on admissibility, plus 38 regression tests. P7 searched for a conversion from a named ordinal rank to the gate's float: **0 definitions** across the runner, composer and vocabulary.
+
+**The last pass added the only thing I am leaving open**, and it is recorded in the panel note rather than claimed: a seat is told to report a rank on a 1-10 scale, the gate reads a float on [0,1], and no code defines the conversion. I state it as a measured absence, not a confirmed defect, because no falsifier I ran demonstrates a wrong outcome from it. It is the strongest candidate for the next round. Also named rather than repaired: `physics_general.txt` cites **INES** with no revision, and because INES is not manifest-declared there is no edition anywhere in the project to supply — inventing one would be the magic wand this project refuses.
+
+Terminating here: pass 7 produced no further above-threshold finding.
+
+<!-- verbatim-end -->
+
+## SEAT `fable` — its blind reply, verbatim
+
+<!-- verbatim-begin -->
+
+All machinery executed. Final report.
+
+---
+
+## `verdict`
+
+| Q | Verdict | Reason |
+|---|---|---|
+| **Q1** | **RECOMMEND 7 — retain; the proposed move to 9 is REJECTED on evidence; final say is HOLD FOR THE FOUNDER** since the recommendation touches what a gate-adjacent declaration admits. | 7 is the lowest published landmark whose band definition (S7 degradation / S8 loss of primary function) entails the project's pre-registered materiality rubric; 9 would exclude "the artefact does not work" from critical, and would make engineering the only domain gating on the catastrophic band when CVSS, CTCAE and GHS all chose the lower qualifying landmark. |
+| **Q2** | **RECOMMEND: 16 of 22 move DRAFT → CROSS_VERIFIED; 6 stay DRAFT** (adjudicated per-encoding below, edits delivered as files, guard test added). | Each mover has primary-confirmed current citations and/or load-bearing claims re-executed by tool today; each stay has a named defect — including one **material finding: CTCAE v5.0 is superseded by v6.0**, refuting the manifest's 2026-11-12 "confirmed current" claim. |
+
+## `q1_procedure`
+
+**When a declared standard names ≥2 landmark bands, set the critical level to the LOWEST landmark whose published band definition entails the project's own pre-registered materiality definition** (`CRITICAL_DEFINITION_PREREG_2026-05-18.md` / §10's five categories: wrong result, hard-constraint violation, verification-integrity corruption, silent evidence loss, unreproducibility). Concretely: (1) write each landmark's defining criteria beside the five categories; (2) a band qualifies iff a defect meeting its definition is material under at least one category; (3) take the lowest qualifying band — choosing a higher one excludes material defects from critical, which is §10 category-4 silent evidence loss by construction; (4) if the band criteria cannot be read (standard unreachable), fall back to `p-pass-ambiguity-default` → HARD → the tighter cut, flagged `[VERIFY:current]`; (5) the rejected landmark stays in the delivered LEVELS line so the seat sees both.
+
+**Applied to AIAG-VDA:** four independent secondary sources agree S7 = degradation of primary function, S8 = loss of primary function, S9 = regulatory noncompliance, S10 = safety hazard. Loss/degradation of the artefact's primary function **is** §10 category 1 (wrong result in the specified function) — so band 7-8 qualifies and is the lowest. **Yields 7.** The procedure applies to the next standard unchanged, and it is already the project's de facto rule — a consistency fact the brief did not surface: CVSS chose High (7.0) over Critical (9.0), CTCAE chose Grade 3 (severe) over Grade 4 (life-threatening), GHS chose Category 2 over Category 1. All four existing declarations sit on the lower qualifying landmark. Moving FMEA alone to 9 would be the project's only departure from its own pattern, on its only secondary-sourced scale.
+
+**The third option (declare both landmarks):** evaluated and **already shipped in its simplest sufficient form**. The executed declaration above delivers `9-10 safety or regulatory` verbatim in the LEVELS line — both landmarks reach the seat today. A second machine-readable field (`safety_level = "9"`) has **zero consumers**: nothing in the repo reads even `critical_level` outside `composer._severity_declaration` (measured: 0 occurrences in the runner, 0 in convergence). It would be an addition nothing reaches — rejected under the additive standard until a consumer exists. The guard test now asserts both landmarks continue to reach the seat, which wires the existing two-landmark delivery to a test.
+
+## `q1_consequence` (measured)
+
+- `reference_runner_v3.py`: **0** occurrences of `critical_level`, **0** of `domain_vocabulary`; `CRITICAL_SEVERITY_THRESHOLD = 0.7` is a frozen float on the 0–1 proxy scale. `convergence_location.py`: likewise **0/0**; its `severity_threshold: float = 0.7` is a bare float. Both verified by AST import-walk and source count, pasted above.
+- Therefore the two-sided gate and the gamma critical series are **mechanically independent** of the domain's named level: a 7→9 move changes **only the sentence delivered into the seat's prompt**. Convergence verdicts do not change by any code path.
+- What it *does* change: a seat told "critical at 9" stops reporting S7/S8 findings (loss/degradation of primary function) as critical in FMEA coordinates; the model-asserted 0–1 severities that the gate *does* consume are downstream of that framing, so there is an **indirect, unmeasured gate exposure through model behaviour** — which is exactly why the recommendation holds for the founder rather than being applied.
+
+## `q2_table`
+
+| # | Encoding | Cited standard | Current? | HARD tool-checkable? | Verdict | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | software_general | CVSS v4.0, Table 22 (FIRST) | **Yes** (reconfirmed 2026-11-14) | Yes (ast, pytest, crosshair/z3, mypy, dis) | **CROSS_VERIFIED** | Primary spec read directly; 0.7×10=7.0 lands exactly on the High boundary, recomputed |
+| 2 | chemistry_general | UN GHS Rev. 11 | **Yes — flag discharged**: UNECE published Rev. 11 on 2025-09-12 (primary) | Yes (rdkit, pint, scipy; element-balance by execution) | **CROSS_VERIFIED** | Rev-11 amendments don't touch acute-toxicity categories; inversion claim (Cat 1 most severe) correct |
+| 3 | biology_genetics | CTCAE v5.0 "confirmed current" | **No — REFUTED**: v6.0 published 2025-07-10, errata 2026-01-20 | Yes (Biopython, scipy.stats) | **DRAFT** | Superseded version citation; Grade 3 landmark retained in v6.0, so the *level* survives |
+| 4 | biology_natural_world | CTCAE v5.0 | **No** (same) | Partially (scoped inheritance) | **DRAFT** | Same supersession; scoping (ecology inherits application) is sound |
+| 5 | biology_zoology | CTCAE v5.0 + unnamed welfare regimes | **No** (same) + own unresolved flag | Partially | **DRAFT** | Two unresolved currency gaps |
+| 6 | cross_general | Founder's composition rule (internal); pint/SymPy | n/a — no external standard | Yes — **re-executed**: 3.540000 cm exact, m+s and K+V refused, CTCAE 3+CVSS 7.0=10.0 limitation reproduced | **CROSS_VERIFIED** | Judgement call flagged: all load-bearing claims tool-verified; nothing external exists to cite |
+| 7 | info_science_general | FAIR 2016; ISO/IEC 11179 | **Yes — flag discharged**: ISO/IEC 11179-1:2023 Ed. 4 (2023-01-16, IEC webstore) | Yes (round-trip, validation) | **CROSS_VERIFIED** | Severity 'none' consistent with manifest |
+| 8 | info_science_data_management | FAIR 2016; ISO/IEC 11179-1:2023 | **Yes** (same discharge) | Yes (hash/restore by execution) | **CROSS_VERIFIED** | |
+| 9 | info_science_knowledge_rep | ISO/IEC 11179-1:2023; Dublin Core | **Yes** (same) | Yes | **CROSS_VERIFIED** | |
+| 10 | info_science_retrieval | "Standard IR evaluation practice" — **unnamed**; ASA 2016 | ASA yes; primary basis unnamed | Yes | **DRAFT** | An unnamed source cannot be cross-verified; recommend naming the evaluation literature |
+| 11 | logistics_warehousing | None confirmed primary (its own admission) | n/a | Yes (pint, reconciliation) | **DRAFT** | Its honesty is correct and the tier correctly reflects it |
+| 12 | mathematics_applied | SI Brochure 9th ed. (BIPM 2019) | Yes (edition in force) | Yes (pint, SymPy, scipy) | **CROSS_VERIFIED** | Inheritance targets (FMEA 7, CTCAE Grade 3) match manifest |
+| 13 | mathematics_numerical | IEEE 754-2019 / ISO/IEC 60559:2020 | Yes | Yes — **re-executed**: 53 bits, −1022..+1023, ties-to-even; 53·log₁₀2 = 15.954590 by Python **and Wolfram Language (local kernel)** | **CROSS_VERIFIED** | My first re-check used 52·log₁₀2 and "refuted" the figure wrongly — the claim survived its falsifier |
+| 14 | mathematics_proof | None — "no standards body governs proof" | n/a | Yes (SymPy, z3) | **DRAFT** | CROSS_VERIFIED would certify a verification event that cannot exist; its route up is VALIDATED (HIL) directly |
+| 15 | physics_general | SI Brochure 9th ed. | Yes | Yes — **re-executed**: 5 defining constants exact float equality, uncertainty 0.0 | **CROSS_VERIFIED** | |
+| 16 | physics_classical | SI Brochure | Yes | Yes | **CROSS_VERIFIED** | FMEA-7 inheritance matches manifest |
+| 17 | physics_quantum | SI Brochure; h exact | Yes — h = 6.62607015e-34 re-executed exact | Yes | **CROSS_VERIFIED** | |
+| 18 | physics_thermodynamics | SI Brochure; k exact | Yes — k = 1.380649e-23 re-executed exact | Yes | **CROSS_VERIFIED** | GHS Cat-2 inheritance matches manifest |
+| 19 | statistics_experimental_design | ASA 2016; CONSORT/PRISMA | **Yes — flag discharged**: CONSORT 2025 (2025-04-14, five journals), PRISMA 2020 | Yes (simulation, scipy.stats) | **CROSS_VERIFIED** | |
+| 20 | statistics_general | Stevens (1946); ISO 3534 | Stevens yes (stable literature, matches the 2026-11-11 z3-verified admissibility results); ISO 3534 edition unconfirmed, marked not load-bearing | Yes | **CROSS_VERIFIED** | Judgement call flagged |
+| 21 | statistics_inference | ASA 2016 (operative); ISO 3534 (vocabulary) | ASA yes, unsuperseded; ISO 3534 flagged not load-bearing | Yes | **CROSS_VERIFIED** | Judgement call flagged |
+| 22 | statistics_time_series | ASA 2016 | Yes | Yes (statsmodels) | **CROSS_VERIFIED** | |
+
+## `q2_coverage`
+
+**22 of 22 examined; 0 left.** Counts re-measured from disk: 52 `.txt`, 1 universal, 51 domain encodings; exactly 22 carry both `SEVERITY SCALE:` and `TIER: DRAFT` (list pasted above), all dated 2026-11-12. 22/51 = 0.431373, Wilson [0.305012, 0.567347] — **confirmed independently by Wolfram Language (local kernel): {0.305012, 0.567347}**. Adjudication: 16/22 moved (0.727273, Wilson [0.518483, 0.868492]), 6/22 stay (Wilson [0.131508, 0.481517]). Three movers are explicitly flagged judgement calls (rows 6, 20, 21); if the founder's reviewers reject the "not load-bearing" carve-out or the internal-rule reading, those three revert and the split becomes 13/9.
+
+## `tier_mechanism`
+
+**The tier gates nothing at dispatch.** Established by: `grep -rn 'encoding_tier' --include='*.py' bench scripts` → hits only in `domain_vocabulary.py` (parse-time validation that the value is on the ladder, lines 76–81, and a CLI print, line 471); `grep -n 'TIER'` over `composer.py`, `reference_runner_v3.py`, `scripts/` → **0 consumers of the file-level `TIER:` line**. DRAFT was a label with no mechanism — under the additive standard, an addition nothing reaches. The delivered fix makes `bench/tests/test_severity_tier_guards.py` the TIER line's **first consumer** (legality, flag-consistency, supersession rules), so Q2's adjudication now changes something a test executes.
+
+## `falsifier` and `falsifier_result`
+
+Delivered files: **16 encoding edits** (tier + evidence), **3 biology corrections**, **1 manifest note correction** (`domain_manifest.toml` biology `critical_level_note` — the refuted claim is preserved verbatim inside the correction, per project practice), and **`bench/tests/test_severity_tier_guards.py`** (7 tests: tier legality; no unresolved `[VERIFY:current]` above DRAFT; superseded-CTCAE-v5.0-cannot-leave-DRAFT; the Q1 tripwire asserting `CRITICAL LEVEL: 7` + both landmarks reach the seat; no scale-bearing domain delivers silence; gate/convergence independence incl. `CRITICAL_SEVERITY_THRESHOLD == 0.7`; and a mutation test proving every guard goes red — including red on `CRITICAL LEVEL: 9`). The engineering manifest entry is **untouched**: no level was written as settled.
+
+Executed, output pasted above in-session:
+```
+python3 -m pytest bench/tests/test_severity_tier_guards.py ... -q
+43 passed in 0.61s        (7 new + 36 existing severity/dispatch tests)
+```
+The guard also demonstrated it can fail on real data: its first run went red on `statistics_inference.txt` (excusal regex not spanning a line break) — fixed, re-run green. Final sweep: `_severity_declaration("engineering","")` still delivers `CRITICAL LEVEL: 7` with both landmark bands; own-scale suppression intact (`FALSIFIER CLEAN` pasted above).
+
+## `reasoning`
+
+Premises, each executed or primary-sourced: (P1) the critical level reaches only prompt text — 0 `critical_level`/`domain_vocabulary` references in runner and convergence, by AST and count; (P2) the frozen 0.7 is not expressible as a rank on FMEA — recomputed: 1+0.7·9 = 7.3, between levels (F4 confirmed; also 7.0 CVSS exact, 3.8 CTCAE, 4.9 INES); (P3) FMEA band semantics from four concordant secondary sources: S7/S8 functional, S9/S10 safety-regulatory; (P4) the project's critical definition is consequence-based and pre-registered (§10 / F6 prereg). From P3+P4: band 7-8 already meets materiality (loss of function = wrong result), so the lowest qualifying landmark is 7; from P1: the choice is reporting vocabulary, bounded in consequence; from the cross-scale pattern (CVSS High, CTCAE Grade 3, GHS Cat 2): 7 preserves the project's uniform rule. For Q2: per-encoding citation currency was resolved by proactive verification (§9) rather than left flagged — which surfaced the CTCAE v6.0 supersession the 2026-11-12 pass missed.
+
+## `disagreement`
+
+Three points against the brief's framing. **(1) F5 overstates mechanically:** "moving to 9 loosens what is admitted" is true of reporting vocabulary only — by execution, `critical_level` admits nothing into any gate; the two-sided gate and gamma are independent floats. The founder-ruling constraint still binds (via indirect model-behaviour exposure), but the brief presents a gate change where measurement shows a prompt-text change. **(2) "7 is conservative, therefore tighter" conflates admission count with calibration:** labelling S7 degraded-function findings critical is not cost-free — on a safety-certified artefact, "critical" in FMEA coordinates brushes against a band with regulatory meaning; the (value, scale-name) discipline is what actually prevents miscommunication, not the cut's direction. My recommendation of 7 rests on the materiality-entailment procedure and cross-scale consistency, **not** on the conservatism default F5 leans on. **(3) The brief's F3 said "3 of the 4 declared scales were corrected... CTCAE v5.0 was confirmed already correct" — that confirmation was wrong:** v6.0 had been published four months before the 2026-11-12 check. The falsification loop caught the project's own verification pass, which is the system working, but F3 should not be cited as clean again.
+
+## `plain_english`
+
+The engineering severity scale has two natural cut points: 7 ("the thing stops working properly") and 9 ("safety or the law is implicated"). The project should keep 7, because its own definition of a critical finding is "a defect that makes the result wrong" — and a product that stops working is exactly that, even when nobody is endangered. Every other scale the project uses already follows this same rule, so 7 keeps the system consistent; only the founder can decide otherwise, and nothing was changed pending his word. Separately, of the 22 draft domain write-ups, 16 checked out against current published standards (several re-verified by running the maths and the tools today) and were promoted one rung; 6 stay draft for named reasons — the biggest being that the clinical severity scale the biology write-ups cite was quietly superseded last year, which this review caught and corrected. A new automated test now watches all of this so none of it can drift silently.
+
+## `passes_run`
+
+**3 passes.** Pass 1: read artefacts, execute the severity/tier/gate machinery, establish independence and the counts. Pass 2: proactive verification of every citation (6 web checks against primary publishers; Wolfram as second falsifier on two computed figures) — added the CTCAE v6.0 refutation, the GHS Rev 11 / ISO 11179-1:2023 / CONSORT 2025 discharges, and corrected my own wrong refutation of the 15.954590 figure. Pass 3: deliver and falsify the fixes — added nothing new above threshold beyond the guard-regex defect its own first run exposed. Terminated at diminishing returns: the remaining open items (ISO 3534 edition, the AIAG-VDA primary handbook, the CTCAE v6.0 document itself) are flagged in the files, not silently dropped.
+
+**What would refute me (Q1):** a reading of the primary AIAG-VDA handbook showing the 7-8 band's definitions do **not** entail functional loss/degradation — e.g. if S7/S8 criteria were written as inconvenience/appearance classes — would collapse the materiality entailment and move the recommendation to 9; so would a founder-level ruling that CDSFL "critical" should mean only safety/regulatory consequence, which would also require re-cutting CVSS to 9.0 and CTCAE to Grade 4 for consistency. **(Q2):** `sha256sum` any adjudicated file against the dispatch stamps — my verdicts hold against the staged state; a primary UNECE/NCI/ISO document contradicting a discharge (command: open the cited publisher page; result: different edition or date) reverts that row to DRAFT, and `python3 -m pytest bench/tests/test_severity_tier_guards.py -q` failing after such a reversion is the designed loud signal.
+
+Sources: [FMEA ranking tables (AIAG-VDA 2019)](https://qhubio.com/fmea-ranking-tables), [AIAG VDA FMEA tables](https://fmearatings.com/aiag-vda-fmea-tables), [Severity in FMEA (AIAG-VDA)](https://quasist.com/fmea/severity-in-fmea/), [Design FMEA severity table](https://sripadhmam.com/wp-content/uploads/2021/08/Design-FMEA-SOD-tables.pdf), [UNECE GHS Rev. 11 (2025)](https://unece.org/transport/dangerous-goods/ghs-rev11-2025), [NCI CTEP CTC page](https://ctep.cancer.gov/protocoldevelopment/electronic_applications/ctc.htm), [PharmaSUG 2026 on CTCAE v6.0](https://pharmasug.org/proceedings/2026/DS/PharmaSUG-2026-DS-131.pdf), [CTCAE v6.0 lookup](https://www.weguide.health/tools/ctcae-lookup), [CONSORT 2025 statement (PLOS Medicine)](https://journals.plos.org/plosmedicine/article?id=10.1371%2Fjournal.pmed.1004587), [CONSORT 2025 (PubMed)](https://pubmed.ncbi.nlm.nih.gov/40228833/), [CVSS v4.0 specification (FIRST)](https://www.first.org/cvss/specification-document), [ISO/IEC 11179-1:2023 (IEC webstore)](https://webstore.iec.ch/en/publication/81976). Wolfram-derived values (15.9545898; Wilson {0.305012, 0.567347}) computed with Wolfram Language (local Wolfram Engine, via wolframscript).
+
+<!-- verbatim-end -->

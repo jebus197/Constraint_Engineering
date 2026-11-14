@@ -1,0 +1,469 @@
+{
+  "model": "fable",
+  "elapsed_s": 1004.6,
+  "tool_calls": 89,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and top-level files\"}",
+      "t_offset_s": 113.904
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/user 2>/dev/null; find / -maxdepth 3 -name \\\"domain_manifest.toml\\\" -not -path \\\"*/proc/*\\\" 2>/dev/null | head\", \"description\": \"Locate the CDSFL repository root\"}",
+      "t_offset_s": 115.132
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/cdsfl_registry/composer.py bench/reference_runner_v3.py bench/cdsfl_registry/registry.py bench/cdsfl_registry/domain_vocabulary.py bench/convergence_location.py bench/cdsfl_registry/domain_manifest.toml bench/directives/physics/physics_general.txt bench/directives/statistics/statistics_inference.txt bench/directives/universal/cdsfl_core_formal.md bench/exp40_baseline/C",
+      "t_offset_s": 121.176
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/ | grep -iE \\\"severity|tier|cut|consequence|domain\\\" && ls bench/directives/\", \"description\": \"List severity-related tests and directive domains\"}",
+      "t_offset_s": 122.633
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/*2026-11-14* scripts/*2026-11-14* experimental_notes/*2026-11-14* bench/tests/test_severity_tier_guards.py 2>&1; echo ---; grep -rn \\\"TIER\\\" bench/directives --include=\\\"*.txt\\\" -l | head -30\", \"description\": \"Check whether blind-round deliverables persisted; list encodings with TIER lines\"}",
+      "t_offset_s": 133.459
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"tier\\\" bench/cdsfl_registry/domain_vocabulary.py | head -30\", \"description\": \"Find tier handling in domain_vocabulary.py\"}",
+      "t_offset_s": 134.579
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"tiers\\\\|tier\\\" bench/cdsfl_registry/domain_manifest.toml | head; echo ===; sed -n '1,80p' bench/cdsfl_registry/domain_manifest.toml\", \"description\": \"Read manifest header, tiers declaration and opening sections\"}",
+      "t_offset_s": 140.551
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n -i \\\"cross_verified\\\\|CROSS_VERIFIED\\\\|tier\\\" docs/GLOSSARY.md | head -20\", \"description\": \"Find tier definitions in the glossary\"}",
+      "t_offset_s": 141.416
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '85,135p' bench/cdsfl_registry/domain_manifest.toml\", \"description\": \"Read manifest tier-definition comment block\"}",
+      "t_offset_s": 144.927
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity_scale\\\\|critical_level\\\\|confirmed\\\\|CONFIRMED\\\\|scale =\\\" bench/cdsfl_registry/domain_manifest.toml | head -60\", \"description\": \"Extract severity scale declarations and confirmation notes from manifest\"}",
+      "t_offset_s": 186.506
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/directives/chemistry/chemistry_general.txt bench/directives/cross-domain/cross_general.txt bench/directives/information_science/information_science_general.txt bench/directives/information_science/information_science_data_management.txt bench/directives/information_science/information_science_knowledge_representation.txt bench/directives/information_science/information_",
+      "t_offset_s": 209.251
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/directives/physics/physics_thermodynamics.txt bench/directives/statistics/statistics_experimental_design.txt bench/directives/statistics/statistics_general.txt bench/directives/mathematics/mathematics_proof.txt bench/directives/biology/biology_genetics.txt; do echo \\\"=== $f\\\"; grep -n \\\"TIER\\\\|SEVERITY\\\\|VERIFY\\\\|Rev\\\\.\\\\|CTCAE\\\\|CONSORT\\\\|PRISMA\\\\|3534\\\\|Stevens\\\\|GHS\\",
+      "t_offset_s": 211.496
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:WebFetch,WebSearch\", \"max_results\": 2}",
+      "t_offset_s": 269.257
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"directives\\\\|read_text\\\\|encoding\\\\|\\\\.txt\\\" bench/cdsfl_registry/composer.py | grep -in \\\"path\\\\|read\\\\|load\\\\|open\\\" | head -20\", \"description\": \"Find where composer loads encoding files\"}",
+      "t_offset_s": 270.535
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '950,1045p' bench/cdsfl_registry/composer.py\", \"description\": \"Read composer encoding-loading function to see if header lines are stripped\"}",
+      "t_offset_s": 275.535
+    },
+    {
+      "name": "WebFetch",
+      "input_preview": "{\"url\": \"https://unece.org/transport/dangerous-goods/ghs-rev11-2025\", \"prompt\": \"Is this the UNECE primary page for GHS Revision 11 (2025)? State the publication/release date, the document symbol (ST/SG/AC.10/...), and whether Rev. 11 is the current edition superseding Rev. 10.\"}",
+      "t_offset_s": 303.298
+    },
+    {
+      "name": "WebFetch",
+      "input_preview": "{\"url\": \"https://www.first.org/cvss/\", \"prompt\": \"What is the current version of CVSS as of today? Is CVSS v4.0 the latest, or has a newer version (v4.1, v5) been published? Give dates.\"}",
+      "t_offset_s": 304.472
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"AIAG-VDA FMEA Handbook current edition 2nd edition 2024 2025 2026\"}",
+      "t_offset_s": 305.179
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"ISO/IEC 11179-1:2023 metadata registries current edition ISO 11179-3 status\"}",
+      "t_offset_s": 305.813
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"UNECE GHS \\\"Rev.11\\\" 2025 eleventh revised edition ST/SG/AC.10/30/Rev.11 published\"}",
+      "t_offset_s": 325.795
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"CONSORT 2025 statement published April 2025 updated guideline randomised trials\"}",
+      "t_offset_s": 326.441
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"ISO 3534-1:2006 statistics vocabulary current edition status ISO 3534-2\"}",
+      "t_offset_s": 327.149
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"BIPM SI Brochure current edition 9th edition v2.01 2022 10th edition\"}",
+      "t_offset_s": 327.622
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"Dublin Core current version \\\"DCMI Metadata Terms\\\" 2020 ISO 15836-1:2017 ISO 15836-2:2019 current\"}",
+      "t_offset_s": 446.567
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat bench/exp40_baseline/CRITICAL_DEFINITION_PREREG_2026-05-18.md; echo =====; for f in bench/directives/biology/biology_genetics.txt bench/directives/biology/biology_natural_world.txt bench/directives/biology/biology_zoology.txt; do echo \\\"--- $f\\\"; sed -n '1,14p' \\\"$f\\\"; done\", \"description\": \"Read pre-registered critical definition and biology encoding headers\"}",
+      "t_offset_s": 448.622
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/directives/biology/biology_genetics.txt bench/directives/biology/biology_natural_world.txt bench/directives/biology/biology_zoology.txt bench/directives/statistics/statistics_experimental_design.txt bench/directives/statistics/statistics_general.txt bench/directives/information_science/information_science_general.txt bench/directives/information_science/information_scie",
+      "t_offset_s": 456.404
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/directives/chemistry/chemistry_general.txt bench/directives/physics/physics_thermodynamics.txt bench/directives/software/software_general.txt bench/directives/mathematics/mathematics_applied.txt bench/directives/physics/physics_classical.txt bench/directives/statistics/statistics_inference.txt bench/directives/mathematics/mathematics_numerical.txt bench/directives/physi",
+      "t_offset_s": 502.703
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"SEVERITY SCALE\\\\|_severity_declaration\\\" bench/cdsfl_registry/composer.py | head; echo ---; grep -rn \\\"v5.0\\\\|v5\\\\.0\\\" bench/directives --include=\\\"*.txt\\\" | grep -v biology | head\", \"description\": \"Locate severity declaration suppression and stray v5.0 tokens\"}",
+      "t_offset_s": 570.038
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\nD = Path(\\\"bench/directives\\\")\\nedits = []  # (file, old, new)\\n\\ndef E(f, old, new): edits.append((f, old, new))\\n\\n# --- biology: CTCAE v5.0 -> v6.0, correction preserved verbatim ---\\nE(D/\\\"biology/biology_genetics.txt\\\",\\n  \\\"SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on\\\",\\n  \\\"SEVERITY SCALE: CTCAE v6.",
+      "t_offset_s": 619.593
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '5,14p' bench/directives/information_science/information_science_knowledge_representation.txt\", \"description\": \"Inspect edited knowledge-representation header\"}",
+      "t_offset_s": 628.208
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\nf = Path(\\\"bench/directives/information_science/information_science_knowledge_representation.txt\\\")\\nt = f.read_text(encoding=\\\"utf-8\\\")\\nold = \\\"(flag of 2026-11-12 discharged; it read: revisions not confirmed from a primary\\\\n       source on 2026-11-12.\\\\n\\\"\\nnew = \\\"(flag of 2026-11-12 discharged; it read: revisions not confirmed\\\\n    ",
+      "t_offset_s": 632.885
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\nf = Path(\\\"bench/cdsfl_registry/domain_manifest.toml\\\")\\nt = f.read_text(encoding=\\\"utf-8\\\")\\nold_chem = 'severity_scale_source = \\\"UN GHS. Rev. 10 is ST/SG/AC.10/30/Rev.10, published 2023-07-27 by UNECE; PubChem lists a Rev. 11 (2025) as current. [VERIFY:current] -- the Rev. 11 citation is secondary.\\\"'\\nnew_chem = 'severity_scale_source =",
+      "t_offset_s": 646.483
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"bench/tests/test_the_tier_line_is_evidenced_2026-11-14.py\", \"content\": \"\\\"\\\"\\\"The file-level TIER line is evidenced, and the 2026-11-14 adjudication is executed.\\n\\nWHY THIS TEST EXISTS. The joint panel round of 2026-11-14 established by AST\\nthat the manifest field `encoding_tier` is consumed by 0 code decisions, and\\nby reading `composer.py` (the DirectivePacket at the manifest-vo",
+      "t_offset_s": 683.74
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_tier_line_is_evidenced_2026-11-14.py <<'PYEOF'\\n\\\"\\\"\\\"The file-level TIER line is evidenced, and the 2026-11-14 adjudication is executed.\\n\\nWHY THIS TEST EXISTS. The joint panel round of 2026-11-14 established by AST\\nthat the manifest field `encoding_tier` is consumed by 0 code decisions, and\\nby reading `composer.py` (the DirectivePacket at the manifest-v",
+      "t_offset_s": 712.505
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom pathlib import Path\\nf = Path(\\\"bench/tests/test_the_tier_line_is_evidenced_2026-11-14.py\\\")\\nt = f.read_text(encoding=\\\"utf-8\\\")\\nold = '''def test_no_header_asserts_a_version_the_manifest_has_superseded():\\n    offenders = []\\n    for p in _tier_files():\\n        head = _header(p.read_text(encoding=\\\"utf-8\\\"))\\n'''\\nnew = '''def _asserted(head: str) -> str:\\n",
+      "t_offset_s": 733.782
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py -q 2>&1 | tail -3\", \"description\": \"Run the three stamped severity regression tests\"}",
+      "t_offset_s": 741.39
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom statsmodels.stats.proportion import proportion_confint\\nfor k, n, label in [(15,22,\\\"CROSS_VERIFIED 15/22\\\"), (7,22,\\\"DRAFT 7/22\\\"), (1,2,\\\"same-kind confirmations wrong at creation 1/2\\\"), (2,4,\\\"scale declarations needing correction within 2 days 2/4\\\")]:\\n    lo, hi = proportion_confint(k, n, method=\\\"wilson\\\")\\n    print(f\\\"{label}: {k/n:.6f}, Wilson [{lo:.",
+      "t_offset_s": 744.101
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && timeout 90 wolframscript -code 'Module[{p=15/22,n=22,z=Quantile[NormalDistribution[],0.975],c,h},c=(p+z^2/(2n))/(1+z^2/n);h=z*Sqrt[p(1-p)/n+z^2/(4n^2)]/(1+z^2/n);N[{c-h,c+h},6]]' || echo \\\"WOLFRAM UNAVAILABLE on this machine\\\"\", \"description\": \"Cross-verify Wilson interval for 15/22 with Wolfram\"}",
+      "t_offset_s": 756.325
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'Module[{p=15/22,n=22,z=Quantile[NormalDistribution[],0.975],c,h},c=(p+z^2/(2n))/(1+z^2/n);h=z*Sqrt[p(1-p)/n+z^2/(4n^2)]/(1+z^2/n);N[{c-h,c+h},6]]'\", \"description\": \"Retry Wolfram cross-check without timeout wrapper\"}",
+      "t_offset_s": 760.326
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"encoding_tier\\\" bench/cdsfl_registry/composer.py bench/reference_runner_v3.py bench/cdsfl_registry/registry.py 2>&1; python3 - <<'EOF'\\n# smoke: the chemistry domain layer now delivers the discharged header\\nimport sys; sys.path.insert(0, \\\"bench\\\")\\nfrom cdsfl_registry import composer\\npkt = composer._load_domain_packet(\\\"chemistry\\\", None) if hasattr(composer, \\\"_load_doma",
+      "t_offset_s": 781.945
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys, warnings; sys.path.insert(0, \\\"bench\\\")\\nwarnings.filterwarnings(\\\"ignore\\\")\\nfrom cdsfl_registry.composer import _load_domain_directive, _severity_declaration\\npkt = _load_domain_directive(\\\"chemistry\\\", None)\\nprint(\\\"name:\\\", pkt.name)\\nprint(\\\"tier delivered:\\\", \\\"TIER: CROSS_VERIFIED\\\" in pkt.text)\\nprint(\\\"Rev. 11 primary delivered:\\\", \\\"ST/SG/AC.1",
+      "t_offset_s": 788.435
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /home/user/cdsfl 2>/dev/null || cd ~/cdsfl 2>/dev/null || pwd; ls\", \"description\": \"Locate repository root\"}",
+      "t_offset_s": 149.233
+    },
+    {
+      "name": "ToolSearch",
+      "input_preview": "{\"query\": \"select:WebSearch,WebFetch\", \"max_results\": 2}",
+      "t_offset_s": 149.686
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/cdsfl_registry/composer.py bench/reference_runner_v3.py bench/cdsfl_registry/registry.py bench/cdsfl_registry/domain_vocabulary.py bench/cdsfl_registry/domain_manifest.toml 2>/dev/null | awk '{print substr($1,1,16), $2}'; echo ---; ls bench/tests/ | grep -iE 'severity|tier|domain|consequence|cut' ; echo ---; ls scripts/ | grep -i 2026-11-14; ls bench/tests/ | grep 2026",
+      "t_offset_s": 156.772
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/cdsfl_registry/domain_vocabulary.py\"}",
+      "t_offset_s": 165.927
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/directives/*/ | head -80; echo ===; grep -rln 'TIER:' bench/directives/ | wc -l; grep -rln 'SEVERITY SCALE:' bench/directives/ | wc -l\", \"description\": \"List directive encodings and count TIER/SEVERITY SCALE lines\"}",
+      "t_offset_s": 167.27
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"^TIER:\", \"path\": \"bench/directives\", \"output_mode\": \"content\", \"-n\": false}",
+      "t_offset_s": 173.048
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"tiers\\\\s*=|encoding_tier\", \"path\": \"bench/cdsfl_registry/domain_manifest.toml\", \"output_mode\": \"content\"}",
+      "t_offset_s": 174.168
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"_load_domain_directive|def compose|read_text|TIER\", \"path\": \"bench/cdsfl_registry/composer.py\", \"output_mode\": \"content\", \"-C\": 4, \"head_limit\": 120}",
+      "t_offset_s": 181.718
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, 'bench')\\nfrom cdsfl_registry import composer\\nfor dom in (\\\"software\\\", \\\"physics\\\", \\\"statistics\\\"):\\n    try:\\n        out = composer.compose(dom, \\\"fable_5_1\\\")\\n        text = out if isinstance(out, str) else getattr(out, \\\"text\\\", None) or str(out)\\n    except Exception as e:\\n        print(dom, \\\"compose() raised:\\\", e); continu",
+      "t_offset_s": 193.091
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, 'bench')\\nfrom cdsfl_registry import composer\\nimport pathlib\\nsrc = pathlib.Path('bench/directives/software/software_general.txt').read_text()\\nprint(\\\"file chars:\\\", len(src))\\ntier_pos = src.find(\\\"TIER:\\\")\\nprint(\\\"TIER: at char\\\", tier_pos, \\\"of\\\", len(src), \\\"-> line\\\", src[:tier_pos].count('\\\\n')+1)\\nout = composer.compose(\\\"sof",
+      "t_offset_s": 205.939
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, 'bench')\\nfrom cdsfl_registry import composer\\nout = composer.compose(\\\"software\\\", \\\"fable_5_1\\\")\\ntext = out if isinstance(out, str) else getattr(out, \\\"text\\\", str(out))\\ni = text.find(\\\"TIER: DRAFT\\\")\\nprint(\\\"found at\\\", i)\\nprint(repr(text[max(0,i-200):i+120]))\\nEOF\", \"description\": \"Show context of TIER line inside composed prom",
+      "t_offset_s": 217.184
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, 'bench')\\nfrom cdsfl_registry import composer\\nout = composer.compose(\\\"software\\\", \\\"fable_5_1\\\")\\nprint(type(out))\\nif not isinstance(out, str):\\n    print([a for a in dir(out) if not a.startswith('_')][:20])\\n    t = getattr(out, 'text', None)\\n    print(\\\"has .text:\\\", t is not None)\\nEOF\\ngrep -n \\\"def compose(\\\" -A 30 bench/cdsfl",
+      "t_offset_s": 230.558
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sys\\nsys.path.insert(0, 'bench')\\nfrom cdsfl_registry import composer\\nfor dom in (\\\"software\\\",\\\"physics\\\",\\\"statistics\\\",\\\"biology\\\",\\\"chemistry\\\",\\\"mathematics\\\",\\\"information_science\\\",\\\"logistics\\\",\\\"cross_domain\\\"):\\n    try:\\n        out = composer.compose(dom, \\\"fable_5_1\\\")\\n    except Exception as e:\\n        print(f\\\"{dom:20s} raised: {e}\\\"); conti",
+      "t_offset_s": 238.342
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/cdsfl_registry/domain_manifest.toml\", \"limit\": 185}",
+      "t_offset_s": 276.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '186,440p' bench/cdsfl_registry/domain_manifest.toml\", \"description\": \"Read manifest domain entries 186-440\"}",
+      "t_offset_s": 279.646
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in biology/biology_genetics information_science/information_science_retrieval mathematics/mathematics_proof chemistry/chemistry_general cross-domain/cross_general information_science/information_science_general information_science/information_science_data_management information_science/information_science_knowledge_representation physics/physics_thermodynamics statistics/statist",
+      "t_offset_s": 301.902
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"AIAG-VDA FMEA Handbook edition current 2026 second edition errata\"}",
+      "t_offset_s": 401.994
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"CVSS latest version 2026 FIRST.org v4.0 current specification\"}",
+      "t_offset_s": 402.576
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"BIPM SI Brochure edition current 2026 CGPM 28th meeting November 2026\"}",
+      "t_offset_s": 403.224
+    },
+    {
+      "name": "WebFetch",
+      "input_preview": "{\"url\": \"https://unece.org/transport/dangerous-goods/ghs-rev11-2025\", \"prompt\": \"Is GHS Rev. 11 (2025) published by UNECE? What is its publication date and document symbol? Is it the current/latest revision? Any mention of Rev. 12?\"}",
+      "t_offset_s": 404.582
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"UNECE GHS Rev.11 2025 ST/SG/AC.10/30/Rev.11 published latest revision\"}",
+      "t_offset_s": 428.674
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"ISO/IEC 11179-1:2023 metadata registries current edition status\"}",
+      "t_offset_s": 429.267
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"ISO 3534-1 statistics vocabulary current edition 2006 revised\"}",
+      "t_offset_s": 429.842
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"IEEE 754-2019 current standard revision 2029 status floating point\"}",
+      "t_offset_s": 430.421
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"CONSORT 2025 statement published April 2025 randomised trials reporting guideline current\"}",
+      "t_offset_s": 461.662
+    },
+    {
+      "name": "WebSearch",
+      "input_preview": "{\"query\": \"DCMI Dublin Core Metadata Terms current version 2020 ISO 15836\"}",
+      "t_offset_s": 462.377
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CTCAE v5\\\\.0|CTCAE v5|confirmed current 2026-11-12\", \"path\": \"bench/directives\", \"output_mode\": \"content\"}",
+      "t_offset_s": 463.356
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\ncc2 = {\\\"biology_genetics\\\",\\\"is_retrieval\\\",\\\"mathematics_applied\\\",\\\"mathematics_numerical\\\",\\\"mathematics_proof\\\",\\\"physics_classical\\\",\\\"physics_general\\\",\\\"physics_quantum\\\",\\\"software_general\\\",\\\"statistics_inference\\\",\\\"statistics_time_series\\\"}\\nfable = {\\\"software_general\\\",\\\"chemistry_general\\\",\\\"cross_general\\\",\\\"is_general\\\",\\\"is_data_management\\\",\\\"is_k",
+      "t_offset_s": 568.763
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"THE TIER LINE IS PROMPT-DELIVERED, AND A STALE CITATION IN AN ENCODING IS A\\nSTALE STATEMENT IN EVERY SEAT'S DIRECTIVE.\\n\\nJoint panel round `fmea_level_and_draft_encodings_2026-11-14`. The round'",
+      "t_offset_s": 602.641
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"THE TIER LINE IS PROMPT-DELIVERED, AND A STALE CITATION IN AN ENCODING IS A\\nSTALE STATEMENT IN EVERY SEAT'S DIRECTIVE.\\n\\nJoint panel round `fmea_level_and_draft_encodings_2026-11-14`. The round'",
+      "t_offset_s": 626.838
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"THE TIER LINE IS PROMPT-DELIVERED, AND A STALE CITATION IN AN ENCODING IS A\\nSTALE STATEMENT IN EVERY SEAT'S DIRECTIVE.\\n\\nJoint panel round `fmea_level_and_draft_encodings_2026-11-14`. The round's brief\\nsaid `encoding_tier` is \\\"consumed by 0 decisions anywhere in the tree\\\",",
+      "t_offset_s": 650.7
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,16p' bench/directives/biology/biology_natural_world.txt; echo =====; sed -n '1,16p' bench/directives/biology/biology_zoology.txt\", \"description\": \"Read severity blocks of the other two biology encodings\"}",
+      "t_offset_s": 656.768
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,18p' bench/directives/biology/biology_zoology.txt\", \"description\": \"Read zoology severity block\"}",
+      "t_offset_s": 660.36
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_genetics.txt\", \"old_string\": \"SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on\\n       a person. Research-only work inherits the application's scale.\\nSOURCES: NCI CTEP CTCAE v5.0 (2017), confirmed current 2026-11-12.",
+      "t_offset_s": 670.386
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_natural_world.txt\", \"old_string\": \"SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3. Inherited from the\", \"new_string\": \"SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3. Inherited from the\"}",
+      "t_offset_s": 672.136
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_natural_world.txt\", \"old_string\": \"SOURCES: NCI CTEP, CTCAE v5.0, published 2017-11-27, confirmed current\\n       2026-11-12: Grade 3 is severe or medically significant but not\\n       immediately life-threatening.\", \"new_string\": \"SOURCES: NCI CT",
+      "t_offset_s": 675.661
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_zoology.txt\", \"old_string\": \"SEVERITY SCALE: CTCAE v5.0 grade, critical at Grade 3, where the work bears on\", \"new_string\": \"SEVERITY SCALE: CTCAE v6.0 grade, critical at Grade 3, where the work bears on\"}",
+      "t_offset_s": 677.423
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo/bench/directives/biology/biology_zoology.txt\", \"old_string\": \"SOURCES: NCI CTEP CTCAE v5.0 (2017) for the human-consequence half.\", \"new_string\": \"SOURCES: NCI CTEP CTCAE v6.0 (MedDRA 28.0, published 2025-07-22) for the\\n       human-consequence half. CORRECTED 2026-11-14 from \\\"",
+      "t_offset_s": 679.817
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\ndef sub(path, old, new):\\n    p = pathlib.Path(path)\\n    t = p.read_text(encoding=\\\"utf-8\\\")\\n    assert t.count(old) == 1, f\\\"{path}: pattern count {t.count(old)} != 1\\\"\\n    p.write_text(t.replace(old, new), encoding=\\\"utf-8\\\")\\n    print(\\\"edited\\\", path)\\n\\nsub(\\\"bench/directives/biology/biology_genetics.txt\\\",\\n\\\"\\\"\\\"SEVERITY SCALE: CTCAE v5.0 ",
+      "t_offset_s": 695.156
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\ndef sub(path, old, new):\\n    p = pathlib.Path(path)\\n    t = p.read_text(encoding=\\\"utf-8\\\")\\n    assert t.count(old) == 1, f\\\"{path}: pattern count {t.count(old)} != 1\\\"\\n    p.write_text(t.replace(old, new), encoding=\\\"utf-8\\\")\\n    print(\\\"edited\\\", path)\\n\\n# -- chemistry encoding: Rev. 11 discharge (UNECE primary)\\nsub(\\\"bench/directives/chemis",
+      "t_offset_s": 724.296
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\ndef sub(path, old, new):\\n    p = pathlib.Path(path)\\n    t = p.read_text(encoding=\\\"utf-8\\\")\\n    assert t.count(old) == 1, f\\\"{path}: pattern count {t.count(old)} != 1\\\"\\n    p.write_text(t.replace(old, new), encoding=\\\"utf-8\\\")\\n    print(\\\"edited\\\", path)\\n\\nM = \\\"bench/cdsfl_registry/domain_manifest.toml\\\"\\n# chemistry: discharge the secondary-s",
+      "t_offset_s": 736.963
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py -q 2>&1 | tail -5\", \"description\": \"Run guard test and the three stamped severity tests\"}",
+      "t_offset_s": 746.074
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py::test_no_directive_cites_ctcae_v5_as_current -q 2>&1 | grep -E 'AssertionError.*directives' | head -3; grep -rn \\\"v5\\\\.0\\\" bench/directives/biology/ | head\", \"description\": \"Find which v5.0 mentions still trip the guard\"}",
+      "t_offset_s": 754.056
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_tier_line_reaches_the_seat_2026-11-14.py\\\")\\nt = p.read_text()\\nold = '''def test_no_directive_cites_ctcae_v5_as_current():\\n    \\\"\\\"\\\"CTCAE v5.0 was superseded by v6.0 (MedDRA 28.0, published 2025-07-22,\\n    read from the primary at dctd.cancer.gov; manifest corrected 2026-11-14).\\n    No prompt-delivered enc",
+      "t_offset_s": 783.66
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_domain_severity_reaches_the_prompt_2026-11-13.py bench/tests/test_the_cut_is_a_domain_property_2026-11-11.py bench/tests/test_the_consequence_domain_is_resolved_2026-11-12.py -q 2>&1 | tail -2\\ncat > scripts/the_two_q1_procedures_can_disagree_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"THE 2 Q1 PROCEDURES ARE 2 RULES, NOT 1 RULE IN 2 W",
+      "t_offset_s": 820.814
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom statsmodels.stats.proportion import proportion_confint as ci\\nfor k, n, label in [(17,22,\\\"adjudicated CV-eligible\\\"), (5,22,\\\"stay DRAFT\\\"),\\n                    (11,22,\\\"rows the 2 seats classify differently\\\"),\\n                    (1,2,\\\"claimed-confirmations wrong (CTCAE of {CTCAE,CVSS})\\\"),\\n                    (2,4,\\\"declared-scale citations stale in som",
+      "t_offset_s": 839.315
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'N[{(17/22 + 1.959963985^2/(2*22) - 1.959963985*Sqrt[17/22*(1-17/22)/22 + 1.959963985^2/(4*22^2)])/(1 + 1.959963985^2/22), (17/22 + 1.959963985^2/(2*22) + 1.959963985*Sqrt[17/22*(1-17/22)/22 + 1.959963985^2/(4*22^2)])/(1 + 1.959963985^2/22)}, 6]' 2>&1 || echo \\\"WOLFRAM ABSENT\\\"\", \"description\": \"Wolfram second falsifier on the",
+      "t_offset_s": 845.577
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > experimental_notes/Panel_Joint_FMEA_Level_And_Tier_Adjudication_2026-11-14.md <<'MDEOF'\\n# JOINT ROUND `fmea_level_and_draft_encodings_2026-11-14` \\u2014 tier adjudication record\\n\\nSeat: third seat, joint half. This file is the record the brief asked for: the\\nper-encoding adjudication a consumer reads BEFORE any `TIER:` line is written.\\nNo tier line was flipped this round \\u2",
+      "t_offset_s": 913.74
+    }
+  ],
+  "attempts": 2,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 861.7,
+      "tool_calls": 41,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_2zdhz9vu/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    },
+    {
+      "attempt": 2,
+      "elapsed_s": 1004.6,
+      "tool_calls": 48,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jnd6vcu_/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

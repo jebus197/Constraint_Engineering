@@ -102,9 +102,19 @@ def test_the_promise_in_the_directive_still_exists(comp):
 
 
 def test_the_gate_constant_is_untouched():
-    """★ THE BOUNDARY. This repair must not have moved what the gate admits."""
-    src = (REPO / "bench" / "reference_runner_v3.py").read_text(
-        encoding="utf-8", errors="ignore")
-    assert "CRITICAL_SEVERITY_THRESHOLD = 0.7" in src, (
-        "the live critical cut moved. That is held under his `d` and is not "
-        "part of making the directive's promise true.")
+    """★ THE BOUNDARY. This repair must not have moved what the gate admits.
+
+    ★ CONVERTED FROM A SOURCE-TEXT ASSERTION TO A READ OF THE LIVE VALUE,
+    2026-11-14, on the census's own advice. It read
+    `"CRITICAL_SEVERITY_THRESHOLD = 0.7" in src`, which is weaker in both
+    directions: a reassignment later in the file would leave the string present
+    while the VALUE moved, and a reformatting to `= 0.70` would turn it red
+    while the value was unchanged. Importing the module and reading the
+    attribute asserts the number the gate actually uses.
+    """
+    import importlib
+    rr = importlib.import_module("bench.reference_runner_v3")
+    assert rr.CRITICAL_SEVERITY_THRESHOLD == 0.7, (
+        f"the live critical cut is {rr.CRITICAL_SEVERITY_THRESHOLD!r}, not 0.7. "
+        f"That is held under his `d` and is not part of making the directive's "
+        f"promise true.")

@@ -1,0 +1,212 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 13351,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANONYMIZED/cdsfl 2>/dev/null || cd $(pwd); pwd; ls; git status --short 2>&1 | head -40\", \"description\": \"Locate repo and check state\"}",
+      "t_offset_s": 5.293
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANONYMIZED/cdsfl 2>/dev/null || true; for f in bench/reference_runner_v3.py bench/evidence.py bench/tests/test_verified_true_ledger.py bench/audit_closing_window.py bench/convergence_location.py docs/MATHEMATICAL_APPENDIX.md scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py; do if [ -f \\\"$f\\\" ]; t",
+      "t_offset_s": 8.179
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def severity_is_proven\\\" -A 40 bench/reference_runner_v3.py | head -70\", \"description\": \"Read severity_is_proven\"}",
+      "t_offset_s": 30.995
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def compute_sev_f\\\" -A 45 bench/reference_runner_v3.py | head -60; echo \\\"=== SEV_F_W ===\\\"; grep -n \\\"SEV_F_W\\\" bench/reference_runner_v3.py | head -20\", \"description\": \"Read compute_sev_f and weights\"}",
+      "t_offset_s": 32.82
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity_is_proven\\\" bench/reference_runner_v3.py; echo \\\"=== THRESH ===\\\"; grep -rn \\\"CRITICAL_SEVERITY_THRESHOLD\\\\s*=\\\" bench/*.py; echo \\\"=== LEDGER ===\\\"; grep -rn \\\"LEDGER_CRITICAL_SEVERITY\\\" bench/*.py bench/tests/*.py | head; echo \\\"=== critical_threshold defaults ===\\\"; grep -n \\\"critical_threshold\\\" bench/convergence_location.py | head -40\", \"description\": \"Find doo",
+      "t_offset_s": 37.301
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py\", \"description\": \"Read the F1 producer\"}",
+      "t_offset_s": 38.027
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '4430,4450p' bench/reference_runner_v3.py; echo \\\"=== 9720-9745 ===\\\"; sed -n '9720,9745p' bench/reference_runner_v3.py; echo \\\"=== 10925-10950 ===\\\"; sed -n '10925,10950p' bench/reference_runner_v3.py\", \"description\": \"Read all 3 severity_is_proven call sites\"}",
+      "t_offset_s": 49.687
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/logs | head -30; echo \\\"---count---\\\"; ls bench/logs | wc -l; echo \\\"--- runner_state files ---\\\"; find bench/logs -name runner_state.json | wc -l\", \"description\": \"Survey the archive\"}",
+      "t_offset_s": 50.922
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '10880,10925p' bench/reference_runner_v3.py\", \"description\": \"Read calibration-demotion eligibility\"}",
+      "t_offset_s": 65.696
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _calibrate_finding_severity\\\" -A 30 bench/reference_runner_v3.py | head -40; echo \\\"=== caller sig ===\\\"; grep -n \\\"def calibrate_severities\\\\|def _severity_calibration\\\\|floor\\\" bench/reference_runner_v3.py | sed -n '1,40p'\", \"description\": \"Read calibration function\"}",
+      "t_offset_s": 67.178
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _is_demotion_eligible\\\" -A 35 bench/reference_runner_v3.py | head -45\", \"description\": \"Read demotion eligibility predicate\"}",
+      "t_offset_s": 72.49
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"7\\\\.7\\\\.1\\\\|### 7\\\\.7\\\\|## 7\\\\.7\\\\|credence\\\" docs/MATHEMATICAL_APPENDIX.md | head -40\", \"description\": \"Locate appendix 7.7 / 7.7.1\"}",
+      "t_offset_s": 123.346
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity_scale\\\\|critical_level\\\" bench/*.py bench/dm/*.py configs/*.json configs/*.yaml 2>/dev/null | head -30; echo \\\"=== manifest ===\\\"; ls configs/ | head -30\", \"description\": \"Find per-domain scale wiring and manifest\"}",
+      "t_offset_s": 124.791
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1455,1500p' docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Read appendix 7.7.1 pair definition\"}",
+      "t_offset_s": 127.252
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"severity_scale\\\" --include=*.py --include=*.json --include=*.md --include=*.yaml . 2>/dev/null | head -20\", \"description\": \"Find severity_scale manifest sites\"}",
+      "t_offset_s": 128.477
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity_scale\\\" bench/ configs/ docs/ scripts/ 2>/dev/null | head -20; echo \\\"=== composer call sites ===\\\"; grep -n \\\"critical_level\\\\|severity_scale\\\" bench/composer.py 2>/dev/null | head -20\", \"description\": \"Find severity_scale and composer sites\"}",
+      "t_offset_s": 138.835
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nimport inspect, bench.convergence_location as cl\\nn=0\\nfor name,fn in inspect.getmembers(cl, inspect.isfunction):\\n    try: sig=inspect.signature(fn)\\n    except Exception: continue\\n    p=sig.parameters.get('critical_threshold')\\n    if p is not None:\\n        n+=1\\n        print(f'{name:40s} default={p.default!r}')\\nprint('functions",
+      "t_offset_s": 141.667
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity_scale\\\\|critical_level\\\\|^\\\\[\\\" bench/cdsfl_registry/domain_manifest.toml | sed -n '1,80p'\", \"description\": \"Read manifest severity scales and critical levels\"}",
+      "t_offset_s": 150.289
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '855,900p' bench/cdsfl_registry/composer.py\", \"description\": \"Read composer severity_scale call site\"}",
+      "t_offset_s": 151.044
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2130,2150p' bench/cdsfl_registry/composer.py 2>/dev/null; echo \\\"=== who calls _severity_declaration ===\\\"; grep -n \\\"_severity_declaration\\\" bench/cdsfl_registry/composer.py; echo \\\"=== wc ===\\\"; wc -l bench/cdsfl_registry/composer.py\", \"description\": \"Check fable's cited composer call site 2140\"}",
+      "t_offset_s": 208.686
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Three measurements the joint round of `severity_proof_and_weight_2026-11-14` turns on.\\n\\nWHY THIS EXISTS. The blind half produced two answers that agree on the verdicts\\n(R1 hold, R2 re",
+      "t_offset_s": 303.462
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch scripts/_perm_probe.tmp && echo WRITE_OK && rm scripts/_perm_probe.tmp\", \"description\": \"Probe write permission in repo tree\"}",
+      "t_offset_s": 310.479
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Three measurements the joint round of `severity_proof_and_weight_2026-11-14` turns on.\\n\\nWHY THIS EXISTS. The blind half produced two replies that AGREE on the three\\nverdicts (R1 hold, R2 reject, R3 recommend) and DISAGREE on three measurable\\nfacts underneath them.",
+      "t_offset_s": 389.376
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 600 python3 scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py 2>&1 | tail -90\", \"description\": \"Run the producer\"}",
+      "t_offset_s": 391.299
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py 2>&1 | tail -100\", \"description\": \"Run the producer\", \"timeout\": 600000}",
+      "t_offset_s": 393.274
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys,inspect; sys.path.insert(0,'.')\\nimport bench.convergence_location as cl\\nprint(inspect.signature(cl.hierarchical_novelty_series))\\nprint(inspect.signature(cl.novelty_rule_divergence))\\n\\\"\", \"description\": \"Get correct signatures\"}",
+      "t_offset_s": 413.907
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport re, pathlib\\np = pathlib.Path(\\\"scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py\\\")\\nsrc = p.read_text()\\n\\n# --- repair 1: the TypeError probe must exercise the COMPARISON, not the signature.\\nold = '''    print(\\\"\\\\\\\\n  can the live comparison site accept a per-domain critical \\\"\\n          \\\"level?\\\")\\n    try:\\n        cl.hierarch",
+      "t_offset_s": 430.608
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '975,1010p' bench/convergence_location.py\", \"description\": \"Read _criticals filter\"}",
+      "t_offset_s": 442.596
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _gate_population\\\" -A 30 bench/convergence_location.py | head -40\", \"description\": \"Read _gate_population\"}",
+      "t_offset_s": 446.828
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py\\\")\\nsrc = p.read_text()\\nold = '''    _entries = [{\\\"id\\\": \\\"X1\\\", \\\"severity\\\": 0.9, \\\"round_opened\\\": 1,\\n                 \\\"status\\\": \\\"OPEN\\\", \\\"symbol\\\": \\\"s\\\"}]'''\\nnew = '''    # `_gate_population` keeps only entries with a non-negative\\n    # `open_si",
+      "t_offset_s": 456.212
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'Reduce[Exists[{rA,rB,kA,kB}, rA<rB && 0<=kA<=1 && 0<=kB<=1 && (rA>rB || (rA==rB && kA>kB))],{},Reals]' 2>&1 | head -5 || echo \\\"WOLFRAM_ABSENT\\\"\", \"description\": \"Wolfram cross-check of lex admissibility\", \"timeout\": 300000}",
+      "t_offset_s": 478.22
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_credence_coordinate_still_carries_consequence_2026-11-14.py <<'PYEOF'\\n\\\"\\\"\\\"Guards for the joint round `severity_proof_and_weight_2026-11-14`.\\n\\nEach test pins a fact the two blind seats DISAGREED about, so that the\\nresolution is executed rather than remembered. Every one reads the live\\nmodules; none re-types a formula under test.\\n\\\"\\\"\\\"\\nimport inspect",
+      "t_offset_s": 516.602
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py bench/tests/test_verified_true_ledger.py -q 2>&1 | tail -8\", \"description\": \"Run the two dispatch-named test files\", \"timeout\": 600000}",
+      "t_offset_s": 526.761
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1480,1488p' docs/MATHEMATICAL_APPENDIX.md\", \"description\": \"Locate insertion point in 7.7.1\"}",
+      "t_offset_s": 527.895
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"docs/MATHEMATICAL_APPENDIX.md\\\")\\nsrc = p.read_text(encoding=\\\"utf-8\\\")\\nanchor = (\\\"definition of the credence factor, and the pair makes explicit \\\"\\n          \\\"which half it is.\\\\n\\\")\\nassert src.count(anchor) == 1, \\\"anchor not unique\\\"\\n\\nadd = anchor + \\\"\\\"\\\"\\n#### 7.7.1.a The credence coordinate still carries consequence ",
+      "t_offset_s": 550.354
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"MATHEMATICAL_APPENDIX\\\" bench/tests/ | head\", \"description\": \"Find tests that read the appendix\"}",
+      "t_offset_s": 555.261
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_appendix_inverse_is_executed_2026-09-20.py bench/tests/test_the_severity_specification_shadow_2026-10-12.py bench/tests/test_no_severity_bound_above_one_half_is_a_magnitude_test_2026-11-06.py bench/tests/test_severity_composition_key_property_2026-11-06.py bench/tests/test_are_items_12_to_21_done_2026-11-12.py -q 2>&1 | tail -8\", \"description\": \"Run ",
+      "t_offset_s": 558.512
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/reference_runner_v3.py bench/evidence.py bench/tests/test_verified_true_ledger.py bench/audit_closing_window.py bench/convergence_location.py docs/MATHEMATICAL_APPENDIX.md scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py; do printf \\\"%s  %s\\\\n\\\" \\\"$(sha256sum \\\"$f\\\" | cut -c1-16)\\\" \\\"$",
+      "t_offset_s": 576.575
+    }
+  ],
+  "n_tool_calls": 38,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 678.9,
+  "response": "Converged. 141 targeted tests pass; exactly one dispatched artefact changed (the appendix, intentionally). Here is my verdict.\n\n## `verdict`\n\n| repair | my verdict | what moved me |\n|---|---|---|\n| **R1** repoint `severity_is_proven` | **HOLD FOR THE FOUNDER.** I did **not** rebuild it \u2014 see below. | Both seats built it independently with matching semantics and a correct tighten-only derivation. I verified the polarity at all three call sites myself: predicate-True admits more at each, so a conjunctive strengthening cannot loosen. Agreement survives. |\n| **R2** a 3rd weight in `(1/2, 1)` | **REJECT** \u2014 and on a ground **neither seat gave**, because both their stated reasons are defective. | Executed below. |\n| **R3** the ordered pair | **RECOMMEND the direction; R3 as recorded is INCOMPLETE.** New finding J-A. | The `credence` coordinate still carries a consequence weight. |\n\n**I did not rebuild R1.** Two seats delivered it; a third copy in a third sandbox is an addition nothing reaches, which is the failure mode this project has shipped 11 times. Saying so is my answer, not an omission.\n\n## `reasoning`\n\n### J1 \u2014 the R1 population: measured, and **neither** seat's derivation is complete\n\n`severity_is_proven` has three live call sites and they **do not share a population**:\n\n- **Site A** (A4 release door, 4442) and **Site B** (reasoned withdrawal, 9735): each conjoined with `severity < 0.7`. An entry at or above the cut never held their exemption.\n- **Site C** (calibration demotion, 10936): **not** so conjoined. `_is_demotion_eligible` *requires* `severity >= CRITICAL_SEVERITY_THRESHOLD` (line 10662). Site C acts on **exactly the 133 entries `fable` excluded**.\n\n```\n  fable's population (sites A and B: severity < 0.7):\n    entries holding the exemption today : 519\n    entries LOSING it when repointed    : 422/519 = 81.31%  Wilson [77.73%, 84.43%]\n  the population both headline figures mishandle (site C: severity >= 0.7):\n    entries at or above the cut : 133\n    of those, demotion-ELIGIBLE (live _is_demotion_eligible): 0\n```\n\n**Resolution: `fable`'s number is right and its derivation is incomplete.** Site C's eligible population in the archive is **0 of 133**, so the omission is numerically inert *today* \u2014 `_is_demotion_eligible` also requires `latent` and a CONFIRMED falsifier, which no archived entry carries. It stops being inert the moment `severity_calibration_enabled` runs on a registry with `latent` populated. **Report 422/519 to the founder, with that condition attached.** `cc2`'s 555/652 answers a different question \u2014 how many proven-statuses flip \u2014 which is the right population for the monotonicity argument and the wrong one for the door.\n\n*Caveat I owe my own measurement:* Site A reads `effective_severity(e)`, sites B and C read raw `e[\"severity\"]`. My partition used raw. With `_SEVERITY_SPEC[\"on\"]` False (the default) `effective_severity` returns the asserted float unchanged, so the partition is exact today and would need redoing with that flag on. `cc2` flagged this divergence as below threshold; it is below threshold for the verdict and *not* below threshold for the measurement, which is why I state it.\n\n### J3 \u2014 the self-falsification: **right conclusion, wrong reason, and both seats inherited the wrong reason**\n\nR2 and R3 **are** mutually exclusive. But the brief's reason \u2014 and `fable`'s restatement of it, \"a 3rd weight ... decides nothing the pair gate reads\" \u2014 is **false by execution**. A pair is compared **lexicographically**. When `c_d` ties, the comparison falls through to `credence`, which contains `W`:\n\n```\n    both findings share c_d = 'High'  -> FIRST coordinate TIES\n    2 weights: A(MEDIUM->HARD default)=0.900  B(HARD)=0.800  -> A > B\n    3 weights: A(MEDIUM)=0.720         B(HARD)=0.800  -> A < B\n    ordering changed by adding a 3rd weight: True\n```\n\n`cc2`'s reason fails differently. Its \u03c6-invariance `sat` is a test of the **product gate**, which R3 retires. \u03c6 re-labels the *consequence* scale; `credence` is a dimensionless belief in `[0,1]`, so the \u03c6 test does not reach R2-*alongside*-R3. `cc2`'s argument is sound against R2-*instead-of*-R3 and silent on the composition it was being asked about.\n\n**The correct reason (finding J-A).** \u00a77.7.1 defines `credence(f)` as \"today's \u00a77.7 product under its own name\" \u2014 `W(class) \u00b7 confidence \u00b7 Ver`. **`W` is keyed on constraint class, the core directives' \u00a71 *consequence* partition.** So the coordinate named `credence` is not a function of the evidence alone, and the pair double-counts consequence \u2014 the exact defect \u00a77.7.1 names (\"a product of a consequence and a belief is neither\") surviving *inside its own repair*:\n\n```\n  evidential-invariance test -- same evidence, different class:\n    conf=0.9  CONFIRMED   HARD=0.900  SOFT=0.450   <-- credence depends on CONSEQUENCE\n    ... cells where identical evidence gave different credence: 6/6\n  z3: today W*conf*Ver, identical evidence different credence?  sat   (defect)\n  z3: repaired conf*Ver                                      ?  unsat (invariant)\n  z3: pair (c_d, credence) lex: SOFT outranks HARD?  unsat (order tracks c_d)\n```\nWolfram Language (local Wolfram Engine, exit 0, no `Name::tag`) independently returned `False` for the same existential \u2014 no SOFT finding outranks a HARD one under the lex pair.\n\nSo: **`W` is not jobless, it is misplaced.** R2 refines a term R3 should **delete**. Exclusive \u2014 yes. The brief's framing of R2 as \"a smaller R3\" is wrong, and the brief is right by accident.\n\n### The fact neither seat had: what a per-domain cut does to the frozen spellings\n\n**There are six, not four** \u2014 `cc2` is right, the brief is wrong. Read by `inspect.signature`, `convergence_location` carries `critical_threshold=0.7` on **four** functions (`combined_novelty_series`, `hierarchical_novelty_series`, `location_only_series`, `novelty_rule_divergence`). A parameter default is invisible to a text search for an assignment.\n\n**`cc2` is right that a per-domain cut makes them wrong, not merely duplicated** \u2014 and in three independent ways, not one. All four declared levels are **strings** (`'High'`, `'Category 2'`, `'Grade 3'`, `'7'`); the manifest's own notes record CTCAE landing at 3.8 and FMEA at 7.3, *between levels, not expressible as a rank*; and GHS runs **inverted** (Category 1 is most severe), so `>=` points the wrong way there. `cc2`'s `TypeError: '>=' not supported between instances of 'float' and 'str'` reproduces.\n\n**`fable` is wrong here, on count and mechanism.** Measured: **5** domains declare `severity_scale = \"none\"`, not 6. The sixth is `cross_domain`, which declares `\"composed\"` and by the manifest's own rule carries two-or-more scales and inherits **no single application level**.\n\n**Does this change a verdict?** No \u2014 it strengthens all three. Pinning remains correct (drift protection), but it makes the six *consistently* wrong. The real repair is at the comparison site, which must take an ordering and a level, not a float.\n\n### J2 \u2014 where we agree, does it survive\n\n- **R1 HOLD: survives on its own merits.** I re-derived the polarity at all three sites independently. Not a concurrence.\n- **R2 REJECT: the verdict survives, both routes to it do not.** Recorded above.\n- **F4 (\"operative\"): the disagreement is verbal, not factual.** `fable`'s citation (`composer.py:2140`) is the real call site; `cc2`'s 888 is inside the function body. Both measured the same thing, and the code settles the word \u2014 `_severity_declaration`'s own docstring reads *\"\u2605 AND IT DOES NOT TOUCH WHAT THE GATE ADMITS.\"* `cc2` is right that \"operative\" overstates it; `fable` concedes \"no gate consumes it\". No factual disagreement to resolve.\n\n## `composability`\n\n- **R2 + R3: no composition.** R2's only live effect under R3 is through the credence tie-break \u2014 the coordinate R3 should strip of `W`. Composing adds precision to a doomed term. Fails the founder's rule and the additive standard.\n- **R1 + R3: independent, not composed.** I do not accept `fable`'s dominance claim as a *measurement*. \"R3 alone leaves F1\" is true of a change that currently decides nothing \u2014 R3 is wired to no gate. Two repairs at disjoint sites fixing disjoint defects is the weak \"they don't conflict\" sense the founder's wording excludes. Ship R1 on its ruling; rule R3 separately.\n- **My delivery claims no composition.**\n\n## `falsifier` / `falsifier_result`\n\nDelivered at real paths:\n- `scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py` (producer, M-A/M-B/M-C)\n- `bench/tests/test_the_credence_coordinate_still_carries_consequence_2026-11-14.py` (7 guards)\n- `docs/MATHEMATICAL_APPENDIX.md` \u00a77.7.1.a (the committed measurement; sole changed dispatch artefact, `b86878ca\u2026` \u2192 `a3b89eb1\u2026`)\n\n```\n$ python3 -m pytest bench/tests/test_the_credence_coordinate_still_carries_consequence_2026-11-14.py -q\n7 passed in 0.63s\n$ python3 -m pytest <test_the_severity_spec_decides_when_promoted, test_verified_true_ledger> -q\n52 passed in 2.30s\n$ python3 -m pytest <5 appendix-reading suites> -q\n82 passed in 5.16s\n```\n\n**What did not work, stated openly \u2014 two defects in my own probe, both caught on my falsification pass:**\n1. First version called `hierarchical_novelty_series([], max_round=1, critical_threshold=\"High\")` and caught `TypeError: missing 1 required positional argument: 'symbols'` \u2014 a **signature** error. It demonstrates nothing about the comparison. Had I reported it, I would have confirmed `cc2`'s claim with the wrong error.\n2. Second version supplied `round_opened`; `_gate_population` keeps on `open_since_round`, so the entry was filtered and the comparison **never ran**. The probe printed `'High' accepted \u2014 no type error`, a clean pass proving nothing. The guard now asserts the entry survives `_gate_population` *before* the probe, so it cannot pass vacuously again.\n3. The z3 lex-pair line originally **printed a verdict I had not computed** (\"unsat by construction\"). Replaced with a solved query over ranks `rA < rB`.\n\n## `strongest_disagreement`\n\n**Against `fable`:** *\"under R3 the consequence verdict `c_d \u227d_d \u03b8_d` contains no `W` term, so a 3rd weight changes **zero** consequence verdicts\"* \u2014 and its gloss, *\"decides nothing the pair gate reads.\"* The first clause is true; the second does not follow and is **refuted by execution**: on a `c_d` tie the lexicographic comparison falls through to `credence`, which contains `W`, and the third weight flips the ordering (0.900 \u227b 0.800 becomes 0.720 \u227a 0.800). Pinned by `test_a_third_weight_changes_a_lexicographic_pair_ordering`. Secondary: *\"the 6 `severity_scale = \"none\"` domains\"* \u2014 measured, **5**; the sixth declares `\"composed\"` and inherits no application level.\n\n**Against `cc2`:** *\"Composition is therefore **strictly worse than R3 alone** on the named property (invariance under strictly increasing re-labelling): the composite inherits the product's `sat`.\"* Under R3 the product **is not the gate** \u2014 the lex pair is, and it is `unsat` (z3 and Wolfram agree). The composite does not inherit a `sat` from a gate R3 retired. `cc2`'s `sat` is a correct result about R2-instead-of-R3 and is being applied to a configuration it does not reach. The REJECT verdict stands; this route to it does not.\n\n## `aims_check`\n\nAdditive \u2014 one producer, one guard file, one appendix amendment; nothing removed, nothing disabled; every guard reached by pytest and executed. Simplest sufficient \u2014 finding J-A's *fix* (removing `W` from `credence`) is a live-computation change and therefore the founder's ruling; I delivered the measurement that a ruling needs and stopped. No key, manifest, or answer file was read; the producer reads `bench/logs`, the live modules, and the domain manifest only.\n\n## `passes_run`\n\n**Five.** (1) digest verification, call-site mapping \u2014 found the three-population split. (2) archive measurement \u2014 found site C's eligible population is empty, which rescues `fable`'s number while refuting its derivation. (3) appendix read \u2014 found J-A, the consequence weight inside `credence`. (4) falsifying my own work \u2014 found the signature-`TypeError`, the vacuous-pass, and the uncomputed z3 verdict; all three repaired. (5) regression across 141 targeted tests, confirming the appendix edit broke nothing. Pass 5 produced no new above-threshold finding, so I stopped.\n\n## What would refute me\n\n1. **J-A falls** if `compute_sev_f(\"HARD\", c, v) == compute_sev_f(\"SOFT\", c, v)` for all `(c, v)` \u2014 i.e. `W` is not in the credence coordinate. Run the guard.\n2. **My J3 reason falls** if the pair is specified as compared on `c_d` *only*, with no tie-break \u2014 then `credence` is never read and `W` really is jobless. \u00a77.7.1 does not say this; a founder ruling that it does would overturn me.\n3. **My J1 correction falls** if any archived registry contains a demotion-eligible entry at or above the cut \u2014 site C's population would stop being empty and `fable`'s 422/519 would stop being the right number to quote. Measured 0/133 today.\n4. **My \"six spellings\" claim falls** if `inspect.signature` is the wrong reader \u2014 e.g. a decorator rewrites the defaults at import. Pinned by the enumerating test, which would then show a DRIFT.\n5. **My refusal to call R1+R3 a composition falls** on a measurement showing the composed state dominates either alone on a named property \u2014 which requires R3 to be wired to a gate first. It is not.",
+  "t_start_epoch": 1794617720.3342268,
+  "t_end_epoch": 1794618399.2069912,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo",
+      "built": false
+    }
+  ]
+}

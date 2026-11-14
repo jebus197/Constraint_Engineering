@@ -360,6 +360,10 @@ def _render_universal_minimal(max_chars: int | None = None) -> str:
         universal_text = formal_path.read_text(encoding="utf-8")
     elif prose_path.exists():
         universal_text = prose_path.read_text(encoding="utf-8")
+    #: ★ B194. A DRAFT BLOCK REACHES 0 PROMPTS. Without this the HARD half of an
+    #: unratified draft is carried verbatim below while its not-in-force header,
+    #: being SOFT, is carried nowhere.
+    universal_text = strip_not_in_force(universal_text)
 
     lines = ["CDSFL CORE MINIMAL"]
     lines.extend(_flatten_policy_items(universal_policy, "policy"))
@@ -710,6 +714,62 @@ _HARD_BLOCK_MARKERS = (
     " NON-NEGOTIABLE ", " FORBIDDEN ", " DO NOT ", " ALWAYS ",
 )
 
+#: ★ B194. A BLOCK MAY SIT IN THE CANONICAL FILE AND BIND NOTHING.
+#:
+#: FOUND BY THE `cc2` SEAT IN THE 2026-11-14 JOINT ROUND, which was asked to
+#: write the paragraph the founder would paste for his proposed 4th formal
+#: standard and DECLINED to put it where the brief pointed. Its reason, and it
+#: verified here by calling the predicate rather than taking the seat's word:
+#: a draft split into 2 blocks -- a `PROPOSED -- NOT IN FORCE` header and a
+#: directive body -- classifies the BODY as HARD on the word MUST and the
+#: HEADER as SOFT, because the header carries none of the keywords above. In
+#: `_render_universal_minimal` only HARD blocks are carried, so the binding
+#: sentence reaches every seat and the sentence saying it is not binding
+#: reaches none of them.
+#:
+#: WHY NOT REWORD THE DRAFT TO DODGE THE KEYWORDS, which is the obvious
+#: workaround: `cc2` refused it on the right ground -- *"the next author would
+#: not know to"* -- and a convention that depends on each author rediscovering
+#: it is the unwired addition `additive-standard` forbids.
+#:
+#: THE MARKER IS PER BLOCK AND DELIBERATELY NOT A REGION. A region needs a
+#: closing marker, and an unbalanced region is a live failure mode in this
+#: project's own note linter. A draft spanning 3 paragraphs carries the marker
+#: 3 times, and each paragraph then says of itself that it is not in force,
+#: which is the honest reading at the point a human sees it.
+_NOT_IN_FORCE_MARKER = "[CDSFL:NOT-IN-FORCE]"
+
+#: Blank-line block boundaries, WITH their own text, so a strip can remove a
+#: marked block and leave every other byte untouched. Rejoining through
+#: `_split_packet_directives` would have re-shaped the whitespace of the FULL
+#: specification for every model, which is a behaviour change well beyond the
+#: defect; the guard asserts byte-identity on text carrying no marker.
+_BLOCK_GAP_RE = re.compile(r"\n[ \t]*\n")
+
+
+def block_is_not_in_force(block: str) -> bool:
+    """True when this block carries the explicit not-in-force marker."""
+    return _NOT_IN_FORCE_MARKER in block.upper()
+
+
+def strip_not_in_force(text: str) -> str:
+    """Directive text with every not-in-force block removed, byte-exact otherwise.
+
+    Returns `text` unchanged, byte for byte, when no block carries the marker.
+    """
+    out: list[str] = []
+    pos = 0
+    for m in _BLOCK_GAP_RE.finditer(text):
+        seg = text[pos:m.start()]
+        if not block_is_not_in_force(seg):
+            out.append(seg)
+            out.append(m.group(0))
+        pos = m.end()
+    tail = text[pos:]
+    if not block_is_not_in_force(tail):
+        out.append(tail)
+    return "".join(out)
+
 
 def _split_packet_directives(text: str) -> list[str]:
     """Split directive text into individual blocks by structure."""
@@ -801,6 +861,11 @@ def _load_universal_directive(model: str | None = None) -> DirectivePacket:
 
     path = formal_path if formal_path.exists() else prose_path
     full_text = path.read_text(encoding="utf-8") if path.exists() else ""
+    #: ★ B194. The FULL path does carry the warning, because it carries the file.
+    #: It is stripped here anyway, because the fix's stated property is that a
+    #: marked block reaches 0 prompts -- not that it reaches a prompt next to a
+    #: caveat. Byte-exact when nothing is marked; the guard asserts that.
+    full_text = strip_not_in_force(full_text)
 
     # C18: a model with NO phenotype entry silently inherits the dataclass
     # default, whose `max_directive_chars` is 8000 against the 12000 that

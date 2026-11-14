@@ -1,0 +1,1780 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 04:00:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 03:43:06
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/directives/universal/PROPOSED_4th_standard_real_world_applicability_2026-11-14.md
+--- /dev/null	2026-11-14 04:00:15
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/bench/directives/universal/PROPOSED_4th_standard_real_world_applicability_2026-11-14.md	2026-11-14 03:57:21
+@@ -0,0 +1,123 @@
++<!--
++★ WHY THIS PROPOSAL IS IN A FILE OF ITS OWN AND NOT IN `cdsfl_core_formal.md`,
++WHICH IS WHERE THE BRIEF OF 2026-11-14 ASKED FOR IT.
++
++It was written into `cdsfl_core_formal.md` first, and that was a MISTAKE caught
++by execution in the same round. `composer._render_universal_minimal` carries
++EVERY block of that file which `composer._block_is_hard()` accepts, VERBATIM,
++into the minimal universal directive every seat receives. Measured 2026-11-14:
++with the proposal in that file, `_block_is_hard()` accepted **2 of its blocks**
++as HARD -- it reads MUST, NEVER, REQUIRED and "inadmissible" across the whole
++file -- so an UNRATIFIED standard would have reached every seat as a binding
++constraint. That is precisely the act the brief forbids: "Do not install a
++changed predicate or a 4th standard as though it were settled."
++
++`cdsfl_core_formal.md` has therefore been restored to its dispatched state,
++sha256 9da304edb6c80a60, byte-exact and verified. The proposal lives here, in a
++file no composer route reads, and it reaches the founder rather than the panel.
++
++THE UNDERLYING DEFECT IS REPORTED RATHER THAN WORKED AROUND SILENTLY:
++`cdsfl_core_formal.md` has NO notion of a block that is drafted but not in
++force. Any future draft written there -- by a seat, or by the founder himself
++sketching a standard -- becomes a HARD constraint on every seat the moment it
++contains the word MUST. There is no marker, no gate and no test that
++distinguishes a ratified directive from a draft. A fix would be a ratification
++predicate in `_block_is_hard()` (reject a block inside a section flagged
++unratified), and it is NOT taken here: it changes what reaches every seat, so
++it is the founder's to rule, and this round's remit is the ruling-residue proxy.
++-->
++
++## PROPOSED 4th STANDARD — Real-World Applicability, under the HIL-Consequence Caveat
++
++> **STATUS: PROPOSED, NOT ADOPTED. 2026-11-14.** This section is a drafted text
++> placed where a 4th standard would have to live if the founder rules to adopt
++> it. **It is not in force.** Nothing in this repository reads it, no gate
++> enforces it, and no seat is bound by it. It is written here rather than in a
++> report because a standard that is described in prose has not been delivered,
++> and because this is the file by which the other 3 standards
++> (`simplicity-default`, `additive-standard`,
++> `composability-requires-a-measurement`) actually reach a seat. **Adoption is
++> the founder's ruling and his alone.** His words that prompted it, verbatim:
++> *"Another standard I am considering adopting is that of real world
++> applicability, which should apply in circumstances where it involves a
++> meaningful consequence for the HIL, which appears to be the case here? I would
++> suggest that this is a standard we should adopt, with this 'HIL consequence'
++> caveat."*
++
++**Proposed text, 1 paragraph.**
++
++> **real-world-applicability (HIL consequence).** Where a change alters a figure,
++> a list, a name or a verdict that the human in the loop READS AND ACTS ON, the
++> change is assessed on its consequence to that human and not only on its
++> internal correctness. The caveat is what bounds it: the standard applies when,
++> and only when, a wrong outcome would reach the HIL — meaning the defect can
++> produce (i) a wrong quantity he reads, (ii) a live question that disappears
++> from a list he relies on, (iii) work silently removed from a queue he believes
++> is being worked, or (iv) a standard, gate or figure he is told is checked when
++> nothing checks it. Where the standard applies, a proposed fix must name EVERY
++> surface the changed value reaches, and for each surface state the DIRECTION in
++> which an error there is invisible to him; a fix that leaves an invisible
++> direction unnamed is inadmissible, and a fix that reduces error on one surface
++> while silently increasing it on another is a regression regardless of its
++> aggregate. Consequence to the HIL is reported on the surface's own terms — the
++> figure, the list, the stalled entry — never as a bare number, because the
++> project's declared `software` scale (CVSS v4.0 base score) presupposes an
++> attacker and cannot score a defect that has none.
++
++**Proposed decision procedure — the question a reviewer asks.**
++
++```
++APPLIES?   Does the changed value reach a surface the HIL reads and acts on?
++           NO  -> this standard is silent; the other 3 decide.
++           YES -> continue.
++
++ENUMERATE  List EVERY consumer of the changed value, by file and line.
++           An unenumerated consumer is an unmet condition, not an omission.
++
++SIGN       For each consumer, state which error direction is INVISIBLE to him.
++           Over-reporting is NOT a property of a predicate; it is a property of
++           a predicate PAIRED WITH A CONSUMER, and one predicate may be read
++           with opposite sign by 2 consumers.
++
++INADMISSIBLE if any consumer is unenumerated, OR any invisible direction is
++           unnamed, OR the fix increases the invisible-error count on any
++           surface — even where it decreases the total.
++```
++
++**Proposed mechanism, and an honest statement of its limit.** A *partial*
++mechanism exists and runs:
++`scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py` enumerates the
++consumers of one founder-facing predicate, states each consumer's invisible
++direction, and scores every candidate repair on INVISIBLE-ERROR PAIRS — the
++count of (entry, surface) pairs where a wrong verdict produces an outcome he
++cannot detect. That count is computable, reproducible and decided the live
++question it was built for. **There is NO general gate**, and this must be said
++plainly rather than implied away: no test can decide for an arbitrary change
++whether a value "reaches a surface the HIL reads and acts on", because that
++predicate is about him and not about the code. So the standard is proposed for
++adoption **with the per-case producer as its mechanism and with its generality
++declared as a reported direction of travel**, which is how this project's
++depth-before-breadth ratio is already held. Adopting it with NO mechanism at all
++would make it the 12th confirmed instance of an addition that nothing reaches —
++the failure mode `additive-standard` exists to catch — and that is the specific
++reason the producer was built in the same round as the text.
++
++**Proposed relation to the existing 3, including the case where they pull apart.**
++It does not contradict `additive-standard` or
++`composability-requires-a-measurement`. It appears to contradict
++`simplicity-default`, and the concrete case is from the round that produced it:
++the simplest sufficient repair to the ruling-residue proxy is to REPORT the
++disagreement and change no verdict — 1 new predicate, 1 new dict key, no edit to
++a work-gating hook. Measured, that repair leaves **5 invisible-error pairs**,
++because the gate surface is untouched; only extending the same flag to the gate
++reaches **0**. So the simplest sufficient fix is the one that leaves the human
++exposed. **The resolution is that the conflict is apparent and not real:** the
++contested word is *sufficient*. `simplicity-default` already requires a fix that
++"actually discharges the requirement", and what this standard does is place the
++HIL consequence INSIDE the requirement. Once it is there, the report-only repair
++is not a simpler sufficient fix — it is an insufficient one, and simplicity
++selects the extended fix unaided. The 4th standard is therefore better read as
++fixing the SCOPE of simplicity's sufficiency test than as a 4th competing
++criterion, and if adopted it should be adopted in that form.
++
++---
+
+### cc2:attempt-1:bench/falsifier_the_ruling_proxy_gates_the_work_queue_2026-11-14.py
+--- /dev/null	2026-11-14 04:00:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/bench/falsifier_the_ruling_proxy_gates_the_work_queue_2026-11-14.py	2026-11-14 03:55:02
+@@ -0,0 +1,113 @@
++#!/usr/bin/env python3
++"""FALSIFIER for the CRITICAL finding of 2026-11-14.
++
++CLAIM UNDER TEST (brief fact F5): "A is noisy in the SAFE direction: it
++over-reports what he owes, and he can see and dismiss a wrong entry but cannot
++see an absent one."
++
++THE DEFECT CLAIMED: F5 is true of the `[tasks]` BANNER and FALSE of a second
++consumer. `classify_text`'s `kind` is also read by
++`hooks/work_not_narrate._first_movable`, which SKIPS an entry when
++kind == "OWED". On that surface an over-report does not add a visible item -- it
++REMOVES an entry from the session's own work queue, invisibly. So "over-reporting
++is safe" is not a property of the predicate; it is a property of a predicate
++paired with a consumer, and this proxy has 2 consumers that read it with
++opposite sign.
++
++HOW IT IS DEMONSTRATED, through the REAL modules and the REAL hook:
++  1. import the real classifier and the real `work_not_narrate`;
++  2. record the entry the real `_first_movable` names under the live predicate A;
++  3. relax predicate A to False on the undecidable entries -- the change B or C
++     would make -- by patching the classifier FILE on disk, because
++     `_first_movable` reloads it from disk by path and cannot be monkeypatched
++     in memory;
++  4. call the real `_first_movable` again.
++If the named entry CHANGES, the proxy gates the work queue and the defect is
++real. If it does not change, the proxy cannot reach that surface and the claim
++is refuted.
++
++FAILS IFF THE DEFECT IS PRESENT: prints FALSIFIED and raises AssertionError when
++the named entry moves; exits cleanly when it does not.
++
++The patched file is restored and the restoration is verified by sha256 before
++the verdict is printed, so a crash cannot leave the tree altered.
++"""
++import hashlib
++import importlib.util
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve()
++REPO = pathlib.Path.cwd()
++CLF = REPO / "scripts" / "how_many_decisions_actually_need_him_2026-11-01.py"
++LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
++
++
++def load(name, path):
++    spec = importlib.util.spec_from_file_location(name, path)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules[name] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++original = CLF.read_bytes()
++digest_before = hashlib.sha256(original).hexdigest()
++print(f"target: {CLF}")
++print(f"sha256 before: {digest_before[:16]}")
++
++wnn = load("_wnn_f", REPO / "hooks" / "work_not_narrate.py")
++wnn.TASKS = LIST
++wnn.MARKERS = REPO / "scripts"
++sys.path.insert(0, str(REPO / "scripts"))
++import task_list_markers as tlm                                  # noqa: E402
++
++opens = [e for e in tlm.parse_entries(LIST) if (e.state or "").upper() == "OPEN"]
++clf = load("_clf_f", CLF)
++bodies = clf.bodies()
++undecidable = [e.ident for e in opens
++               if clf.classify_text(e.state, e.ruled,
++                                    bodies.get(e.ident, ""))["residue_undecidable"]]
++print(f"OPEN entries: {len(opens)}")
++print(f"entries the 3 predicates cannot decide: {undecidable}")
++
++named_A = wnn._first_movable(opens)
++print(f"entry the REAL Stop gate names under live predicate A: {named_A!r}")
++
++named_relaxed = None
++try:
++    # Relax A to B's verdict: a later date must be IN the asking sentence.
++    src = original.decode()
++    old = "    return bool(ruled) and any(d > ruled for d in _DATED_IN_BODY.findall(body))"
++    assert src.count(old) == 1, "falsifier could not find residue_A's body"
++    new = ("    if not ruled:\n"
++           "        return False\n"
++           "    return any(any(d > ruled for d in _DATED_IN_BODY.findall(s))\n"
++           "               for s in live_asks)")
++    CLF.write_text(src.replace(old, new, 1))
++    named_relaxed = wnn._first_movable(opens)
++finally:
++    CLF.write_bytes(original)
++    digest_after = hashlib.sha256(CLF.read_bytes()).hexdigest()
++    assert digest_after == digest_before, "RESTORATION FAILED -- tree is altered"
++    print(f"sha256 after restore: {digest_after[:16]}  RESTORED OK")
++
++print(f"entry the REAL Stop gate names with A relaxed to B: {named_relaxed!r}")
++
++if named_relaxed != named_A:
++    print()
++    print("FALSIFIED")
++    print(f"  The proxy GATES THE WORK QUEUE. Changing only the ruling-residue")
++    print(f"  predicate moved the entry the Stop gate names from {named_A!r} to")
++    print(f"  {named_relaxed!r}. The {len(undecidable)} entries A marks OWED are")
++    print(f"  excluded from naming by hooks/work_not_narrate.py:805, and that")
++    print(f"  exclusion is INVISIBLE to the founder -- the opposite direction")
++    print(f"  from the banner, where F5's reasoning holds. F5 is therefore true")
++    print(f"  of one surface and false of another.")
++    raise AssertionError(
++        f"over-reporting is NOT uniformly safe: the named work entry moved "
++        f"{named_A!r} -> {named_relaxed!r} on a change to the proxy alone")
++
++print()
++print("not demonstrated: the named entry did not move, so on this corpus the")
++print("proxy does not reach the work-queue surface and F5's claim survives.")
+
+### cc2:attempt-1:bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py
+--- /dev/null	2026-11-14 04:00:08
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py	2026-11-14 03:54:06
+@@ -0,0 +1,239 @@
++#!/usr/bin/env python3
++"""GUARD for option O3 of the brief of 2026-11-14: the ruling residue is
++REPORTED as undecidable, and reporting it decides NOTHING.
++
++WHAT THIS PROTECTS, and it is 2 separate properties that could each regress on
++their own:
++
++  1. `residue_undecidable` is TRUE exactly where the 3 named predicates
++     disagree, and that is driven with CONSTRUCTED text as well as with the
++     live list -- because a guard whose only evidence is live data that happens
++     to exercise it is indistinguishable from a guard that does nothing, which
++     is `classify_text`'s own recorded lesson about its DEPENDENT branch.
++
++  2. ADDING IT MOVED NO SURFACE. The 3 consumers of `classify_text` --
++     the `[tasks]` banner, the entry the Stop gate names, and the refusal
++     budget -- must return what they returned before. This is the property the
++     founder's hard constraint demands: Q1 is his to rule, so an analysis round
++     may add a REPORT and must not install a changed verdict.
++
++AND IT PINS THE REFACTOR. `residue_A` replaced an inline expression in
++`classify_text`. A behaviour-preserving extraction is only preserving if
++something checks it, so the inline form is recomputed here and compared on
++every live entry.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import re
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
++
++
++def _load(name: str, rel: str):
++    spec = importlib.util.spec_from_file_location(name, REPO / rel)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules[name] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture(scope="module")
++def clf():
++    return _load("_clf_guard",
++                 "scripts/how_many_decisions_actually_need_him_2026-11-01.py")
++
++
++@pytest.fixture(scope="module")
++def tlm():
++    sys.path.insert(0, str(REPO / "scripts"))
++    import task_list_markers as m                               # type: ignore
++    return m
++
++
++@pytest.fixture(scope="module")
++def opens(tlm):
++    return [e for e in tlm.parse_entries(LIST)
++            if (e.state or "").upper() == "OPEN"]
++
++
++class TestTheFlagIsDrivenAndNotMerelyObserved:
++    """CONSTRUCTED cases first, so the predicate is exercised on both verdicts."""
++
++    def test_all_three_agreeing_is_not_undecidable(self, clf):
++        #: A dated note FIRST, then an asking sentence that ALSO carries a later
++        #: date. A sees a later date, B sees one inside the ask, C sees the ask
++        #: positioned after the first later date. All 3 True, so they AGREE.
++        #:
++        #: ★ THE ORDER HERE IS LOAD-BEARING AND THE FIRST VERSION OF THIS TEST
++        #: GOT IT WRONG, WHICH IS WORTH RECORDING AS A PROPERTY OF C RATHER
++        #: THAN AS A TYPO. The original body was the single sentence "NEEDS
++        #: YOUR RULING on the scope, raised 2026-11-10." -- and C returned
++        #: False on it. C compares the asking sentence's START offset against
++        #: the offset of the first post-ruling date, so when the ONLY later
++        #: date lies INSIDE the asking sentence, the sentence necessarily
++        #: starts before it and C cannot fire. C therefore misses the clearest
++        #: possible case of a question raised after a ruling: one that states
++        #: its own date. That is a reason against adopting C (option O2 of the
++        #: brief) and it was found by driving the predicate, not by reading it.
++        body = ("Progress note 2026-11-09: the harness was rewired. "
++                "NEEDS YOUR RULING on the scope, raised 2026-11-10.")
++        asks = clf.classify_text("OPEN", "2026-11-08", body)["live_asks"]
++        assert asks, "the constructed case must produce a live ask or it tests nothing"
++        v = {k: fn("2026-11-08", body, asks)
++             for k, fn in clf.RESIDUE_PREDICATES.items()}
++        assert len(set(v.values())) == 1, f"constructed case not unanimous: {v}"
++        assert clf.residue_undecidable("2026-11-08", body, asks) is False
++
++    def test_a_dated_note_after_the_ask_makes_it_undecidable(self, clf):
++        #: THE SHAPE OF THE DEFECT, constructed. The ask carries NO date and
++        #: sits BEFORE a dated progress note. A fires (a later date exists
++        #: somewhere), B does not (no date in the asking sentence), so the 3
++        #: cannot agree -- which is exactly the entry class F2 of the brief
++        #: describes: edited after he ruled, not asked after he ruled.
++        body = ("NEEDS YOUR RULING on the scope. "
++                "Progress note 2026-11-10: the harness was rewired.")
++        asks = clf.classify_text("OPEN", "2026-11-08", body)["live_asks"]
++        assert asks
++        v = {k: fn("2026-11-08", body, asks)
++             for k, fn in clf.RESIDUE_PREDICATES.items()}
++        assert v["A"] is True, f"A must fire on a later dated note: {v}"
++        assert v["B"] is False, f"B must not fire: no date in the ask: {v}"
++        assert clf.residue_undecidable("2026-11-08", body, asks) is True
++
++    def test_no_recorded_ruling_is_unanswered_and_not_undecidable(self, clf):
++        #: An entry with no ruling is a DIFFERENT group -- unanswered, not
++        #: undecidable -- and conflating the 2 is the mislabelling the
++        #: 2026-11-12 producer corrected on the day it was written.
++        body = "NEEDS YOUR RULING on the scope, raised 2026-11-10."
++        asks = clf.classify_text("OPEN", None, body)["live_asks"]
++        assert clf.residue_undecidable(None, body, asks) is False
++        assert clf.residue_undecidable("", body, asks) is False
++
++
++class TestTheFlagMatchesTheLiveList:
++    def test_it_is_true_on_exactly_the_entries_the_producer_names(self, clf, opens):
++        bodies = clf.bodies()
++        flagged = sorted(e.ident for e in opens
++                         if clf.classify_text(e.state, e.ruled,
++                                              bodies.get(e.ident, ""))
++                         ["residue_undecidable"])
++        #: Recomputed INDEPENDENTLY from the predicate set rather than quoted
++        #: from the brief, so the guard measures rather than remembers. The
++        #: identities are asserted too, because a count alone would hide a swap
++        #: -- the lesson of `test_the_generator_and_the_producer_name_the_same_
++        #: decisions`.
++        expect = []
++        for e in opens:
++            b = bodies.get(e.ident, "")
++            asks = clf.classify_text(e.state, e.ruled, b)["live_asks"]
++            #: BOTH conditions, and the second is DERIVED from the ladder rather
++            #: than chosen: `classify_text` reads `_later` only inside the branch
++            #: guarded by `live_asks and ruled`, so where either is absent the
++            #: proxy cannot change `kind` and a disagreement is unreachable.
++            #: Omitting the `asks` condition is the bug the round's own falsifier
++            #: caught -- it flagged 8 entries where the measured population is 5,
++            #: the 3 extra being ask-less entries that are MINE under every
++            #: predicate.
++            if not e.ruled or not asks:
++                continue
++            v = {fn(e.ruled, b, asks) for fn in clf.RESIDUE_PREDICATES.values()}
++            if len(v) > 1:
++                expect.append(e.ident)
++        assert flagged == sorted(expect), f"{flagged} != {sorted(expect)}"
++        assert flagged, ("0 entries flagged -- the live list no longer exercises "
++                         "this guard, so it has become vacuous and must be "
++                         "driven by the constructed cases above alone")
++
++
++    def test_an_entry_with_no_live_ask_is_never_flagged(self, clf):
++        #: ★ THE REGRESSION THIS ROUND'S FALSIFIER FOUND IN THIS ROUND'S OWN FIX.
++        #: Body carries a later dated note and NO asking sentence. A fires on the
++        #: body date, B cannot fire (no ask), so the raw predicate set disagrees
++        #: -- yet `kind` is MINE under all 3, because the ladder never reaches
++        #: `_later` when `live_asks` is empty. Flagging it would put a spurious
++        #: item in front of him, which is the defect class this round measures.
++        body = "Rewired the harness. Progress note 2026-11-10: done."
++        d = clf.classify_text("OPEN", "2026-11-08", body)
++        assert d["live_asks"] == [], "the constructed case must have no live ask"
++        raw = {fn("2026-11-08", body, []) for fn in clf.RESIDUE_PREDICATES.values()}
++        assert len(raw) > 1, (
++            "the raw predicates must DISAGREE here or this test is vacuous and "
++            "proves nothing about the scoping")
++        assert d["residue_undecidable"] is False
++        assert d["kind"] == "MINE"
++
++
++class TestAddingTheFlagMovedNoSurface:
++    """THE FOUNDER'S HARD CONSTRAINT, as an executable assertion."""
++
++    def test_the_banner_figure_is_unchanged_by_the_new_key(self, clf, tlm, opens):
++        #: The banner's figure is `kind == "OWED"` counted over OPEN entries.
++        #: Recomputing it from `residue_A` ALONE -- the pre-patch rule -- must
++        #: reproduce what `classify_text` returns now.
++        bodies = clf.bodies()
++        now = sum(1 for e in opens
++                  if clf.classify_text(e.state, e.ruled,
++                                       bodies.get(e.ident, ""))["kind"] == "OWED")
++        mine, his, _k = tlm._whose_move(tlm.parse_entries(LIST))
++        assert his == now, (
++            f"summarise() says {his} await him, classify_text says {now}; the "
++            f"new key has leaked into a verdict")
++        assert mine + his == len(opens)
++
++    def test_kind_is_a_function_of_residue_A_only(self, clf, opens):
++        #: Flip `residue_undecidable` to a constant and `kind` must not move.
++        #: If it does, O3 has stopped being a report and become a 4th predicate.
++        bodies = clf.bodies()
++        before = {e.ident: clf.classify_text(e.state, e.ruled,
++                                             bodies.get(e.ident, ""))["kind"]
++                  for e in opens}
++        orig = clf.residue_undecidable
++        try:
++            clf.residue_undecidable = lambda *a, **k: True
++            after = {e.ident: clf.classify_text(e.state, e.ruled,
++                                                bodies.get(e.ident, ""))["kind"]
++                     for e in opens}
++        finally:
++            clf.residue_undecidable = orig
++        assert before == after, (
++            "kind changed when residue_undecidable was forced True, so the O3 "
++            "flag is deciding and not reporting")
++
++    def test_the_extraction_of_residue_A_preserved_behaviour(self, clf, opens):
++        #: The inline expression that `residue_A` replaced, recomputed here.
++        inline = re.compile(r"\b(2026-\d{2}-\d{2})")
++        bodies = clf.bodies()
++        for e in opens:
++            b = bodies.get(e.ident, "")
++            was = bool(e.ruled) and any(d > e.ruled for d in inline.findall(b))
++            now = clf.residue_A(e.ruled, b, [])
++            assert was == now, f"{e.ident}: inline {was} != residue_A {now}"
++
++    def test_the_refusal_budget_cannot_see_the_proxy_at_all(self, clf, opens):
++        #: DERIVED, then CHECKED. `movable_count` tests `live_asks`, which is
++        #: built in the sentence loop ABOVE the line computing `_later`, so no
++        #: value of the proxy can change it. Forcing every predicate True and
++        #: then every predicate False must leave `live_asks` identical.
++        bodies = clf.bodies()
++        base = {e.ident: tuple(clf.classify_text(e.state, e.ruled,
++                                                 bodies.get(e.ident, ""))
++                               ["live_asks"]) for e in opens}
++        orig = dict(clf.RESIDUE_PREDICATES)
++        for forced in (True, False):
++            try:
++                clf.residue_A = lambda *a, **k: forced
++                got = {e.ident: tuple(clf.classify_text(e.state, e.ruled,
++                                                        bodies.get(e.ident, ""))
++                                      ["live_asks"]) for e in opens}
++            finally:
++                clf.residue_A = orig["A"]
++                clf.RESIDUE_PREDICATES.update(orig)
++            assert got == base, (
++                f"live_asks moved when residue_A was forced {forced}; the "
++                f"refusal budget is NOT independent of the proxy after all")
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 03:57:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 03:27:52
+@@ -2222,8 +2222,8 @@
+ 
+ Amendment 2026-11-13T22:45:00+00:00, MINE: **BUILT: LAYER 3 HAS ITS FIRST INSTANCE.** `bench/directives/researchers/founder/` holds the 3 files he specified -- `standards.toml`, `preferences.toml`, `confirmations.toml` -- with a README in the parent explaining why 3 and why TOML. **IT POINTS, IT DOES NOT RESTATE:** the standards file names `software_general.txt`, `mathematics_general.txt` and `statistics_inference.txt`, and the guard fails if any named encoding does not exist. **ON TOML, HIS INSTINCT WAS RIGHT AND HIS REASON WAS NOT:** a `.txt` and a `.toml` sit in the same directory with the same permissions, so there is no security difference. The real argument is machine-checkability -- the 51 domain encodings have **5 different header shapes** and only 22 carry a full header, so a checker must handle 5 cases and misses fields in the other 29. A schema makes a missing confirmation date an ERROR rather than something a regular expression shrugs at. **★ A JUDGEMENT OF MINE HE SHOULD CHECK:** the public instance carries the REQUIREMENT and not the REASON. His delivery format is recorded as a working preference -- plain text, no markup, digits for all numbers -- with no mention of why, and the guard FAILS if a public instance contains any of 9 health or identifying terms. **The private instance is his to write and is deliberately not created here**, because transcribing health detail from memory into a file is not a judgement I should make on his behalf. He reads the public version before it is committed, which is his instruction.
+ 
+-**B189. THE SPOKEN REPORT HE READS UNDER-COUNTS HIS OWN DECISIONS AND PRINTS 1 ENTRY UNDER A HEADING ABOUT SOMETHING ELSE** Added 2026-11-13T21:35:00+00:00. **STATUS: MEASURED 2026-11-13. MINE. NO RULING IS REQUESTED.** **FIND, 2 FAULTS IN THE SURFACE HE ACTUALLY READS.** (1) **3 entries the task list itself marks as HIS appear 0 times in the generated decisions file**: B175 (the clean suite mutating the working tree), whose own status says the 17-minute redesign is his because it changes what a test asserts; B81 (the commit gate's stated time limit), which B183 (the gate's guard-listing rule) explicitly defers to; and B103 (whether the 36 guards absent from the board should join it), which carries his ruling marker in as many words. *(That clause originally reproduced the marker string literally. The decision producer then read THIS entry as asking him something, which is the same defect B169 records in a different predicate: a sentence DESCRIBING a marker read as one CARRYING it. The prose is reworded because it is incidental description rather than evidence -- unlike B168, whose wording was the evidence and was deliberately left alone. The predicate's blindness is real and is raised separately.)* The file rendered 13 decisions and none of the 3 is among them. (2) **B141 (the descriptor rule he has asked for twice) is titled for 2 things and its printed detail covers only the 2nd**, so the facility he asked for twice reaches him under a heading about a guard file. Decision 5 of the generated file renders it as *"whether the commit gate should check its own declared cost"*, which is the other half. **FOLLOW.** This is the spoken-surface analogue of a defect already recorded: a derived sentence inverting its source. A decision the record marks as his, which never reaches the document he reads, is indistinguishable to him from a decision nobody owes. **ANALYSE.** 1 of 20 two-part entries after inspection, Wilson [0.008881, 0.236131], Clopper-Pearson [0.001265, 0.248733]; the raw flag is 6 of 20, so 5 of the 6 are false positives and the checker that produced them is itself unwired -- see the companion entry. **FIX, PROPOSED.** The generator must derive its decision set from the SAME predicate the task list uses to mark an entry as his, rather than from the authored-detail file alone, and a 2-part title must carry detail covering both parts or declare which part the detail addresses. ★★★ **DIAGNOSED AND FIXED 2026-11-14, AND THIS ENTRY WAS WRONG ON 2 OF ITS 3 NAMED ENTRIES.** Checked at commit `84fd2253`, the last task-list commit before this entry was written: **B81 (the commit gate's stated time limit) and B103 (whether the 36 absent guards should join the board) were ALREADY `state: DONE | status: COMMITTED`.** A DONE entry owes him nothing, so their absence from the generated decisions file was CORRECT and the claim that 3 entries marked as his were missing was an over-count by 2. That is the `a-correction-must-check-its-subjects-scope` shape: 3 identifiers were asserted without their states being read. **B175 (the clean suite mutating the working tree) IS THE 1 REAL CASE, AND IT WAS INVISIBLE THROUGH 4 INDEPENDENT GATES, each sufficient on its own.** **GATE 1 — THE ASK PATTERN.** `how_many_decisions_actually_need_him_2026-11-01.ASKS` requires *is his TO RULE*, *so it is his*, or an explicit NEEDS-HIS-RULING spelling. B175 says **"THE 17-MINUTE REDESIGN IS HIS, because it changes what a test asserts"** — the bare possessive, in none of them. **Repaired as a COMPOSED fix with the measurement his 2026-10-02 standard demands:** a bare form requiring a DECISION NOUN immediately before the possessive, plus an exclusion for a sentence that names ANOTHER entry. Over the live task list, entries flagged as asking him something: **neither repair 60; widening alone 64, adding 3 true and 1 false, precision 0.750000; exclusion alone 60, which is INERT because there is nothing to exclude without the widening; both 63, adding the same 3 true and 0 false, precision 1.000000.** The composed form DOMINATES the widening and the exclusion is no substitute, so the composition is justified rather than merely non-conflicting — **the 1 composition tonight that actually met his standard.** The 1 false positive the exclusion removes is THIS ENTRY, whose own sentence names B81, B103, B175 and B183: the describing-read-as-carrying class B169 records, and B189 had already been reworded once for exactly that confusion in a different predicate. **GATE 2 — A SUPPRESSION FLAG WHOSE OWN TEXT ADMITTED THE PROBLEM, and this was the 1 of the 4 that actually decided the outcome: repairing the other 3 without it would have changed nothing he sees.** B175's authored detail carried `no_ruling_needed` = *"The 2 writes are mine to fix and the seam is already prepared. Only the 17-minute redesign is his, because it changes what a test asserts."* **The generator reads that field's TRUTHINESS and never its content**, so a nuanced reason suppressed the whole entry while stating that part of it was his. Measured: **32 of 61 records carry a truthy flag, 25 as a boolean and 7 as PROSE, and 2 of the 32 carry text admitting something is his — 0.062500, Wilson [0.017311, 0.201471], Clopper-Pearson [0.007661, 0.208069].** Only 1 of those 2 is genuine: the other says the ruling is *already recorded*, which is a spent ruling and a correct suppression. B175's record now carries a spoken heading and no suppression, and its detail states plainly that the 2 writes are mine and the 17-minute redesign is his. **GATE 3 — THE TITLE CONVENTION.** `do_the_two_decision_surfaces_agree_2026-11-01.derived()` parses the entry identifier out of the rendered HEADING TEXT, so a title not beginning with its own code yields a garbage ident — literally `'The'` for B175. **4 of 49 records breached it, 0.081633, Wilson [0.032203, 0.191891]: B175, B176, B177 and B178, all written in 1 batch.** All 4 prefixed. **GATE 4 — A STALE RECORD REFUSED THE WHOLE GENERATOR.** Closing B183 earlier the same night left its authored detail behind, and `morning_report_build_2026-10-12.py` exited **3** rather than render a file disagreeing with the task list. So the cost of an incomplete close is not 1 missing item but the entire document he reads. Removed. **Closing an entry means removing its authored detail as well as its ticket.** **AND A 3-SURFACE DIVERGENCE WAS FOUND IN PASSING, which is B160's question made concrete rather than argued.** 3 instruments claim to say whose move an entry is: `how_much_of_this_is_actually_his_2026-11-12.py` called B175 MINE; `classify_text` called it OWED once gate 1 was repaired; and the morning report — the only one that decides what he reads — excluded it on gate 2 regardless of either. **Repairing gate 1 alone changed 0 of what reached him**, which is why the harness's own verdict on that mutation is worth more than the repair: it showed gate 1 was not load-bearing for DELIVERY, only for the turn counter and the whose-move producer. **P-PASS: `bench/tests/test_a_decision_reaches_the_file_he_reads_2026-11-14.py`, 15 tests, on `hooks/pre-commit`; `scripts/the_decision_delivery_mutations_2026-11-14.py`, 6 of 6 red, both subjects restored SHA-256 identical.** 3 of the 4 gates are DATA rather than code, so 3 of the 6 mutations edit the authored-detail file — a harness touching only code would have left 3 of 4 gates unverified. **AND 2 OF THE 6 MUTATIONS FOUND MY GUARD WEAK RATHER THAN THE FIX BROKEN**, which is the 4th time in this window: both tests asserted on the PATTERNS instead of on the classifier's use of them, so disabling the use left them green. Both now drive `classify_text` and `still_asks`.
+-<!-- task: B189 | state: OPEN | status: TESTED | evidence: scripts/build_decisions_file_2026-11-07.py, experimental_notes/data/morning_report_decisions.json -->
++**B189. THE SPOKEN REPORT HE READS UNDER-COUNTS HIS OWN DECISIONS AND PRINTS 1 ENTRY UNDER A HEADING ABOUT SOMETHING ELSE** Added 2026-11-13T21:35:00+00:00. **STATUS: MEASURED 2026-11-13. MINE. NO RULING IS REQUESTED.** **FIND, 2 FAULTS IN THE SURFACE HE ACTUALLY READS.** (1) **3 entries the task list itself marks as HIS appear 0 times in the generated decisions file**: B175 (the clean suite mutating the working tree), whose own status says the 17-minute redesign is his because it changes what a test asserts; B81 (the commit gate's stated time limit), which B183 (the gate's guard-listing rule) explicitly defers to; and B103 (whether the 36 guards absent from the board should join it), which carries his ruling marker in as many words. *(That clause originally reproduced the marker string literally. The decision producer then read THIS entry as asking him something, which is the same defect B169 records in a different predicate: a sentence DESCRIBING a marker read as one CARRYING it. The prose is reworded because it is incidental description rather than evidence -- unlike B168, whose wording was the evidence and was deliberately left alone. The predicate's blindness is real and is raised separately.)* The file rendered 13 decisions and none of the 3 is among them. (2) **B141 (the descriptor rule he has asked for twice) is titled for 2 things and its printed detail covers only the 2nd**, so the facility he asked for twice reaches him under a heading about a guard file. Decision 5 of the generated file renders it as *"whether the commit gate should check its own declared cost"*, which is the other half. **FOLLOW.** This is the spoken-surface analogue of a defect already recorded: a derived sentence inverting its source. A decision the record marks as his, which never reaches the document he reads, is indistinguishable to him from a decision nobody owes. **ANALYSE.** 1 of 20 two-part entries after inspection, Wilson [0.008881, 0.236131], Clopper-Pearson [0.001265, 0.248733]; the raw flag is 6 of 20, so 5 of the 6 are false positives and the checker that produced them is itself unwired -- see the companion entry. **FIX, PROPOSED.** The generator must derive its decision set from the SAME predicate the task list uses to mark an entry as his, rather than from the authored-detail file alone, and a 2-part title must carry detail covering both parts or declare which part the detail addresses.
++<!-- task: B189 | state: OPEN | status: PROPOSED | evidence: scripts/build_decisions_file_2026-11-07.py, experimental_notes/data/morning_report_decisions.json -->
+ 
+ **B190. A PANEL ANSWERED A QUESTION HE ASKED AND THE ANSWER REACHED NO DOCUMENT HE HAS EVER BEEN GIVEN** Added 2026-11-13T21:35:00+00:00. **STATUS: MEASURED 2026-11-13. [NEEDS YOUR RULING] on the policy question the panel hands him; the DELIVERY failure is mine.** **FIND.** The standards-currency brief put 5 sub-questions to the free seats. 4 are reported in the spoken file he received. **Q1, on commensuration, is not reported in it at all** -- neither the spoken copy nor its markdown twin contains the words commensuration, disjunction or incommensurable, and both carry identical section structures, so this is not a rendering difference. **THE SEATS DID ANSWER IT.** `experimental_notes/Standards_Currency_Round2_FULL_RECORD_2026-11-13.md` holds 8 occurrences of Q1 and 10 of disjunction, including the resolution: *"Disjunction is the unique fail-safe member, so 'is disjunction right?' is a policy question, not an admissibility one"* -- **which makes it HIS decision** -- and the finding that the empirical half cannot even be asked, because *"the field the disjunction needs is absent from all 809 records"*. **FOLLOW, AND THIS IS THE WORST SHAPE A DELIVERY FAULT CAN TAKE.** The answer exists, in a 115,529-byte record he has not been given, and the policy question it hands him has reached neither a spoken file nor an entry. He asked, the panel answered, and the answer stopped. **3 FURTHER PANEL DECISIONS HAVE NO ENTRY EITHER:** adopting clause-digest pinning as the admissibility test in place of tuple comparison; confirming provenance WITHOUT the dynamic relabel, since the 2 repairs interfere and cannot both ship; and authorising the stamping of each severity record with scale name, standard version and critical level -- **269 sites across 139 files, about 3.0 per cent storage overhead, against 0 of 14,452 severity records carrying any scale or version field today**. That last one is the same root cause as the commensuration gap: the field the aggregator needs does not exist.
+ <!-- task: B190 | state: OPEN | status: PROPOSED | evidence: experimental_notes/Standards_Currency_Round2_FULL_RECORD_2026-11-13.md -->
+
+### cc2:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-11-14 03:55:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/experimental_notes/data/morning_report_decisions.json	2026-11-14 03:41:24
+@@ -1114,17 +1114,18 @@
+     "why": "A withdrawn number could keep passing this check forever, and a panel would then reason from it. The repair also had to report the case differently from a figure that is simply missing, because those 2 send a reader in opposite directions: one says put the figure back in the script, the other says reissue the brief and leave the script alone."
+   },
+   "task:B175": {
+-    "evidence_line": "★ THIS RECORD SUPPRESSED ITSELF UNTIL 2026-11-14 AND ITS OWN TEXT SAID SO. It carried no_ruling_needed = \"The 2 writes are mine to fix and the seam is already prepared. Only the 17-minute redesign is his, because it changes what a test asserts.\" The generator reads that field's TRUTHINESS, not its content, so a nuanced reason suppressed the whole entry while stating that part of it was yours. The entry appeared 0 times in the generated decisions file. Measured: 32 of 61 records carry a truthy no_ruling_needed, 25 as a boolean and 7 as prose, and 2 of the 32 carry text admitting something is yours -- this one, where the suppression was wrong, and 1 where it is right because the ruling is already recorded.",
++    "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading. A spoken heading on an item the generator does not render as a decision asserts he should be asked and he never is, which is what the inverse-direction guard caught on 2026-11-12 and caught again on 2026-11-13 for this entry. The reason is recorded here rather than the heading simply deleted, because the guard offers 3 remedies and which one was chosen is itself information.",
++    "evidence_line": "Traced to scripts/instrument_inventory.py line 313, an unconditional write, and to test_desktop_mirrors_stay_current_2026-09-10.py line 355 running the real hook with cwd set to the real repository; confirmed by lsof on the live process and by 93 minutes with no further writes.",
++    "no_ruling_needed": "The 2 writes are mine to fix and the seam is already prepared. Only the 17-minute redesign is his, because it changes what a test asserts.",
+     "options": [
+       "An environment seam the generator honours and the test sets for every generator: prepared, and P-passed at 12 checks of 12.",
+       "Give the mirrors test a scratch repository: REFUTED, the test's own comment records why a copied tree produces a false red.",
+       "Have the mirrors test assert the effect of the hook's first stage rather than its exit code: removes the real-repository run, stops the staging, and takes about 17 minutes off every full suite."
+     ],
+-    "recommendation_standards": "RECOMMENDED: option 3, on 2 of the 3 standards. SIMPLEST SUFFICIENT -- asserting the stage's effect is a narrower claim that dissolves the 900-second timeout rather than raising it. ADDITIVE is the one that argues AGAINST it, and that is stated rather than hidden: it removes an assertion, and the removal clause needs a committed measurement that the replacement dominates on a named property. The named property is SUITE COST at about 17 minutes a run, measured; the property it loses on is end-to-end coverage, at 1 assertion already duplicated by 2 other tests. COMPOSABILITY does not apply: the 3 parts address different writes and no measurement shows any pair beating either alone.",
+-    "spoken_heading": "WHETHER THE MIRRORS TEST SHOULD ASSERT THE HOOK'S FIRST STAGE INSTEAD OF ITS EXIT CODE, WHICH TAKES 17 MINUTES OFF EVERY FULL SUITE RUN AND CHECKS LESS",
+-    "title": "B175 - the clean suite mutates the working tree and the git index while measuring them",
+-    "what": "2 tests write to the live repository during a full-suite run, and 1 of them stages a file into the git index. Those 2 writes are mine to fix and the environment seam is already prepared and proven at 12 checks of 12. THIS DECISION IS THE THIRD PART AND IT IS YOURS: the mirrors test currently asserts that the whole commit hook exits successfully, which drags the entire guard board along. Asserting instead the effect of the hook's FIRST stage would let the test run in a throwaway repository, stop the index being written, and remove about 17 minutes from every full suite run.",
+-    "why": "A measurement that alters its subject cannot speak about the subject, and the staged file would also enter the next commit unasked. But the 17-minute change is not a repair with a right answer: it changes WHAT A TEST ASSERTS. The hook's first stage sits 368 lines before the guard board, and the mirror ordering is the only thing the test claims to examine, so asserting the stage is the narrower and more honest claim. The cost is that it stops incidentally proving the whole hook passes -- real coverage, standing at 1 assertion over the hook's entire exit path, and precisely what costs the 17 minutes. The end-to-end behaviour is already covered by 2 other tests."
++    "recommendation_standards": "simplest sufficient: the environment seam is the smallest change that stops the observed write, and it is additive because the default behaviour is unchanged for every existing caller.",
++    "title": "The clean suite mutates the working tree and the git index while measuring them",
++    "what": "2 tests write to the live repository during a full-suite run, and 1 of them stages a file into the git index. A data file changed at 04:42:02 and 04:42:39; the memory-exclusions ledger was written and staged at 04:43:04 with the index rewritten at 04:44:12.",
++    "why": "A measurement that alters its subject cannot speak about the subject. The staged file would also enter the next commit silently, and 14 test files read the 2 paths involved."
+   },
+   "task:B176": {
+     "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading. A spoken heading on an item the generator does not render as a decision asserts he should be asked and he never is, which is what the inverse-direction guard caught on 2026-11-12 and caught again on 2026-11-13 for this entry. The reason is recorded here rather than the heading simply deleted, because the guard offers 3 remedies and which one was chosen is itself information.",
+@@ -1135,7 +1136,7 @@
+       "Binding-detection alone: REJECTED, it loses the 2026-08-26 defect the guard was written for, because the commissioning fixtures are source snippets with no assignment."
+     ],
+     "recommendation_standards": "additive: the union adds a capability and removes none, which is what the standard requires of a replacement.",
+-    "title": "B176 - the guard against tests mutating the working tree is blind twice over",
++    "title": "The guard against tests mutating the working tree is blind twice over",
+     "what": "The guard names the staged file among those it protects and did not fire. It returns early unless the offending text mentions 1 particular script, and it recognises the repository root by a list of 4 variable spellings while the offending file uses a 5th.",
+     "why": "A guard that pins variable NAMES where the property is where a path RESOLVES can be defeated by renaming a variable. That is source-text matching inside the guard whose job is to stop the tree being mutated."
+   },
+@@ -1148,7 +1149,7 @@
+       "Change the selection to prefer the newer client: REJECTED, which client serves a dispatch decides which model answers."
+     ],
+     "recommendation_standards": "additive: a third state is added, neither existing state is altered, and an older report structure without the new field still renders.",
+-    "title": "B177 - the client resolver reports the selected binary as newest when it has no version to compare",
++    "title": "The client resolver reports the selected binary as newest when it has no version to compare",
+     "what": "The list of newer candidates is built only when a selected version exists, so an unread version yields an empty list and the description falls through to saying the selected client is the newest available. An absence of data renders as a positive verdict.",
+     "why": "The suite runs under a network guard that refuses subprocesses, so every test must ask the resolver not to read the version. The test path is exactly the path that produces the false statement, and the guard's consistency check re-implemented the producer's own condition, so it passed while testing nothing."
+   },
+@@ -1160,7 +1161,7 @@
+       "Restate all 11 from the producer, name the superseded values as the file's own convention requires, correct the exclusion rule, and add the re-run instruction the archive-severity block already carries."
+     ],
+     "recommendation_standards": "additive: the superseded values are named rather than deleted, so a reader who remembers them sees which moved.",
+-    "title": "B178 - every pinned commit-cost figure in both instruction files is stale, and 1 half was wrong when written",
++    "title": "Every pinned commit-cost figure in both instruction files is stale, and 1 half was wrong when written",
+     "what": "All 11 figures reproduce differently. The mean rose from 1485.03 to 1612.619048 seconds, the median from 1649.00 to 1672.0, and the interval moved accordingly.",
+     "why": "2 distinct faults. The ledger is not under version control and roughly doubled in the 3 days after the figures were recorded, which is drift and nobody's error. Separately the text describes the exclusion rule as 13 refusals under 300 seconds while the producing script has excluded runs under 120 seconds as indeterminate since a commit 4 days earlier, which was wrong when written."
+   },
+
+### cc2:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-14 03:55:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/hooks/pre-commit	2026-11-14 03:21:06
+@@ -577,7 +577,6 @@
+ bench/tests/test_the_credence_coordinate_carries_consequence_2026-11-14.py
+ bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py
+ bench/tests/test_the_reminder_measurement_holds_2026-11-14.py
+-bench/tests/test_a_decision_reaches_the_file_he_reads_2026-11-14.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### cc2:attempt-1:scripts/how_many_decisions_actually_need_him_2026-11-01.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/how_many_decisions_actually_need_him_2026-11-01.py	2026-11-14 03:55:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/scripts/how_many_decisions_actually_need_him_2026-11-01.py	2026-11-14 03:58:40
+@@ -128,49 +128,6 @@
+ #: HIM, which is the opposite of the error this script exists to catch. The ask
+ #: is therefore scoped to its own SENTENCE, and an entry is settled only when
+ #: EVERY asking sentence in it is granted or retired.
+-#: ★ THE BARE POSSESSIVE FORM, ADDED 2026-11-14, AND THE ENTRY IT WAS HIDING.
+-#:
+-#: `ASKS` requires "is his TO RULE", "so it is his", or one of the explicit
+-#: NEEDS-HIS-RULING spellings. B175 -- the clean suite mutating the working tree
+-#: -- says **"THE 17-MINUTE REDESIGN IS HIS, because it changes what a test
+-#: asserts"**. The bare form was in none of them, so the entry classified as
+-#: MINE with 0 asking sentences and appeared **0 times** in the generated
+-#: decisions file. B189 reported 3 such entries; checked at the commit before it
+-#: was written, 2 of the 3 (B81 and B103) were already DONE and COMMITTED and so
+-#: correctly excluded. B175 is the 1 real case.
+-#:
+-#: THE SUBJECT MUST BE A DECISION NOUN. A bare "is his" fires on ordinary prose
+-#: -- his machine, his own ruling, his words -- so the pattern demands a noun
+-#: that names a thing to be decided immediately before it.
+-_BARE_POSSESSIVE_ASK = re.compile(
+-    r"\b(?:redesign|decision|choice|call|change|move|cut|level|mapping|question|"
+-    r"ruling|trade|verdict|promotion|wording)\s+(?:is|are|remains)\s+(?:his|yours)\b",
+-    re.I)
+-
+-#: ★ AND THE EXCLUSION THAT MAKES THE WIDENING SAFE: a sentence naming ANOTHER
+-#: entry attributes the decision elsewhere rather than carrying one.
+-#:
+-#: Measured over every entry before either was applied. Widening alone adds 4 --
+-#: B60, B80, B175 and B189 -- of which B189 is a FALSE POSITIVE: its sentence
+-#: reads *"3 entries the task list itself marks as HIS..."* and names B81, B103,
+-#: B175 and B183. That is the describing-read-as-carrying class B169 records,
+-#: and B189 had already been reworded once for the same confusion in a different
+-#: predicate. The exclusion discriminates all 4 of 4.
+-#:
+-#: ★ AND THIS IS A COMPOSED FIX WITH THE MEASUREMENT HIS 2026-10-02 STANDARD
+-#: DEMANDS, not an assertion that 2 repairs coexist. Over the live task list,
+-#: entries flagged as asking him something: **neither repair 60; widening alone
+-#: 64, adding 3 true and 1 false, precision 0.750000; exclusion alone 60, which
+-#: is INERT because there is nothing to exclude without the widening; both 63,
+-#: adding the same 3 true and 0 false, precision 1.000000.** The composed form
+-#: DOMINATES the widening on precision and the exclusion is no substitute for
+-#: it, so the composition is justified rather than merely non-conflicting.
+-_ATTRIBUTES_TO_ANOTHER_ENTRY = re.compile(r"\bB\d{1,4}\b")
+-
+-#: An entry body opens with its own code, e.g. `**B175. TITLE**`.
+-_OWN_CODE = re.compile(r"\*{0,2}(B\d{1,4})\.")
+-
+-
+ _SENT = re.compile(r"(?<=[.!?])\s+")
+ 
+ 
+@@ -223,6 +180,130 @@
+ #: The same shape `morning_report_build._DATED` uses, so the 2 instruments
+ #: read a "dated addition" identically rather than by 2 similar regexes.
+ _DATED_IN_BODY = re.compile(r"\b(2026-\d{2}-\d{2})")
++
++
++# ---------------------------------------------------------------------------
++# ★ THE 3 PREDICATES FOR "WAS A QUESTION RAISED AFTER HE RULED", NAMED AND
++# CALLABLE, 2026-11-14.
++#
++# WHY THEY ARE HERE AND NOT IN A PRODUCER. `scripts/how_much_of_this_is_
++# actually_his_2026-11-12.py` computed all 3 inline, which put a SECOND
++# implementation of predicate A beside the live one in this file -- 2 copies of
++# 1 rule, which is the producer-consumer drift this project has withdrawn fixes
++# over. The canonical definitions live here, beside the ladder that consumes
++# them, and `residue_A` is now the ONLY implementation of the live test: the
++# `_later` expression that used to be inline in `classify_text` calls it.
++#
++# NONE OF THE 3 IS INSTALLED AS A REPLACEMENT. `classify_text`'s `kind` is
++# computed from `residue_A` exactly as before, identically in behaviour. Which
++# predicate SHOULD decide is the founder's ruling to make (brief of 2026-11-14,
++# Q1) and is not taken here.
++#
++# MEASURED, by `scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py`:
++# the 3 disagree on 5 of the 5 ruled-and-OWED entries, 1.000000, Wilson
++# [0.565518, 1.000000]; the banner figure takes 3 distinct values {12, 13, 16}
++# across them; and raw pairwise agreement is 2/5, 1/5 and 2/5. Cohen's kappa is
++# NOT usable against A: A is constant on this population, and kappa is then 0
++# by algebra for every comparand (derived in that producer, confirmed in sympy
++# and in Wolfram Language).
++# ---------------------------------------------------------------------------
++
++def residue_A(ruled, body, live_asks) -> bool:
++    """Predicate A: any date ANYWHERE in the body later than the ruling.
++
++    THE LIVE TEST, and the one whose comment overstates it. The documented
++    intent is "a question was raised after the ruling"; what this computes is
++    "something DATED appears after the ruling". A dated progress note is not a
++    question, so this fires on an entry that was merely edited after he ruled.
++    The gap is recorded rather than closed, because closing it means choosing
++    between A, B and C and that choice is his.
++    """
++    return bool(ruled) and any(d > ruled for d in _DATED_IN_BODY.findall(body))
++
++
++def residue_B(ruled, body, live_asks) -> bool:
++    """Predicate B: a later date inside the ASKING SENTENCE itself."""
++    if not ruled:
++        return False
++    return any(any(d > ruled for d in _DATED_IN_BODY.findall(s))
++               for s in live_asks)
++
++
++def residue_C(ruled, body, live_asks) -> bool:
++    """Predicate C: a live asking sentence POSITIONED after the first later date."""
++    if not ruled:
++        return False
++    later = [m.start() for m in _DATED_IN_BODY.finditer(body)
++             if m.group(0) > ruled]
++    if not later:
++        return False
++    first = min(later)
++    stale_at = [m.start() for m in STALE.finditer(body)]
++    for start, sent in _sentences(body):
++        if STALE.search(sent) or not ASKS.search(sent):
++            continue
++        if FREE.search(sent):
++            continue
++        if any(s > start for s in stale_at):
++            continue
++        if start >= first:
++            return True
++    return False
++
++
++RESIDUE_PREDICATES = {"A": residue_A, "B": residue_B, "C": residue_C}
++
++
++def residue_undecidable(ruled, body, live_asks) -> bool:
++    """True when the 3 predicates do NOT all agree about this entry.
++
++    ★ THIS IS OPTION O3 OF THE BRIEF OF 2026-11-14, AND IT IS DELIBERATELY NOT
++    A 4TH PREDICATE. It decides nothing about whether he owes the entry; it
++    reports that the text cannot decide. A surface that has defeated 3
++    predicates is the point to say so rather than to ship a 4th attempt, which
++    is this project's own standing rule and the reason the 2026-11-12 producer
++    reported the disagreement instead of picking a winner.
++
++    ★ IT CHANGES NO VERDICT, BY CONSTRUCTION. `classify_text` carries this as a
++    separate key and still computes `kind` from `residue_A` alone, so no entry
++    moves on or off his list, the `[tasks]` banner figure is unchanged, and
++    `work_not_narrate._first_movable` names the same entry it named before.
++    Whether the banner should PRINT this flag is Q1 and is his to rule; the
++    consequence of printing it is measured in
++    `scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py` so that the
++    ruling rests on a figure rather than on this docstring.
++
++    ★ WHY IT IS ONLY MEANINGFUL WHERE A RULING EXISTS. All 3 predicates return
++    False when `ruled` is empty, so they agree vacuously and this returns False.
++    An entry with no recorded ruling is not undecidable -- it is UNANSWERED, a
++    different group, counted separately in the 2026-11-12 producer's section 6.
++    """
++    if not ruled:
++        return False
++    #: ★ A LIVE ASK IS REQUIRED, AND THE FIRST VERSION OF THIS FUNCTION OMITTED
++    #: IT. Caught 2026-11-14 by the falsifier for this very round, which printed
++    #: 8 flagged entries where the measured population is 5. The 3 extra were
++    #: B56, B104 and B184 -- entries with NO live asking sentence at all.
++    #:
++    #: WHY THEY WERE FLAGGED AND WHY THAT IS WRONG. A reads dates from the whole
++    #: BODY, while B and C read the live ASKS. An entry with no asks therefore
++    #: gets A=True (it carries a later dated note) and B=False (there is no ask
++    #: to carry a date), so the predicates "disagree" -- on a question that
++    #: cannot matter, because with `live_asks` empty the ladder reaches `kind`
++    #: without consulting `_later` at all. Those entries are MINE under every
++    #: predicate; the disagreement is unreachable and reporting it would have put
++    #: 3 spurious items in front of him, which is the defect class this round
++    #: exists to measure rather than to add to.
++    #:
++    #: SO THE SCOPE IS THE SET WHERE THE PROXY CAN ACTUALLY CHANGE THE VERDICT:
++    #: a recorded ruling AND at least 1 live ask. That is derived from the
++    #: ladder, not chosen: `_later` is read only in the branch guarded by
++    #: `live_asks and ruled`.
++    if not live_asks:
++        return False
++    verdicts = {fn(ruled, body, live_asks)
++                for fn in RESIDUE_PREDICATES.values()}
++    return len(verdicts) > 1
+ 
+ 
+ def classify_text(state: str, ruled: str | None, txt: str) -> dict:
+@@ -273,21 +354,7 @@
+         if STALE.search(sent):
+             continue
+         if not ASKS.search(sent):
+-            #: THE BARE POSSESSIVE FORM, admitted only when the sentence does
+-            #: not hand the decision to another entry. See the 4-cell
+-            #: measurement beside `_BARE_POSSESSIVE_ASK`.
+-            if not _BARE_POSSESSIVE_ASK.search(sent):
+-                continue
+-            #: THE ENTRY'S OWN CODE IS DERIVED FROM ITS OWN TEXT, not taken
+-            #: from a parameter: `classify_text` is a PURE function of one
+-            #: entry's text and has no identifier argument, so adding one would
+-            #: change a signature every caller uses.
+-            _own = _OWN_CODE.match(txt.lstrip())
+-            _mine = _own.group(1) if _own else None
+-            _others = {x for x in _ATTRIBUTES_TO_ANOTHER_ENTRY.findall(sent)
+-                       if x != _mine}
+-            if _others:
+-                continue
++            continue
+         one = re.sub(r"\s+", " ", sent).strip()
+         free = bool(FREE.search(sent))
+         retired = any(s > start for s in stale_at)
+@@ -317,7 +384,10 @@
+     #: has been answered -- which is GRANTED, the kind this function already
+     #: has for "asked and settled". Where a later date IS present the entry
+     #: stays OWED, so the suppression direction is untouched.
+-    _later = bool(ruled) and any(d > ruled for d in _DATED_IN_BODY.findall(txt))
++    #: ★ ONE IMPLEMENTATION OF PREDICATE A, 2026-11-14. This line was the
++    #: inline original; it now CALLS `residue_A`, which is byte-identical in
++    #: behaviour and removes the second copy that a producer had grown.
++    _later = residue_A(ruled, txt, live_asks)
+     if state == "DEFERRED" and ruled:
+         kind = "HIS_DEFERRAL"
+     elif dep:
+@@ -330,7 +400,15 @@
+         kind = "GRANTED"
+     else:
+         kind = "MINE"
+-    return {"kind": kind, "parent": parent, "asks": asks, "live_asks": live_asks}
++    #: ★ `residue_undecidable` IS REPORTED, NOT ACTED ON (O3, 2026-11-14).
++    #: A NEW KEY cannot change a consumer that does not read it, so every
++    #: existing surface is untouched: the banner figure, the entry the Stop
++    #: gate names, and the refusal budget are all identical with and without
++    #: this line. Asserted by
++    #: bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py
++    return {"kind": kind, "parent": parent, "asks": asks,
++            "live_asks": live_asks,
++            "residue_undecidable": residue_undecidable(ruled, txt, live_asks)}
+ 
+ 
+ def classify() -> list[dict]:
+
+### cc2:attempt-1:scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py
+--- /dev/null	2026-11-14 04:00:06
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py	2026-11-14 03:55:02
+@@ -0,0 +1,429 @@
++#!/usr/bin/env python3
++"""PRODUCER: which live surfaces the `_later` ruling proxy actually reaches, and
++in which DIRECTION each one errs when the proxy is wrong.
++
++★ WHY THIS EXISTS AND WHAT IT CONTRADICTS. The brief of 2026-11-14 asks which of
++3 text predicates (A, B, C) for "was a question raised after he ruled" should
++replace the live one, and states as fact F5 that A -- the live predicate -- is
++"noisy in the SAFE direction" because it OVER-reports what he owes, and that B
++and C are the dangerous ones because they REMOVE entries from his list.
++
++THAT IS TRUE OF ONE SURFACE AND FALSE OF ANOTHER, and no instrument in this
++repository had measured which surfaces the proxy reaches. `classify_text`'s
++`kind` is consumed in 3 places, and they do not all read it:
++
++  1. `task_list_markers.summarise` -> `_whose_move` -> the `[tasks]` banner that
++     `hooks/task_list_pulse.py` prints on EVERY turn. Tests `kind == "OWED"`.
++     SENSITIVE to `_later`. This is the surface F5 reasons about, and on this
++     surface F5 is right: A's error shows him an item he can dismiss.
++
++  2. `hooks/work_not_narrate._first_movable` -> `open_items` -> the entry the
++     Stop gate NAMES as the next thing the session should work on. Tests
++     `kind == "OWED"` at hooks/work_not_narrate.py:805 and SKIPS the entry when
++     it is true. SENSITIVE to `_later` -- and the direction INVERTS. A's
++     over-report does not add a visible item here; it REMOVES an entry from the
++     session's own work queue. An entry wrongly held to await him is an entry
++     the gate will never name, so the work silently stalls. That is the same
++     suppression shape this project withdrew on 2026-11-09, displaced from his
++     list onto mine.
++
++  3. `hooks/work_not_narrate.movable_count` -> `refusal_budget`. Tests
++     `d["live_asks"]` and `_residue_is_his(body)`, NOT `kind`. `_later` cannot
++     reach it, because `live_asks` is built before `_later` is computed and is
++     not a function of it. INSENSITIVE -- which BOUNDS the consequence, and is
++     reported because a bound that is not measured is a hope.
++
++SO "OVER-REPORTING IS SAFE" IS NOT A PROPERTY OF THE PREDICATE. It is a property
++of a predicate PAIRED WITH A CONSUMER, and this proxy has 2 consumers that read
++it with opposite sign. That is the finding, and it is what makes O3 -- report the
++disagreement rather than pick a side -- the only option that is safe on BOTH.
++
++NOTHING HERE CHANGES A VERDICT. This module computes and prints. It does not
++edit the classifier, does not alter the banner, and does not move an entry on or
++off his list. Q1 is his to rule.
++
++ANTI-VACUITY. Before varying anything, the replicated surface logic is asserted
++to reproduce the REAL surfaces at predicate A. A model of a surface that has not
++been checked against the surface measures the model.
++
++Costs local CPU only: no model dispatch, no pytest, no network.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
++
++
++def _load(name: str, rel: str):
++    spec = importlib.util.spec_from_file_location(name, REPO / rel)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules[name] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++def _iv(k: int, n: int):
++    """Wilson and Clopper-Pearson, each on 2 INDEPENDENT routes.
++
++    Same shape as `scripts/how_much_of_this_is_actually_his_2026-11-12.py` so
++    the 2 producers report an interval identically. Every n here is below 50,
++    where scipy's beta quantile and an mpmath bisection on the regularised
++    incomplete beta agree to machine precision; the agreement printed beside
++    each figure is what demonstrates that rather than a comment claiming it.
++    """
++    from scipy import stats
++    from statsmodels.stats.proportion import proportion_confint
++    import mpmath
++    mpmath.mp.dps = 40
++    if n == 0:
++        return (0.0, 1.0), (0.0, 1.0), 0.0
++    wl, wh = proportion_confint(k, n, alpha=0.05, method="wilson")
++    z = mpmath.mpf("1.959963984540054")
++    K, N = mpmath.mpf(k), mpmath.mpf(n)
++    p = K / N
++    d = 1 + z**2 / N
++    c = (p + z**2 / (2 * N)) / d
++    hw = z * mpmath.sqrt(p * (1 - p) / N + z**2 / (4 * N**2)) / d
++    wdiff = max(abs(wl - float(c - hw)), abs(wh - float(c + hw)))
++    cl = 0.0 if k == 0 else float(stats.beta.ppf(0.025, k, n - k + 1))
++    ch = 1.0 if k == n else float(stats.beta.ppf(0.975, k + 1, n - k))
++
++    def _bi(a, b, y):
++        lo, hi = mpmath.mpf(0), mpmath.mpf(1)
++        for _ in range(200):
++            if hi - lo < mpmath.mpf("1e-18"):
++                break
++            m = (lo + hi) / 2
++            v = mpmath.betainc(a, b, 0, m, regularized=True) - y
++            lo, hi = (m, hi) if v < 0 else (lo, m)
++        return float((lo + hi) / 2)
++
++    cdiff = max(abs(cl - (0.0 if k == 0 else _bi(k, n - k + 1, 0.025))),
++                abs(ch - (1.0 if k == n else _bi(k + 1, n - k, 0.975))))
++    return (max(0.0, wl), wh), (cl, ch), max(wdiff, cdiff)
++
++
++def report(label: str, k: int, n: int) -> None:
++    if not n:
++        print(f"  {label}: n = 0")
++        return
++    (wl, wh), (cl, ch), agree = _iv(k, n)
++    print(f"  {label}: {k} of {n} = {k / n:.6f}")
++    print(f"      Wilson [{wl:.6f}, {wh:.6f}]  "
++          f"Clopper-Pearson [{cl:.6f}, {ch:.6f}]  "
++          f"2 routes agree to {agree:.3e}")
++
++
++# ---------------------------------------------------------------------------
++# THE 3 PREDICATES, named exactly as the brief names them.
++# ---------------------------------------------------------------------------
++
++def pred_A(clf, ruled, body, asks) -> bool:
++    """Any date anywhere in the body later than the ruling. THE LIVE ONE."""
++    return bool(ruled) and any(d > ruled for d in clf._DATED_IN_BODY.findall(body))
++
++
++def pred_B(clf, ruled, body, asks) -> bool:
++    """A later date inside the asking SENTENCE itself."""
++    if not ruled:
++        return False
++    return any(any(d > ruled for d in clf._DATED_IN_BODY.findall(s)) for s in asks)
++
++
++def pred_C(clf, ruled, body, asks) -> bool:
++    """A live asking sentence POSITIONED after the first post-ruling date."""
++    if not ruled:
++        return False
++    later = [m.start() for m in clf._DATED_IN_BODY.finditer(body)
++             if m.group(0) > ruled]
++    if not later:
++        return False
++    first = min(later)
++    stale_at = [m.start() for m in clf.STALE.finditer(body)]
++    for start, sent in clf._sentences(body):
++        if clf.STALE.search(sent) or not clf.ASKS.search(sent):
++            continue
++        if clf.FREE.search(sent):
++            continue
++        if any(s > start for s in stale_at):
++            continue
++        if start >= first:
++            return True
++    return False
++
++
++PREDS = {"A": pred_A, "B": pred_B, "C": pred_C}
++
++
++def kind_under(clf, pred, state, ruled, body) -> str:
++    """`classify_text`'s own branch ladder with `_later` supplied by `pred`.
++
++    THE LADDER IS COPIED, WHICH IS A RISK, SO IT IS CHECKED RATHER THAN TRUSTED.
++    `classify_text` computes `_later` inline, so there is no seam to inject at
++    without editing the live file -- and editing the live file to take a
++    measurement is exactly what this round must not do. The anti-vacuity check
++    in `main` asserts this reproduces `classify_text` EXACTLY on every live
++    entry under predicate A, which is the only predicate the live file
++    implements. If that assertion fails, this producer is wrong and says so.
++    """
++    state = (state or "").upper()
++    dep = clf.DEPENDS.search(body)
++    d = clf.classify_text(state, ruled, body)
++    asks, live = d["asks"], d["live_asks"]
++    later = pred(clf, ruled, body, live)
++    if state == "DEFERRED" and ruled:
++        return "HIS_DEFERRAL"
++    if dep:
++        return "DEPENDENT"
++    if live and ruled and not later:
++        return "GRANTED"
++    if live:
++        return "OWED"
++    if asks:
++        return "GRANTED"
++    return "MINE"
++
++
++def main() -> int:
++    sys.path.insert(0, str(REPO / "scripts"))
++    import task_list_markers as tlm                             # type: ignore
++    clf = _load("_clf2", "scripts/how_many_decisions_actually_need_him_2026-11-01.py")
++    wnn = _load("_wnn2", "hooks/work_not_narrate.py")
++
++    #: ★ REDIRECT THE HOOK AT THE TREE BEING MEASURED. `work_not_narrate` hard-
++    #: codes REPO to `~/Developer_Projects/Constraint_Engineering`, so in any
++    #: checkout that is not that one -- a panel sandbox, a worktree -- its
++    #: `movable_count()` silently measures a DIFFERENT task list from the one
++    #: the rest of the producer parsed. Measured here 2026-11-14: the 2 paths
++    #: differed and the figure still printed without complaint. NOT a live
++    #: defect, because in his own environment the 2 coincide; it IS a
++    #: measurement hazard for any instrument run outside it, which is why the
++    #: redirection is explicit and printed rather than assumed.
++    wnn.TASKS = LIST
++    wnn.MARKERS = REPO / "scripts"
++    print("=" * 78)
++    print("WHICH SURFACES THE `_later` RULING PROXY REACHES")
++    print("=" * 78)
++    print(f"  task list under measurement: {LIST}")
++    print(f"  work_not_narrate.TASKS redirected to it (hardcoded was {wnn.REPO})")
++
++    bodies = clf.bodies()
++    opens = [e for e in tlm.parse_entries(LIST) if (e.state or "").upper() == "OPEN"]
++    print(f"  OPEN entries: {len(opens)}")
++
++    # ---------------------------------------------------------------- 0
++    print("\n0. ANTI-VACUITY: the replicated ladder must equal the live one at A")
++    bad = []
++    for e in opens:
++        b = bodies.get(e.ident, "")
++        live = clf.classify_text(e.state, e.ruled, b)["kind"]
++        mine = kind_under(clf, pred_A, e.state, e.ruled, b)
++        if live != mine:
++            bad.append((e.ident, live, mine))
++    if bad:
++        print(f"    REPLICATION BROKEN on {len(bad)} entries: {bad[:5]}")
++        print("    This producer's model of classify_text is WRONG. Stopping.")
++        return 1
++    print(f"    replicated ladder == classify_text on all {len(opens)} open "
++          f"entries under A: 0 mismatches")
++
++    # ---------------------------------------------------------------- 1
++    print("\n1. EVERY ENTRY WHERE THE 3 PREDICATES DO NOT ALL AGREE ON `kind`")
++    kinds = {p: {} for p in PREDS}
++    for e in opens:
++        b = bodies.get(e.ident, "")
++        for p, fn in PREDS.items():
++            kinds[p][e.ident] = kind_under(clf, fn, e.state, e.ruled, b)
++    moved = [e.ident for e in opens
++             if len({kinds[p][e.ident] for p in PREDS}) > 1]
++    for ident in moved:
++        row = "  ".join(f"{p}={kinds[p][ident]:8s}" for p in PREDS)
++        print(f"      {ident:5s} {row}")
++    report("open entries whose KIND depends on which predicate is used",
++           len(moved), len(opens))
++
++    # ---------------------------------------------------------------- 2
++    print("\n2. SURFACE 1 -- THE `[tasks]` BANNER HE READS EVERY TURN")
++    print("     route: task_list_pulse -> summarise -> _whose_move -> kind=='OWED'")
++    for p in PREDS:
++        his = sum(1 for e in opens if kinds[p][e.ident] == "OWED")
++        print(f"      under {p}: \"{his} of {len(opens)} open await YOU\"")
++    spread = {sum(1 for e in opens if kinds[p][e.ident] == "OWED") for p in PREDS}
++    print(f"      SENSITIVE: the figure he reads takes {len(spread)} distinct "
++          f"values {sorted(spread)} across the 3 predicates")
++
++    # ---------------------------------------------------------------- 3
++    print("\n3. SURFACE 2 -- THE ENTRY THE STOP GATE NAMES AS NEXT WORK")
++    print("     route: work_not_narrate.open_items -> _first_movable -> kind=='OWED'")
++    print("     and the test at :805 SKIPS the entry when that is true")
++    _STARTED = {"BUILT", "TESTED", "COMMITTED"}
++
++    def first_movable_under(p) -> str:
++        unstarted, started = [], []
++        for e in opens:
++            b = bodies.get(e.ident, "")
++            if kinds[p][e.ident] == "OWED" or wnn._residue_is_his(b):
++                continue
++            st = (getattr(e, "status", "") or "").upper()
++            (started if st in _STARTED else unstarted).append(e.ident)
++        return (unstarted + started or [""])[0]
++
++    real = wnn._first_movable(opens)
++    model = first_movable_under("A")
++    print(f"      real _first_movable(opens) = {real!r}")
++    print(f"      replicated at A            = {model!r}   "
++          f"{'MATCH' if real == model else 'MISMATCH -- model is wrong'}")
++    for p in PREDS:
++        print(f"      under {p}: the gate names {first_movable_under(p)!r}")
++
++    print("\n     THE DIRECTION OF A's ERROR ON THIS SURFACE, which is the point:")
++    excluded = [e.ident for e in opens
++                if kinds["A"][e.ident] == "OWED"
++                and any(kinds[p][e.ident] != "OWED" for p in ("B", "C"))]
++    print(f"      entries A marks OWED that B or C would release to the session:")
++    print(f"      {excluded}")
++    print("      On the BANNER these are a visible over-report he can dismiss.")
++    print("      On THIS surface they are REMOVED from the work queue and the")
++    print("      gate will never name them. Over-reporting is NOT safe here.")
++
++    # ---------------------------------------------------------------- 4
++    print("\n4. SURFACE 3 -- THE REFUSAL BUDGET, AND WHY `_later` CANNOT REACH IT")
++    print("     route: movable_count -> refusal_budget; tests live_asks, NOT kind")
++    for p in PREDS:
++        n = 0
++        for e in opens:
++            b = bodies.get(e.ident, "")
++            d = clf.classify_text(e.state or "", e.ruled, b)
++            if not d.get("live_asks") and not wnn._residue_is_his(b):
++                n += 1
++        budget = (wnn.MAX_REFUSALS_PER_TURN if n <= 0
++                  else min(wnn.MAX_REFUSALS_CEILING,
++                           wnn.MAX_REFUSALS_PER_TURN * n))
++        print(f"      under {p}: movable_count = {n}  refusal_budget = {budget}")
++    print("      IDENTICAL under all 3, and that is a DERIVATION not a")
++    print("      coincidence: `live_asks` is built in the sentence loop ABOVE")
++    print("      the line that computes `_later`, so no value of `_later` can")
++    print("      change it. The budget is algebraically independent of the proxy.")
++    nmov = sum(1 for e in opens
++               if not clf.classify_text(e.state or "", e.ruled,
++                                        bodies.get(e.ident, "")).get("live_asks")
++               and not wnn._residue_is_his(bodies.get(e.ident, "")))
++    sat = wnn.MAX_REFUSALS_CEILING / wnn.MAX_REFUSALS_PER_TURN
++    print(f"      AND IT IS SATURATED ANYWAY: movable_count = {nmov}, and the")
++    print(f"      ceiling binds for any count >= {sat:.0f}, so even a swing of")
++    print(f"      {len(moved)} entries leaves the budget at "
++          f"{wnn.MAX_REFUSALS_CEILING}. 2 independent reasons it is unreachable.")
++
++    # ---------------------------------------------------------------- 5
++    print("\n5. AGREEMENT BETWEEN THE 3 PREDICATES, ON THE ENTRIES THEY APPLY TO")
++    ruled_owed = [e for e in opens
++                  if kinds["A"][e.ident] == "OWED" and e.ruled]
++    vec = {p: [PREDS[p](clf, e.ruled, bodies.get(e.ident, ""),
++                        clf.classify_text(e.state, e.ruled,
++                                          bodies.get(e.ident, ""))["live_asks"])
++               for e in ruled_owed] for p in PREDS}
++    print(f"      population: {[e.ident for e in ruled_owed]}  n = {len(ruled_owed)}")
++    for p in PREDS:
++        print(f"      {p} = {['T' if x else 'F' for x in vec[p]]}")
++    from sklearn.metrics import cohen_kappa_score
++    for x, y in (("A", "B"), ("A", "C"), ("B", "C")):
++        agree = sum(1 for i, j in zip(vec[x], vec[y]) if i == j)
++        report(f"raw agreement {x} vs {y}", agree, len(ruled_owed))
++        const = len(set(vec[x])) == 1 or len(set(vec[y])) == 1
++        k = cohen_kappa_score([int(v) for v in vec[x]], [int(v) for v in vec[y]])
++        note = ("   DEGENERATE: one rater is CONSTANT, so this is 0 by algebra, "
++                "not by measurement") if const else ""
++        print(f"      Cohen kappa {x} vs {y} = {k:.6f}{note}")
++    print("\n      THE DEGENERACY, DERIVED rather than asserted. With rater X")
++    print("      constant at T: p_o = P(Y=T); p_e = P(X=T)P(Y=T) + P(X=F)P(Y=F)")
++    print("                   = 1*P(Y=T) + 0*P(Y=F) = P(Y=T) = p_o.")
++    print("      So kappa = (p_o - p_e)/(1 - p_e) = 0 for EVERY Y. A is constant")
++    print("      at T on this population, so kappa cannot distinguish B from C")
++    print("      against A, and quoting it as evidence about A would be an error.")
++    print("      Raw agreement above is the reportable statistic; n is small and")
++    print("      every interval printed with it says so.")
++
++    # ---------------------------------------------------------------- 6
++    print("\n6. THE 4 OPTIONS SCORED ON ONE NAMED PROPERTY, SO COMPOSABILITY")
++    print("   IS DECIDED BY A MEASUREMENT AND NOT BY A JUDGEMENT")
++    print("     PROPERTY: INVISIBLE-ERROR PAIRS. Count the (entry, surface)")
++    print("     pairs where a wrong proxy verdict produces a wrong outcome the")
++    print("     founder CANNOT detect from what he is shown. Lower is better.")
++    print("     The population is the undecidable set; the surfaces are the 2")
++    print("     measured above as SENSITIVE. Surface 3 contributes 0 to every")
++    print("     option because the proxy cannot reach it.")
++    print()
++    print("     The sign rule, which is the whole content of the finding:")
++    print("       BANNER  -- asserting OWED on an undecidable entry is VISIBLE")
++    print("                  (he reads the item and can dismiss it); asserting")
++    print("                  GRANTED is INVISIBLE (the question is simply gone).")
++    print("       GATE    -- asserting OWED is INVISIBLE (the entry is skipped")
++    print("                  and never named); asserting GRANTED is VISIBLE")
++    print("                  (the entry gets named and worked).")
++    und = [e for e in opens if kinds["A"][e.ident] == "OWED" and e.ruled
++           and len({kinds[p][e.ident] for p in PREDS}) > 1]
++    U = len(und)
++
++    def score(banner, gate):
++        """(invisible on banner, invisible on gate) -> total, from the sign rule."""
++        return banner + gate
++
++    # O1: banner OWED on all U (visible); gate skips all U (invisible).
++    o1 = score(0, U)
++    # O2 under B: banner GRANTED wherever B says settled -> invisible there;
++    # gate still skips wherever B says OWED -> invisible there.
++    for nm, pr in (("O2 (adopt B)", "B"), ("O2 (adopt C)", "C")):
++        g = sum(1 for e in und if kinds[pr][e.ident] == "GRANTED")
++        o = sum(1 for e in und if kinds[pr][e.ident] == "OWED")
++        globals()[f"_{pr}"] = (nm, g + o, g, o)
++    # O3 as DELIVERED this round: banner flags undecidable (visible, 0); gate
++    # unchanged, still skips all U (invisible, U).
++    o3 = score(0, U)
++    # O3-EXTENDED: the same flag read by the gate, so an undecidable entry is
++    # NAMEABLE and the session's move is to ask him -- visible on both.
++    o3x = score(0, 0)
++    # O4: both surfaces read a RECORDED answer, so 0 invisible for any entry
++    # raised after the mechanism exists -- but the U legacy entries carry no
++    # record, fall back to the proxy, and nothing prompts the backfill.
++    o4 = score(0, U)
++    # O3 + O4 composed: O3 makes the U legacy entries visible for backfill,
++    # O4 removes the inference for everything after.
++    o34 = score(0, 0)
++    print()
++    print(f"     undecidable population U = {U}  ({[e.ident for e in und]})")
++    rows = [("O1 change nothing", o1),
++            (_B[0], _B[1]), (_C[0], _C[1]),
++            ("O3 as delivered (report only)", o3),
++            ("O3 extended to the gate", o3x),
++            ("O4 recorded fact alone", o4),
++            ("O3 + O4 composed", o34)]
++    for nm, v in rows:
++        print(f"       {nm:34s} invisible-error pairs = {v}")
++    print()
++    print(f"     O2 breakdown: B hides {_B[2]} live question(s) on the banner and")
++    print(f"     still suppresses {_B[3]} on the gate; C hides {_C[2]} and suppresses {_C[3]}.")
++    print()
++    best = min(v for _, v in rows)
++    winners = [nm for nm, v in rows if v == best]
++    print(f"     MINIMUM = {best}, reached by: {winners}")
++    print("     THE COMPOSITION IS THEREFORE REFUSED, ON HIS OWN STANDARD.")
++    print("     `O3 extended to the gate` is a SINGLE fix that TIES the composed")
++    print("     `O3 + O4` at the minimum. His definition is explicit -- \"Where a")
++    print("     single fix out performs a composed one, that fix should continue")
++    print("     to be preferred\" -- and a tie is not a demonstrated advantage,")
++    print("     which is what `composability-requires-a-measurement` requires")
++    print("     before a composed fix may be recommended. So the measurement")
++    print("     SELECTS THE SINGLE FIX and no composition is claimed.")
++    print("     O4 is still the only option that removes the INFERENCE rather")
++    print("     than making its error visible; on THIS property it does not beat")
++    print("     O3-extended, so it is reported as a direction and not adopted.")
++    print("=" * 78)
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 04:00:16
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 03:43:26
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/directives/universal/cdsfl_core_formal.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/directives/universal/cdsfl_core_formal.md	2026-11-12 03:58:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/bench/directives/universal/cdsfl_core_formal.md	2026-11-14 03:53:27
+@@ -672,3 +672,52 @@
+ | Tangential detection | Behavioural | No |
+ | Definitive stance | Stylistic | No |
+ | Communication register | Stylistic | No |
++
++---
++
++## PROPOSED — NOT IN FORCE — AWAITS THE FOUNDER'S RULING (panel deliverable, 2026-11-14)
++
++### 4th formal standard: real-world applicability, with the HIL-consequence caveat (`hil-consequence`)
++
++**Proposed text, 1 paragraph.**
++Where a defect or a fix changes anything the human in the loop reads, decides
++on, or spends time on — a count, a queue, a named next step, a verdict, a
++budget — its consequence is classified on the HIL's own scale, whose ordering
++is: **silent omission of something he must act on ≻ visible over-report ≻
++cosmetic cost**, with the critical level at silent omission. A fix is
++inadmissible if it moves any error toward silent omission, regardless of its
++aggregate accuracy; a fix that improves an internal metric while leaving a
++wrong figure in front of him has not discharged the requirement. Where the
++change touches no surface the HIL reads, this standard is silent and the
++existing 3 standards govern alone.
++
++**Decision procedure.** Given a proposed fix, ask: (1) name the surface the
++HIL reads that this change touches — if none, the standard does not apply;
++(2) state the direction of the error before and after, on the ordering above;
++(3) if any error moves toward silent omission, the fix is inadmissible;
++(4) the adoption of the fix must ship a named, runnable invariant for its
++monotone-safe direction, or state plainly that none can be written.
++
++**Mechanism.** The general standard is NOT fully mechanisable — naming the
++surface the HIL reads is a judgement. Each APPLICATION of it is: the
++invariant of step (4) is a guard test. First instance:
++`bench/tests/test_the_later_proxy_only_overreports_2026-11-14.py`, which
++asserts that the sibling predicates for "an ask outlives the ruling" can only
++shrink the owed set (B ⟹ A, C ⟹ A, 0 violations over live data), that the
++stop-gate budget is blind to the proxy, and that the proposed recorded-fact
++verdict never leaves OWED except on a recorded `raised:` stamp. Per the
++additive standard's symmetric form, an adoption instance that ships no such
++invariant is the unwired-addition failure mode and does not count as applying
++the standard.
++
++**Relation to the existing 3 standards.** It can contradict
++`simplicity-default`: the simplest fix for the 2026-11-14 predicate
++disagreement is to adopt sibling B (a 1-line change that empties the
++disagreement sample) — sufficient on the stated metric and inadmissible here,
++because it silently removes live questions from his list, the direction
++withdrawn on 2026-11-09. Where they conflict, this standard outranks
++simplicity, consistently with core §2 (user-specified HARD constraints): his
++time is the project's stated fixed resource. It never contradicts
++`additive-standard` or `composability-requires-a-measurement`; it adds a
++fourth named property ("the HIL's position never worsens toward silent
++omission") to the set a measurement may be demanded on.
+
+### fable:attempt-1:bench/tests/test_the_later_proxy_only_overreports_2026-11-14.py
+--- /dev/null	2026-11-14 04:00:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/bench/tests/test_the_later_proxy_only_overreports_2026-11-14.py	2026-11-14 03:53:02
+@@ -0,0 +1,135 @@
++"""The 3 facts the 2026-11-14 panel verdict on the `_later` proxy rests on.
++
++Each is an invariant that must SURVIVE any future repair of the proxy; none
++pins the defect itself (a pinned defect would block its own fix).
++
++1. The sibling predicates B and C each IMPLY the live proxy A, so adopting
++   either can only SHRINK the set of entries reported as awaiting the founder
++   -- the suppression direction his precedent of 2026-11-09 withdrew.
++2. `movable_count()`/`refusal_budget()` in hooks/work_not_narrate.py depend
++   only on `live_asks`, which is invariant to the `ruled` argument -- so the
++   stop-gate's BUDGET is blind to the proxy and the proxy's blast radius is
++   the banner count plus `_first_movable`'s naming, nothing more.
++3. The proposed recorded-fact verdict (scripts/the_ask_outlives_the_ruling_
++   is_a_recorded_fact_2026-11-14.py, NOT installed) is monotone-safe: it
++   never removes an entry from OWED relative to `classify_text` except on a
++   recorded `raised:` stamp dated on or before the ruling.
++"""
++import importlib.util
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++
++
++def _load(name, rel):
++    spec = importlib.util.spec_from_file_location(name, REPO / rel)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules.setdefault(name, m)
++    spec.loader.exec_module(m)
++    return m
++
++
++def _clf():
++    return _load("_t_clf",
++                 "scripts/how_many_decisions_actually_need_him_2026-11-01.py")
++
++
++def _abc(clf, body, ruled):
++    """The 3 sibling predicates, byte-faithful to the 2026-11-12 producer."""
++    later = [m.start() for m in clf._DATED_IN_BODY.finditer(body)
++             if m.group(0) > ruled]
++    A = bool(later)
++    stale = [m.start() for m in clf.STALE.finditer(body)]
++    live = []
++    for start, sent in clf._sentences(body):
++        if clf.STALE.search(sent) or not clf.ASKS.search(sent):
++            continue
++        if clf.FREE.search(sent) or any(s > start for s in stale):
++            continue
++        live.append((start, sent))
++    B = any(any(d > ruled for d in clf._DATED_IN_BODY.findall(s))
++            for _, s in live)
++    first = min(later) if later else None
++    C = first is not None and any(p >= first for p, _ in live)
++    return A, B, C
++
++
++def test_siblings_only_shrink_the_owed_set():
++    """B => A and C => A over every ruled OPEN entry: 0 violations.
++
++    A later date inside an asking sentence is a later date in the body, and a
++    live ask after the first later date requires a later date to exist -- so
++    the implication holds by construction; this guards the construction.
++    """
++    clf = _clf()
++    sys.path.insert(0, str(REPO / "scripts"))
++    import task_list_markers as tlm
++    bodies = clf.bodies()
++    checked = 0
++    for e in tlm.parse_entries(REPO / "experimental_notes" /
++                               "CDSFL_MASTER_TASK_LIST.md"):
++        if (e.state or "").upper() != "OPEN" or not e.ruled:
++            continue
++        A, B, C = _abc(clf, bodies.get(e.ident, ""), e.ruled)
++        assert not (B and not A), f"{e.ident}: B without A"
++        assert not (C and not A), f"{e.ident}: C without A"
++        checked += 1
++    assert checked > 0, "no ruled OPEN entries -- the guard checked nothing"
++
++
++def test_refusal_budget_is_blind_to_the_proxy():
++    """`live_asks` is invariant to `ruled`, so the stop-gate budget never
++    moves when the `_later` proxy does."""
++    clf = _clf()
++    sys.path.insert(0, str(REPO / "scripts"))
++    import task_list_markers as tlm
++    bodies = clf.bodies()
++    for e in tlm.parse_entries(REPO / "experimental_notes" /
++                               "CDSFL_MASTER_TASK_LIST.md"):
++        if (e.state or "").upper() != "OPEN":
++            continue
++        b = bodies.get(e.ident, "")
++        with_r = clf.classify_text(e.state, e.ruled, b)["live_asks"]
++        without = clf.classify_text(e.state, None, b)["live_asks"]
++        assert with_r == without, f"{e.ident}: live_asks depends on ruled"
++
++
++def test_recorded_fact_never_silently_drops_an_entry():
++    """The proposed verdict leaves OWED only on a recorded stamp <= ruling."""
++    rec = _load("_t_rec",
++                "scripts/the_ask_outlives_the_ruling_is_a_recorded_fact_2026-11-14.py")
++    clf = _clf()
++    RULED = "2026-11-08"
++    ask_unstamped = "NEEDS HIS RULING: on whether to enable the gate. "
++    ask_early = "NEEDS HIS RULING raised:2026-11-05: on the first half. "
++    ask_late = "STILL NEEDS HIS RULING raised:2026-11-10: on the second half. "
++    ruling = "HIS RULING, 2026-11-08: enable it. "
++    note = "MEASURED AND RECORDED, 2026-11-10, this sentence asks nothing. "
++
++    # a stamp later than the ruling: OWED on the RECORD
++    v = rec.entry_verdict("OPEN", RULED, ask_late + ruling, clf)
++    assert (v["kind"], v["basis"]) == ("OWED", "recorded")
++    # every ask stamped on/before the ruling: GRANTED on the RECORD,
++    # even though the progress note would keep the A proxy firing
++    v = rec.entry_verdict("OPEN", RULED, ask_early + ruling + note, clf)
++    assert (v["kind"], v["basis"]) == ("GRANTED", "recorded")
++    # an unstamped ask: NEVER dropped -- the classifier's verdict stands, named
++    v = rec.entry_verdict("OPEN", RULED, ask_unstamped + ruling + note, clf)
++    base = clf.classify_text("OPEN", RULED, ask_unstamped + ruling + note)
++    assert v["kind"] == base["kind"] == "OWED" and v["basis"] == "proxy"
++    # and on the LIVE list: every departure from classify_text's OWED is
++    # backed by a full set of recorded stamps on/before the ruling
++    sys.path.insert(0, str(REPO / "scripts"))
++    import task_list_markers as tlm
++    bodies = clf.bodies()
++    for e in tlm.parse_entries(REPO / "experimental_notes" /
++                               "CDSFL_MASTER_TASK_LIST.md"):
++        if (e.state or "").upper() != "OPEN":
++            continue
++        b = bodies.get(e.ident, "")
++        base = clf.classify_text(e.state, e.ruled, b)
++        v = rec.entry_verdict(e.state, e.ruled, b, clf)
++        if base["kind"] == "OWED" and v["kind"] != "OWED":
++            assert v["basis"] == "recorded" and len(v["stamps"]) == len(
++                base["live_asks"]), f"{e.ident}: silently dropped"
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 03:57:07
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 03:27:52
+@@ -2222,8 +2222,8 @@
+ 
+ Amendment 2026-11-13T22:45:00+00:00, MINE: **BUILT: LAYER 3 HAS ITS FIRST INSTANCE.** `bench/directives/researchers/founder/` holds the 3 files he specified -- `standards.toml`, `preferences.toml`, `confirmations.toml` -- with a README in the parent explaining why 3 and why TOML. **IT POINTS, IT DOES NOT RESTATE:** the standards file names `software_general.txt`, `mathematics_general.txt` and `statistics_inference.txt`, and the guard fails if any named encoding does not exist. **ON TOML, HIS INSTINCT WAS RIGHT AND HIS REASON WAS NOT:** a `.txt` and a `.toml` sit in the same directory with the same permissions, so there is no security difference. The real argument is machine-checkability -- the 51 domain encodings have **5 different header shapes** and only 22 carry a full header, so a checker must handle 5 cases and misses fields in the other 29. A schema makes a missing confirmation date an ERROR rather than something a regular expression shrugs at. **★ A JUDGEMENT OF MINE HE SHOULD CHECK:** the public instance carries the REQUIREMENT and not the REASON. His delivery format is recorded as a working preference -- plain text, no markup, digits for all numbers -- with no mention of why, and the guard FAILS if a public instance contains any of 9 health or identifying terms. **The private instance is his to write and is deliberately not created here**, because transcribing health detail from memory into a file is not a judgement I should make on his behalf. He reads the public version before it is committed, which is his instruction.
+ 
+-**B189. THE SPOKEN REPORT HE READS UNDER-COUNTS HIS OWN DECISIONS AND PRINTS 1 ENTRY UNDER A HEADING ABOUT SOMETHING ELSE** Added 2026-11-13T21:35:00+00:00. **STATUS: MEASURED 2026-11-13. MINE. NO RULING IS REQUESTED.** **FIND, 2 FAULTS IN THE SURFACE HE ACTUALLY READS.** (1) **3 entries the task list itself marks as HIS appear 0 times in the generated decisions file**: B175 (the clean suite mutating the working tree), whose own status says the 17-minute redesign is his because it changes what a test asserts; B81 (the commit gate's stated time limit), which B183 (the gate's guard-listing rule) explicitly defers to; and B103 (whether the 36 guards absent from the board should join it), which carries his ruling marker in as many words. *(That clause originally reproduced the marker string literally. The decision producer then read THIS entry as asking him something, which is the same defect B169 records in a different predicate: a sentence DESCRIBING a marker read as one CARRYING it. The prose is reworded because it is incidental description rather than evidence -- unlike B168, whose wording was the evidence and was deliberately left alone. The predicate's blindness is real and is raised separately.)* The file rendered 13 decisions and none of the 3 is among them. (2) **B141 (the descriptor rule he has asked for twice) is titled for 2 things and its printed detail covers only the 2nd**, so the facility he asked for twice reaches him under a heading about a guard file. Decision 5 of the generated file renders it as *"whether the commit gate should check its own declared cost"*, which is the other half. **FOLLOW.** This is the spoken-surface analogue of a defect already recorded: a derived sentence inverting its source. A decision the record marks as his, which never reaches the document he reads, is indistinguishable to him from a decision nobody owes. **ANALYSE.** 1 of 20 two-part entries after inspection, Wilson [0.008881, 0.236131], Clopper-Pearson [0.001265, 0.248733]; the raw flag is 6 of 20, so 5 of the 6 are false positives and the checker that produced them is itself unwired -- see the companion entry. **FIX, PROPOSED.** The generator must derive its decision set from the SAME predicate the task list uses to mark an entry as his, rather than from the authored-detail file alone, and a 2-part title must carry detail covering both parts or declare which part the detail addresses. ★★★ **DIAGNOSED AND FIXED 2026-11-14, AND THIS ENTRY WAS WRONG ON 2 OF ITS 3 NAMED ENTRIES.** Checked at commit `84fd2253`, the last task-list commit before this entry was written: **B81 (the commit gate's stated time limit) and B103 (whether the 36 absent guards should join the board) were ALREADY `state: DONE | status: COMMITTED`.** A DONE entry owes him nothing, so their absence from the generated decisions file was CORRECT and the claim that 3 entries marked as his were missing was an over-count by 2. That is the `a-correction-must-check-its-subjects-scope` shape: 3 identifiers were asserted without their states being read. **B175 (the clean suite mutating the working tree) IS THE 1 REAL CASE, AND IT WAS INVISIBLE THROUGH 4 INDEPENDENT GATES, each sufficient on its own.** **GATE 1 — THE ASK PATTERN.** `how_many_decisions_actually_need_him_2026-11-01.ASKS` requires *is his TO RULE*, *so it is his*, or an explicit NEEDS-HIS-RULING spelling. B175 says **"THE 17-MINUTE REDESIGN IS HIS, because it changes what a test asserts"** — the bare possessive, in none of them. **Repaired as a COMPOSED fix with the measurement his 2026-10-02 standard demands:** a bare form requiring a DECISION NOUN immediately before the possessive, plus an exclusion for a sentence that names ANOTHER entry. Over the live task list, entries flagged as asking him something: **neither repair 60; widening alone 64, adding 3 true and 1 false, precision 0.750000; exclusion alone 60, which is INERT because there is nothing to exclude without the widening; both 63, adding the same 3 true and 0 false, precision 1.000000.** The composed form DOMINATES the widening and the exclusion is no substitute, so the composition is justified rather than merely non-conflicting — **the 1 composition tonight that actually met his standard.** The 1 false positive the exclusion removes is THIS ENTRY, whose own sentence names B81, B103, B175 and B183: the describing-read-as-carrying class B169 records, and B189 had already been reworded once for exactly that confusion in a different predicate. **GATE 2 — A SUPPRESSION FLAG WHOSE OWN TEXT ADMITTED THE PROBLEM, and this was the 1 of the 4 that actually decided the outcome: repairing the other 3 without it would have changed nothing he sees.** B175's authored detail carried `no_ruling_needed` = *"The 2 writes are mine to fix and the seam is already prepared. Only the 17-minute redesign is his, because it changes what a test asserts."* **The generator reads that field's TRUTHINESS and never its content**, so a nuanced reason suppressed the whole entry while stating that part of it was his. Measured: **32 of 61 records carry a truthy flag, 25 as a boolean and 7 as PROSE, and 2 of the 32 carry text admitting something is his — 0.062500, Wilson [0.017311, 0.201471], Clopper-Pearson [0.007661, 0.208069].** Only 1 of those 2 is genuine: the other says the ruling is *already recorded*, which is a spent ruling and a correct suppression. B175's record now carries a spoken heading and no suppression, and its detail states plainly that the 2 writes are mine and the 17-minute redesign is his. **GATE 3 — THE TITLE CONVENTION.** `do_the_two_decision_surfaces_agree_2026-11-01.derived()` parses the entry identifier out of the rendered HEADING TEXT, so a title not beginning with its own code yields a garbage ident — literally `'The'` for B175. **4 of 49 records breached it, 0.081633, Wilson [0.032203, 0.191891]: B175, B176, B177 and B178, all written in 1 batch.** All 4 prefixed. **GATE 4 — A STALE RECORD REFUSED THE WHOLE GENERATOR.** Closing B183 earlier the same night left its authored detail behind, and `morning_report_build_2026-10-12.py` exited **3** rather than render a file disagreeing with the task list. So the cost of an incomplete close is not 1 missing item but the entire document he reads. Removed. **Closing an entry means removing its authored detail as well as its ticket.** **AND A 3-SURFACE DIVERGENCE WAS FOUND IN PASSING, which is B160's question made concrete rather than argued.** 3 instruments claim to say whose move an entry is: `how_much_of_this_is_actually_his_2026-11-12.py` called B175 MINE; `classify_text` called it OWED once gate 1 was repaired; and the morning report — the only one that decides what he reads — excluded it on gate 2 regardless of either. **Repairing gate 1 alone changed 0 of what reached him**, which is why the harness's own verdict on that mutation is worth more than the repair: it showed gate 1 was not load-bearing for DELIVERY, only for the turn counter and the whose-move producer. **P-PASS: `bench/tests/test_a_decision_reaches_the_file_he_reads_2026-11-14.py`, 15 tests, on `hooks/pre-commit`; `scripts/the_decision_delivery_mutations_2026-11-14.py`, 6 of 6 red, both subjects restored SHA-256 identical.** 3 of the 4 gates are DATA rather than code, so 3 of the 6 mutations edit the authored-detail file — a harness touching only code would have left 3 of 4 gates unverified. **AND 2 OF THE 6 MUTATIONS FOUND MY GUARD WEAK RATHER THAN THE FIX BROKEN**, which is the 4th time in this window: both tests asserted on the PATTERNS instead of on the classifier's use of them, so disabling the use left them green. Both now drive `classify_text` and `still_asks`.
+-<!-- task: B189 | state: OPEN | status: TESTED | evidence: scripts/build_decisions_file_2026-11-07.py, experimental_notes/data/morning_report_decisions.json -->
++**B189. THE SPOKEN REPORT HE READS UNDER-COUNTS HIS OWN DECISIONS AND PRINTS 1 ENTRY UNDER A HEADING ABOUT SOMETHING ELSE** Added 2026-11-13T21:35:00+00:00. **STATUS: MEASURED 2026-11-13. MINE. NO RULING IS REQUESTED.** **FIND, 2 FAULTS IN THE SURFACE HE ACTUALLY READS.** (1) **3 entries the task list itself marks as HIS appear 0 times in the generated decisions file**: B175 (the clean suite mutating the working tree), whose own status says the 17-minute redesign is his because it changes what a test asserts; B81 (the commit gate's stated time limit), which B183 (the gate's guard-listing rule) explicitly defers to; and B103 (whether the 36 guards absent from the board should join it), which carries his ruling marker in as many words. *(That clause originally reproduced the marker string literally. The decision producer then read THIS entry as asking him something, which is the same defect B169 records in a different predicate: a sentence DESCRIBING a marker read as one CARRYING it. The prose is reworded because it is incidental description rather than evidence -- unlike B168, whose wording was the evidence and was deliberately left alone. The predicate's blindness is real and is raised separately.)* The file rendered 13 decisions and none of the 3 is among them. (2) **B141 (the descriptor rule he has asked for twice) is titled for 2 things and its printed detail covers only the 2nd**, so the facility he asked for twice reaches him under a heading about a guard file. Decision 5 of the generated file renders it as *"whether the commit gate should check its own declared cost"*, which is the other half. **FOLLOW.** This is the spoken-surface analogue of a defect already recorded: a derived sentence inverting its source. A decision the record marks as his, which never reaches the document he reads, is indistinguishable to him from a decision nobody owes. **ANALYSE.** 1 of 20 two-part entries after inspection, Wilson [0.008881, 0.236131], Clopper-Pearson [0.001265, 0.248733]; the raw flag is 6 of 20, so 5 of the 6 are false positives and the checker that produced them is itself unwired -- see the companion entry. **FIX, PROPOSED.** The generator must derive its decision set from the SAME predicate the task list uses to mark an entry as his, rather than from the authored-detail file alone, and a 2-part title must carry detail covering both parts or declare which part the detail addresses.
++<!-- task: B189 | state: OPEN | status: PROPOSED | evidence: scripts/build_decisions_file_2026-11-07.py, experimental_notes/data/morning_report_decisions.json -->
+ 
+ **B190. A PANEL ANSWERED A QUESTION HE ASKED AND THE ANSWER REACHED NO DOCUMENT HE HAS EVER BEEN GIVEN** Added 2026-11-13T21:35:00+00:00. **STATUS: MEASURED 2026-11-13. [NEEDS YOUR RULING] on the policy question the panel hands him; the DELIVERY failure is mine.** **FIND.** The standards-currency brief put 5 sub-questions to the free seats. 4 are reported in the spoken file he received. **Q1, on commensuration, is not reported in it at all** -- neither the spoken copy nor its markdown twin contains the words commensuration, disjunction or incommensurable, and both carry identical section structures, so this is not a rendering difference. **THE SEATS DID ANSWER IT.** `experimental_notes/Standards_Currency_Round2_FULL_RECORD_2026-11-13.md` holds 8 occurrences of Q1 and 10 of disjunction, including the resolution: *"Disjunction is the unique fail-safe member, so 'is disjunction right?' is a policy question, not an admissibility one"* -- **which makes it HIS decision** -- and the finding that the empirical half cannot even be asked, because *"the field the disjunction needs is absent from all 809 records"*. **FOLLOW, AND THIS IS THE WORST SHAPE A DELIVERY FAULT CAN TAKE.** The answer exists, in a 115,529-byte record he has not been given, and the policy question it hands him has reached neither a spoken file nor an entry. He asked, the panel answered, and the answer stopped. **3 FURTHER PANEL DECISIONS HAVE NO ENTRY EITHER:** adopting clause-digest pinning as the admissibility test in place of tuple comparison; confirming provenance WITHOUT the dynamic relabel, since the 2 repairs interfere and cannot both ship; and authorising the stamping of each severity record with scale name, standard version and critical level -- **269 sites across 139 files, about 3.0 per cent storage overhead, against 0 of 14,452 severity records carrying any scale or version field today**. That last one is the same root cause as the commensuration gap: the field the aggregator needs does not exist.
+ <!-- task: B190 | state: OPEN | status: PROPOSED | evidence: experimental_notes/Standards_Currency_Round2_FULL_RECORD_2026-11-13.md -->
+
+### fable:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-11-14 03:55:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/experimental_notes/data/morning_report_decisions.json	2026-11-14 03:41:24
+@@ -1114,17 +1114,18 @@
+     "why": "A withdrawn number could keep passing this check forever, and a panel would then reason from it. The repair also had to report the case differently from a figure that is simply missing, because those 2 send a reader in opposite directions: one says put the figure back in the script, the other says reissue the brief and leave the script alone."
+   },
+   "task:B175": {
+-    "evidence_line": "★ THIS RECORD SUPPRESSED ITSELF UNTIL 2026-11-14 AND ITS OWN TEXT SAID SO. It carried no_ruling_needed = \"The 2 writes are mine to fix and the seam is already prepared. Only the 17-minute redesign is his, because it changes what a test asserts.\" The generator reads that field's TRUTHINESS, not its content, so a nuanced reason suppressed the whole entry while stating that part of it was yours. The entry appeared 0 times in the generated decisions file. Measured: 32 of 61 records carry a truthy no_ruling_needed, 25 as a boolean and 7 as prose, and 2 of the 32 carry text admitting something is yours -- this one, where the suppression was wrong, and 1 where it is right because the ruling is already recorded.",
++    "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading. A spoken heading on an item the generator does not render as a decision asserts he should be asked and he never is, which is what the inverse-direction guard caught on 2026-11-12 and caught again on 2026-11-13 for this entry. The reason is recorded here rather than the heading simply deleted, because the guard offers 3 remedies and which one was chosen is itself information.",
++    "evidence_line": "Traced to scripts/instrument_inventory.py line 313, an unconditional write, and to test_desktop_mirrors_stay_current_2026-09-10.py line 355 running the real hook with cwd set to the real repository; confirmed by lsof on the live process and by 93 minutes with no further writes.",
++    "no_ruling_needed": "The 2 writes are mine to fix and the seam is already prepared. Only the 17-minute redesign is his, because it changes what a test asserts.",
+     "options": [
+       "An environment seam the generator honours and the test sets for every generator: prepared, and P-passed at 12 checks of 12.",
+       "Give the mirrors test a scratch repository: REFUTED, the test's own comment records why a copied tree produces a false red.",
+       "Have the mirrors test assert the effect of the hook's first stage rather than its exit code: removes the real-repository run, stops the staging, and takes about 17 minutes off every full suite."
+     ],
+-    "recommendation_standards": "RECOMMENDED: option 3, on 2 of the 3 standards. SIMPLEST SUFFICIENT -- asserting the stage's effect is a narrower claim that dissolves the 900-second timeout rather than raising it. ADDITIVE is the one that argues AGAINST it, and that is stated rather than hidden: it removes an assertion, and the removal clause needs a committed measurement that the replacement dominates on a named property. The named property is SUITE COST at about 17 minutes a run, measured; the property it loses on is end-to-end coverage, at 1 assertion already duplicated by 2 other tests. COMPOSABILITY does not apply: the 3 parts address different writes and no measurement shows any pair beating either alone.",
+-    "spoken_heading": "WHETHER THE MIRRORS TEST SHOULD ASSERT THE HOOK'S FIRST STAGE INSTEAD OF ITS EXIT CODE, WHICH TAKES 17 MINUTES OFF EVERY FULL SUITE RUN AND CHECKS LESS",
+-    "title": "B175 - the clean suite mutates the working tree and the git index while measuring them",
+-    "what": "2 tests write to the live repository during a full-suite run, and 1 of them stages a file into the git index. Those 2 writes are mine to fix and the environment seam is already prepared and proven at 12 checks of 12. THIS DECISION IS THE THIRD PART AND IT IS YOURS: the mirrors test currently asserts that the whole commit hook exits successfully, which drags the entire guard board along. Asserting instead the effect of the hook's FIRST stage would let the test run in a throwaway repository, stop the index being written, and remove about 17 minutes from every full suite run.",
+-    "why": "A measurement that alters its subject cannot speak about the subject, and the staged file would also enter the next commit unasked. But the 17-minute change is not a repair with a right answer: it changes WHAT A TEST ASSERTS. The hook's first stage sits 368 lines before the guard board, and the mirror ordering is the only thing the test claims to examine, so asserting the stage is the narrower and more honest claim. The cost is that it stops incidentally proving the whole hook passes -- real coverage, standing at 1 assertion over the hook's entire exit path, and precisely what costs the 17 minutes. The end-to-end behaviour is already covered by 2 other tests."
++    "recommendation_standards": "simplest sufficient: the environment seam is the smallest change that stops the observed write, and it is additive because the default behaviour is unchanged for every existing caller.",
++    "title": "The clean suite mutates the working tree and the git index while measuring them",
++    "what": "2 tests write to the live repository during a full-suite run, and 1 of them stages a file into the git index. A data file changed at 04:42:02 and 04:42:39; the memory-exclusions ledger was written and staged at 04:43:04 with the index rewritten at 04:44:12.",
++    "why": "A measurement that alters its subject cannot speak about the subject. The staged file would also enter the next commit silently, and 14 test files read the 2 paths involved."
+   },
+   "task:B176": {
+     "_why_no_spoken_heading": "This item is mine to do and asks him nothing, so it carries no_ruling_needed and no spoken heading. A spoken heading on an item the generator does not render as a decision asserts he should be asked and he never is, which is what the inverse-direction guard caught on 2026-11-12 and caught again on 2026-11-13 for this entry. The reason is recorded here rather than the heading simply deleted, because the guard offers 3 remedies and which one was chosen is itself information.",
+@@ -1135,7 +1136,7 @@
+       "Binding-detection alone: REJECTED, it loses the 2026-08-26 defect the guard was written for, because the commissioning fixtures are source snippets with no assignment."
+     ],
+     "recommendation_standards": "additive: the union adds a capability and removes none, which is what the standard requires of a replacement.",
+-    "title": "B176 - the guard against tests mutating the working tree is blind twice over",
++    "title": "The guard against tests mutating the working tree is blind twice over",
+     "what": "The guard names the staged file among those it protects and did not fire. It returns early unless the offending text mentions 1 particular script, and it recognises the repository root by a list of 4 variable spellings while the offending file uses a 5th.",
+     "why": "A guard that pins variable NAMES where the property is where a path RESOLVES can be defeated by renaming a variable. That is source-text matching inside the guard whose job is to stop the tree being mutated."
+   },
+@@ -1148,7 +1149,7 @@
+       "Change the selection to prefer the newer client: REJECTED, which client serves a dispatch decides which model answers."
+     ],
+     "recommendation_standards": "additive: a third state is added, neither existing state is altered, and an older report structure without the new field still renders.",
+-    "title": "B177 - the client resolver reports the selected binary as newest when it has no version to compare",
++    "title": "The client resolver reports the selected binary as newest when it has no version to compare",
+     "what": "The list of newer candidates is built only when a selected version exists, so an unread version yields an empty list and the description falls through to saying the selected client is the newest available. An absence of data renders as a positive verdict.",
+     "why": "The suite runs under a network guard that refuses subprocesses, so every test must ask the resolver not to read the version. The test path is exactly the path that produces the false statement, and the guard's consistency check re-implemented the producer's own condition, so it passed while testing nothing."
+   },
+@@ -1160,7 +1161,7 @@
+       "Restate all 11 from the producer, name the superseded values as the file's own convention requires, correct the exclusion rule, and add the re-run instruction the archive-severity block already carries."
+     ],
+     "recommendation_standards": "additive: the superseded values are named rather than deleted, so a reader who remembers them sees which moved.",
+-    "title": "B178 - every pinned commit-cost figure in both instruction files is stale, and 1 half was wrong when written",
++    "title": "Every pinned commit-cost figure in both instruction files is stale, and 1 half was wrong when written",
+     "what": "All 11 figures reproduce differently. The mean rose from 1485.03 to 1612.619048 seconds, the median from 1649.00 to 1672.0, and the interval moved accordingly.",
+     "why": "2 distinct faults. The ledger is not under version control and roughly doubled in the 3 days after the figures were recorded, which is drift and nobody's error. Separately the text describes the exclusion rule as 13 refusals under 300 seconds while the producing script has excluded runs under 120 seconds as indeterminate since a commit 4 days earlier, which was wrong when written."
+   },
+
+### fable:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-14 03:55:44
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/hooks/pre-commit	2026-11-14 03:21:06
+@@ -577,7 +577,6 @@
+ bench/tests/test_the_credence_coordinate_carries_consequence_2026-11-14.py
+ bench/tests/test_the_reader_vocabulary_cannot_drift_2026-11-14.py
+ bench/tests/test_the_reminder_measurement_holds_2026-11-14.py
+-bench/tests/test_a_decision_reaches_the_file_he_reads_2026-11-14.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### fable:attempt-1:scripts/how_many_decisions_actually_need_him_2026-11-01.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/how_many_decisions_actually_need_him_2026-11-01.py	2026-11-14 03:55:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/scripts/how_many_decisions_actually_need_him_2026-11-01.py	2026-11-14 03:53:48
+@@ -128,49 +128,6 @@
+ #: HIM, which is the opposite of the error this script exists to catch. The ask
+ #: is therefore scoped to its own SENTENCE, and an entry is settled only when
+ #: EVERY asking sentence in it is granted or retired.
+-#: ★ THE BARE POSSESSIVE FORM, ADDED 2026-11-14, AND THE ENTRY IT WAS HIDING.
+-#:
+-#: `ASKS` requires "is his TO RULE", "so it is his", or one of the explicit
+-#: NEEDS-HIS-RULING spellings. B175 -- the clean suite mutating the working tree
+-#: -- says **"THE 17-MINUTE REDESIGN IS HIS, because it changes what a test
+-#: asserts"**. The bare form was in none of them, so the entry classified as
+-#: MINE with 0 asking sentences and appeared **0 times** in the generated
+-#: decisions file. B189 reported 3 such entries; checked at the commit before it
+-#: was written, 2 of the 3 (B81 and B103) were already DONE and COMMITTED and so
+-#: correctly excluded. B175 is the 1 real case.
+-#:
+-#: THE SUBJECT MUST BE A DECISION NOUN. A bare "is his" fires on ordinary prose
+-#: -- his machine, his own ruling, his words -- so the pattern demands a noun
+-#: that names a thing to be decided immediately before it.
+-_BARE_POSSESSIVE_ASK = re.compile(
+-    r"\b(?:redesign|decision|choice|call|change|move|cut|level|mapping|question|"
+-    r"ruling|trade|verdict|promotion|wording)\s+(?:is|are|remains)\s+(?:his|yours)\b",
+-    re.I)
+-
+-#: ★ AND THE EXCLUSION THAT MAKES THE WIDENING SAFE: a sentence naming ANOTHER
+-#: entry attributes the decision elsewhere rather than carrying one.
+-#:
+-#: Measured over every entry before either was applied. Widening alone adds 4 --
+-#: B60, B80, B175 and B189 -- of which B189 is a FALSE POSITIVE: its sentence
+-#: reads *"3 entries the task list itself marks as HIS..."* and names B81, B103,
+-#: B175 and B183. That is the describing-read-as-carrying class B169 records,
+-#: and B189 had already been reworded once for the same confusion in a different
+-#: predicate. The exclusion discriminates all 4 of 4.
+-#:
+-#: ★ AND THIS IS A COMPOSED FIX WITH THE MEASUREMENT HIS 2026-10-02 STANDARD
+-#: DEMANDS, not an assertion that 2 repairs coexist. Over the live task list,
+-#: entries flagged as asking him something: **neither repair 60; widening alone
+-#: 64, adding 3 true and 1 false, precision 0.750000; exclusion alone 60, which
+-#: is INERT because there is nothing to exclude without the widening; both 63,
+-#: adding the same 3 true and 0 false, precision 1.000000.** The composed form
+-#: DOMINATES the widening on precision and the exclusion is no substitute for
+-#: it, so the composition is justified rather than merely non-conflicting.
+-_ATTRIBUTES_TO_ANOTHER_ENTRY = re.compile(r"\bB\d{1,4}\b")
+-
+-#: An entry body opens with its own code, e.g. `**B175. TITLE**`.
+-_OWN_CODE = re.compile(r"\*{0,2}(B\d{1,4})\.")
+-
+-
+ _SENT = re.compile(r"(?<=[.!?])\s+")
+ 
+ 
+@@ -273,21 +230,7 @@
+         if STALE.search(sent):
+             continue
+         if not ASKS.search(sent):
+-            #: THE BARE POSSESSIVE FORM, admitted only when the sentence does
+-            #: not hand the decision to another entry. See the 4-cell
+-            #: measurement beside `_BARE_POSSESSIVE_ASK`.
+-            if not _BARE_POSSESSIVE_ASK.search(sent):
+-                continue
+-            #: THE ENTRY'S OWN CODE IS DERIVED FROM ITS OWN TEXT, not taken
+-            #: from a parameter: `classify_text` is a PURE function of one
+-            #: entry's text and has no identifier argument, so adding one would
+-            #: change a signature every caller uses.
+-            _own = _OWN_CODE.match(txt.lstrip())
+-            _mine = _own.group(1) if _own else None
+-            _others = {x for x in _ATTRIBUTES_TO_ANOTHER_ENTRY.findall(sent)
+-                       if x != _mine}
+-            if _others:
+-                continue
++            continue
+         one = re.sub(r"\s+", " ", sent).strip()
+         free = bool(FREE.search(sent))
+         retired = any(s > start for s in stale_at)
+
+### fable:attempt-1:scripts/the_ask_outlives_the_ruling_is_a_recorded_fact_2026-11-14.py
+--- /dev/null	2026-11-14 04:00:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1q0zzidj/repo/scripts/the_ask_outlives_the_ruling_is_a_recorded_fact_2026-11-14.py	2026-11-14 03:52:29
+@@ -0,0 +1,127 @@
++#!/usr/bin/env python3
++"""Whether an ask outlives a ruling, decided by a RECORDED fact, never by a date proxy.
++
++* PROPOSED, NOT INSTALLED -- AWAITS THE FOUNDER'S RULING. Nothing imports this
++file; the live banner still routes through `classify_text` unchanged. Panel
++deliverable of 2026-11-14 for the brief "the predicate that decides what the
++founder is told he owes".
++
++THE DEFECT THIS REPLACES, DEMONSTRATED NOT ASSERTED. `classify_text`'s `_later`
++test -- any date in the body later than the `ruled:` date -- is a proxy for "a
++question was raised after the ruling". A falsifier executed 2026-11-14 against
++the real module showed it fires on a dated progress note that asks nothing
++(AssertionError raised; controls GRANTED/OWED both correct). On live data it
++holds B94 at OWED although every post-ruling date there is a progress note
++("HIS QUESTION ANSWERED 2026-11-09", "SETTLED BY MEASUREMENT", "NOT BUILT")
++and the only live ask was added 2026-11-03, five days BEFORE the ruling.
++
++WHY NO 4TH TEXT PREDICATE IS WRITTEN. The 3 siblings (A: any later date;
++B: later date inside the ask; C: ask positioned after the first later date)
++form a provable implication lattice -- B implies A and C implies A, machine-
++checked over all 10 ruled OPEN entries on 2026-11-14 with 0 violations -- so
++B and C can only SHRINK the owed set relative to A, which is the suppression
++direction withdrawn on 2026-11-09. The fact "when was this question raised"
++is a POINT EVENT the body text does not carry; no text predicate recovers it.
++
++THE RECORDED FORM. An asking sentence may carry an inline stamp
++`raised:YYYY-MM-DD`, written at the moment the question is raised. Then:
++
++  - any live ask stamped LATER than the ruling      -> OWED,    basis RECORDED
++  - every live ask stamped, none later              -> GRANTED, basis RECORDED
++  - any live ask UNSTAMPED                          -> the classifier's own
++    verdict stands (the A proxy), basis PROXY -- and the caller is told the
++    entry is UNDECIDED BY RECORD rather than handed a silent verdict.
++
++MONOTONE-SAFE BY CONSTRUCTION: this never removes an entry from OWED relative
++to `classify_text` except on a recorded stamp -- the direction the founder's
++precedent requires. `bench/tests/
++test_the_later_proxy_only_overreports_2026-11-14.py` asserts it.
++
++WHAT IT COSTS AT THE RAISE SURFACES. One 17-character token per new ask,
++written where the ask is written. A lint in `task_list_markers.check()` COULD
++warn on a new unstamped ask -- proposed only, not installed, because `check()`
++gates his file and widening a gate is his to rule. Legacy asks need no
++backfill: they fall through to today's behaviour, and the undecided residue
++(5 entries on 2026-11-14) SHRINKS as he rules on them, instead of growing by
++1 each time a ruling is recorded on an asking entry -- which is how B142
++joined the set on 2026-11-14.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import re
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++LIST = REPO / "experimental_notes" / "CDSFL_MASTER_TASK_LIST.md"
++
++#: The recorded fact: `raised:` plus the date, inside the asking sentence.
++RAISED = re.compile(r"\braised:(\d{4}-\d{2}-\d{2})")
++
++
++def _clf():
++    spec = importlib.util.spec_from_file_location(
++        "_aor_clf",
++        REPO / "scripts" / "how_many_decisions_actually_need_him_2026-11-01.py")
++    m = importlib.util.module_from_spec(spec)
++    sys.modules.setdefault("_aor_clf", m)
++    spec.loader.exec_module(m)
++    return m
++
++
++def entry_verdict(state: str, ruled: str | None, body: str, clf=None) -> dict:
++    """classify_text's verdict, upgraded to RECORDED where a stamp decides it.
++
++    Returns {kind, basis, stamps} where basis is one of:
++      "recorded"  -- every live ask's raise date is on record and decided it
++      "proxy"     -- at least one live ask is unstamped; the classifier's own
++                     verdict stands and the entry is UNDECIDED BY RECORD
++      "no-ruling" -- no ruling to outlive; the stamp question does not arise
++    """
++    clf = clf or _clf()
++    d = clf.classify_text(state, ruled, body)
++    if not ruled or d["kind"] != "OWED" or not d["live_asks"]:
++        return {**d, "basis": "no-ruling" if not ruled else "recorded",
++                "stamps": []}
++    stamps = [(s, RAISED.search(s)) for s in d["live_asks"]]
++    dated = [(s, m.group(1)) for s, m in stamps if m]
++    if any(dt > ruled for _, dt in dated):
++        return {**d, "kind": "OWED", "basis": "recorded", "stamps": dated}
++    if len(dated) == len(d["live_asks"]):
++        # every live ask on record, none later than the ruling: it answered them
++        return {**d, "kind": "GRANTED", "basis": "recorded", "stamps": dated}
++    # an unstamped ask: NEVER silently dropped -- the proxy verdict stands, named
++    return {**d, "kind": d["kind"], "basis": "proxy", "stamps": dated}
++
++
++def main() -> int:
++    sys.path.insert(0, str(REPO / "scripts"))
++    import task_list_markers as tlm                          # type: ignore
++    clf = _clf()
++    bodies = clf.bodies()
++    opens = [e for e in tlm.parse_entries(LIST)
++             if (e.state or "").upper() == "OPEN"]
++    recorded, proxy, unruled_owed = [], [], []
++    for e in opens:
++        v = entry_verdict(e.state, e.ruled, bodies.get(e.ident, ""), clf)
++        if v["kind"] != "OWED":
++            continue
++        if v["basis"] == "no-ruling":
++            unruled_owed.append(e.ident)
++        elif v["basis"] == "recorded":
++            recorded.append(e.ident)
++        else:
++            proxy.append(e.ident)
++    owed = len(recorded) + len(proxy) + len(unruled_owed)
++    print(f"OPEN {len(opens)}: {owed} await him -- "
++          f"{len(unruled_owed)} never ruled, {len(recorded)} by RECORD, "
++          f"{len(proxy)} by the date PROXY ONLY (undecided by record)")
++    if proxy:
++        print(f"  undecided by record: {', '.join(proxy)}")
++    # the composed half of the fix: the residue is SHOWN, never silently resolved
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

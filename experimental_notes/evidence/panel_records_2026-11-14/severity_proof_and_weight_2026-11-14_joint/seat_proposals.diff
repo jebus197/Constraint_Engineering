@@ -1,0 +1,1389 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 01:06:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 00:55:20
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_the_credence_coordinate_still_carries_consequence_2026-11-14.py
+--- /dev/null	2026-11-14 01:06:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/bench/tests/test_the_credence_coordinate_still_carries_consequence_2026-11-14.py	2026-11-14 01:03:56
+@@ -0,0 +1,181 @@
++"""Guards for the joint round `severity_proof_and_weight_2026-11-14`.
++
++Each test pins a fact the two blind seats DISAGREED about, so that the
++resolution is executed rather than remembered. Every one reads the live
++modules; none re-types a formula under test.
++"""
++import inspect
++
++import pytest
++
++import bench.audit_closing_window as acw
++import bench.convergence_location as cl
++import bench.evidence as ev
++from bench.reference_runner_v3 import (
++    CRITICAL_SEVERITY_THRESHOLD,
++    SEV_F_W,
++    _is_demotion_eligible,
++    compute_sev_f,
++)
++
++REPO_TOML = "bench/cdsfl_registry/domain_manifest.toml"
++
++
++def _spellings():
++    """Every spelling of the frozen cut OUTSIDE the canonical constant.
++
++    Read by IMPORT and `inspect.signature`, never by text search: a parameter
++    DEFAULT is invisible to a search for an assignment, which is how the
++    round's brief came to say four when there are six.
++    """
++    out = [("bench/evidence.py::LEDGER_CRITICAL_SEVERITY",
++            ev.LEDGER_CRITICAL_SEVERITY),
++           ("bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD",
++            acw.CRITICAL_SEVERITY_THRESHOLD)]
++    for name, fn in sorted(inspect.getmembers(cl, inspect.isfunction)):
++        p = inspect.signature(fn).parameters.get("critical_threshold")
++        if p is not None and p.default is not inspect.Parameter.empty:
++            out.append(("bench/convergence_location.py::%s" % name, p.default))
++    return out
++
++
++def test_every_spelling_of_the_critical_cut_matches_the_runner():
++    """No duplicate spelling of the cut may drift from the canonical constant.
++
++    Enumerated rather than listed, so a spelling added later is caught without
++    editing this test.
++    """
++    drifted = [(n, v) for n, v in _spellings()
++               if v != CRITICAL_SEVERITY_THRESHOLD]
++    assert not drifted, (
++        "these spellings of the critical cut have drifted from "
++        "reference_runner_v3.CRITICAL_SEVERITY_THRESHOLD=%r: %r"
++        % (CRITICAL_SEVERITY_THRESHOLD, drifted))
++
++
++def test_there_are_six_spellings_not_four():
++    """The round's brief says four. Measured by import, there are six.
++
++    `convergence_location` carries `critical_threshold=0.7` on FOUR functions,
++    not two. This is a floor, not an equality: a NEW spelling should make the
++    count rise and should be pinned by the test above, not forbidden here.
++    """
++    assert len(_spellings()) >= 6, (
++        "expected at least the six known spellings, found %d: %r"
++        % (len(_spellings()), _spellings()))
++
++
++def test_the_three_proof_call_sites_do_not_share_one_population():
++    """`severity_is_proven`'s call sites split the registry, they do not share it.
++
++    Sites A (A4 release door) and B (reasoned withdrawal) are each conjoined
++    with `severity < CRITICAL_SEVERITY_THRESHOLD`. Site C (calibration
++    demotion) runs only where `_is_demotion_eligible` holds, and that predicate
++    REQUIRES `severity >= CRITICAL_SEVERITY_THRESHOLD`. The two populations are
++    therefore disjoint and complementary, which is why no single percentage is
++    "the door-relevant figure".
++    """
++    base = {"falsifier_verdict": "CONFIRMED", "latent": True,
++            "finding_category": "performance"}
++    below = dict(base, severity=CRITICAL_SEVERITY_THRESHOLD - 0.01)
++    at_or_above = dict(base, severity=CRITICAL_SEVERITY_THRESHOLD)
++
++    assert not _is_demotion_eligible(below), (
++        "site C must not reach an entry below the cut -- if it does, the "
++        "populations overlap and the two-figure report is wrong")
++    assert _is_demotion_eligible(at_or_above), (
++        "site C must reach an entry at or above the cut")
++
++
++def test_the_credence_coordinate_is_not_a_function_of_the_evidence_alone():
++    """RECORDED DEFECT, not a desired property.
++
++    Appendix section 7.7.1 defines `severity_d(f) = ( c_d(f) , credence(f) )`
++    with `credence(f)` being section 7.7's product, `W(class) * confidence *
++    Ver`. `W` is keyed on CONSTRAINT CLASS -- the core directives' section 1
++    CONSEQUENCE partition. So two findings with identical evidence receive
++    different "credence" solely because one concerns a safety constraint.
++
++    ★ WHEN `W` LEAVES THE CREDENCE COORDINATE, THIS TEST MUST BE INVERTED, NOT
++    DELETED: change the assertion to `hard == soft` and keep it. It exists to
++    make the repair visible in the diff, and deleting it would hide exactly the
++    change it was written to expose.
++    """
++    assert set(SEV_F_W) == {"HARD", "SOFT"}, (
++        "this guard is written against the two-weight table; re-derive it if "
++        "the table changes")
++    differing = [(c, v) for c in (0.9, 0.6, 0.3)
++                 for v in ("CONFIRMED", "UNTOOLABLE")
++                 if compute_sev_f("HARD", c, v) != compute_sev_f("SOFT", c, v)]
++    assert len(differing) == 6, (
++        "expected all six (confidence, verdict) cells to show the credence "
++        "coordinate varying with CONSEQUENCE class; got %r" % (differing,))
++
++
++def test_a_third_weight_changes_a_lexicographic_pair_ordering():
++    """Refutes "a 3rd weight decides nothing the pair gate reads".
++
++    A pair is compared lexicographically. When `c_d` TIES, the comparison falls
++    through to `credence`, which contains `W`. So a third weight does change
++    pair orderings, and R2 is not jobless under R3 -- it refines a term that
++    should not be in that coordinate at all.
++    """
++    a_conf, b_conf, ver = 0.9, 0.8, 1.0
++    # Two weights: "MEDIUM" is unrecognised, so compute_sev_f defaults to HARD.
++    two_a = compute_sev_f("MEDIUM", a_conf, "CONFIRMED")
++    two_b = compute_sev_f("HARD", b_conf, "CONFIRMED")
++    # Three weights, as R2 proposes: a value strictly inside (1/2, 1).
++    w3 = {"HARD": 1.0, "MEDIUM": 0.8, "SOFT": 0.5}
++    three_a, three_b = w3["MEDIUM"] * a_conf * ver, w3["HARD"] * b_conf * ver
++
++    assert two_a > two_b, "under two weights A must outrank B"
++    assert three_a < three_b, "under three weights B must outrank A"
++    assert (two_a > two_b) != (three_a > three_b), (
++        "the third weight must flip the tie-break; if it does not, the claim "
++        "that R2 is live under R3 falls")
++
++
++def test_a_per_domain_critical_level_cannot_reach_the_numeric_gate():
++    """The gate compares with `>=` against a float; declared levels are strings.
++
++    The probe entry is asserted to SURVIVE `_gate_population` first. Two
++    earlier versions of this probe passed without demonstrating anything: one
++    omitted a required argument and caught a signature `TypeError`, the other
++    used `round_opened` instead of `open_since_round`, so the entry was
++    filtered out and the comparison was never reached.
++    """
++    entries = [{"canonical_id": "X1", "severity": 0.9,
++                "open_since_round": 0, "status": "OPEN"}]
++    assert len(cl._gate_population(entries)) == 1, (
++        "probe entry must survive the gate population filter")
++    assert cl._criticals(entries, 1, CRITICAL_SEVERITY_THRESHOLD), (
++        "probe entry must be counted critical at the numeric cut, else a "
++        "clean run below would prove nothing")
++
++    with pytest.raises(TypeError, match="'>=' not supported"):
++        cl.hierarchical_novelty_series(entries, 1, ["s"],
++                                       critical_threshold="High")
++
++
++def test_the_manifest_declares_five_none_and_one_composed():
++    """Refutes "the 6 severity_scale='none' domains inherit the application level".
++
++    Measured: FIVE declare `none`. The sixth is `cross_domain`, which declares
++    `composed` -- and by the manifest's own rule a composed domain carries two
++    or more scales and inherits NO single application level.
++    """
++    try:
++        import tomllib
++    except ImportError:                                        # pragma: no cover
++        import tomli as tomllib
++    import pathlib
++    root = pathlib.Path(__file__).resolve().parents[2]
++    man = tomllib.loads((root / REPO_TOML).read_text(encoding="utf-8"))
++    none_d = [k for k, v in man.items()
++              if isinstance(v, dict) and v.get("severity_scale") == "none"]
++    composed = [k for k, v in man.items()
++                if isinstance(v, dict) and v.get("severity_scale") == "composed"]
++    assert len(none_d) == 5, "expected five 'none' domains, got %r" % (none_d,)
++    assert composed == ["cross_domain"], (
++        "expected cross_domain to be the only 'composed' domain, got %r"
++        % (composed,))
+
+### cc2:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-13 23:56:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-14 01:04:30
+@@ -1481,7 +1481,55 @@
+ with `credence(f)` being today's §7.7 product under its own name. A product of a
+ consequence and a belief is neither. **§7.7 is NOT removed**: it remains the
+ definition of the credence factor, and the pair makes explicit which half it is.
++
++#### 7.7.1.a The credence coordinate still carries consequence (measured 2026-11-14)
++
++> **AMENDMENT, joint round `severity_proof_and_weight_2026-11-14`.** §7.7.1
++> above is correct that the product is a credence wearing a consequence name.
++> It is INCOMPLETE, and the gap was found by executing the definition rather
++> than reading it.
++
++`credence(f)` is defined above as "today's §7.7 product under its own name".
++That product is `W(class) · confidence · Ver(verification)`, and `W` is keyed
++on CONSTRAINT CLASS — the core directives' §1 partition of
++physics/mathematics/law/safety (HARD, `W = 1.0`) from
++economic/preference/convenience (SOFT, `W = 0.5`). **That is a consequence
++classification.** So the coordinate named `credence` is not a function of the
++evidence alone, and the pair carries consequence in BOTH coordinates.
++
++**Committed measurement**, `scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py`,
++executed against the live `bench.reference_runner_v3.compute_sev_f`:
++
++| property | today, `W·conf·Ver` | evidence-only, `conf·Ver` |
++|---|---|---|
++| evidential invariance — identical evidence, identical credence | **violated in 6 of 6** `(confidence, verdict)` cells | holds |
++| z3: `∃` identical evidence with differing credence | **sat** (defect present) | **unsat** (invariant) |
++| z3: induced order tracks the consequence order `c_d` | **sat** that a SOFT finding outranks a HARD one | lex pair: **unsat** |
++
++The z3 `unsat` for the lexicographic pair was independently re-derived on
++Wolfram Language (local Wolfram Engine): `Reduce[Exists[{rA,rB,kA,kB}, rA<rB &&
++0<=kA<=1 && 0<=kB<=1 && (rA>rB || (rA==rB && kA>kB))], {}, Reals]` → `False`.
++The consequence ranks enter only as `rA < rB`, so the result holds under every
++strictly increasing re-labelling φ of the domain's scale.
+ 
++**What this decides about R2 (a third consequence weight in `(1/2, 1)`).** The
++blind round's proposed reason for rejecting R2 — that under R3 consequence has
++moved to `c_d`, leaving `W` with no job — is **false as stated**. A pair is
++compared LEXICOGRAPHICALLY; when `c_d` ties, the comparison falls through to
++`credence`, which contains `W`. Executed: two findings sharing `c_d`, with
++`W ∈ {0.5, 1.0}` giving A ≻ B (0.900 vs 0.800) and `W ∈ {0.5, 0.8, 1.0}` giving
++B ≻ A (0.720 vs 0.800) — **the third weight flips the tie-break.** `W` is not
++jobless; it is MISPLACED. R2 and R3 remain mutually exclusive, but because R2
++adds precision to a term R3 should delete, not because the term is inert.
++Guarded by `bench/tests/test_the_credence_coordinate_still_carries_consequence_2026-11-14.py::test_a_third_weight_changes_a_lexicographic_pair_ordering`.
++
++**Not acted on here.** Removing `W` from the credence coordinate changes a live
++computation and is the founder's ruling under the additive standard, not the
++panel's. The named property on which the replacement would dominate is recorded
++above (evidential invariance: violated → holds) so that the ruling has its
++measurement in hand.
++
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 00:57:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 00:49:52
+@@ -2190,7 +2190,7 @@
+ **B180. THE GATE THAT ENFORCES HIS 60-SECOND MONITORING DIRECTIVE WAS INERT THROUGH BOTH OF TODAY'S 3-HOUR MEASUREMENTS** Added 2026-11-13T13:00:07+00:00. **STATUS: MEASURED. THE WIDENING IS HIS TO DECIDE and NEEDS HIS RULING, because it changes how often a gate interrupts him.** **FIND.** `hooks/cy_monitor_gate.py` enforces his standing directive of 2026-05-18 to monitor a running experiment at about 60-second cadence. Its predicate is `pgrep -f "run_simulated_experiment.py"` and nothing else. **ANALYSE, BY EXECUTION WHILE THE B165 RUN WAS LIVE.** `cy.live_runs()` returned `([], [])` while `pgrep -f "pytest bench/tests"` returned 1 pid. So through the 3 h 19 m 43 s run that ended 07:30:43 and through the clean run that began 09:32:04, the gate was silent. The monitoring happened because the directive is in the instruction files and was followed by hand; `cy_monitor_gate.py` itself was inert, which is `additive-standard`'s symmetric half. **WHY IT IS HIS.** A 200-minute pytest is plainly a running process, and his directive says *"experiment/process"*, so I believe it should be seen. But widening it makes the gate prod on every suite run, and whether that is wanted is a judgement about his own interruptions. **1 RECOMMENDATION:** widen it, because the alternative is a directive enforced only by my remembering it. **FALSIFIER:** with no long-running process `cy_monitor_gate.py` must stay silent after the change, testable through its own seam `CDSFL_CY_NO_PGREP`.
+ <!-- task: B180 | state: OPEN | status: PROPOSED | evidence: bench/tests/test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py -->
+ 
+-**B181. `parked_items()` IS BLIND TO EVERY NUMERICALLY-IDENTIFIED ENTRY, ALL 36 OF WHICH ARE CLOSED, AND IT IGNORES THE PARKED FILE'S OWN SETTLED BOUNDARY** Added 2026-11-13T13:00:07+00:00. **STATUS: FIXED 2026-11-13, AND THE FIRST REPAIR WAS INCOMPLETE. MINE. NO RULING IS REQUESTED.** Widening the constant changed NOTHING, because the drop logic carried its own inline copy of the same pattern -- 2 declarations of 1 idea, with the consumer keeping the narrow one. Replacing the inline regex with the constant took `parked_items()` from 46 to 44 and the report's parked section from 27 to 26. The morning report now lints at 0 findings, where it carried 6 and could not be committed. **FIND.** The morning report shows him 27 parked items, and 4 come from BELOW the parked file's own heading `# Settled - kept for the record, not for his attention`. 1 of the 4 is entry 10.2, which the task list records WITHDRAWN. **ANALYSE, 2 INDEPENDENT CAUSES.** First, `parked_items()` in `scripts/morning_report_build_2026-10-12.py` drops a heading only when it NAMES an entry recorded DONE or WITHDRAWN, and it finds the name with `_PARKED_CODE = r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b"`, which requires capitals before the digits. **36 of 324 entries carry a purely numeric identifier -- 0.111111, Wilson [0.081345, 0.149990], Clopper-Pearson [0.079045, 0.150496] -- and ALL 36 are recorded DONE or WITHDRAWN**, so every identifier the filter cannot see belongs to an entry it exists to drop. It cannot notice this, because an unparseable identifier is indistinguishable from an absent one and absent means KEEP, by a deliberately conservative rule that is otherwise right. Second, the reader takes every `## ` heading in the whole file, ignoring the settled boundary entirely: 38 headings above it, 38 below. **FIX:** widen the pattern to admit a numeric identifier AND honour the boundary. **THEY ARE NOT SUBSTITUTES:** widening alone still shows him notes that name nothing, and the boundary alone leaves the filter blind for notes ABOVE the line. **THE COMPOSITION IS NOT YET MEASURED, so it is recommended PROVISIONALLY** -- `composability-requires-a-measurement` demands the 4 counts -- neither repair, each alone, and both -- and not the argument, and `--measure` prints them. ★★★ **MEASURED 2026-11-14, AND IT REFUTES THE PROVISIONAL RECOMMENDATION. THE COMPOSITION IS NOT JUSTIFIED.** **AND 2 CLAIMS IN THE SENTENCE ABOVE WERE FALSE WHEN WRITTEN, which is why the measurement had to come before the recommendation and not after it.** First, **`--measure` does not exist**: `argparse` in `scripts/morning_report_build_2026-10-12.py` declares `--since`, `--write` and `--check` and nothing else, so the facility this entry told a reader to run was never built. Second, **the BOUNDARY half was not built either** — `parked_items()` collected every `## ` heading in the whole file with no boundary check at all, so of the 2 repairs this entry describes as in place, only the widening had shipped. **THE BOUNDARY IS NOW BUILT**, as `_parked_headings()`, which stops at the file's own `# Settled` h1 and **fails OPEN if that heading is ever renamed** — over-reporting what needs him rather than hiding something from him, which is the direction `parked_items` already chooses when it cannot parse an identifier and the direction this project had to restore once after a suppression. **THE 4 ARMS — an arm being 1 of the 4 combinations of the 2 repairs being on or off — with the named property SETTLED ITEMS STILL SHOWN TO HIM, lower being better.** Neither repair: 46 shown, **2 settled**, 0.043478, Wilson [0.012005, 0.145323], Clopper-Pearson [0.005309, 0.148387]. Widening alone: 44 shown, **0 settled**, Wilson [0.000000, 0.080296]. Boundary alone: 34 shown, **0 settled**, Wilson [0.000000, 0.101515]. Composed: 34 shown, **0 settled**, Wilson [0.000000, 0.101515]. Every interval on 2 agreeing routes — statsmodels against a hand-rolled Wilson and against `scipy.stats.beta` — to 5.551e-17 or better. **n is small and the intervals say what that is worth: this establishes that the combinations carrying either repair show 0 identifier-provably-settled items, NOT a rate; Fisher exact against the combination with neither repair gives p = 0.505063.** **THE DECISIVE FACT IS A SET EQUALITY OF 34 HEADINGS, NOT A DIFFERENCE OF 2 NUMBERS: with both repairs on, and with the boundary alone, the filter returns the SAME 34 headings.** The widening alone shows 10 headings the boundary alone does not; the boundary alone shows **0** that the widening alone does not. All 10 sit BELOW the settled line, and **8 of the 10 name no known entry at all**, so no widening of an identifier pattern could ever drop them. Both of the 2 identifier-provably-settled items are also below the line. **So the boundary SUBSUMES the widening on this corpus, the composition adds nothing, and under his standard of 2026-10-02 the single fix is PREFERRED where it performs as well.** **THE WIDENING IS KEPT, NOT REMOVED, and that is a separate judgement from the recommendation.** `additive-standard`'s removal clause needs a committed measurement that the replacement dominates on a named property, and what is measured here is that the 2 TIE at 0 on today's corpus — the widening's own failure mode, a settled numerically-identified heading ABOVE the line, has 0 instances today rather than being impossible. Tying is not dominating. **AND THE FIRST VERSION OF THIS MEASUREMENT WAS CIRCULAR AND IS NAMED RATHER THAN QUIETLY FIXED.** Its oracle defined *settled* as *below the parked file's settled boundary* — one of the 2 treatments under test — so the boundary combination returned 0 settled items by construction and the verdict was decided by the definition rather than by the data. It reported that both repairs together only TIE the boundary alone, which is the same conclusion reached for the wrong reason, and it would have put a confident wrong argument under his composability standard. The replacement counts a heading as settled when the TASK LIST records every entry it names as DONE or WITHDRAWN, extracted with the WIDEST pattern in all 4 combinations including the 2 that run the narrow one, because an oracle that cannot see what the narrow identifier pattern misses cannot count those misses. Producer: `scripts/does_the_parked_composition_beat_either_half_2026-11-14.py`.
++**B181. `parked_items()` IS BLIND TO EVERY NUMERICALLY-IDENTIFIED ENTRY, ALL 36 OF WHICH ARE CLOSED, AND IT IGNORES THE PARKED FILE'S OWN SETTLED BOUNDARY** Added 2026-11-13T13:00:07+00:00. **STATUS: FIXED 2026-11-13, AND THE FIRST REPAIR WAS INCOMPLETE. MINE. NO RULING IS REQUESTED.** Widening the constant changed NOTHING, because the drop logic carried its own inline copy of the same pattern -- 2 declarations of 1 idea, with the consumer keeping the narrow one. Replacing the inline regex with the constant took `parked_items()` from 46 to 44 and the report's parked section from 27 to 26. The morning report now lints at 0 findings, where it carried 6 and could not be committed. **FIND.** The morning report shows him 27 parked items, and 4 come from BELOW the parked file's own heading `# Settled - kept for the record, not for his attention`. 1 of the 4 is entry 10.2, which the task list records WITHDRAWN. **ANALYSE, 2 INDEPENDENT CAUSES.** First, `parked_items()` in `scripts/morning_report_build_2026-10-12.py` drops a heading only when it NAMES an entry recorded DONE or WITHDRAWN, and it finds the name with `_PARKED_CODE = r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b"`, which requires capitals before the digits. **36 of 324 entries carry a purely numeric identifier -- 0.111111, Wilson [0.081345, 0.149990], Clopper-Pearson [0.079045, 0.150496] -- and ALL 36 are recorded DONE or WITHDRAWN**, so every identifier the filter cannot see belongs to an entry it exists to drop. It cannot notice this, because an unparseable identifier is indistinguishable from an absent one and absent means KEEP, by a deliberately conservative rule that is otherwise right. Second, the reader takes every `## ` heading in the whole file, ignoring the settled boundary entirely: 38 headings above it, 38 below. **FIX:** widen the pattern to admit a numeric identifier AND honour the boundary. **THEY ARE NOT SUBSTITUTES:** widening alone still shows him notes that name nothing, and the boundary alone leaves the filter blind for notes ABOVE the line. **THE COMPOSITION IS NOT YET MEASURED, so it is recommended PROVISIONALLY** -- `composability-requires-a-measurement` demands the 4 counts -- neither repair, each alone, and both -- and not the argument, and `--measure` prints them.
+ <!-- task: B181 | state: OPEN | status: TESTED | evidence: bench/tests/test_a_settled_item_is_not_a_decision_2026-11-01.py -->
+ 
+ **B182. `local_resource_budget.py` EXISTS TO STOP DELEGATED WORK LAUNCHING HEAVY VERIFICATION ON HIS MACHINE, AND IT LETS 126 OF 150 REAL INSTRUCTIONS THROUGH WHILE REFUSING 2 BRIEFS THAT FORBADE EXACTLY THAT** Added 2026-11-13T16:22:00+00:00. **STATUS: MEASURED, NOT FIXED. [NEEDS YOUR RULING] -- the subject is a hook you have protected with a deliberate tripwire, so I have not touched it.** **FIND, AND IT WAS FOUND BY BEING REFUSED BY IT.** `~/.claude/hooks/local_resource_budget.py` is a `PreToolUse` gate on `Agent`, `Task` and `Workflow`. It exists because delegated work once launched the project's heavy verification on a machine with 8 cores and 8 GiB, where the measured heavy budget is 1. On 2026-11-13 it refused 2 adversarial-review briefs of mine. **Both FORBADE delegated heavy runs in as many words.** **FOLLOW, AND THE 2 FAULTS POINT OPPOSITE WAYS.** The gate's own docstring already records the over-refusal class from 2026-10-17 -- it fired once on an explicit *"do NOT run pytest"* and again, after that word was removed, on *"cost more than a full board run"* inside the same prohibition -- and claims to have fixed it by requiring an IMPERATIVE mention outside a negation. **The negation half HOLDS: 3 of 3 prohibitions are correctly not refused.** What was never checked is the other direction. **ANALYSE, BY EXECUTION OVER A SYSTEMATIC GRID RATHER THAN A HAND-PICKED LIST.** The live hook's `_instructs_heavy_verification` was imported and driven over the cross product of 5 ordinary verbs of execution, 10 noun phrases this project uses for its own suite, and 3 sentence tails -- **150 cells, every one a genuine instruction that SHOULD be refused.** **126 pass straight through: 0.840000**, Wilson 95% [0.772960, 0.890060], Clopper-Pearson [0.771351, 0.894713], each computed on 2 agreeing routes (statsmodels against a closed form; statsmodels against `scipy.stats.beta`) to 0.000e+00; exact binomial p = 3.055735e-225 against a null that the gate works at 0.01. **8 of the 10 noun phrases are COMPLETELY blind**, 15 of 15 each: `the test suite`, `the full test suite`, `the entire test suite`, `the whole test suite`, `the full suite`, **`bench/tests/`** -- the literal path a brief would name -- `the commit board` and `the verification board`. Only `the suite` and `the full board` are caught at all, 12 of 15 each, **and those are the 2 phrasings the gate's author tested.** That is the shape already recorded as *the passing input cannot test a defence*. **WHY THE UNDER-CATCHING IS THE DANGEROUS HALF, IN THE GATE'S OWN WORDS.** Its docstring argues that an author who cannot state a limit has 2 options left, drop it or reword around the matcher, and that *"a delegated agent with no stated limit is MORE likely to invoke the tooling"*. A gate that is 0.84 blind supplies assurance it cannot deliver, and over-refusal pushes authors toward exactly the briefs it cannot see. **FIX, PROPOSED, AND NOT APPLIED.** The matcher needs the noun-phrase side widened to the forms this project actually writes, and a case for a bare path. **BUT THE HOOK SHARES AN INODE WITH ITS REPOSITORY COPY**, and `bench/tests/test_the_local_resource_budget_binds_2026-10-11.py` carries a deliberate tripwire so a hook edit cannot arrive without your permission on record. **So this entry raises a measurement and asks for a ruling; it changes nothing.** **AND 1 THING IS HONESTLY UNRESOLVED.** The over-refusal of my 2 briefs was NOT reproduced. 6 minimal payloads driven end-to-end through the live hook were all allowed, including the prohibition verbatim, a 3rd-person description, and a brief naming `bench/tests/`. **After 3 failed predicates I stopped**, under this project's own rule that a surface defeating 3 predicates is recorded rather than hunted. The over-refusal is OBSERVED TWICE, trigger UNISOLATED. The 0.84 figure does not depend on it. **PRODUCER:** `scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py`, which imports the LIVE hook rather than a copy and edits nothing.
+
+### cc2:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-14 00:58:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/hooks/pre-commit	2026-11-14 00:36:41
+@@ -573,7 +573,6 @@
+ bench/tests/test_a_mid_turn_message_is_still_his_2026-11-10.py
+ bench/tests/test_the_co_author_trailer_is_not_doubled_2026-11-14.py
+ bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py
+-bench/tests/test_the_parked_boundary_is_honoured_2026-11-14.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### cc2:attempt-1:scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py
+--- /dev/null	2026-11-14 01:06:39
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_bkhlgl69/repo/scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py	2026-11-14 01:02:56
+@@ -0,0 +1,370 @@
++#!/usr/bin/env python3
++"""Three measurements the joint round of `severity_proof_and_weight_2026-11-14` turns on.
++
++WHY THIS EXISTS. The blind half produced two replies that AGREE on the three
++verdicts (R1 hold, R2 reject, R3 recommend) and DISAGREE on three measurable
++facts underneath them. Two seats reaching one answer by one flawed route is not
++corroboration, so each disputed fact is re-derived here from the live modules
++rather than quoted from either reply.
++
++M-A  THE DOOR'S POPULATION IS THREE POPULATIONS, NOT ONE.
++     `severity_is_proven` has three live call sites and they do NOT share a
++     population. Sites A (the A4 release door, ~4442) and B (reasoned
++     withdrawal, ~9735) are each conjoined with `severity < CRITICAL_SEVERITY_
++     THRESHOLD`, so an entry at or above the cut never held their exemption.
++     Site C (calibration demotion, ~10936) is NOT so conjoined: the live
++     `_is_demotion_eligible` REQUIRES `severity >= CRITICAL_SEVERITY_THRESHOLD`,
++     so site C acts on exactly the complement -- the population sites A and B
++     exclude. Seat `cc2`'s 555/652 therefore merges three populations, and seat
++     `fable`'s correction to 422/519 is right for A and B while excluding the
++     only population C can touch. The honest report is a PAIR of figures.
++
++M-B  THE `credence` COORDINATE OF THE ORDERED PAIR STILL CARRIES CONSEQUENCE.
++     Appendix section 7.7.1 defines `severity_d(f) = ( c_d(f) , credence(f) )`
++     with "`credence(f)` being today's section 7.7 product under its own name".
++     That product is `W(class) * confidence * Ver(verification)`, and `W` is
++     keyed on CONSTRAINT CLASS -- the core directives' section 1 partition of
++     physics/mathematics/law/safety (HARD) from economic/preference/convenience
++     (SOFT). That is a CONSEQUENCE classification. So the coordinate named
++     `credence` is not a function of the evidence alone: two findings with
++     IDENTICAL evidence (same confidence, same falsifier verdict) receive
++     different credence solely because one concerns a safety constraint. This
++     is the very defect section 7.7.1 names -- "a product of a consequence and
++     a belief is neither" -- surviving INSIDE the repair for it.
++
++     The consequence for J3: seat `fable` asserts that under R3 a 3rd weight
++     "decides nothing the pair gate reads". A pair is compared
++     LEXICOGRAPHICALLY; when `c_d` ties, the comparison falls through to
++     `credence`, which contains `W`. A 3rd weight therefore changes pair
++     orderings. Demonstrated below by construction.
++
++M-C  WHAT A PER-DOMAIN CUT DOES TO THE FROZEN SPELLINGS.
++     Read by IMPORTING the modules. The brief says four spellings outside the
++     canonical constant; there are SIX, because `convergence_location` carries
++     `critical_threshold=0.7` on FOUR functions, not two -- a parameter default
++     is invisible to a text search for an assignment. Seat `cc2` counted six
++     and is right. Then the manifest is read for what a per-domain cut IS.
++
++Usage: python3 scripts/the_credence_coordinate_still_carries_consequence_2026-11-14.py
++"""
++import inspect
++import json
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++
++LOGS = REPO / "bench" / "logs"
++PROVEN = {"PASS", "WARN"}
++TOL = 0.05
++
++
++def rule(title):
++    print("\n" + "=" * 72)
++    print(title)
++    print("=" * 72)
++
++
++def wilson(k, n):
++    from statsmodels.stats.proportion import proportion_confint
++    if n == 0:
++        return (float("nan"), float("nan"))
++    return proportion_confint(k, n, alpha=0.05, method="wilson")
++
++
++def load_entries():
++    """Every archived entry carrying a PASS/WARN R_k proof, in full."""
++    out = []
++    for fp in LOGS.glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                      # noqa: BLE001
++            continue
++        for e in ((d or {}).get("registry") or {}).get("entries", {}).values():
++            if not isinstance(e, dict):
++                continue
++            proof = e.get("severity_proof")
++            if not isinstance(proof, dict):
++                continue
++            if str(proof.get("status") or "").strip().upper() not in PROVEN:
++                continue
++            sev = e.get("severity")
++            rk = proof.get("recomputed_rk", proof.get("model_rk"))
++            if isinstance(sev, (int, float)) and isinstance(rk, (int, float)):
++                out.append((e, float(sev), float(rk)))
++    return out
++
++
++def m_a():
++    rule("M-A  the door's population is THREE populations, not one")
++    from bench.reference_runner_v3 import (
++        CRITICAL_SEVERITY_THRESHOLD as CUT, severity_is_proven,
++        _is_demotion_eligible,
++    )
++    rows = load_entries()
++    n = len(rows)
++    print("archived entries carrying a PASS/WARN R_k proof: %d" % n)
++    if n < 10:
++        print("too few entries; measurement void.")
++        return None
++
++    old = [severity_is_proven(e) for e, _s, _r in rows]
++    new = [o and abs(s - r) <= TOL for o, (_e, s, r) in zip(old, rows)]
++    assert all(old), "rows selected on PASS/WARN; the live fn must agree"
++
++    flips = sum(1 for o, nw in zip(old, new) if o and not nw)
++    loosen = sum(1 for o, nw in zip(old, new) if nw and not o)
++    lo, hi = wilson(flips, n)
++    print("\n  cc2's population (ALL proven entries, proven-status flips):")
++    print("    flip PROVEN -> UNPROVEN : %d/%d = %.2f%%  Wilson [%.2f%%, %.2f%%]"
++          % (flips, n, 100 * flips / n, 100 * lo, 100 * hi))
++    print("    flip UNPROVEN -> PROVEN : %d   (loosening impossible by "
++          "conjunction)" % loosen)
++
++    ab = [(o, nw) for o, nw, (_e, s, _r) in zip(old, new, rows) if s < CUT]
++    ab_n = len(ab)
++    ab_lost = sum(1 for o, nw in ab if o and not nw)
++    lo2, hi2 = wilson(ab_lost, ab_n)
++    print("\n  fable's population (sites A and B: severity < %s):" % CUT)
++    print("    entries holding the exemption today : %d" % ab_n)
++    print("    entries LOSING it when repointed    : %d/%d = %.2f%%  "
++          "Wilson [%.2f%%, %.2f%%]"
++          % (ab_lost, ab_n, 100 * ab_lost / ab_n, 100 * lo2, 100 * hi2))
++
++    above = [(e, s, r) for (e, s, r) in rows if s >= CUT]
++    print("\n  the population both headline figures mishandle "
++          "(site C: severity >= %s):" % CUT)
++    print("    entries at or above the cut : %d" % len(above))
++    elig = [(e, s, r) for (e, s, r) in above if _is_demotion_eligible(e)]
++    print("    of those, demotion-ELIGIBLE (live _is_demotion_eligible): %d"
++          % len(elig))
++    c_lost = sum(1 for e, s, r in elig
++                 if severity_is_proven(e) and not abs(s - r) <= TOL)
++    print("    eligible entries LOSING their demotion when repointed: %d"
++          % c_lost)
++    print("\n  VERDICT: site C acts ONLY on severity >= %s, which fable's %d "
++          "excludes\n           entirely, and cc2's %d merges with the other "
++          "two. Neither single\n           number is the door-relevant figure; "
++          "the PAIR is." % (CUT, ab_n, n))
++    print("           sites A+B: %d/%d    site C: %d/%d eligible"
++          % (ab_lost, ab_n, c_lost, len(elig)))
++    return dict(n=n, flips=flips, ab_n=ab_n, ab_lost=ab_lost,
++                above=len(above), elig=len(elig), c_lost=c_lost)
++
++
++def m_b():
++    rule("M-B  the `credence` coordinate is NOT a function of the evidence alone")
++    from bench.reference_runner_v3 import compute_sev_f, SEV_F_W
++
++    print("  SEV_F_W (live) = %r" % (SEV_F_W,))
++    print("  W is keyed on CONSTRAINT CLASS, which core-directives section 1")
++    print("  defines as a CONSEQUENCE partition: physics/mathematics/law/")
++    print("  safety = HARD, economic/preference/convenience = SOFT.\n")
++
++    print("  evidential-invariance test -- same evidence, different class:")
++    bad = 0
++    for conf in (0.9, 0.6, 0.3):
++        for verdict in ("CONFIRMED", "UNTOOLABLE"):
++            h = compute_sev_f("HARD", conf, verdict)
++            s = compute_sev_f("SOFT", conf, verdict)
++            flag = "" if h == s else "   <-- credence depends on CONSEQUENCE"
++            if h != s:
++                bad += 1
++            print("    conf=%.1f  verdict=%-11s  HARD=%.3f  SOFT=%.3f%s"
++                  % (conf, verdict, h, s, flag))
++    print("\n  cells where identical evidence gave different credence: %d/6"
++          % bad)
++    assert bad == 6, "expected every cell to violate evidential invariance"
++
++    print("\n  lexicographic pair comparison -- does a 3rd weight change an "
++          "ORDERING?")
++    print("  (fable: a 3rd weight 'decides nothing the pair gate reads')")
++
++    A_conf, B_conf, V = 0.9, 0.8, 1.0
++    w2_A = SEV_F_W.get("MEDIUM", SEV_F_W["HARD"])        # unrecognised -> HARD
++    w2_B = SEV_F_W["HARD"]
++    two_A, two_B = w2_A * A_conf * V, w2_B * B_conf * V
++    W3 = {"HARD": 1.0, "MEDIUM": 0.8, "SOFT": 0.5}       # R2: a 3rd weight
++    three_A, three_B = W3["MEDIUM"] * A_conf * V, W3["HARD"] * B_conf * V
++
++    print("    both findings share c_d = 'High'  -> FIRST coordinate TIES")
++    print("    2 weights: A(MEDIUM->HARD default)=%.3f  B(HARD)=%.3f  -> A %s B"
++          % (two_A, two_B, ">" if two_A > two_B else "<"))
++    print("    3 weights: A(MEDIUM)=%.3f  B(HARD)=%.3f  -> A %s B"
++          % (three_A, three_B, ">" if three_A > three_B else "<"))
++    flipped = (two_A > two_B) != (three_A > three_B)
++    print("    ordering changed by adding a 3rd weight: %s" % flipped)
++    assert flipped, "expected the 3rd weight to flip the lexicographic order"
++    print("\n  VERDICT: a 3rd weight DOES change pair orderings, through the")
++    print("           credence coordinate on a c_d tie. fable's 'decides")
++    print("           nothing the pair gate reads' is REFUTED. R2 is not")
++    print("           jobless under R3 -- it refines a term that should not be")
++    print("           in that coordinate at all.")
++    return dict(invariance_violations=bad, lex_flip=flipped)
++
++
++def m_b_z3():
++    rule("M-B(z3)  evidential invariance, and which induced order tracks c_d")
++    try:
++        import z3
++    except ImportError:
++        print("  z3 unavailable; skipped (not a blocker).")
++        return None
++    conf, v = z3.Real("conf"), z3.Real("v")
++    dom = [conf >= 0, conf <= 1, v >= 0, v <= 1]
++
++    s = z3.Solver(); s.add(dom); s.add(1.0 * conf * v != 0.5 * conf * v)
++    today = s.check()
++    print("  today    W(class)*conf*Ver : identical evidence, different "
++          "credence?  %s   (sat = defect)" % today)
++    s2 = z3.Solver(); s2.add(dom); s2.add(conf * v != conf * v)
++    rep = s2.check()
++    print("  repaired conf*Ver         : identical evidence, different "
++          "credence?  %s (unsat = invariant)" % rep)
++
++    # Does the induced ORDER track the consequence order?
++    # Consequence: HARD (W=1.0) strictly outranks SOFT (W=0.5).
++    kA, kB = z3.Reals("kA kB")       # credences of a SOFT A and a HARD B
++    base = [kA >= 0, kA <= 1, kB >= 0, kB <= 1]
++    # product order disagrees with the consequence order?
++    sp = z3.Solver(); sp.add(base); sp.add(0.5 * kA > 1.0 * kB)
++    print("\n  product W*credence : SOFT finding outranks a HARD one?  %s"
++          "  (sat = order does NOT track c_d)" % sp.check())
++    if sp.check() == z3.sat:
++        m = sp.model()
++        print("    witness: %s" % m)
++    # Lexicographic pair, COMPUTED rather than asserted.  c_d is ordinal, so
++    # the classes enter as RANKS under a strictly increasing re-label phi:
++    # only `rankA < rankB` is assumed, never any particular numbers.
++    rA, rB = z3.Reals("rankA rankB")
++    sl = z3.Solver()
++    sl.add(base)
++    sl.add(rA < rB)                       # SOFT strictly below HARD on c_d
++    outranks = z3.Or(rA > rB, z3.And(rA == rB, kA > kB))   # lex order
++    sl.add(outranks)                      # ask for a SOFT that outranks a HARD
++    res = sl.check()
++    print("  pair (c_d, credence) lex : SOFT finding outranks a HARD one?  %s"
++          "  (unsat = order tracks c_d)" % res)
++    assert str(res) == "unsat", "the lex pair must never let SOFT outrank HARD"
++    return str(today), str(rep)
++
++
++def m_c():
++    rule("M-C  the frozen cut's spellings, read by IMPORT not by text search")
++    from bench.reference_runner_v3 import CRITICAL_SEVERITY_THRESHOLD as CANON
++    import bench.evidence as ev
++    import bench.audit_closing_window as acw
++    import bench.convergence_location as cl
++
++    spellings = [("bench/evidence.py::LEDGER_CRITICAL_SEVERITY",
++                  ev.LEDGER_CRITICAL_SEVERITY),
++                 ("bench/audit_closing_window.py::CRITICAL_SEVERITY_THRESHOLD",
++                  acw.CRITICAL_SEVERITY_THRESHOLD)]
++    for name, fn in sorted(inspect.getmembers(cl, inspect.isfunction)):
++        p = inspect.signature(fn).parameters.get("critical_threshold")
++        if p is not None and p.default is not inspect.Parameter.empty:
++            spellings.append(
++                ("bench/convergence_location.py::%s(critical_threshold=)"
++                 % name, p.default))
++    print("  canonical: bench/reference_runner_v3.py::"
++          "CRITICAL_SEVERITY_THRESHOLD = %s" % CANON)
++    for name, val in spellings:
++        print("    [%s] %s = %s" % ("OK   " if val == CANON else "DRIFT", name,
++                                    val))
++    print("\n  spellings outside the canonical constant: %d  "
++          "(the brief says 4; cc2 says 6)" % len(spellings))
++
++    rule("M-C(2)  what a PER-DOMAIN cut is, read from the domain manifest")
++    try:
++        import tomllib
++    except ImportError:
++        import tomli as tomllib
++    man = tomllib.loads(
++        (REPO / "bench" / "cdsfl_registry" / "domain_manifest.toml")
++        .read_text(encoding="utf-8"))
++    none_d, scaled, composed = [], [], []
++    for name, d in man.items():
++        if not isinstance(d, dict) or "severity_scale" not in d:
++            continue
++        sc = d["severity_scale"]
++        if sc == "none":
++            none_d.append(name)
++        elif sc == "composed":
++            composed.append(name)
++        else:
++            scaled.append((name, sc, d.get("critical_level")))
++    print("  domains declaring severity_scale='none'     : %d  %s"
++          % (len(none_d), none_d))
++    print("  domains declaring severity_scale='composed' : %d  %s"
++          % (len(composed), composed))
++    print("  domains declaring a scale of their own      : %d" % len(scaled))
++    for name, sc, lvl in scaled:
++        print("    %-14s scale=%r" % (name, sc))
++        print("    %-14s critical_level=%r   type=%s"
++              % ("", lvl, type(lvl).__name__))
++    print("\n  fable: 'the 6 severity_scale=\"none\" domains inherit the "
++          "application level'.")
++    print("  MEASURED: %d declare 'none'; the 6th is %r, which declares"
++          % (len(none_d), composed[0] if composed else None))
++    print("  'composed' and by the manifest's own rule carries 2+ scales and")
++    print("  inherits NO single application level. Count and mechanism both "
++          "wrong.")
++
++    print("\n  can the live comparison site accept a per-domain critical "
++          "level?")
++    # The signature is (entries, max_round, symbols, *, within_threshold,
++    # critical_threshold).  A FIRST VERSION of this probe omitted `symbols` and
++    # caught a TypeError for the missing ARGUMENT, which demonstrates nothing
++    # about the comparison.  One real entry at or above the cut is supplied so
++    # that `(e["severity"] or 0.0) >= critical_threshold` is actually reached.
++    # `_gate_population` keeps only entries with a non-negative
++    # `open_since_round` and a non-terminal status.  A SECOND version of this
++    # probe used `round_opened`, so the entry was dropped and the comparison
++    # was never reached -- the probe passed VACUOUSLY.  Reaching the
++    # comparison is asserted below rather than assumed.
++    _entries = [{"canonical_id": "X1", "severity": 0.9,
++                 "open_since_round": 0, "status": "OPEN"}]
++    import bench.convergence_location as _cl_chk
++    assert len(_cl_chk._gate_population(_entries)) == 1, (
++        "the probe entry must survive _gate_population, else the comparison "
++        "is never reached and a clean run proves nothing")
++    assert _cl_chk._criticals(_entries, 1, 0.7), (
++        "the probe entry must be counted critical at the numeric cut")
++    try:
++        cl.hierarchical_novelty_series(_entries, 1, ["s"],
++                                       critical_threshold="High")
++        print("    'High' accepted -- no type error")
++    except TypeError as exc:
++        print("    TypeError: %s" % exc)
++        print("    -> cc2 is right: the gate compares with '>=' against a "
++              "float, and 3 of")
++        print("       the 4 declared levels are STRINGS. Pinning the six makes "
++              "them")
++        print("       CONSISTENTLY wrong; it buys drift protection and nothing "
++              "more.")
++    except Exception as exc:                                   # noqa: BLE001
++        print("    %s: %s" % (type(exc).__name__, exc))
++    return len(spellings), len(none_d), len(composed), scaled
++
++
++def main():
++    a = m_a()
++    b = m_b()
++    m_b_z3()
++    m_c()
++    rule("SUMMARY")
++    if a:
++        print("  M-A  three populations, not one. Sites A+B lose %d/%d; site C "
++              "acts on the\n       %d entries that population excludes."
++              % (a["ab_lost"], a["ab_n"], a["above"]))
++    print("  M-B  credence violates evidential invariance in %d/6 cells; a 3rd"
++          "\n       weight flips a lexicographic pair ordering (%s)."
++          % (b["invariance_violations"], b["lex_flip"]))
++    print("  M-C  six spellings, not four; 5 'none' + 1 'composed', not 6 "
++          "'none'.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-14 01:06:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/.cdsfl_deny_canonical_writes.sb	2026-11-14 00:55:40
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/reference_runner_v3.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/reference_runner_v3.py	2026-11-13 21:28:38
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/reference_runner_v3.py	2026-11-14 01:01:41
+@@ -2158,6 +2158,12 @@
+     # repair alone), run 2 ON. Both changes in one run would make neither
+     # attributable.
+     severity_spec_enabled: bool = False
++    # Require the recorded severity proof to be ABOUT the number the gate reads,
++    # not about R_k. Conjunctive, so it can only tighten. Default OFF: this
++    # changes what a release door admits and is the founder's ruling to make.
++    # See `_SEVERITY_PROOF_MATCHES_GATED` and
++    # `scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py`.
++    severity_proof_must_match_gated: bool = False
+     # Severity a demoted finding is pinned to (must be < CRITICAL_SEVERITY_THRESHOLD).
+     severity_calibration_floor: float = 0.69
+     # LATENT TAGGER (2026-07-31) — the upstream producer severity calibration has
+@@ -10779,16 +10785,86 @@
+     if not isinstance(proof, dict):
+         return "ABSENT"
+     return (proof.get("status") or "ABSENT").strip().upper()
++
+ 
++#: Tolerance of the R_k proof itself (WARN is issued at this band). Reused
++#: deliberately: the test below asks whether the proof's own recomputed number
++#: agrees with the gated number AT THE PROOF'S OWN TOLERANCE, so no new
++#: tolerance is invented and the comparison is on the proof mechanism's terms.
++_RK_PROOF_TOLERANCE = 0.05
+ 
++#: Must `severity_is_proven` additionally require that the proof's recomputed
++#: quantity agree with the number the gate reads? Mirrored from
++#: `RunnerConfig.severity_proof_must_match_gated` by `wire_module_mirrors`, the
++#: same pattern `_SEVERITY_SPEC` uses.
++#:
++#: DEFAULT OFF, AND THAT IS A RULING THAT IS NOT THE PANEL'S TO MAKE. This
++#: changes what a release door ADMITS. It is built, wired and measured so the
++#: founder can rule on a reviewable artefact rather than on a description.
++#:
++#: WHY IT EXISTS (measured by
++#: `scripts/the_proven_number_is_not_the_gated_number_2026-10-12.py`, reproduced
++#: 2026-11-14): over 652 archived entries carrying a PASS/WARN proof, the PROVEN
++#: R_k and the RELEASED severity correlate at Pearson r = -0.5538, p = 1.152e-53,
++#: 95% CI [-0.6048, -0.4982]; Spearman rho = -0.4716. The proof moves AGAINST the
++#: number it licenses.
++#:
++#: WHAT THIS IS AND IS NOT. It is NOT a proof of severity -- nothing in the
++#: schema produces one, and R_k (residual risk) and Sev(f) (consequence x
++#: credence) are different quantities by construction. It is the narrower and
++#: mechanically checkable claim that a proof of a DIFFERENT number must not be
++#: honoured as evidence for THIS number. The full repair is a harness-computed
++#: severity (appendix 7.7.1 / 7.8 Approach B) and is out of scope here.
++_SEVERITY_PROOF_MATCHES_GATED: Dict[str, Any] = {"on": False}
++
++
++def severity_proof_is_about_gated(entry: dict,
++                                  tol: float = _RK_PROOF_TOLERANCE) -> bool:
++    """Does the recorded proof recompute the number the GATE reads?
++
++    The gate reads `effective_severity(entry)`. The proof recomputes R_k. This
++    returns True only when those agree to within the proof's own tolerance, so a
++    proof that demonstrably computed a different quantity cannot license a
++    release. A missing or non-numeric proof figure returns False: absence of a
++    comparable number is not agreement.
++    """
++    proof = entry.get("severity_proof")
++    if not isinstance(proof, dict):
++        return False
++    rk = proof.get("recomputed_rk", proof.get("model_rk"))
++    if isinstance(rk, bool) or not isinstance(rk, (int, float)):
++        return False
++    try:
++        gated = float(effective_severity(entry))
++        rk = float(rk)
++    except (TypeError, ValueError):
++        return False
++    if not (math.isfinite(gated) and math.isfinite(rk)):
++        return False
++    return abs(gated - rk) <= float(tol)
++
++
+ def severity_is_proven(entry: dict) -> bool:
+     """True when the model's stated R_k reproduces from its own stated inputs.
+ 
+     WARN is accepted alongside PASS: WARN is a rounding-scale discrepancy
+     (tolerance 0.05), which is a model writing 3 significant figures, not a model
+     asserting a number it did not compute.
++
++    With `_SEVERITY_PROOF_MATCHES_GATED["on"]` the test is CONJUNCTIVELY
++    strengthened: the proof must also be about the number the gate reads. The
++    conjunction is why the direction of effect is knowable without re-running a
++    round -- the admitted set can only shrink, and all three live call sites (the
++    A4 convergence door at `unverified_critical_count`, the reasoned-withdrawal
++    retirement, and the severity-calibration demotion) admit MORE when this
++    returns True. So the flag can only ever TIGHTEN a release, never manufacture
++    one.
+     """
+-    return severity_proof_status(entry) in _RK_PROOF_ACCEPTED
++    if severity_proof_status(entry) not in _RK_PROOF_ACCEPTED:
++        return False
++    if not _SEVERITY_PROOF_MATCHES_GATED.get("on"):
++        return True
++    return severity_proof_is_about_gated(entry)
+ 
+ 
+ #: Is the appendix's section 7.7 severity specification DECIDING, or merely
+@@ -10833,7 +10909,10 @@
+     reaching into module globals.
+     """
+     _SEVERITY_SPEC["on"] = bool(getattr(cfg, "severity_spec_enabled", False))
+-    return {"severity_spec": _SEVERITY_SPEC["on"]}
++    _SEVERITY_PROOF_MATCHES_GATED["on"] = bool(
++        getattr(cfg, "severity_proof_must_match_gated", False))
++    return {"severity_spec": _SEVERITY_SPEC["on"],
++            "severity_proof_matches_gated": _SEVERITY_PROOF_MATCHES_GATED["on"]}
+ 
+ 
+ def spec_verification_factor(entry: dict) -> float:
+
+### fable:attempt-1:bench/tests/test_severity_is_ordinal_guards_2026-11-14.py
+--- /dev/null	2026-11-14 01:06:50
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/tests/test_severity_is_ordinal_guards_2026-11-14.py	2026-11-14 01:01:41
+@@ -0,0 +1,180 @@
++"""Guards from the panel round of 2026-11-14 on severity.
++
++Three things this file pins, each of which was measured before it was written:
++
++1.  R1 -- `severity_is_proven` can be repointed at the number the GATE reads,
++    the repoint is CONJUNCTIVE, and the mirror is actually WIRED. Both arms of
++    the flag are executed here, because a default-off flag nothing reaches is
++    not an addition (this project's own record: 11 confirmed defects were
++    additions that did nothing).
++
++2.  F3 -- the critical cut is spelled SIX times outside its canonical constant,
++    not four. Five of the six were pinned by nothing. They are pinned here.
++
++3.  R2 -- why a 3rd consequence weight is REFUSED. The product's induced
++    ordering on findings is not determined by the consequence ORDERING, so a
++    3rd weight repairs the arity of W while leaving the product inadmissible
++    under `cdsfl_core_formal.md`'s ordinal criterion. The order flip is
++    reproduced here in arithmetic so the refusal is checkable rather than
++    asserted.
++"""
++import inspect
++
++import pytest
++
++from bench import reference_runner_v3 as rr
++
++
++# ── 1. R1: the repointed proof door ──────────────────────────────────────────
++
++def _entry(sev, rk, status="PASS"):
++    return {"severity": sev, "severity_proof": {"status": status,
++                                                "recomputed_rk": rk}}
++
++
++@pytest.fixture(autouse=True)
++def _restore_mirror():
++    """Leave the module mirror exactly as found, whatever the test does."""
++    was = rr._SEVERITY_PROOF_MATCHES_GATED["on"]
++    yield
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = was
++
++
++def test_default_is_byte_identical_to_the_old_door():
++    """OFF must be the tree as it stood: status alone decides."""
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = False
++    assert rr.severity_is_proven(_entry(0.45, 0.95)) is True
++    assert rr.severity_is_proven(_entry(0.45, 0.45)) is True
++    assert rr.severity_is_proven(_entry(0.45, 0.95, "FAIL")) is False
++    assert rr.severity_is_proven({}) is False
++
++
++def test_on_refuses_a_proof_of_a_different_number():
++    """The archive's whole problem in one case: R_k 0.95 releasing a 0.45."""
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = True
++    assert rr.severity_is_proven(_entry(0.45, 0.95)) is False
++    assert rr.severity_is_proven(_entry(0.45, 0.45)) is True
++    # at the proof's OWN tolerance, so a 3-significant-figure write still passes
++    assert rr.severity_is_proven(_entry(0.45, 0.49)) is True
++    assert rr.severity_is_proven(_entry(0.45, 0.51)) is False
++
++
++def test_a_missing_or_nonnumeric_figure_is_not_agreement():
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = True
++    assert rr.severity_is_proven({"severity": 0.5,
++                                  "severity_proof": {"status": "PASS"}}) is False
++    assert rr.severity_is_proven(_entry(0.5, "0.5")) is False
++    assert rr.severity_is_proven(_entry(0.5, True)) is False
++    assert rr.severity_is_proven(_entry(0.5, float("nan"))) is False
++
++
++def test_the_repoint_is_conjunctive_and_therefore_cannot_loosen():
++    """THE DIRECTION PROPERTY. Exhaustive over a grid: ON implies OFF, always.
++
++    This is what makes the direction of effect knowable without a round. All
++    three live call sites admit MORE when `severity_is_proven` is True, so a
++    strictly smaller proven set can only shrink what is released.
++    """
++    grid = [_entry(s, r, st)
++            for s in (0.0, 0.3, 0.45, 0.69, 0.7, 0.95, 1.0)
++            for r in (0.0, 0.3, 0.44, 0.45, 0.46, 0.7, 0.95, 1.0)
++            for st in ("PASS", "WARN", "FAIL", "SKIP")]
++    loosened = 0
++    for e in grid:
++        rr._SEVERITY_PROOF_MATCHES_GATED["on"] = False
++        off = rr.severity_is_proven(e)
++        rr._SEVERITY_PROOF_MATCHES_GATED["on"] = True
++        on = rr.severity_is_proven(e)
++        if on and not off:
++            loosened += 1
++    assert loosened == 0, f"{loosened}/{len(grid)} entries LOOSEN -- not monotone"
++
++
++def test_the_mirror_is_wired_to_the_config():
++    """An unwired flag is an addition nothing reaches. This executes the wiring."""
++    cfg = rr.RunnerConfig()
++    assert cfg.severity_proof_must_match_gated is False
++    got = rr.wire_module_mirrors(cfg)
++    assert got["severity_proof_matches_gated"] is False
++    assert rr._SEVERITY_PROOF_MATCHES_GATED["on"] is False
++
++    cfg.severity_proof_must_match_gated = True
++    got = rr.wire_module_mirrors(cfg)
++    assert got["severity_proof_matches_gated"] is True
++    assert rr._SEVERITY_PROOF_MATCHES_GATED["on"] is True
++
++
++# ── 2. F3: every spelling of the cut, pinned ─────────────────────────────────
++
++def test_every_duplicate_spelling_of_the_critical_cut_matches_the_runner():
++    """SIX spellings outside the canonical constant, not four.
++
++    `bench/evidence.py` was already pinned by test_verified_true_ledger.py.
++    The other five were pinned by nothing, and four of them live in
++    `convergence_location.py` as PARAMETER DEFAULTS, which no text search for
++    an assignment finds. Read by import and by `inspect.signature`.
++    """
++    from bench import audit_closing_window as acw
++    from bench import convergence_location as cl
++    from bench import evidence
++
++    canonical = rr.CRITICAL_SEVERITY_THRESHOLD
++    spellings = {
++        "evidence.LEDGER_CRITICAL_SEVERITY": evidence.LEDGER_CRITICAL_SEVERITY,
++        "audit_closing_window.CRITICAL_SEVERITY_THRESHOLD":
++            acw.CRITICAL_SEVERITY_THRESHOLD,
++    }
++    for fn in (cl.combined_novelty_series, cl.hierarchical_novelty_series,
++               cl.location_only_series, cl.novelty_rule_divergence):
++        p = inspect.signature(fn).parameters["critical_threshold"]
++        spellings[f"convergence_location.{fn.__name__}(critical_threshold=)"] = p.default
++
++    assert len(spellings) == 6, f"spelling count changed: {sorted(spellings)}"
++    bad = {k: v for k, v in spellings.items() if v != canonical}
++    assert not bad, f"drifted from runner {canonical}: {bad}"
++
++
++# ── 3. R2: why a 3rd weight is refused ───────────────────────────────────────
++
++def test_the_product_ordering_is_not_determined_by_the_consequence_ordering():
++    """Reproduces, in arithmetic, the z3 `sat` that refuses R2.
++
++    Two findings. A is the lower consequence class with the higher credence; B
++    is the higher class with the lower credence. Re-label the two classes by a
++    strictly increasing map that PRESERVES their ordering. The ordering of the
++    FINDINGS flips. A product of a consequence and a belief is therefore not a
++    statement about an ordinal consequence, and adding a 3rd weight does not
++    change that -- it adds a third arbitrary numeric label to the same product.
++    """
++    cA, cB = 0.75, 0.25
++    lo, hi = rr.SEV_F_W["SOFT"], rr.SEV_F_W["HARD"]        # 0.5, 1.0 -- live values
++    assert lo < hi
++    assert lo * cA > hi * cB                               # A outranks B
++
++    relo, rehi = 1.0, 4.0                                  # strictly increasing
++    assert relo < rehi                                     # class ordering PRESERVED
++    assert relo * cA < rehi * cB                           # finding ordering FLIPPED
++
++    # the ordered pair of R3, compared lexicographically, does not flip:
++    # B is in the higher class under BOTH labellings, so B outranks A in both.
++    def lex_gt(rank_x, cred_x, rank_y, cred_y):
++        return rank_x > rank_y or (rank_x == rank_y and cred_x > cred_y)
++
++    assert lex_gt(hi, cB, lo, cA) is True
++    assert lex_gt(rehi, cB, relo, cA) is True
++
++
++def test_only_one_of_the_six_cells_can_reach_the_critical_cut():
++    """F2 at the level of actual return values, from the real function.
++
++    `Sev >= 0.7` is identically `HARD AND CONFIRMED AND confidence >= 0.7`, and
++    inside that one surviving cell `Sev == confidence` exactly. Consequence
++    magnitude places NO constraint on the magnitude the gate tests.
++    """
++    reachable = [(c, v)
++                 for c in ("HARD", "SOFT")
++                 for v in ("CONFIRMED", "REFUTED", "UNTOOLABLE")
++                 if rr.compute_sev_f(c, 1.0, v) >= rr.CRITICAL_SEVERITY_THRESHOLD]
++    assert reachable == [("HARD", "CONFIRMED")]
++    for conf in (0.0, 0.33, 0.7, 0.9, 1.0):
++        assert rr.compute_sev_f("HARD", conf, "CONFIRMED") == pytest.approx(conf)
+
+### fable:attempt-1:bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py	2026-10-15 04:49:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/bench/tests/test_the_severity_spec_decides_when_promoted_2026-10-15.py	2026-11-14 01:01:57
+@@ -214,7 +214,15 @@
+                 f"config said severity_spec_enabled={flag} and the mirror reads "
+                 f"{rr._SEVERITY_SPEC['on']}; the launcher flag would be recorded "
+                 f"and ignored")
+-            assert got == {"severity_spec": flag}, got
++            # EXTENDED 2026-11-14 (joint panel, R1): `wire_module_mirrors` now
++            # also wires `severity_proof_matches_gated`, so this exact-equality
++            # assertion -- whose documented contract is "the values it set" --
++            # asserts BOTH mirrors. The new one reads False here because this
++            # config does not set it. The blind round demonstrated the cost of
++            # NOT running this stamped file: one seat's delivery failed exactly
++            # this line and the failure went unreported.
++            assert got == {"severity_spec": flag,
++                           "severity_proof_matches_gated": False}, got
+ 
+     def test_a_config_missing_the_field_entirely_is_safe(self):
+         """A bare object with no such attribute must leave the mirror OFF rather
+
+### fable:attempt-1:docs/MATHEMATICAL_APPENDIX.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/docs/MATHEMATICAL_APPENDIX.md	2026-11-13 23:56:20
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/docs/MATHEMATICAL_APPENDIX.md	2026-11-14 01:01:41
+@@ -1481,7 +1481,36 @@
+ with `credence(f)` being today's §7.7 product under its own name. A product of a
+ consequence and a belief is neither. **§7.7 is NOT removed**: it remains the
+ definition of the credence factor, and the pair makes explicit which half it is.
++
++**AND A THIRD WEIGHT IS REFUSED, WITH THE MEASUREMENT THAT REFUSES IT**
++(panel round 2026-11-14; producer
++`scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py`; guard
++`bench/tests/test_severity_is_ordinal_guards_2026-11-14.py`). z3 confirms W in
++{0.5, 1.0} expresses exactly 2 consequence levels (3 distinct weights: **unsat**).
++The obvious repair -- add a 3rd weight strictly inside (1/2, 1) -- was tested and
++**does not discharge the requirement**, for two measured reasons:
+ 
++1. For every `w3` tried (51/100, 3/4, 9/10, 99/100) z3 returns **unsat** for the
++   negation of `Sev >= 0.7  ==  Ver = 1 AND ((HARD AND conf >= 0.7) OR (w3 AND
++   conf >= 0.7/w3))`. The cut is still a test on `confidence`, a model-asserted
++   belief; the 3rd weight only rescales the belief cut per class. Magnitude
++   still never decides.
++2. **The product's induced ordering is not determined by the consequence
++   ordering.** Re-label the classes by a strictly increasing map that preserves
++   their ordering -- `{1/2 -> 1, 1 -> 4}` -- and two findings swap rank:
++   A = (SOFT, credence 3/4) scores 3/8 > 1/4 = B = (HARD, credence 1/4), but
++   after the re-label A = 3/4 < 1 = B. z3: **sat** (witness a=1, b=4, cA=3/4,
++   cB=1/4). Independently confirmed with Wolfram Language (local Wolfram Engine):
++   `Reduce[Exists[{a,b,x,y}, 0<a && a<b && 0<=x<=1 && 0<=y<=1 && (1/2)x > y &&
++   a x < b y], {}, Reals]` returns `True`.
++
++   The ordered pair compared lexicographically is **unsat** on the same test --
++   invariant. So the pair and a 3rd weight are **EXCLUSIVE, not composable**: a
++   composition inherits the product's `sat` and is strictly worse than the pair
++   alone on the named property (invariance under strictly increasing
++   re-labelling). This is why §7.7's product is retained as a CREDENCE and is
++   not repaired as a consequence.
++
+ ### 7.8 Multi-Verifier Severity (Bayesian Evidence Fusion)
+ 
+ SymPy, dimensional analysis, and numerical spot-checking each catch different error types with different reliability. Two combination approaches:
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 00:57:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 00:49:52
+@@ -2190,7 +2190,7 @@
+ **B180. THE GATE THAT ENFORCES HIS 60-SECOND MONITORING DIRECTIVE WAS INERT THROUGH BOTH OF TODAY'S 3-HOUR MEASUREMENTS** Added 2026-11-13T13:00:07+00:00. **STATUS: MEASURED. THE WIDENING IS HIS TO DECIDE and NEEDS HIS RULING, because it changes how often a gate interrupts him.** **FIND.** `hooks/cy_monitor_gate.py` enforces his standing directive of 2026-05-18 to monitor a running experiment at about 60-second cadence. Its predicate is `pgrep -f "run_simulated_experiment.py"` and nothing else. **ANALYSE, BY EXECUTION WHILE THE B165 RUN WAS LIVE.** `cy.live_runs()` returned `([], [])` while `pgrep -f "pytest bench/tests"` returned 1 pid. So through the 3 h 19 m 43 s run that ended 07:30:43 and through the clean run that began 09:32:04, the gate was silent. The monitoring happened because the directive is in the instruction files and was followed by hand; `cy_monitor_gate.py` itself was inert, which is `additive-standard`'s symmetric half. **WHY IT IS HIS.** A 200-minute pytest is plainly a running process, and his directive says *"experiment/process"*, so I believe it should be seen. But widening it makes the gate prod on every suite run, and whether that is wanted is a judgement about his own interruptions. **1 RECOMMENDATION:** widen it, because the alternative is a directive enforced only by my remembering it. **FALSIFIER:** with no long-running process `cy_monitor_gate.py` must stay silent after the change, testable through its own seam `CDSFL_CY_NO_PGREP`.
+ <!-- task: B180 | state: OPEN | status: PROPOSED | evidence: bench/tests/test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py -->
+ 
+-**B181. `parked_items()` IS BLIND TO EVERY NUMERICALLY-IDENTIFIED ENTRY, ALL 36 OF WHICH ARE CLOSED, AND IT IGNORES THE PARKED FILE'S OWN SETTLED BOUNDARY** Added 2026-11-13T13:00:07+00:00. **STATUS: FIXED 2026-11-13, AND THE FIRST REPAIR WAS INCOMPLETE. MINE. NO RULING IS REQUESTED.** Widening the constant changed NOTHING, because the drop logic carried its own inline copy of the same pattern -- 2 declarations of 1 idea, with the consumer keeping the narrow one. Replacing the inline regex with the constant took `parked_items()` from 46 to 44 and the report's parked section from 27 to 26. The morning report now lints at 0 findings, where it carried 6 and could not be committed. **FIND.** The morning report shows him 27 parked items, and 4 come from BELOW the parked file's own heading `# Settled - kept for the record, not for his attention`. 1 of the 4 is entry 10.2, which the task list records WITHDRAWN. **ANALYSE, 2 INDEPENDENT CAUSES.** First, `parked_items()` in `scripts/morning_report_build_2026-10-12.py` drops a heading only when it NAMES an entry recorded DONE or WITHDRAWN, and it finds the name with `_PARKED_CODE = r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b"`, which requires capitals before the digits. **36 of 324 entries carry a purely numeric identifier -- 0.111111, Wilson [0.081345, 0.149990], Clopper-Pearson [0.079045, 0.150496] -- and ALL 36 are recorded DONE or WITHDRAWN**, so every identifier the filter cannot see belongs to an entry it exists to drop. It cannot notice this, because an unparseable identifier is indistinguishable from an absent one and absent means KEEP, by a deliberately conservative rule that is otherwise right. Second, the reader takes every `## ` heading in the whole file, ignoring the settled boundary entirely: 38 headings above it, 38 below. **FIX:** widen the pattern to admit a numeric identifier AND honour the boundary. **THEY ARE NOT SUBSTITUTES:** widening alone still shows him notes that name nothing, and the boundary alone leaves the filter blind for notes ABOVE the line. **THE COMPOSITION IS NOT YET MEASURED, so it is recommended PROVISIONALLY** -- `composability-requires-a-measurement` demands the 4 counts -- neither repair, each alone, and both -- and not the argument, and `--measure` prints them. ★★★ **MEASURED 2026-11-14, AND IT REFUTES THE PROVISIONAL RECOMMENDATION. THE COMPOSITION IS NOT JUSTIFIED.** **AND 2 CLAIMS IN THE SENTENCE ABOVE WERE FALSE WHEN WRITTEN, which is why the measurement had to come before the recommendation and not after it.** First, **`--measure` does not exist**: `argparse` in `scripts/morning_report_build_2026-10-12.py` declares `--since`, `--write` and `--check` and nothing else, so the facility this entry told a reader to run was never built. Second, **the BOUNDARY half was not built either** — `parked_items()` collected every `## ` heading in the whole file with no boundary check at all, so of the 2 repairs this entry describes as in place, only the widening had shipped. **THE BOUNDARY IS NOW BUILT**, as `_parked_headings()`, which stops at the file's own `# Settled` h1 and **fails OPEN if that heading is ever renamed** — over-reporting what needs him rather than hiding something from him, which is the direction `parked_items` already chooses when it cannot parse an identifier and the direction this project had to restore once after a suppression. **THE 4 ARMS — an arm being 1 of the 4 combinations of the 2 repairs being on or off — with the named property SETTLED ITEMS STILL SHOWN TO HIM, lower being better.** Neither repair: 46 shown, **2 settled**, 0.043478, Wilson [0.012005, 0.145323], Clopper-Pearson [0.005309, 0.148387]. Widening alone: 44 shown, **0 settled**, Wilson [0.000000, 0.080296]. Boundary alone: 34 shown, **0 settled**, Wilson [0.000000, 0.101515]. Composed: 34 shown, **0 settled**, Wilson [0.000000, 0.101515]. Every interval on 2 agreeing routes — statsmodels against a hand-rolled Wilson and against `scipy.stats.beta` — to 5.551e-17 or better. **n is small and the intervals say what that is worth: this establishes that the combinations carrying either repair show 0 identifier-provably-settled items, NOT a rate; Fisher exact against the combination with neither repair gives p = 0.505063.** **THE DECISIVE FACT IS A SET EQUALITY OF 34 HEADINGS, NOT A DIFFERENCE OF 2 NUMBERS: with both repairs on, and with the boundary alone, the filter returns the SAME 34 headings.** The widening alone shows 10 headings the boundary alone does not; the boundary alone shows **0** that the widening alone does not. All 10 sit BELOW the settled line, and **8 of the 10 name no known entry at all**, so no widening of an identifier pattern could ever drop them. Both of the 2 identifier-provably-settled items are also below the line. **So the boundary SUBSUMES the widening on this corpus, the composition adds nothing, and under his standard of 2026-10-02 the single fix is PREFERRED where it performs as well.** **THE WIDENING IS KEPT, NOT REMOVED, and that is a separate judgement from the recommendation.** `additive-standard`'s removal clause needs a committed measurement that the replacement dominates on a named property, and what is measured here is that the 2 TIE at 0 on today's corpus — the widening's own failure mode, a settled numerically-identified heading ABOVE the line, has 0 instances today rather than being impossible. Tying is not dominating. **AND THE FIRST VERSION OF THIS MEASUREMENT WAS CIRCULAR AND IS NAMED RATHER THAN QUIETLY FIXED.** Its oracle defined *settled* as *below the parked file's settled boundary* — one of the 2 treatments under test — so the boundary combination returned 0 settled items by construction and the verdict was decided by the definition rather than by the data. It reported that both repairs together only TIE the boundary alone, which is the same conclusion reached for the wrong reason, and it would have put a confident wrong argument under his composability standard. The replacement counts a heading as settled when the TASK LIST records every entry it names as DONE or WITHDRAWN, extracted with the WIDEST pattern in all 4 combinations including the 2 that run the narrow one, because an oracle that cannot see what the narrow identifier pattern misses cannot count those misses. Producer: `scripts/does_the_parked_composition_beat_either_half_2026-11-14.py`.
++**B181. `parked_items()` IS BLIND TO EVERY NUMERICALLY-IDENTIFIED ENTRY, ALL 36 OF WHICH ARE CLOSED, AND IT IGNORES THE PARKED FILE'S OWN SETTLED BOUNDARY** Added 2026-11-13T13:00:07+00:00. **STATUS: FIXED 2026-11-13, AND THE FIRST REPAIR WAS INCOMPLETE. MINE. NO RULING IS REQUESTED.** Widening the constant changed NOTHING, because the drop logic carried its own inline copy of the same pattern -- 2 declarations of 1 idea, with the consumer keeping the narrow one. Replacing the inline regex with the constant took `parked_items()` from 46 to 44 and the report's parked section from 27 to 26. The morning report now lints at 0 findings, where it carried 6 and could not be committed. **FIND.** The morning report shows him 27 parked items, and 4 come from BELOW the parked file's own heading `# Settled - kept for the record, not for his attention`. 1 of the 4 is entry 10.2, which the task list records WITHDRAWN. **ANALYSE, 2 INDEPENDENT CAUSES.** First, `parked_items()` in `scripts/morning_report_build_2026-10-12.py` drops a heading only when it NAMES an entry recorded DONE or WITHDRAWN, and it finds the name with `_PARKED_CODE = r"\b([A-Z]{1,2}\d{1,4}[a-z]?)\b"`, which requires capitals before the digits. **36 of 324 entries carry a purely numeric identifier -- 0.111111, Wilson [0.081345, 0.149990], Clopper-Pearson [0.079045, 0.150496] -- and ALL 36 are recorded DONE or WITHDRAWN**, so every identifier the filter cannot see belongs to an entry it exists to drop. It cannot notice this, because an unparseable identifier is indistinguishable from an absent one and absent means KEEP, by a deliberately conservative rule that is otherwise right. Second, the reader takes every `## ` heading in the whole file, ignoring the settled boundary entirely: 38 headings above it, 38 below. **FIX:** widen the pattern to admit a numeric identifier AND honour the boundary. **THEY ARE NOT SUBSTITUTES:** widening alone still shows him notes that name nothing, and the boundary alone leaves the filter blind for notes ABOVE the line. **THE COMPOSITION IS NOT YET MEASURED, so it is recommended PROVISIONALLY** -- `composability-requires-a-measurement` demands the 4 counts -- neither repair, each alone, and both -- and not the argument, and `--measure` prints them.
+ <!-- task: B181 | state: OPEN | status: TESTED | evidence: bench/tests/test_a_settled_item_is_not_a_decision_2026-11-01.py -->
+ 
+ **B182. `local_resource_budget.py` EXISTS TO STOP DELEGATED WORK LAUNCHING HEAVY VERIFICATION ON HIS MACHINE, AND IT LETS 126 OF 150 REAL INSTRUCTIONS THROUGH WHILE REFUSING 2 BRIEFS THAT FORBADE EXACTLY THAT** Added 2026-11-13T16:22:00+00:00. **STATUS: MEASURED, NOT FIXED. [NEEDS YOUR RULING] -- the subject is a hook you have protected with a deliberate tripwire, so I have not touched it.** **FIND, AND IT WAS FOUND BY BEING REFUSED BY IT.** `~/.claude/hooks/local_resource_budget.py` is a `PreToolUse` gate on `Agent`, `Task` and `Workflow`. It exists because delegated work once launched the project's heavy verification on a machine with 8 cores and 8 GiB, where the measured heavy budget is 1. On 2026-11-13 it refused 2 adversarial-review briefs of mine. **Both FORBADE delegated heavy runs in as many words.** **FOLLOW, AND THE 2 FAULTS POINT OPPOSITE WAYS.** The gate's own docstring already records the over-refusal class from 2026-10-17 -- it fired once on an explicit *"do NOT run pytest"* and again, after that word was removed, on *"cost more than a full board run"* inside the same prohibition -- and claims to have fixed it by requiring an IMPERATIVE mention outside a negation. **The negation half HOLDS: 3 of 3 prohibitions are correctly not refused.** What was never checked is the other direction. **ANALYSE, BY EXECUTION OVER A SYSTEMATIC GRID RATHER THAN A HAND-PICKED LIST.** The live hook's `_instructs_heavy_verification` was imported and driven over the cross product of 5 ordinary verbs of execution, 10 noun phrases this project uses for its own suite, and 3 sentence tails -- **150 cells, every one a genuine instruction that SHOULD be refused.** **126 pass straight through: 0.840000**, Wilson 95% [0.772960, 0.890060], Clopper-Pearson [0.771351, 0.894713], each computed on 2 agreeing routes (statsmodels against a closed form; statsmodels against `scipy.stats.beta`) to 0.000e+00; exact binomial p = 3.055735e-225 against a null that the gate works at 0.01. **8 of the 10 noun phrases are COMPLETELY blind**, 15 of 15 each: `the test suite`, `the full test suite`, `the entire test suite`, `the whole test suite`, `the full suite`, **`bench/tests/`** -- the literal path a brief would name -- `the commit board` and `the verification board`. Only `the suite` and `the full board` are caught at all, 12 of 15 each, **and those are the 2 phrasings the gate's author tested.** That is the shape already recorded as *the passing input cannot test a defence*. **WHY THE UNDER-CATCHING IS THE DANGEROUS HALF, IN THE GATE'S OWN WORDS.** Its docstring argues that an author who cannot state a limit has 2 options left, drop it or reword around the matcher, and that *"a delegated agent with no stated limit is MORE likely to invoke the tooling"*. A gate that is 0.84 blind supplies assurance it cannot deliver, and over-refusal pushes authors toward exactly the briefs it cannot see. **FIX, PROPOSED, AND NOT APPLIED.** The matcher needs the noun-phrase side widened to the forms this project actually writes, and a case for a bare path. **BUT THE HOOK SHARES AN INODE WITH ITS REPOSITORY COPY**, and `bench/tests/test_the_local_resource_budget_binds_2026-10-11.py` carries a deliberate tripwire so a hook edit cannot arrive without your permission on record. **So this entry raises a measurement and asks for a ruling; it changes nothing.** **AND 1 THING IS HONESTLY UNRESOLVED.** The over-refusal of my 2 briefs was NOT reproduced. 6 minimal payloads driven end-to-end through the live hook were all allowed, including the prohibition verbatim, a 3rd-person description, and a brief naming `bench/tests/`. **After 3 failed predicates I stopped**, under this project's own rule that a surface defeating 3 predicates is recorded rather than hunted. The over-refusal is OBSERVED TWICE, trigger UNISOLATED. The 0.84 figure does not depend on it. **PRODUCER:** `scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py`, which imports the LIVE hook rather than a copy and edits nothing.
+
+### fable:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-14 00:58:59
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/hooks/pre-commit	2026-11-14 00:36:41
+@@ -573,7 +573,6 @@
+ bench/tests/test_a_mid_turn_message_is_still_his_2026-11-10.py
+ bench/tests/test_the_co_author_trailer_is_not_doubled_2026-11-14.py
+ bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py
+-bench/tests/test_the_parked_boundary_is_honoured_2026-11-14.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### fable:attempt-1:scripts/the_door_populations_are_site_scoped_2026-11-14.py
+--- /dev/null	2026-11-14 01:06:47
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/scripts/the_door_populations_are_site_scoped_2026-11-14.py	2026-11-14 01:02:49
+@@ -0,0 +1,124 @@
++#!/usr/bin/env python3
++"""The R1 headline figure is SITE-SCOPED, and both blind seats' numbers were
++right about different doors.
++
++JOINT ROUND `severity_proof_and_weight_2026-11-14`. The blind half produced two
++figures for "how many archived entries stop releasing when the proof must be
++about the gated number at tolerance 0.05":
++
++  cc2   : 555/652 = 85.12%  -- every archived PASS/WARN entry
++  fable : 422/519 = 81.31%  -- only entries with severity < 0.7
++
++`severity_is_proven` has THREE live call sites and they read DIFFERENT
++populations:
++
++  * the A4 convergence door (reference_runner_v3.py ~4442) and the
++    reasoned-withdrawal retirement (~9735) consult the proof ONLY when
++    severity < CRITICAL_SEVERITY_THRESHOLD -- fable's 519 is their population;
++  * the severity-calibration demotion (~10936) consults it only on entries
++    `_is_demotion_eligible` admits, whose FIRST clause is
++    severity >= CRITICAL_SEVERITY_THRESHOLD -- the 133 criticals cc2's count
++    includes and fable's excludes are EXACTLY that door's population.
++
++So neither single figure is "the" effect of the repoint. This script reports
++the effect PER DOOR. Measured at dispatch: release/withdrawal doors lose
++422/519 (81.31%); the demotion door loses 133/133 (100.00%, Wilson
++[97.19%, 100.00%]) -- under the repoint, NO archived critical's proof agrees
++with its own severity, so proof-licensed demotion would stop entirely until a
++proof about the gated number exists. 555 = 422 + 133 exactly, which is why the
++two blind figures reconcile: every entry that keeps the exemption (97) is
++sub-critical.
++
++Usage: python3 scripts/the_door_populations_are_site_scoped_2026-11-14.py
++"""
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++from _cli_help import answer_help  # noqa: E402
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++PROVEN = {"PASS", "WARN"}
++TOL = 0.05
++
++
++def pairs():
++    out = []
++    for fp in (REPO / "bench" / "logs").glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                  # noqa: BLE001
++            continue
++        for e in ((d or {}).get("registry") or {}).get("entries", {}).values():
++            if not isinstance(e, dict):
++                continue
++            p = e.get("severity_proof")
++            if not isinstance(p, dict):
++                continue
++            if str(p.get("status") or "").strip().upper() not in PROVEN:
++                continue
++            sev = e.get("severity")
++            rk = p.get("recomputed_rk", p.get("model_rk"))
++            if isinstance(sev, (int, float)) and isinstance(rk, (int, float)):
++                out.append((float(sev), float(rk)))
++    return out
++
++
++def main() -> int:
++    answer_help(__doc__, __file__)
++    from statsmodels.stats.proportion import proportion_confint
++    from bench.reference_runner_v3 import CRITICAL_SEVERITY_THRESHOLD as T
++
++    data = pairs()
++    if len(data) < 10:
++        print(f"only {len(data)} proven entries found; the measurement is void.")
++        return 3
++
++    def rep(name, pop):
++        n = len(pop)
++        keep = sum(1 for s, r in pop if abs(s - r) <= TOL)
++        lose = n - keep
++        lo, hi = proportion_confint(lose, n, alpha=0.05, method="wilson")
++        print(f"  {name}\n    n={n}  keep exemption: {keep} ({keep/n:.2%})  "
++              f"lose: {lose} ({lose/n:.2%})  Wilson [{lo:.2%}, {hi:.2%}]")
++        return n, keep, lose
++
++    sub = [(s, r) for s, r in data if s < T]
++    crit = [(s, r) for s, r in data if s >= T]
++    print(f"archived PASS/WARN entries: {len(data)}  "
++          f"(threshold read from the runner: {T})")
++    n_all, k_all, l_all = rep("ALL entries (the blind 555/652 population)", data)
++    n_sub, k_sub, l_sub = rep(
++        "severity < threshold -- A4 door (~4442) + reasoned withdrawal (~9735)",
++        sub)
++    n_cr, k_cr, l_cr = rep(
++        "severity >= threshold -- calibration demotion door (~10936, "
++        "via _is_demotion_eligible clause 1)", crit)
++    assert l_all == l_sub + l_cr and k_all == k_sub + k_cr
++    print(f"\n  reconciliation: {l_all} = {l_sub} + {l_cr}; every keeper is "
++          f"sub-critical ({k_cr} critical keepers).")
++
++    # The guard that decided the merge: a malformed proof figure must not
++    # license. Python's bool is an int, so an isinstance((int, float)) check
++    # ADMITS `recomputed_rk=True` as 1.0; the merged implementation rejects it.
++    from bench import reference_runner_v3 as rr
++    was = rr._SEVERITY_PROOF_MATCHES_GATED["on"]
++    try:
++        rr._SEVERITY_PROOF_MATCHES_GATED["on"] = True
++        e = {"severity": 0.97,
++             "severity_proof": {"status": "PASS", "recomputed_rk": True}}
++        got = rr.severity_is_proven(e)
++        print(f"\n  merged guard: PASS proof with recomputed_rk=True (bool) at "
++              f"severity 0.97 -> severity_is_proven = {got} "
++              f"(must be False: a malformed figure is not agreement)")
++        assert got is False
++    finally:
++        rr._SEVERITY_PROOF_MATCHES_GATED["on"] = was
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+
+### fable:attempt-1:scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py
+--- /dev/null	2026-11-14 01:06:48
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_jsl3rzve/repo/scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py	2026-11-14 01:01:41
+@@ -0,0 +1,173 @@
++#!/usr/bin/env python3
++"""R1, R2 and R3 measured, not argued. Panel round of 2026-11-14.
++
++THREE QUESTIONS, THREE MEASUREMENTS.
++
++R1  Repoint `severity_is_proven` so the proof is about the number the GATE
++    reads rather than about R_k. Measured over every archived entry carrying a
++    PASS/WARN proof: how many still release, and in which DIRECTION the gate
++    moves. The direction is the part a count alone does not give you, and a
++    change of unknown direction is not a fix.
++
++R2  Add a 3rd consequence weight strictly inside (1/2, 1). Measured with z3:
++    does consequence MAGNITUDE then decide the gate, or does the gate still
++    reduce to a test on the model-asserted `confidence`?
++
++R3  Retire the product for the ordered pair (c_d(f), credence(f)). Measured
++    with z3 on the ORDINAL-ADMISSIBILITY criterion that
++    `bench/directives/universal/cdsfl_core_formal.md` now carries: a statement
++    about an ordinal quantity must survive re-labelling the scale by a strictly
++    increasing map. This is the measurement that decides R2 vs R3, and it is
++    NOT the weak "they do not conflict" form.
++
++Usage: python3 scripts/the_proof_must_be_about_the_gated_number_2026-11-14.py
++"""
++import json
++import os
++import pathlib
++import sys
++
++sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
++REPO = pathlib.Path(__file__).resolve().parents[1]
++sys.path.insert(0, str(REPO))
++sys.path.insert(0, str(REPO / "bench"))
++
++LOGS = REPO / "bench" / "logs"
++
++
++def archived_proven_entries():
++    """Every archived entry carrying a PASS/WARN R_k proof, as dicts."""
++    out = []
++    for fp in LOGS.glob("**/runner_state.json"):
++        try:
++            d = json.loads(fp.read_text(encoding="utf-8", errors="ignore"))
++        except Exception:                                   # noqa: BLE001
++            continue
++        for e in ((d or {}).get("registry") or {}).get("entries", {}).values():
++            if not isinstance(e, dict):
++                continue
++            proof = e.get("severity_proof")
++            if not isinstance(proof, dict):
++                continue
++            if str(proof.get("status") or "").strip().upper() not in ("PASS", "WARN"):
++                continue
++            rk = proof.get("recomputed_rk", proof.get("model_rk"))
++            if isinstance(e.get("severity"), (int, float)) and isinstance(rk, (int, float)):
++                out.append(e)
++    return out
++
++
++def main() -> int:
++    import reference_runner_v3 as rr
++    from statsmodels.stats.proportion import proportion_confint
++
++    entries = archived_proven_entries()
++    n = len(entries)
++    print("=" * 74)
++    print("R1 -- REPOINTING THE PROOF AT THE NUMBER THE GATE READS")
++    print("=" * 74)
++    print(f"archived entries carrying a PASS/WARN R_k proof: {n}")
++    if n < 10:
++        print("too few entries; the measurement is void.")
++        return 3
++
++    # ARM A: the flag OFF -- today's tree, byte-identical behaviour.
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = False
++    off = [rr.severity_is_proven(e) for e in entries]
++    # ARM B: the flag ON -- the repointed door.
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = True
++    on = [rr.severity_is_proven(e) for e in entries]
++    rr._SEVERITY_PROOF_MATCHES_GATED["on"] = False          # leave as found
++
++    k_off, k_on = sum(off), sum(on)
++    loosened = sum(1 for a, b in zip(off, on) if b and not a)
++    tightened = sum(1 for a, b in zip(off, on) if a and not b)
++
++    print(f"  proven with the door as it stands : {k_off}/{n}")
++    print(f"  proven with the proof repointed   : {k_on}/{n}")
++    lo, hi = proportion_confint(k_on, n, alpha=0.05, method="wilson")
++    print(f"  still releasing: {k_on}/{n} = {k_on/n:.2%}  Wilson [{lo:.2%}, {hi:.2%}]")
++    slo, shi = proportion_confint(tightened, n, alpha=0.05, method="wilson")
++    print(f"  STOP releasing : {tightened}/{n} = {tightened/n:.2%}  "
++          f"Wilson [{slo:.2%}, {shi:.2%}]")
++    print()
++    print("  DIRECTION OF EFFECT, which a count alone does not give:")
++    print(f"    entries moved PROVEN -> UNPROVEN (gate TIGHTENS): {tightened}")
++    print(f"    entries moved UNPROVEN -> PROVEN (gate LOOSENS) : {loosened}")
++    if loosened:
++        print("    FALSIFIED: the repoint is not monotone. It can manufacture a release.")
++        return 1
++    print("    MONOTONE TIGHTENING over the whole archive: 0 entries loosen.")
++    print("    All 3 live call sites admit MORE when severity_is_proven is True")
++    print("    (runner lines ~4442 A4 door, ~9735 reasoned withdrawal, ~10936")
++    print("    calibration demotion), so a strictly smaller proven set strictly")
++    print("    shrinks what is released.")
++
++    print()
++    print("=" * 74)
++    print("R2 vs R3 -- THE ORDINAL-ADMISSIBILITY MEASUREMENT")
++    print("=" * 74)
++    from z3 import Solver, Real, Reals, Or, And, Q, sat, unsat
++
++    # (a) Does a 3rd weight make consequence MAGNITUDE decide the cut?
++    print("(a) with a 3rd weight w3 in (1/2,1), what does `Sev >= 0.7` become?")
++    allu = True
++    for w3 in (Q(51, 100), Q(3, 4), Q(9, 10), Q(99, 100)):
++        W, C, V = Reals("W C V")
++        dom = And(Or(W == Q(1, 2), W == w3, W == 1), C >= 0, C <= 1,
++                  Or(V == 0, V == Q(1, 2), V == 1))
++        equiv = ((W * C * V) >= Q(7, 10)) == And(
++            V == 1, Or(And(W == 1, C >= Q(7, 10)),
++                       And(W == w3, C >= Q(7, 10) / w3)))
++        s = Solver(); s.add(dom, equiv == False)            # noqa: E712
++        r = s.check()
++        allu &= (r == unsat)
++        print(f"    w3={w3}: negation of 'cut == V=1 AND class-rescaled "
++              f"confidence test' -> {r}")
++    print(f"    => for every w3 tested the equivalence HOLDS ({allu}).")
++    print("    The magnitude test is STILL on `confidence`, a model-asserted")
++    print("    belief; the 3rd weight only rescales the belief cut per class.")
++
++    # (b) THE DECIDER. Severity is ordinal. Re-label the consequence classes by
++    #     any strictly increasing phi preserving the class ordering. Does the
++    #     induced ordering ON FINDINGS survive?
++    print()
++    print("(b) is the finding-ordering invariant under a strictly increasing")
++    print("    re-label of the consequence scale?")
++    a, b, cA, cB = Reals("a b cA cB")
++    s = Solver()
++    s.add(a > 0, b > a)                      # strictly increasing; SOFT < HARD kept
++    s.add(cA >= 0, cA <= 1, cB >= 0, cB <= 1)
++    s.add(Q(1, 2) * cA > Q(1, 1) * cB)       # original labels: A outranks B
++    s.add(a * cA < b * cB)                   # re-labelled: the order FLIPS
++    r2 = s.check()
++    print(f"    R2 (product W*c*Ver): order-flipping re-label exists? {r2}")
++    if r2 == sat:
++        m = s.model()
++        print(f"      witness: {{{', '.join(f'{d}={m[d]}' for d in m)}}}")
++
++    c1, c2, a2, b2 = Reals("c1 c2 a2 b2")
++    s2 = Solver()
++    s2.add(a2 > 0, b2 > a2, c1 >= 0, c1 <= 1, c2 >= 0, c2 <= 1)
++    orig = Or(Q(1, 2) > Q(1, 1), And(Q(1, 2) == Q(1, 1), c1 > c2))
++    new = Or(a2 > b2, And(a2 == b2, c1 > c2))
++    s2.add(orig != new)
++    r3 = s2.check()
++    print(f"    R3 (ordered pair, lexicographic): verdict-changing re-label? {r3}")
++
++    print()
++    if r2 == sat and r3 == unsat:
++        print("    DECIDED BY MEASUREMENT, NOT BY JUDGEMENT:")
++        print("    R2 leaves the ordering BREAKABLE (sat). R3 is INVARIANT (unsat).")
++        print("    They are EXCLUSIVE, not composable: composing them would")
++        print("    re-admit the inadmissible product alongside the admissible")
++        print("    pair, and the composite inherits the sat. A composition is")
++        print("    therefore strictly WORSE than R3 alone on the named property")
++        print("    (invariance under strictly increasing re-labelling).")
++        return 0
++    print("    UNEXPECTED: the exclusivity argument did not reproduce.")
++    return 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())

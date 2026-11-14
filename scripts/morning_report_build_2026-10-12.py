@@ -362,6 +362,34 @@ def study_items() -> list[dict]:
     return out
 
 
+#: The parked file's own SETTLED boundary. Everything below this h1 is, in the
+#: file's own words, *"kept for the record, not for his attention"*.
+#:
+#: ★ WHY IT IS AN h1 AND WHY THAT MATTERS. The live items are `## ` headings;
+#: the boundary is a `# ` heading, so a reader collecting `## ` lines sweeps
+#: straight past it and takes the settled half as live. Measured 2026-11-13
+#: under B181: 38 headings above the line and 38 below, and the reader took all
+#: 76.
+#:
+#: ★ IT FAILS OPEN, DELIBERATELY. If the boundary heading is ever renamed, no
+#: match is found and EVERY heading is returned -- which over-reports what needs
+#: him rather than hiding something from him. That is the same direction
+#: `parked_items` already chooses when it cannot parse an identifier, and the
+#: direction this project had to restore once after a suppression.
+_PARKED_SETTLED_BOUNDARY = re.compile(r"^#\s+Settled\b", re.I)
+
+
+def _parked_headings(text: str) -> list[str]:
+    """Every LIVE `## ` heading, stopping at the file's settled boundary."""
+    out: list[str] = []
+    for line in text.splitlines():
+        if _PARKED_SETTLED_BOUNDARY.match(line):
+            break
+        if line.startswith("## "):
+            out.append(line[3:].strip())
+    return out
+
+
 def parked_items() -> list[str]:
     """The parked file's LIVE portion, derived from the task list's markers.
 
@@ -382,8 +410,7 @@ def parked_items() -> list[str]:
     """
     if not PARKED.is_file():
         return []
-    headings = [l[3:].strip() for l in PARKED.read_text(encoding="utf-8").splitlines()
-                if l.startswith("## ")]
+    headings = _parked_headings(PARKED.read_text(encoding="utf-8"))
     # THE WHOLE TASK LIST, not this report's live subset. `task_items()` returns
     # only the LIVE items, so deriving closure from it gave 0 closed and dropped
     # nothing -- an instrument that cannot see the thing it is filtering on.
@@ -1400,9 +1427,33 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
     A("Each of these already carries a ruling on the record, so it is queued work rather "
       "than a question.")
     A("")
-    _s = len(L)                      # task-list headlines, as the markers carry them
+    #: ★ THE SPAN IS PER HEADLINE, AND IT USED TO WRAP THE WHOLE LOOP.
+    #:
+    #: FOUND 2026-11-14 BY RUNNING THE LINT TWICE, with the generator's spans
+    #: and without them. `_s` was set HERE, before the loop, and closed only
+    #: after it at the `_ex.append` below -- so the exemption meant for the
+    #: headline line also covered the "You ruled on this" sentence, the
+    #: recorded status, and BOTH the `what` and `why` authored fields. The
+    #: comment said "headlines"; the effect was the entire section.
+    #:
+    #: MEASURED ON THE FILE HE LISTENS TO, before the repair: 3 spans covered
+    #: 52,584 of 57,898 characters = **0.908218** of the spoken report, span 2
+    #: alone running [2109, 48419) at 46,310 chars = 0.7999. It silenced **39
+    #: of 39** blocking findings -- 29 spelled numbers, 7 bare entry codes, 3
+    #: category nouns -- so the generator printed `is clean` on a file carrying
+    #: 39, and the founder's ruling of 2026-09-04 making a spelled-number
+    #: finding BLOCKING was unenforced on that surface.
+    #:
+    #: ★ AND `_ex` HAS A SECOND CONSUMER, which is why 1 root cause had 2
+    #: effects. `_mark_my_paragraphs(L, _ex, _hd)` treats an exempt span as
+    #: HIS words and withholds the asterisk, so **189 of 205** paragraph
+    #: openers in the spoken report carried no marker while the decisions file,
+    #: whose guard IS on the board, carried 0 unmarked. A fix applied to the
+    #: lint alone would have left that half broken.
     for o in outstanding:
+        _s = len(L)                  # task-list headlines, as the markers carry them
         A(_spoken(o.get("title") or o["ident"]) + ".")
+        _ex.append((_s, len(L)))     # the headline ONLY, never the prose below it
         A("")
         # Spoken aloud, so he hears that he already settled it and on what date.
         if o.get("ruled"):
@@ -1430,7 +1481,9 @@ def render_tts(decs, outstanding, done, owed, parked, since, superseded=(),
             A("")
             A(_spoken(o["why"]))
         A("")
-    _ex.append((_s, len(L)))         # closes the task-list headline span
+    #: The headline spans are appended per iteration above, so there is nothing
+    #: to close here. Leaving the old append would have re-added a span running
+    #: from the LAST headline to the end of the section.
     A(f"SECTION 4. EXPLANATIONS OWED, {len(owed)} OF THEM")
     A("")
     A("Each of these is a place where an explanation was asked for before a ruling would "

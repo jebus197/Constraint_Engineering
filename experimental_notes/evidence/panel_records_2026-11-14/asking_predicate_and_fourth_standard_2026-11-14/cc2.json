@@ -1,0 +1,232 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 17885,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && echo \\\"---\\\" && sha256sum scripts/how_many_decisions_actually_need_him_2026-11-01.py scripts/how_much_of_this_is_actually_his_2026-11-12.py hooks/task_list_pulse.py scripts/task_list_markers.py experimental_notes/CDSFL_MASTER_TASK_LIST.md bench/directives/universal/cdsfl_core_formal.md bench/cdsfl_registry/composer.py 2>&1 | head -40\", \"description\": \"Orient and verify ar",
+      "t_offset_s": 6.536
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ide 2>/dev/null || true; ls ~ 2>/dev/null | head; echo \\\"--- git\\\"; git rev-parse --show-toplevel 2>&1\", \"description\": \"Find repo root\"}",
+      "t_offset_s": 7.549
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/how_much_of_this_is_actually_his_2026-11-12.py 2>&1 | tail -80\", \"description\": \"Run the producer script\"}",
+      "t_offset_s": 11.314
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/how_much_of_this_is_actually_his_2026-11-12.py scripts/how_many_decisions_actually_need_him_2026-11-01.py hooks/task_list_pulse.py\", \"description\": \"Line counts\"}",
+      "t_offset_s": 12.647
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/how_much_of_this_is_actually_his_2026-11-12.py 2>&1 | tail -90\", \"description\": \"Run the producer script\"}",
+      "t_offset_s": 14.894
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/scripts/how_much_of_this_is_actually_his_2026-11-12.py\"}",
+      "t_offset_s": 15.724
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/scripts/how_many_decisions_actually_need_him_2026-11-01.py\"}",
+      "t_offset_s": 28.424
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/hooks/task_list_pulse.py\"}",
+      "t_offset_s": 29.195
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"classify_text\\\\|how_many_decisions_actually_need_him\\\" --include=*.py --include=*.md --include=*.json --include=*.toml --include=*.sh . | grep -v \\\"CDSFL_MASTER_TASK_LIST\\\" | head -40\", \"description\": \"Find all callers of classify_text\"}",
+      "t_offset_s": 36.836
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def summarise\\\\|def open_roster\\\" -A 60 scripts/task_list_markers.py | head -140\", \"description\": \"Read summarise and open_roster\"}",
+      "t_offset_s": 37.834
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"classify_text\\\\|_whose_move\\\\|how_many_decisions_actually_need_him\\\" . 2>/dev/null | grep -v \\\"CDSFL_MASTER_TASK_LIST.md\\\" | grep -v \\\"\\\\.git/\\\" | head -40\", \"description\": \"Find all callers\"}",
+      "t_offset_s": 42.024
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_whose_move\\\" -B 5 -A 70 scripts/task_list_markers.py | head -110\", \"description\": \"Read _whose_move\"}",
+      "t_offset_s": 42.782
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"classify_text\\\\|def movable_count\\\\|def refusal_budget\\\\|def _residue_is_his\\\\|MAX_REFUSALS\\\" -B3 -A 30 hooks/work_not_narrate.py | head -150\", \"description\": \"Read work_not_narrate classifier use\"}",
+      "t_offset_s": 65.474
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"movable_count\\\\|refusal_budget\\\" --include=\\\"*.py\\\" . 2>/dev/null | grep -v \\\"\\\\.git/\\\" | head -20; echo \\\"=== settings hooks\\\"; ls .claude 2>/dev/null; cat .claude/settings.json 2>/dev/null | head -60\", \"description\": \"Find movable_count callers and hook wiring\"}",
+      "t_offset_s": 66.967
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def movable_count\\\" -A 45 hooks/work_not_narrate.py; echo \\\"=== refusal_budget\\\"; grep -n \\\"def refusal_budget\\\" -A 30 hooks/work_not_narrate.py; echo \\\"=== residue\\\"; grep -n \\\"def _residue_is_his\\\" -A 40 hooks/work_not_narrate.py\", \"description\": \"Read movable_count, refusal_budget, _residue_is_his\"}",
+      "t_offset_s": 83.519
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def _first_movable\\\" -A 35 hooks/work_not_narrate.py; echo \\\"=== open_items body\\\"; sed -n '600,712p' hooks/work_not_narrate.py | grep -n \\\"kind\\\\|OWED\\\\|_first_movable\\\\|return\\\" | head -30\", \"description\": \"Read _first_movable and open_items body\"}",
+      "t_offset_s": 98.324
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"scale\\\\|critical_level\\\\|severity\\\" bench/cdsfl_registry/composer.py | head -50\", \"description\": \"Find severity scale machinery in composer\"}",
+      "t_offset_s": 99.268
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '855,915p' bench/cdsfl_registry/composer.py\", \"description\": \"Read severity declaration function\"}",
+      "t_offset_s": 137.053
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys,pathlib; sys.path.insert(0,'bench')\\nfrom cdsfl_registry import _domain_vocabulary as dv\\nfor d in sorted(getattr(dv,'DOMAINS',[]) or []):\\n    print(d, dv.severity(d))\\n\\\" 2>&1 | head -30; echo \\\"=== grep manifests\\\"; grep -rn \\\"severity_scale\\\" bench/ --include=*.py --include=*.json --include=*.toml 2>/dev/null | head -10\", \"description\": \"Enumerate domain ",
+      "t_offset_s": 139.112
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity_scale\\\\|critical_level\\\" bench/ 2>/dev/null | grep -v \\\"\\\\.git\\\" | grep -vi \\\"composer.py\\\" | head -15; echo \\\"=== dv file\\\"; ls bench/cdsfl_registry/ | head -30\", \"description\": \"Locate domain manifest severity entries\"}",
+      "t_offset_s": 141.959
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nfrom cdsfl_registry import domain_vocabulary as dv\\nimport tomllib,pathlib\\nm=tomllib.loads(pathlib.Path('bench/cdsfl_registry/domain_manifest.toml').read_text())\\nfor k,v in (m.get('domain') or m).items():\\n    if isinstance(v,dict) and 'severity_scale' in v:\\n        print(k,'|',v.get('severity_scale'),'| crit=',v.get('critical_",
+      "t_offset_s": 158.49
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport importlib.util,pathlib,sys\\nREPO=pathlib.Path('.').resolve()\\nspec=importlib.util.spec_from_file_location('h',REPO/'hooks/work_not_narrate.py')\\nm=importlib.util.module_from_spec(spec); sys.modules['h']=m; spec.loader.exec_module(m)\\nprint('hook REPO  =',m.REPO)\\nprint('exists     =',m.REPO.exists())\\nprint('hook TASKS =',m.TASKS, m.TASKS.exists())\\nprint('staged",
+      "t_offset_s": 187.468
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"PRODUCER: which live surfaces the `_later` ruling proxy actually reaches, and\\nin which DIRECTION each one errs when the proxy is wrong.\\n\\n\\u2605 WHY THIS EXISTS AND WHAT IT CONTRADICTS. The brie",
+      "t_offset_s": 276.499
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"touch scripts/.__wtest 2>&1 && echo \\\"WRITABLE\\\" && rm -f scripts/.__wtest || echo \\\"READ-ONLY\\\"\", \"description\": \"Test write permission on staged tree\"}",
+      "t_offset_s": 280.408
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"PRODUCER: which live surfaces the `_later` ruling proxy actually reaches, and\\nin which DIRECTION each one errs when the proxy is wrong.\\n\\n\\u2605 WHY THIS EXISTS AND WHAT IT CONTRADICTS. The brief of 2026-11-14 asks which of\\n3 text predicates (A, B, C) for \\\"was a question ra",
+      "t_offset_s": 346.657
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sympy as sp\\n# Cohen's kappa with rater X CONSTANT at T. Y is arbitrary: P(Y=T)=q.\\nq = sp.symbols('q', positive=True)\\n# 2x2 table: X always T. cells: (X=T,Y=T)=q, (X=T,Y=F)=1-q, (X=F,*)=0\\np_o = q                                  # observed agreement = both T\\npX_T, pX_F = 1, 0\\npY_T, pY_F = q, 1-q\\np_e = pX_T*pY_T + pX_F*pY_F\\nkappa = sp.simplify((p_o - p_e)/(",
+      "t_offset_s": 406.773
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'With[{po=q,pe=1*q+0*(1-q)},Simplify[(po-pe)/(1-pe)]]' 2>&1 | head -5; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram second falsifier on kappa identity\"}",
+      "t_offset_s": 407.959
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo/scripts/how_many_decisions_actually_need_him_2026-11-01.py\", \"old_string\": \"#: The same shape `morning_report_build._DATED` uses, so the 2 instruments\\n#: read a \\\"dated addition\\\" identically rather than by 2 similar regexes.\\n_DATED_IN_BODY = re.compile(r\\\"\\\\b(2026-\\\\d{2}-\\\\d{2",
+      "t_offset_s": 457.338
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/_patch_block.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/how_many_decisions_actually_need_him_2026-11-01.py\\\")\\nsrc = p.read_text()\\nanchor = '_DATED_IN_BODY = re.compile(r\\\"\\\\\\\\b(2026-\\\\\\\\d{2}-\\\\\\\\d{2})\\\")'\\nassert src.count(anchor) == 1, f\\\"anchor count {src.count(anchor)}\\\"\\nNEW = '''\\n\\n\\n# -------------------------------------------------------------------",
+      "t_offset_s": 486.459
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== F1/F3 after patch ===\\\"; python3 scripts/how_much_of_this_is_actually_his_2026-11-12.py 2>&1 | sed -n '/4. THE 3 PREDICATES/,$p'\", \"description\": \"Re-run F1/F3 producer after patch\"}",
+      "t_offset_s": 491.041
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"GUARD for option O3 of the brief of 2026-11-14: the ruling residue is\\nREPORTED as undecidable, and reporting it decides NOTHING.\\n\\nWHAT THIS PROTECTS, and it is 2 separate properties that could each regress on\\ntheir own:\\n\\n  1. `residue_undecidable` is TRUE exac",
+      "t_offset_s": 544.881
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py\\\")\\ns = p.read_text()\\nold = '''    def test_all_three_agreeing_is_not_undecidable(self, clf):\\n        #: An asking sentence that itself carries the later date: A sees the\\n        #: date, B sees it in the sentence, C sees the ask at/after it. All 3\\n    ",
+      "t_offset_s": 564.075
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/falsifier_surface_direction.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"FALSIFIER for the CRITICAL finding of 2026-11-14.\\n\\nCLAIM UNDER TEST (brief fact F5): \\\"A is noisy in the SAFE direction: it\\nover-reports what he owes, and he can see and dismiss a wrong entry but cannot\\nsee an absent one.\\\"\\n\\nTHE DEFECT CLAIMED: F5 is true of the `[tasks]` BANNER and FALSE of a sec",
+      "t_offset_s": 611.592
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/how_many_decisions_actually_need_him_2026-11-01.py\\\")\\ns = p.read_text()\\nold = '''    if not ruled:\\n        return False\\n    verdicts = {fn(ruled, body, live_asks)\\n                for fn in RESIDUE_PREDICATES.values()}\\n    return len(verdicts) > 1'''\\nnew = '''    if not ruled:\\n        return False\\n    #: \\u2605 A ",
+      "t_offset_s": 638.341
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py\\\")\\ns = p.read_text()\\nold = '''            asks = clf.classify_text(e.state, e.ruled, b)[\\\"live_asks\\\"]\\n            if not e.ruled:\\n                continue\\n            v = {fn(e.ruled, b, asks) for fn in clf.RESIDUE_PREDICATES.values()}\\n            if",
+      "t_offset_s": 659.647
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/falsifier_surface_direction.py bench/falsifier_the_ruling_proxy_gates_the_work_queue_2026-11-14.py\\npython3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py\\\")\\ns = p.read_text()\\nold = '''    print(\\\"      Raw agreement above is the reportable statistic; n is small and\\\")\\n    print(\\\"      every interval printed wi",
+      "t_offset_s": 715.711
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/directives/universal/cdsfl_core_formal.md\\\")\\ns = p.read_text()\\nanchor = \\\"## Classification Summary\\\"\\nassert s.count(anchor) == 1\\nNEW = '''## PROPOSED 4th STANDARD \\u2014 Real-World Applicability, under the HIL-Consequence Caveat\\n\\n> **STATUS: PROPOSED, NOT ADOPTED. 2026-11-14.** This section is a drafted text\\n> place",
+      "t_offset_s": 780.211
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== does the formal doc reach seats at runtime? ===\\\"; grep -rn \\\"cdsfl_core_formal\\\\|cdsfl_core\\\\.txt\\\" bench/cdsfl_registry/composer.py bench/reference_runner_v3.py 2>/dev/null | head -5\\necho \\\"=== deliverables in the tree ===\\\"\\nfor f in scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py be",
+      "t_offset_s": 809.573
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '320,420p' bench/cdsfl_registry/composer.py\", \"description\": \"Read _block_is_hard and the carry logic\"}",
+      "t_offset_s": 815.257
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench')\\nfrom cdsfl_registry import composer as c\\nimport pathlib\\ntxt=pathlib.Path('bench/directives/universal/cdsfl_core_formal.md').read_text()\\nblocks=c._split_packet_directives(txt)\\nhard=[b for b in blocks if c._block_is_hard(b)]\\nmine=[b for b in hard if 'PROPOSED, NOT ADOPTED' in b or 'real-world-applicability' in b or 'HIL consequ",
+      "t_offset_s": 823.336
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib, re, hashlib\\np = pathlib.Path(\\\"bench/directives/universal/cdsfl_core_formal.md\\\")\\ns = p.read_text()\\nstart = s.index(\\\"## PROPOSED 4th STANDARD\\\")\\nend = s.index(\\\"## Classification Summary\\\")\\nproposal = s[start:end]\\n# restore cdsfl_core_formal.md EXACTLY to its dispatched state\\np.write_text(s[:start] + s[end:])\\nd = hashlib.sha256(p.read_byte",
+      "t_offset_s": 854.104
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py bench/tests/test_the_pulse_says_whose_move_it_is_2026-11-09.py bench/tests/test_a_settled_item_is_not_a_decision_2026-11-01.py bench/tests/test_a_movable_entry_is_not_one_that_merely_asks_nothing_2026-11-12.py bench/tests/test_the_two_decision_surfaces_cannot_diverge_2026-11-01.py -q 2>&1 | tai",
+      "t_offset_s": 864.421
+    }
+  ],
+  "n_tool_calls": 42,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1019.2,
+  "response": "73 passed. Everything verified.\n\n---\n\n## `verdict`\n\n| option | verdict | reason |\n|---|---|---|\n| **O1 change nothing** | **REJECT** | Measured 5 invisible-error pairs; its premise (F5) is false on a second surface I found by execution. |\n| **O2 adopt B or C** | **REJECT** | Both hide live questions on the banner *and* still suppress on the gate \u2014 5 pairs each, no better than O1; C additionally cannot fire on a self-dated ask (proved by construction). |\n| **O3 report the disagreement** | **ADOPT AS DELIVERED, INSUFFICIENT ALONE** | Fixes the banner (0 unsupported assertions) but scores 5 pairs because the gate is untouched. Delivered verdict-neutral. |\n| **O3 extended to the gate** | **RECOMMEND \u2014 awaits his ruling** | Only single fix reaching 0 invisible-error pairs. Touches a work-gating hook, so it is his. |\n| **O4 recorded fact** | **REPORT AS DIRECTION, DO NOT ADOPT NOW** | 5 pairs until backfilled and nothing prompts the backfill; the brief's framing is *not* refuted (see `disagreement`). |\n| **O3+O4 composed** | **REFUSE** | Ties O3-extended at 0. His standard: a tie is not a demonstrated advantage. |\n| **Q2 4th standard** | **ADOPT-WITH-CHANGES** | Adopt as a scope-correction to `simplicity-default`, not a 4th competing criterion. |\n\n## `figures_reproduce`\n\n**F1 and F3 both reproduce exactly.** Pasted above in full; the key lines:\n\n```\nB77   ruled 2026-11-08  A=True  B=False C=True  DISAGREE\nB84   ruled 2026-11-08  A=True  B=True  C=False DISAGREE\nB94   ruled 2026-11-08  A=True  B=False C=False DISAGREE\nB125  ruled 2026-11-08  A=True  B=True  C=False DISAGREE\nB142  ruled 2026-11-12  A=True  B=False C=False DISAGREE\n  ruled-and-OWED entries where the 3 predicates disagree: 5 of 5 = 1.000000\n      Wilson [0.565518, 1.000000]  Clopper-Pearson [0.478176, 1.000000]\n      11  needing a RULING he has never given\n       6  needing only PERMISSION\n       5  carrying his ruling, residue undecidable by text\n      25  MINE and movable without him\n      --  the 4 groups partition all 47 open entries exactly: 0 in 2 groups, 0 in none\n```\n\nAll 7 dispatched sha256 digests matched. One hygiene note, below threshold: `work_not_narrate` hardcodes `REPO` to `~/Developer_Projects/Constraint_Engineering`, so the `movable_count() = 25` in that producer was read from the **home** checkout, not the staged one. Not a live defect (they coincide in his environment); a measurement hazard anywhere else, and my producer redirects explicitly.\n\n## `q1_recommendation`\n\n**O3 extended to the gate.** Named property, measured: **invisible-error pairs** \u2014 (entry, surface) pairs where a wrong verdict produces an outcome he cannot detect. O1 = 5, O2(B) = 5, O2(C) = 5, O3-as-delivered = 5, O4 alone = 5, **O3-extended = 0**, O3+O4 = 0. It dominates every single alternative and ties the composition, so his own words select it.\n\n**Why \u2014 the finding the brief did not have.** `classify_text`'s `kind` has **three** consumers, not one, and they read it with **opposite sign**:\n\n| consumer | route | sensitive to the proxy? | which error is invisible |\n|---|---|---|---|\n| `[tasks]` banner | `task_list_pulse` \u2192 `summarise` \u2192 `_whose_move` | **yes** \u2014 figure takes 12 / 13 / 16 | under-reporting (a question vanishes) |\n| **entry the Stop gate names** | `work_not_narrate.open_items` \u2192 `_first_movable` (`:805`) | **yes** \u2014 names `B188` vs `B77` | **over-reporting (work silently never named)** |\n| refusal budget | `movable_count` \u2192 `refusal_budget` | **no** | n/a |\n\nSurface 3's insensitivity is **derived, not observed**: `live_asks` is built in the sentence loop *above* the line computing `_later`, so no value of the proxy can change it \u2014 and it is saturated anyway (`movable_count = 25`, ceiling binds at \u2265 5). Two independent reasons.\n\n## `q2_text`\n\nDelivered ready-to-paste at `bench/directives/universal/PROPOSED_4th_standard_real_world_applicability_2026-11-14.md`:\n\n> **real-world-applicability (HIL consequence).** Where a change alters a figure, a list, a name or a verdict that the human in the loop READS AND ACTS ON, the change is assessed on its consequence to that human and not only on its internal correctness. The caveat is what bounds it: the standard applies when, and only when, a wrong outcome would reach the HIL \u2014 meaning the defect can produce (i) a wrong quantity he reads, (ii) a live question that disappears from a list he relies on, (iii) work silently removed from a queue he believes is being worked, or (iv) a standard, gate or figure he is told is checked when nothing checks it. Where the standard applies, a proposed fix must name EVERY surface the changed value reaches, and for each surface state the DIRECTION in which an error there is invisible to him; a fix that leaves an invisible direction unnamed is inadmissible, and a fix that reduces error on one surface while silently increasing it on another is a regression regardless of its aggregate. Consequence to the HIL is reported on the surface's own terms \u2014 the figure, the list, the stalled entry \u2014 never as a bare number, because the project's declared `software` scale (CVSS v4.0 base score) presupposes an attacker and cannot score a defect that has none.\n\n**On the scale.** `domain_manifest.toml` declares `software` \u2192 `CVSS v4.0 base score`, critical level `High`. That scale is **not applicable here**: CVSS v4.0 requires an Attack Vector in {N, A, L, P}, all of which presuppose an adversary reaching the system, and offers no \"none\". A wrong decision count has no adversary, so it has no base score. Per the formal directive's own rule for scale-less cases, the consequence is **inherited from the application** \u2014 his decision-making \u2014 and that gap is exactly what makes Q2 non-redundant. `[VERIFY:current]` on the CVSS v4.0 specification text.\n\n## `q2_procedure`\n\n```\nAPPLIES?      Does the changed value reach a surface the HIL reads and acts on?\nENUMERATE     List EVERY consumer, by file and line. An unenumerated consumer\n              is an unmet condition, not an omission.\nSIGN          For each consumer, state which error direction is INVISIBLE to him.\nINADMISSIBLE  if any consumer is unenumerated, OR any invisible direction is\n              unnamed, OR the fix increases invisible error on any surface \u2014\n              even where it decreases the total.\n```\n\nThe `SIGN` step is the one that would have caught this round's defect. It encodes the finding: **over-reporting is not a property of a predicate; it is a property of a predicate paired with a consumer.**\n\n## `q2_mechanism`\n\n**A partial mechanism exists and runs** \u2014 `scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py` enumerates consumers, states each invisible direction, and scores candidates on invisible-error pairs. **There is no general gate, and I state that plainly:** no test can decide for an arbitrary change whether a value \"reaches a surface the HIL reads and acts on\", because that predicate is about *him*, not about the code. So: adopt with the per-case producer as its mechanism and generality declared as a reported direction of travel. Adopting it with no mechanism at all would make it the 12th addition nothing reaches \u2014 which is why the producer was built in the same round as the text.\n\n## `q2_conflicts`\n\n**It appears to contradict `simplicity-default`, and the case is concrete and measured.** The simplest sufficient repair here is O3-as-delivered \u2014 one predicate, one dict key, no edit to a work-gating hook. That leaves **5 invisible-error pairs**. Only the extended fix reaches 0. So the simplest fix is the one that leaves him exposed.\n\n**The conflict is apparent, not real,** and that is the useful result. The contested word is *sufficient*. `simplicity-default` already demands a fix that \"actually discharges the requirement\"; this standard places HIL consequence **inside** the requirement. Once there, the report-only repair is not a simpler sufficient fix \u2014 it is an *insufficient* one, and simplicity selects the extended fix unaided. **Hence ADOPT-WITH-CHANGES: adopt it as a scope-correction to simplicity's sufficiency test, not as a 4th competing criterion.** No conflict with `additive-standard` or `composability-requires-a-measurement`.\n\n## `q2_applied_to_q1`\n\n**O3 extended to the gate.** It rejects O1 and O2 (unnamed invisible direction on the gate), rejects O3-as-delivered (increases nothing but leaves an invisible direction live), rejects the composition (no demonstrated advantage), and selects the one option scoring 0. The standard is operational on its own first test case.\n\n## `falsifier` / `falsifier_result`\n\n`bench/falsifier_the_ruling_proxy_gates_the_work_queue_2026-11-14.py`. It imports the **real** classifier and the **real** `work_not_narrate`, records the entry the real `_first_movable` names, patches `residue_A` **on disk** (the hook reloads by path and cannot be monkeypatched in memory), re-calls the real function, then restores and verifies by sha256 before printing a verdict.\n\n```\n$ python3 bench/falsifier_the_ruling_proxy_gates_the_work_queue_2026-11-14.py\nsha256 before: 2e6bd255894a7d7c\nOPEN entries: 47\nentries the 3 predicates cannot decide: ['B77', 'B84', 'B94', 'B125', 'B142']\nentry the REAL Stop gate names under live predicate A: 'B188'\nsha256 after restore: 2e6bd255894a7d7c  RESTORED OK\nentry the REAL Stop gate names with A relaxed to B: 'B77'\n\nFALSIFIED\n  The proxy GATES THE WORK QUEUE. Changing only the ruling-residue\n  predicate moved the entry the Stop gate names from 'B188' to 'B77'.\nAssertionError: over-reporting is NOT uniformly safe\nEXIT=1\n```\n\n**This falsifier found a defect in my own fix.** Its first run printed **8** flagged entries against the measured 5. The extra three \u2014 B56, B104, B184 \u2014 have **no live asking sentence**, so A fires on a body date while B cannot fire at all; the \"disagreement\" is unreachable because the ladder never consults `_later` when `live_asks` is empty. Reporting them would have put 3 spurious items in front of him \u2014 the very defect class this round measures. Scope corrected to `ruled AND live_asks`, derived from the ladder; flag now yields exactly the 5, with an explicit anti-regression case.\n\n## `reasoning`\n\nPremises first. (1) `classify_text` is a pure function whose only contested input is `_later`. (2) `_later` is read in exactly one branch, guarded by `live_asks and ruled` \u2014 so the proxy can only matter on entries satisfying both; that derivation fixes O3's scope and is what the falsifier verified. (3) The verdict `kind` has three consumers, found by exhaustive grep, two of which test `kind == \"OWED\"` and one of which does not. (4) At `work_not_narrate.py:805` the test is `continue` \u2014 *skip* \u2014 so `OWED` **removes** the entry from candidacy. Therefore an over-report on that surface subtracts work invisibly, while on the banner it adds a dismissible item. The sign differs; F5 reasons about one surface and generalises. (5) Scoring all options on invisible-error pairs, five of six candidates tie at 5 and only O3-extended and O3+O4 reach 0; a tie refuses the composition under his explicit wording. (6) Cohen's kappa cannot be used against A: with one rater constant, `p_e = 1\u00b7P(Y=T) + 0\u00b7P(Y=F) = P(Y=T) = p_o`, so `\u03ba = (p_o\u2212p_e)/(1\u2212p_e) = 0` identically \u2014 verified symbolically in SymPy and independently on the local Wolfram Engine kernel (exit 0, output `0`, *computed with Wolfram Language*). B-vs-C kappa is \u22124/11 exactly, matching sklearn's \u22120.363636. Raw pairwise agreement (2/5, 1/5, 2/5) with both intervals is the reportable statistic, and every interval printed says how small n is.\n\n## `disagreement`\n\nThree disagreements with the brief, all load-bearing.\n\n**1. F5 is false as stated, and this is the headline.** \"Over-reporting is the safe direction\" holds on the banner and *inverts* on the gate, where A's over-report removes five entries from the work queue permanently and invisibly. That is the same suppression shape withdrawn on 2026-11-09, displaced from his list onto mine. Demonstrated by execution through the real hook.\n\n**2. O4's claim that \"the fact is not in the text\" is NOT established, and the brief should not be refused on that ground.** The brief offers O4 as its own strongest refutation; I decline it. The predicates do not fail because the fact is absent from the text \u2014 they fail because **all three read the wrong thing**. A tests for a *date*, not a question; B requires the question to carry its own date; C is position-gated and, as my constructed case proved, **cannot fire at all when the only later date sits inside the asking sentence** \u2014 it misses the clearest possible case of a post-ruling question, one that states its own date. These are three defective readings, not evidence of an absent fact. A fourth predicate testing *\"is there a live asking sentence whose nearest preceding date stamp postdates the ruling\"* is not obviously impossible. I did not write it, per F4's rule \u2014 but \"three attempts failed\" is not \"the fact is unrecoverable\", and the brief's own framing conflates them. O4 remains the more robust long-run design; its justification is cost and recurrence, **not** impossibility.\n\n**3. The brief asks for the proposal in `cdsfl_core_formal.md`, and doing so violates its own hard constraint.** I did it, then caught it by execution: `composer._render_universal_minimal` carries every block that `_block_is_hard()` accepts verbatim into every seat's prompt, and `_block_is_hard()` accepted **2 of my proposal's blocks** \u2014 it reads MUST, NEVER and \"inadmissible\" across the whole file. An unratified standard would have become binding on every seat. I restored that file byte-exact to its dispatched digest `9da304edb6c80a60` and relocated the proposal. **The underlying defect is reported, not worked around:** that file has no notion of a block drafted but not in force. Any future draft written there \u2014 by a seat, or by him sketching a standard \u2014 becomes a HARD constraint the moment it contains the word MUST. A ratification predicate in `_block_is_hard()` would fix it; I have not taken it, because it changes what reaches every seat and is his to rule.\n\n## `plain_english`\n\nThe \"N of 47 await YOU\" figure on your screen rests on a test that asks the wrong question \u2014 it looks for a *date* later than your ruling, and a dated progress note is not a question. Three different versions of that test disagree about all five affected entries, so the figure could honestly be 12, 13 or 16. **But the bigger thing is one the brief didn't know:** that same test also decides which entry I get prodded to work on next, and there it points the other way. When it wrongly says \"this still needs George\", those five entries are quietly dropped from my own work queue and never named again \u2014 you'd never see that happen. So \"it over-counts, which is safe\" isn't true; it over-counts on your screen and *under*-works behind it. I've added a flag that marks those five as **undecidable** rather than guessing, changed no number you currently read, and proved by test that nothing moved. The recommended real fix is to let that same flag reach the work-prodding hook so those five stop being invisible \u2014 it's the only option that scores zero hidden errors, and it beats combining two fixes, so I'm not proposing a combination. **Both the fix to the hook and the new 4th standard are yours to approve; I've installed neither.** On the standard: adopt it, but as a clarification that \"simplest sufficient\" must count the cost *to you*, not as a fourth separate rule.\n\n## `passes_run`\n\n**Five passes.** P1 reproduced F1/F3. P2 traced the consumers and found the third surface and the sign inversion \u2014 the round's main finding. P3 built and ran the end-to-end falsifier, which confirmed the defect **and** caught the ask-less false positive in my own fix. P4 scored all options on invisible-error pairs, which refused the composition on his own standard. **P5 added the most important correction:** checking whether the Q2 proposal actually reaches seats, which revealed that writing it where the brief asked would have installed an unratified HARD constraint on every panel member \u2014 restored, relocated, and reported as a defect in `composer.py`. A sixth pass produced nothing above threshold, so I stopped.\n\n**Delivered as files in the tree:** `scripts/how_many_decisions_actually_need_him_2026-11-01.py` (additive: 4 named predicates + `residue_undecidable`, one implementation of A, no verdict changed), `scripts/which_surfaces_the_ruling_proxy_reaches_2026-11-14.py`, `bench/tests/test_the_ruling_residue_is_reported_not_decided_2026-11-14.py` (9 tests, constructed cases plus live), `bench/falsifier_the_ruling_proxy_gates_the_work_queue_2026-11-14.py`, `bench/directives/universal/PROPOSED_4th_standard_real_world_applicability_2026-11-14.md`. 73 tests pass across five relevant files. `cdsfl_core_formal.md` unchanged at `9da304edb6c80a60`.\n\n**Refutation conditions.** Q1: if `work_not_narrate.py:805` is changed so `_first_movable` no longer tests `kind == \"OWED\"`, the sign inversion disappears and O1 becomes defensible \u2014 re-run the falsifier; a clean exit refutes me. If the banner is retired, the invisible-error scores change and O3-extended may lose. **The recommendation rests on n = 5 and I will not pretend otherwise:** the disagreement proportion's Wilson lower bound is 0.5655, so at least ~57% disagreement is supported, but distinguishing *which* predicate is better needs roughly **n \u2265 20** disagreeing entries for a Wilson half-width under 0.2 \u2014 currently unobtainable, which is itself an argument for O4's recorded fact over any text predicate. Q2: the standard fails if someone produces a change that reaches a founder-facing surface where the procedure's `SIGN` step cannot be answered, or answers it and still selects a fix with more invisible-error pairs. A single such case makes it decorative and it should then be withdrawn, not patched.",
+  "t_start_epoch": 1794627786.8170931,
+  "t_end_epoch": 1794628806.0650518,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_z8lp1ooz/repo",
+      "built": false
+    }
+  ]
+}

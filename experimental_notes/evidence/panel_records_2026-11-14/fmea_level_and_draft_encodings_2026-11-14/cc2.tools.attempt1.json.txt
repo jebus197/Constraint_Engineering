@@ -1,0 +1,312 @@
+{
+  "model": "opus",
+  "elapsed_s": 816.9,
+  "tool_calls": 59,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANONFS/anonymized && ls && git log --oneline -3 2>/dev/null | head -5\", \"description\": \"Orient in repo\"}",
+      "t_offset_s": 4.298
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ANONFS/anonymized && sha256sum bench/cdsfl_registry/composer.py bench/cdsfl_registry/domain_manifest.toml bench/directives/universal/cdsfl_core_formal.md bench/reference_runner_v3.py bench/convergence_location.py 2>&1\", \"description\": \"Verify artefact digests\"}",
+      "t_offset_s": 5.833
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Find working directory\"}",
+      "t_offset_s": 7.199
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/cdsfl_registry/composer.py bench/cdsfl_registry/domain_manifest.toml bench/directives/universal/cdsfl_core_formal.md bench/reference_runner_v3.py bench/convergence_location.py experimental_notes/Panel_FULL_RECORD_Severity_Is_Ordinal_2026-11-11.md 2>&1\", \"description\": \"Verify artefact digests\"}",
+      "t_offset_s": 10.135
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '120,145p;280,300p' bench/cdsfl_registry/domain_manifest.toml\", \"description\": \"Read tier ladder and engineering block\"}",
+      "t_offset_s": 11.584
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd bench/cdsfl_registry && grep -n \\\"_severity_declaration\\\\|severity_scale\\\\|critical_level\\\\|encoding_tier\\\" composer.py | head -60\", \"description\": \"Locate severity API in composer\"}",
+      "t_offset_s": 14.387
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v3.py | head -30\", \"description\": \"Locate gate constant\"}",
+      "t_offset_s": 15.182
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo && pwd && grep -n \\\"CRITICAL_SEVERITY_THRESHOLD\\\" bench/reference_runner_v3.py\", \"description\": \"Locate gate constant uses\"}",
+      "t_offset_s": 18.348
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/cdsfl_registry/composer.py\", \"offset\": 845, \"limit\": 100}",
+      "t_offset_s": 19.685
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Survey 22 encoding severity lines\", \"subagent_type\": \"Explore\", \"prompt\": \"Repo root: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo\\n\\nFind every .txt file under bench/directives/ (excluding bench/directives/universal/) that contains a line starting with \\\"SEVERITY SCALE:\\\" at the start of a line. There should be about 22.\\n\\nFor EACH such file",
+      "t_offset_s": 33.03
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/directives/ && echo \\\"---ALL TXT---\\\" && find bench/directives -name '*.txt' | sort\", \"description\": \"List directives dir and all txt files\"}",
+      "t_offset_s": 35.505
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport sys; sys.path.insert(0,'.')\\nfrom bench.cdsfl_registry import domain_vocabulary as dv, composer as C\\nimport tomllib\\nm=tomllib.load(open('bench/cdsfl_registry/domain_manifest.toml','rb'))\\ndoms=[k for k,v in m.items() if isinstance(v,dict) and ('title' in v or 'config' in v)]\\nprint('DOMAINS:',doms)\\nfor d in sorted(doms):\\n    try: s=dv.severity(d)\\n    except ",
+      "t_offset_s": 36.353
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort\", \"description\": \"Grep for SEVERITY SCALE lines\"}",
+      "t_offset_s": 36.959
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in $(grep -rln --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort); do echo \\\"===== $f\\\"; sed -n \\\"$(grep -n '^SEVERITY SCALE:' \\\"$f\\\" | cut -d: -f1),+6p\\\" \\\"$f\\\"; done\", \"description\": \"Extract SEVERITY SCALE blocks\"}",
+      "t_offset_s": 41.754
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in $(grep -rln --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort); do echo \\\"===== $f\\\"; grep -nE 'DRAFT|TIER|[Tt]ier|PROVISIONAL|EXPERIMENTAL|STATUS:|CRITICAL LEVEL' \\\"$f\\\" | head -20; done\", \"description\": \"Find DRAFT and tier words\"}",
+      "t_offset_s": 43.414
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in bench/directives/biology/biology_zoology.txt bench/directives/software/software_general.txt bench/directives/chemistry/chemistry_general.txt bench/directives/biology/biology_natural_world.txt; do echo \\\"===== $f\\\"; sed -n \\\"$(grep -n '^SOURCES:' \\\"$f\\\" | head -1 | cut -d: -f1),+5p\\\" \\\"$f\\\"; done\", \"description\": \"Get SOURCES blocks for truncated files\"}",
+      "t_offset_s": 47.977
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"comm -23 <(find bench/directives -name '*.txt' | sort) <(grep -rl --include='*.txt' '^SEVERITY SCALE:' bench/directives/ | sort)\", \"description\": \"List txt files without SEVERITY SCALE\"}",
+      "t_offset_s": 50.787
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rniE 'severity scale' bench/directives/biomedical bench/directives/structural bench/directives/hardware bench/directives/software/software_security.txt bench/directives/mathematics/mathematics_general.txt bench/directives/universal | head -30\", \"description\": \"Check for variant severity scale mentions\"}",
+      "t_offset_s": 53.836
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== critical_level consumers (py) ===\\\" && grep -rn \\\"critical_level\\\" --include=*.py bench/ scripts/ | grep -v \\\"critical_level_note\\\" | head -40 && echo \\\"=== encoding_tier consumers (py) ===\\\" && grep -rn \\\"encoding_tier\\\\|CROSS_VERIFIED\\\\|\\\\btiers\\\\b\\\" --include=*.py bench/ scripts/ | head -40\", \"description\": \"Find consumers of critical_level and encoding_tier\"}",
+      "t_offset_s": 84.434
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity_scale\\\\|severity(\\\" --include=*.py bench/cdsfl_registry/domain_vocabulary.py | head -30 && echo \\\"=== gamma / critical series in convergence_location ===\\\" && grep -n \\\"gamma\\\\|critical\\\" bench/convergence_location.py | head -40\", \"description\": \"Inspect domain_vocabulary and convergence_location\"}",
+      "t_offset_s": 86.599
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"critical_level|encoding_tier|CROSS_VERIFIED\", \"glob\": \"*.py\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 60}",
+      "t_offset_s": 90.601
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,80p' bench/cdsfl_registry/domain_vocabulary.py; echo \\\"=== severity fn ===\\\"; grep -n \\\"def severity\\\" -A 60 bench/cdsfl_registry/domain_vocabulary.py | head -80\", \"description\": \"Read domain_vocabulary severity\"}",
+      "t_offset_s": 91.877
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '2120,2160p' bench/cdsfl_registry/composer.py; echo \\\"=== tier read anywhere in composer? ===\\\"; grep -n \\\"tier\\\" bench/cdsfl_registry/composer.py | head -20; echo \\\"=== tier read in runner? ===\\\"; grep -n \\\"encoding_tier\\\" bench/reference_runner_v3.py | head\", \"description\": \"Check tier use at compose/dispatch\"}",
+      "t_offset_s": 102.897
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '440,480p' bench/cdsfl_registry/domain_vocabulary.py; echo \\\"=== head of structural_building ===\\\"; grep -n \\\"SEVERITY SCALE\\\" bench/directives/structural/structural_building.txt || echo \\\"NO SEVERITY SCALE LINE in structural_building.txt\\\"\", \"description\": \"CLI tier print and engineering default encoding\"}",
+      "t_offset_s": 104.527
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/scripts/where_does_a_critical_level_land_2026-11-14.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"Where a domain's critical LEVEL lands, and what a tier word reaches.\\n\\nRUN:  python3 scripts/where_does_a_critical_level_land_2026-11-14.py\\n\\nWHAT THIS DECIDES, by execution rather than by reading.\\n\\n",
+      "t_offset_s": 202.332
+    },
+    {
+      "name": "Agent",
+      "input_preview": "{\"description\": \"Check HARD constraint tool-checkability\", \"subagent_type\": \"Explore\", \"prompt\": \"Repo root: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo\\n\\nFor EACH of these 22 files, I need one specific determination: are the file's HARD constraints TOOL-CHECKABLE?\\n\\nFiles:\\nbench/directives/biology/biology_genetics.txt\\nbench/directives/biology/biology_nat",
+      "t_offset_s": 244.448
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la scripts/ | head -5; echo \\\"---\\\"; touch scripts/_perm_probe.py && echo \\\"WRITE OK\\\" && rm scripts/_perm_probe.py\", \"description\": \"Probe write permission in repo tree\"}",
+      "t_offset_s": 245.63
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/biology/biology_genetics.txt\\\"\", \"description\": \"Read sample directive file\"}",
+      "t_offset_s": 246.868
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives/\\\"\", \"description\": \"List directives directory\"}",
+      "t_offset_s": 247.914
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in biology/biology_natural_world.txt biology/biology_zoology.txt chemistry/chemistry_general.txt cross-domain/cross_general.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"description\": \"Extract HARD sections batch 1\"}",
+      "t_offset_s": 252.146
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in information_science/information_science_data_management.txt information_science/information_science_general.txt information_science/information_science_knowledge_representation.txt information_science/information_science_retrieval.txt; do echo \\\"=== $f ===\\\"; awk '/^\\",
+      "t_offset_s": 254.131
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in logistics/logistics_warehousing.txt mathematics/mathematics_applied.txt mathematics/mathematics_numerical.txt mathematics/mathematics_proof.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"description\": \"Extract HARD sections batch ",
+      "t_offset_s": 257.194
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in physics/physics_classical.txt physics/physics_general.txt physics/physics_quantum.txt physics/physics_thermodynamics.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"description\": \"Extract HARD sections batch 4\"}",
+      "t_offset_s": 259.127
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in software/software_general.txt statistics/statistics_experimental_design.txt statistics/statistics_general.txt statistics/statistics_inference.txt statistics/statistics_time_series.txt; do echo \\\"=== $f ===\\\"; awk '/^\\\\[HARD/{p=1} /^\\\\[SOFT/{p=0} p' \\\"$f\\\"; done\", \"des",
+      "t_offset_s": 261.828
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/where_does_a_critical_level_land_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Where a domain's critical LEVEL lands, and what a tier word reaches.\\n\\nRUN:  python3 scripts/where_does_a_critical_level_land_2026-11-14.py\\n\\nWHAT THIS DECIDES BY EXECUTION, for the panel question of 2026-11-14 on the\\nengineering critical level and on the 22 DRAFT encodings.\\n\\n  M",
+      "t_offset_s": 318.62
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^def \\\\|^    def \\\" bench/convergence_location.py | sed -n '1,40p'\", \"description\": \"List convergence_location public functions\"}",
+      "t_offset_s": 322.216
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport re,pathlib\\np=pathlib.Path(\\\"scripts/where_does_a_critical_level_land_2026-11-14.py\\\")\\ns=p.read_text()\\ns=s.replace('''    import convergence_location as CL\\n    ents = [{\\\"round\\\": 1, \\\"severity\\\": 0.80, \\\"text\\\": \\\"fault at bench/a.py:10 in foo()\\\"},\\n            {\\\"round\\\": 2, \\\"severity\\\": 0.80, \\\"text\\\": \\\"fault at bench/b.py:20 in bar()\\\"}]\\n    prin",
+      "t_offset_s": 333.246
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && timeout 120 wolframscript -code '2+2' 2>&1 | head -3 || echo \\\"WOLFRAM ABSENT\\\"\", \"description\": \"Check Wolfram availability\"}",
+      "t_offset_s": 349.293
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import z3; print('z3', z3.get_version_string())\\\" 2>&1; python3 -c \\\"import sympy; print('sympy', sympy.__version__)\\\" 2>&1\", \"description\": \"Check solver availability\"}",
+      "t_offset_s": 350.308
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'Module[{bands={1,2,3,4,5},phi},phi=Function[x,x^3+x];{Ordering[bands]===Ordering[phi/@bands], Length[Select[bands,#>=4&]], Length[Select[phi/@bands,#>=4&]]}]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second-falsifier on ordinal relabel\"}",
+      "t_offset_s": 355.895
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport re,pathlib\\nD=pathlib.Path(\\\"bench/directives\\\")\\nfams={\\\"FMEA\\\":(r\\\"v?\\\\d|Rev\\\\.?\\\\s*\\\\d\\\",\\\"2019\\\"),\\\"CVSS\\\":(None,\\\"v4.0\\\"),\\\"CTCAE\\\":(None,\\\"v5.0\\\"),\\\"GHS\\\":(None,\\\"Rev. 11\\\")}\\ntok={\\\"FMEA\\\":r\\\"\\\\b(2019|1st edition)\\\\b\\\",\\\"CVSS\\\":r\\\"v4\\\\.0\\\",\\\"CTCAE\\\":r\\\"v5\\\\.0\\\",\\\"GHS\\\":r\\\"Rev\\\\.?\\\\s*1[01]\\\"}\\nprint(f\\\"{'file':62s} {'fam':6s} block_has_ver file_has_ve",
+      "t_offset_s": 390.056
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo/bench/directives\\\" && for f in biology/biology_genetics.txt biology/biology_natural_world.txt biology/biology_zoology.txt chemistry/chemistry_general.txt cross-domain/cross_general.txt information_science/information_science_data_management.txt information_science/information_science_general.txt in",
+      "t_offset_s": 408.177
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in chemistry/chemistry_general mathematics/mathematics_applied physics/physics_classical physics/physics_thermodynamics statistics/statistics_experimental_design statistics/statistics_inference software/software_general; do echo \\\"===== $f\\\"; grep -n \\\"FMEA\\\\|CTCAE\\\\|GHS health\\\" bench/directives/$f.txt; done\", \"description\": \"Exact citation sites to repair\"}",
+      "t_offset_s": 418.065
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in mathematics/mathematics_applied physics/physics_classical physics/physics_thermodynamics statistics/statistics_experimental_design statistics/statistics_inference; do echo \\\"===== $f\\\"; sed -n '5,13p' bench/directives/$f.txt | cat -A | sed 's/\\\\$$//' | head -12; done 2>&1 | head -70\", \"description\": \"Read exact declaration blocks\"}",
+      "t_offset_s": 430.348
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in mathematics/mathematics_applied physics/physics_classical physics/physics_thermodynamics statistics/statistics_experimental_design statistics/statistics_inference; do echo \\\"===== $f\\\"; sed -n '5,13p' bench/directives/$f.txt; done\", \"description\": \"Read declaration blocks\"}",
+      "t_offset_s": 432.832
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '7,16p' bench/directives/software/software_general.txt\", \"description\": \"Read software_general block\"}",
+      "t_offset_s": 445.873
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\nE = [\\n (\\\"chemistry/chemistry_general.txt\\\",\\n  \\\"SEVERITY SCALE: GHS health hazard category, critical at Category 2.\\\",\\n  \\\"SEVERITY SCALE: GHS health hazard category (Rev. 11), critical at Category 2.\\\"),\\n (\\\"mathematics/mathematics_applied.txt\\\",\\n  \\\"       another. Where the application is engineering, FMEA severity applies\\\\n\\\"\\n  \\\"      ",
+      "t_offset_s": 455.864
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The severity declaration a seat receives must be COMPLETE and NON-DEGENERATE.\\n\\nWritten for the panel question of 2026-11-14 on the engineering critical level\\nand the 22 DRAFT encodings. Two independent properties, one guard file because\\nboth are properties of the same",
+      "t_offset_s": 514.728
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py::test_the_edition_guard_is_not_vacuous -q 2>&1 | grep -A4 \\\"got \\\\|assert \\\\[\\\" | head -20\", \"description\": \"Inspect vacuity test failure\"}",
+      "t_offset_s": 528.75
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py::test_the_edition_guard_is_not_vacuous -q 2>&1 | tail -25\", \"description\": \"Inspect vacuity test failure\"}",
+      "t_offset_s": 532.932
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np=pathlib.Path(\\\"bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py\\\")\\ns=p.read_text()\\ns=s.replace('                bad.append((p.relative_to(ROOT).as_posix(), fam))',\\n'''                try:\\n                    name = p.relative_to(ROOT).as_posix()\\n                except ValueError:          # a copy under tmp, in the vacuity",
+      "t_offset_s": 544.516
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== A. GUARD AGAINST THE AS-DISPATCHED TREE (git HEAD) ===\\\"\\npython3 - <<'PYEOF'\\nimport pathlib,subprocess,sys,importlib.util,tempfile\\nspec=importlib.util.spec_from_file_location(\\\"g\\\",\\\"bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py\\\")\\ng=importlib.util.module_from_spec(spec); spec.loader.exec_module(g)\\nfiles=[\\\"bench/directives/chemistry/chemistry_gen",
+      "t_offset_s": 569.568
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib,tempfile,importlib.util\\nspec=importlib.util.spec_from_file_location(\\\"g\\\",\\\"bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py\\\")\\ng=importlib.util.module_from_spec(spec); spec.loader.exec_module(g)\\n# the exact repairs applied, reversed, to rebuild the AS-DISPATCHED text\\nREV=[(\\\"chemistry/chemistry_general.txt\\\",\\n \\\"SEVERITY SCA",
+      "t_offset_s": 592.082
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"severity\\\" bench/reference_runner_v3.py | grep -i \\\"float(\\\\|parse\\\\|0\\\\.0 and 1\\\\.0\\\\|between 0\\\\|scale_name\\\\|\\\\[0,1\\\\]\\\\|0-1\\\" | head -20; echo \\\"=== what the schema tells a seat severity is ===\\\"; grep -rn \\\"severity\\\" bench/reference_runner_v3.py | grep -i \\\"0.0.*1.0\\\\|SEVERITY:\\\" | head -10\", \"description\": \"How severity is parsed from a finding\"}",
+      "t_offset_s": 610.777
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rn \\\"severity\\\" bench/reference_runner_v3.py | grep -iE \\\"0\\\\.0-1\\\\.0|0-1\\\\.0|\\\\b0\\\\.0 to 1\\\\.0|SEVERITY\\\\\\\"? *:|severity.*0\\\\.0.*1\\\\.0\\\" | head -8; echo \\\"--- the finding schema shown to a seat ---\\\"; grep -rn \\\"SEVERITY\\\" bench/reference_runner_v3.py | grep -v \\\"CRITICAL_SEVERITY\\\\|_SEVERITY_SPEC\\\" | head -12\", \"description\": \"Find the severity field spec given to seats\"}",
+      "t_offset_s": 615.009
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"conversion from a named ordinal rank to the [0,1] gate float, anywhere in product code:\\\"; grep -rniE \\\"def .*(to_severity|severity_from|rank_to|normali[sz]e_severity|scale_to_float)\\\" bench/*.py bench/cdsfl_registry/*.py | head; echo \\\"count: $(grep -rcniE 'def .*(to_severity|severity_from|rank_to|normali[sz]e_severity|scale_to_float)' bench/reference_runner_v3.py bench/cdsfl_",
+      "t_offset_s": 626.964
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport math\\ndef w(k,n,z=1.959963984540054):\\n    p=k/n; d=1+z*z/n; c=(p+z*z/(2*n))/d; h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d; return (c-h,c+h)\\nfor k,n,lbl in [(11,22,'CROSS_VERIFIED of 22'),(11,22,'DRAFT of 22'),(115,152,'HARD constraints tool-checkable'),(11,51,'offenders repaired of 51'),(0,22,'edition offenders remaining')]:\\n    lo,hi=w(k,n); print(f'{lbl:36s} {k}",
+      "t_offset_s": 676.848
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > experimental_notes/Panel_Severity_Critical_Level_And_Draft_Adjudication_2026-11-14.md <<'MDEOF'\\n# Panel record \\u2014 where the FMEA critical level sits, and which of the 22 draft\\n# encodings may leave DRAFT\\n\\nSeat: single free-panel seat, one-shot dispatch, 2026-11-14.\\nArtefact digests verified against the dispatch stamps before any measurement:\\nall 6 matched.\\n\\nMeasureme",
+      "t_offset_s": 723.525
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_severity_declaration_is_complete_2026-11-14.py -q 2>&1 | tail -3; echo \\\"---\\\"; python3 scripts/where_does_a_critical_level_land_2026-11-14.py >/dev/null 2>&1 && echo \\\"measurement script exit 0\\\"; echo \\\"---\\\"; sha256sum bench/cdsfl_registry/domain_manifest.toml bench/reference_runner_v3.py bench/cdsfl_registry/composer.py\", \"description\": \"Fina",
+      "t_offset_s": 727.95
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 816.9,
+      "tool_calls": 59,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_cce9x7kn/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

@@ -41,6 +41,7 @@ def _find_root() -> pathlib.Path:
 ROOT = _find_root()
 TLM = ROOT / "scripts" / "task_list_markers.py"
 HOOK = ROOT / "hooks" / "task_list_pulse.py"
+NVL = ROOT / "scripts" / "note_vagueness_lint.py"
 GUARD = ROOT / "bench" / "tests" / (
     "test_an_entry_code_never_travels_alone_in_chat_2026-11-10.py")
 
@@ -62,6 +63,14 @@ MUTATIONS = [
     ("M5  ignore the word budget", TLM,
      "    toks = t.split()[:words]",
      "    toks = t.split()"),
+    # ★ M7 ADDED 2026-11-14. The dotted branch of `_ENTRY_IDENT` was narrowed
+    # to exclude version numbers and 3-component section references, measured at
+    # 159 of 29,864 matches dropped with 0 genuine entry references among them.
+    # Reverting it must turn the guard red, or the 12 cases added beside it are
+    # asserting nothing.
+    ("M7  the detector reads version numbers as entry codes again", NVL,
+     'r"|(?<![.\\d])(?<![vV])\\d{1,2}\\.\\d{1,2}[a-z]?(?!\\.?\\d)))\\b")',
+     'r"|\\d{1,2}\\.\\d{1,2}[a-z]?))\\b")'),
     ("M6  the hook stops injecting the roster", HOOK,
      '    if roster:\n        ctx += ("\\n[entries] print a code only WITH its '
      'descriptor — "\n                + roster)',
@@ -86,7 +95,15 @@ def main(argv=None) -> int:
         description=(__doc__ or "").strip().splitlines()[0])
     ap.parse_args(argv)
 
-    originals = {p: p.read_text() for p in (TLM, HOOK)}
+    #: ★ DERIVED FROM THE MUTATION TABLE, 2026-11-14, not a hand-written
+    #: tuple. This read `(TLM, HOOK)`, so adding a mutation against a 3rd
+    #: subject raised `KeyError` on the first mutation that named it -- and
+    #: the closing line still said "both subjects restored", which would have
+    #: been a false reassurance about a file the harness had never captured.
+    #: A list of subjects beside a table that already names them is the
+    #: duplicate-declaration shape this project keeps paying for.
+    originals = {path: path.read_text()
+                 for _label, path, _find, _repl in MUTATIONS}
     shas = {p: hashlib.sha256(t.encode()).hexdigest()
             for p, t in originals.items()}
 
@@ -125,7 +142,7 @@ def main(argv=None) -> int:
             p.write_text(t)
             back = hashlib.sha256(p.read_text().encode()).hexdigest()
             assert back == shas[p], f"RESTORE FAILED for {p}"
-        print("\n  both subjects restored, sha256 verified")
+        print(f"\n  {len(originals)} subject(s) restored, sha256 verified")
 
     print(f"\n  {red} of {len(MUTATIONS)} mutations turn the guard RED")
     print("=" * 78)

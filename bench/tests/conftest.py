@@ -78,6 +78,7 @@ live path is disabled by default; it is never unreachable.
 from __future__ import annotations
 
 import ipaddress
+import json
 import os
 import pathlib
 import sys
@@ -528,9 +529,81 @@ def pytest_unconfigure(config):
         uninstall_netguard()
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# THE TREE WATCHER — which test file was running when the tree changed.
+#
+# ★ ENTRY B192. On 2026-11-13, 2 documents were rewritten at 06:27 during a
+# 04:10-to-07:30 suite run and THE WRITER WAS UNIDENTIFIABLE. 4 separate
+# explanations were each tested and refuted. A clean-tree measurement is only
+# clean if every writer is accounted for, so an unattributable write means the
+# next clean run can be spoiled the same way with no warning.
+#
+# ★ IT ATTRIBUTES BY TIME-SLICE, NOT BY CATCHING THE WRITER IN THE ACT. By the
+# time a changed path is noticed the writing process has usually exited, and
+# `lsof` on an already-closed file returns nothing. What IS knowable is which
+# test file was executing in the interval the change appeared in, and that is
+# what gets recorded.
+#
+# ★ PER TEST FILE, NEVER PER TEST, and the figure is measured rather than
+# guessed: `git status --porcelain -uall` costs a mean of 0.1275 s here, so 933
+# test files is 118.9 s -- about 0.0737 of a 1612 s board -- while 1 snapshot
+# per test across roughly 15,400 tests would be 32.7 minutes and is refused.
+#
+# ★ OPT-IN, because +7.4 per cent on EVERY board is not free and his machine is
+# a fixed resource. `CDSFL_WATCH_TREE=1` turns it on for the run that needs it.
+#
+# ★ AND IT CAN NEVER FAIL THE SUITE. Every call is wrapped: a watcher that
+# breaks a board is worse than no watcher, and this one exists to explain a
+# board rather than to gate it.
+#: Derived from this file's own location, never typed: a hardcoded root
+#: is the hazard `work_not_narrate.py` carries, where a producer reading
+#: it in a sandbox measures the HOME checkout instead of the tree under
+#: review.
+_REPO_FOR_WATCH = pathlib.Path(__file__).resolve().parent.parent.parent
+_WATCH_TREE = os.environ.get("CDSFL_WATCH_TREE") == "1"
+_watch_state = {"last_file": None, "dirty": None, "events": []}
+
+
+def _tree_dirty_set():
+    """The set of paths git reports as changed, or None when it cannot tell."""
+    try:
+        r = subprocess.run(["git", "status", "--porcelain", "-uall"],
+                           cwd=str(_REPO_FOR_WATCH), capture_output=True,
+                           text=True, timeout=30)
+        if r.returncode != 0:
+            return None
+        return {ln[3:].strip() for ln in r.stdout.splitlines() if len(ln) > 3}
+    except Exception:                                          # noqa: BLE001
+        return None
+
+
+def _watch_checkpoint(nodeid):
+    """Record any path that appeared since the previous checkpoint."""
+    if not _WATCH_TREE:
+        return
+    try:
+        this_file = (nodeid or "").split("::", 1)[0]
+        if this_file == _watch_state["last_file"]:
+            return
+        now = _tree_dirty_set()
+        before = _watch_state["dirty"]
+        if before is not None and now is not None:
+            for path in sorted(now - before):
+                _watch_state["events"].append({
+                    "path": path,
+                    "appeared_while_running": _watch_state["last_file"],
+                    "noticed_entering": this_file,
+                })
+        _watch_state["dirty"] = now
+        _watch_state["last_file"] = this_file
+    except Exception:                                          # noqa: BLE001
+        return
+
+
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_protocol(item, nextitem):
     _state.current_nodeid = item.nodeid
+    _watch_checkpoint(item.nodeid)
     # The free-host window is open ONLY for the duration of a test that
     # declares `free_network`, and closes in every exit path below.
     _is_free = item.get_closest_marker("free_network") is not None
@@ -633,6 +706,33 @@ def _report_unsupported_done_entries(terminalreporter):
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    #: ★ THE WATCHER'S OWN REPORT, entry B192. A ledger nobody reads is the
+    #: same defect as no ledger, so the attribution is printed in the summary
+    #: AND written beside the run. Silent when the watcher is off, so a normal
+    #: board gains 0 lines.
+    if _WATCH_TREE:
+        try:
+            _ev = _watch_state["events"]
+            terminalreporter.write_sep("=", "TREE WATCHER (CDSFL_WATCH_TREE=1)")
+            if not _ev:
+                terminalreporter.write_line(
+                    "  0 paths appeared during the run. The tree was not written "
+                    "to by any test file in this session.")
+            else:
+                terminalreporter.write_line(
+                    f"  {len(_ev)} path(s) appeared DURING the run, attributed to "
+                    f"the test file that was executing:")
+                for e in _ev:
+                    who = e["appeared_while_running"] or "(before the first test)"
+                    terminalreporter.write_line(f"    {e['path']}")
+                    terminalreporter.write_line(f"        while running: {who}")
+            _out = _REPO_FOR_WATCH / ".cdsfl_tmp" / "tree_watch.jsonl"
+            _out.parent.mkdir(parents=True, exist_ok=True)
+            with _out.open("a", encoding="utf-8") as _fh:
+                _fh.write(json.dumps({"events": _ev}) + "\n")
+            terminalreporter.write_line(f"  ledger: {_out}")
+        except Exception as _wexc:                             # noqa: BLE001
+            terminalreporter.write_line(f"  tree watcher report FAILED: {_wexc}")
     _report_unsupported_done_entries(terminalreporter)
     if _LIVE:
         terminalreporter.write_sep(
