@@ -34,6 +34,21 @@ import re
 import sys
 from pathlib import Path
 
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth, the shape
+# that stopped 13 scripts importing on 2026-09-24.
+#
+# ★ WHY, MEASURED 2026-11-14. `scripts/measurement_scripts_only_2026-09-11.py
+# --run` reported `1 of 393 did not answer --help cleanly` and this was the 1:
+# it has no parser, so `--help` ran the whole measurement and exited 0. An exit
+# code is not an answer -- that is the precise defect `_cli_help` was written
+# for on 2026-09-11, when 30 scripts passed the same check the same way.
+for _cand in (Path(__file__).resolve().parent,
+              *Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
+from _cli_help import answer_help  # noqa: E402
+
 REPO = Path(__file__).resolve().parent.parent
 PARKED = REPO / "experimental_notes" / "PARKED_FOR_THE_FOUNDER.md"
 
@@ -159,4 +174,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    answer_help(__doc__, __file__)
     sys.exit(main())

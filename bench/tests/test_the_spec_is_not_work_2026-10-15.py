@@ -12,30 +12,44 @@ is hardly excessive for any modern model? Why should we need to cut it at all?"*
 class below. Producer for every figure quoted here:
 `scripts/the_spec_is_not_work_2026-10-15.py`.
 
-  ★ EVERY FIGURE BELOW WAS REMEASURED 2026-11-12 AND 4 OF THEM MOVED, because
-  `cdsfl_core_formal.md` grew that day: the per-domain severity form and its 5
-  numbered seat instructions were added to it, taking the spec from its previous
-  size to 31,474 characters and the HARD set from 22 blocks to 26. The
-  SUPERSEDED values are named beside each one rather than deleted, because a
-  reader who remembers them needs to see which moved. Remeasured by re-running
-  the producer named above, never by scaling the old numbers.
+  ★ REMEASURED AGAIN 2026-11-14 AND 5 FIGURES MOVED A SECOND TIME, because
+  `cdsfl_core_formal.md` grew again: B194's `## Drafted But Not In Force`
+  section was added to it, taking the spec from 31,474 to 32,671 characters and
+  the HARD set from 26 blocks to 28. The 2 new HARD blocks are identifiable as
+  that section's own 2 -- the producer lists them last, both naming the
+  not-in-force sentinel -- so the move is ATTRIBUTED rather than merely noticed.
+  The earlier remeasurement of 2026-11-12, when the per-domain severity form and
+  its 5 numbered seat instructions took the HARD set from 22 to 26, is retained
+  below as the first SUPERSEDED layer. Values are named rather than deleted,
+  because a reader who remembers them needs to see which moved. Remeasured by
+  re-running the producer named above, never by scaling the old numbers.
+
+  ★ AND THE PIN IS WHY ANY OF THIS IS KNOWN. `test_the_count_is_what_the_producer
+  _measured` asserts the HARD set EXACTLY, so B194's addition could not land
+  quietly -- the suite of 2026-11-14 failed on it. That is the pin working as
+  designed and not a defect in B194.
 
   1. `_load_universal_directive` chose the reduced form by the WORK cap, so 6 of
      6 models got it unconditionally (100.0000%, Wilson [60.9666%, 100.0000%],
      Clopper-Pearson [54.0742%, 100.0000%]). SUPERSEDED: 5 of 5, Wilson
      [56.5518%, 100.0000%] -- the model roster gained a seat.
-  2. The reduced form carried 0 of 26 HARD blocks by verbatim containment
-     (0.0000%, Wilson [0.0000%, 12.8729%], Clopper-Pearson [0.0000%,
-     13.2275%]), the 26 including the whole of "Falsifier Integrity -- Do Not
-     Reach for the Answer". SUPERSEDED: 0 of 22, Wilson [0.0000%, 14.8655%].
-     The POINT IS UNCHANGED and is the reason the interval matters more than the
-     count: the reduced form carries NONE of them at either size, while the full
-     form carries 26 of 26 (100.0000%, Wilson [87.1271%, 100.0000%]).
-  3. `resolve_layer_conflicts` resolved the specification AGAINST ITSELF: 84 of
-     107 conflicts were SAME-PACKET (78.5047%, Wilson [69.8058%, 85.2278%],
-     Clopper-Pearson [69.5128%, 85.8591%]) across 14 domains probed, with 0
-     SAME-LAYER and 23 CROSS-LAYER (21.4953%, Wilson [14.7722%, 30.1942%]), and
-     94 deletions had a HARD loser by the resolver's own HARD predicate.
+  2. The reduced form carried 0 of 28 HARD blocks by verbatim containment
+     (0.0000%, Wilson [0.0000%, 12.0643%], Clopper-Pearson [0.0000%,
+     12.3436%]), the 28 including the whole of "Falsifier Integrity -- Do Not
+     Reach for the Answer". SUPERSEDED: 0 of 26, Wilson [0.0000%, 12.8729%];
+     and before that 0 of 22, Wilson [0.0000%, 14.8655%]. The POINT IS UNCHANGED
+     and is the reason the interval matters more than the count: the reduced
+     form carries NONE of them at any of the 3 sizes, while the full form
+     carries 28 of 28 (100.0000%, Wilson [87.9357%, 100.0000%]).
+  3. `resolve_layer_conflicts` resolved the specification AGAINST ITSELF: 90 of
+     113 conflicts were SAME-PACKET (79.6460%, Wilson [71.3060%, 86.0367%],
+     Clopper-Pearson [71.0410%, 86.6381%]) across 15 domains probed, with 0
+     SAME-LAYER and 23 CROSS-LAYER (20.3540%, Wilson [13.9633%, 28.6940%]), and
+     100 deletions had a HARD loser by the resolver's own HARD predicate.
+     SUPERSEDED 2026-11-12: 84 of 107 SAME-PACKET at 78.5047%, Wilson [69.8058%,
+     85.2278%], 14 domains, 94 HARD losers. The CROSS-LAYER COUNT IS UNMOVED AT
+     23 while SAME-PACKET rose by 6, so the whole of the growth is inside the
+     class the resolver's own docstring puts outside its contract.
      SUPERSEDED: 40 of 42 SAME-PACKET at 95.2381%, Wilson [84.2101%,
      98.6842%], and 41 of 42 HARD losers. THE SHARE FELL AND THE COUNT ROSE,
      which is worth stating plainly rather than quoting only the share: more
@@ -46,9 +60,12 @@ class below. Producer for every figure quoted here:
      truncated `loser_text`, which drops the packet class.
   4. The decomposition decision counted a payload it cannot split. 6 of 6
      simulated seats (100.0000%, Wilson [60.9666%, 100.0000%]) have an effective
-     limit below the 74,177-character system prompt, so every simulated dispatch
+     limit below the 81,717-character system prompt, so every simulated dispatch
      would have force-decomposed on the size of its own instructions -- while no
-     paid seat would have.
+     paid seat would have. SUPERSEDED: 74,177 characters. The repaired spec now
+     leaves -1,717 characters of headroom against the 80,000 hard floor, where
+     2026-11-12 left 5,823, so a 20,000-character work payload force-decomposes
+     after the repair and did not before -- z3 `unsat` before, `sat` after.
 
 EVERY TEST HERE EXECUTES THE CODE. None asserts on source text, because a test
 that reads a module only establishes that the module describes itself
@@ -259,14 +276,21 @@ class TestTheReducedFormIsFaithful:
         assert not missing, f"{len(missing)} of {len(hard_blocks)} absent: {missing}"
 
     def test_the_count_is_what_the_producer_measured(self, hard_blocks):
-        #: ★ 26 SINCE 2026-11-12, remeasured rather than bumped. It was 22 until
-        #: the per-domain severity form and its 5 numbered seat instructions were
-        #: added to `cdsfl_core_formal.md`. The pin is deliberately EXACT and not
-        #: a floor: its whole purpose is to fail when the HARD set moves, so that
-        #: the docstring's figures are remeasured instead of silently going stale
-        #: -- which is what it did, and 4 figures moved with it.
-        assert len(hard_blocks) == 26, (
-            f"the HARD set is now {len(hard_blocks)}, not the 26 every figure in "
+        #: ★ 28 SINCE 2026-11-14, remeasured rather than bumped. 22 until the
+        #: per-domain severity form and its 5 numbered seat instructions landed;
+        #: 26 until B194's `## Drafted But Not In Force` section did. The pin is
+        #: deliberately EXACT and not a floor: its whole purpose is to fail when
+        #: the HARD set moves, so that the docstring's figures are remeasured
+        #: instead of silently going stale -- which is what it did twice, 4
+        #: figures moving the first time and 5 the second.
+        #:
+        #: ★ DO NOT CONVERT THIS TO A FLOOR. 2 sibling count pins in this project
+        #: were converted to floors on 2026-10-29 for exactly the opposite
+        #: reason -- they measured a GROWING archive whose growth carried no
+        #: meaning. This one measures a HAND-WRITTEN specification, where every
+        #: new HARD block is an authored decision that should be seen.
+        assert len(hard_blocks) == 28, (
+            f"the HARD set is now {len(hard_blocks)}, not the 28 every figure in "
             f"this file's docstring was measured over; RE-RUN "
             f"scripts/the_spec_is_not_work_2026-10-15.py and update the figures "
             f"from its output before changing this number")

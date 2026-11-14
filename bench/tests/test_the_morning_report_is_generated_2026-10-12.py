@@ -457,20 +457,69 @@ class TestTheTTSVersionIsSpeakable:
             f"{sorted(set(leaked))[:6]}")
         assert "**State.**" not in t and "State." not in t.split("SECTION 2")[0][:200]
 
+    #: A spoken decision heading: the literal word at the START of a line,
+    #: followed by its number. NOT a bare substring -- see the test below.
+    TTS_DECISION_HEADING = re.compile(r"^DECISION (\d+)\.", re.M)
+
     def test_it_carries_every_decision_with_its_options(self):
+        """Every decision BLOCK states its options, checked per block.
+
+        ★ CONVERTED FROM 2 SUBSTRING COUNTS TO A PER-BLOCK CHECK, 2026-11-14,
+        because the counts disagreed for a reason that was not a defect in the
+        report. It read `n = head.count("DECISION ")` against
+        `head.count("The options.") >= n`, and the full suite of that day
+        reported `assert 18 >= 19`. All 18 decision blocks carried their options;
+        the 19th `DECISION ` was inside B175's own authored prose, the sentence
+        *THIS DECISION IS THE THIRD PART AND IT IS YOURS*. A word count is not a
+        heading count, so correct emphasis in a report read as a missing options
+        line -- the shape this project records as a substring standing in for the
+        thing it names.
+
+        ★ AND IT NOW MATCHES ITS MARKDOWN SIBLING, which has split into blocks
+        and asserted per block since 2026-10-16. 2 tests of 1 property had 2
+        different predicates, and only the weaker one could be fooled.
+
+        ★ A BROKEN HEADING PATTERN CANNOT PASS SILENTLY: if it matched nothing
+        the empty-queue branch would demand the report say the queue is empty,
+        which a populated report does not, so the test fails loudly rather than
+        vacuously.
+        """
         t = self._tts()
         head = t.split("SECTION 2")[0]
+        blocks = re.split(r"(?=^DECISION \d+\.)", head, flags=re.M)[1:]
         # Same generalisation as the markdown test above: a CLEARED queue is a
         # legitimate state, and the spoken form must say so rather than simply
         # omit the section.
-        n = head.count("DECISION ")
-        if n == 0:
+        if not blocks:
             assert "0 decisions" in t or "no decisions" in t.lower(), (
                 "the spoken form dropped the decision section instead of "
                 "reporting that it is empty")
             return
-        assert head.count("The options.") >= n, "options are missing"
-        assert "What it is." in head and "Why it needs a decision." in head
+        numbers = [int(m) for m in self.TTS_DECISION_HEADING.findall(head)]
+        assert numbers == list(range(1, len(numbers) + 1)), (
+            f"decision headings are not a 1-based run: {numbers}")
+        for b in blocks:
+            first = b.splitlines()[0][:70]
+            assert "The options." in b, f"{first}: no options"
+            assert "What it is." in b, f"{first}: no 'what it is'"
+            assert "Why it needs a decision." in b, f"{first}: no 'why'"
+
+    def test_a_prose_mention_of_the_word_decision_is_not_a_heading(self):
+        """ANTI-REGRESSION for the 2026-11-14 false failure, on synthetic input.
+
+        Driven on text rather than on the live report, because the live report's
+        prose is authored and may legitimately stop containing the phrase -- at
+        which point a test that depended on it would pass while guarding
+        nothing.
+        """
+        synthetic = ("DECISION 1. a thing\nThe options.\nWhat it is. THIS "
+                     "DECISION IS THE THIRD PART AND IT IS YOURS: more prose.\n"
+                     "Why it needs a decision. because.\n")
+        assert synthetic.count("DECISION ") == 2, "fixture no longer carries the trap"
+        blocks = re.split(r"(?=^DECISION \d+\.)", synthetic, flags=re.M)[1:]
+        assert len(blocks) == 1, (
+            f"a prose mention still reads as a heading: {len(blocks)} blocks")
+        assert len(self.TTS_DECISION_HEADING.findall(synthetic)) == 1
 
     #: ~310 measured overhead, 16 measured worst block; see
     #: TestItStaysInsideTheStandard for the full provenance of these numbers

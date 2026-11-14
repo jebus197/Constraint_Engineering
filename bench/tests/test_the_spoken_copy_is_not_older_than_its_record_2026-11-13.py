@@ -25,7 +25,9 @@ own module rather than listed again here, so the 2 cannot drift apart.
 from __future__ import annotations
 
 import importlib.util
+import os
 import pathlib
+import subprocess
 import sys
 
 import pytest
@@ -58,6 +60,40 @@ def _sources(m) -> list[pathlib.Path]:
     return out
 
 
+def _content_changed_at(p: pathlib.Path) -> float:
+    """When this file's CONTENT last changed, not when it was last written.
+
+    ★ WHY THIS IS NOT `st_mtime`, found on 2026-11-14. The full suite rewrote
+    `morning_report_decisions.json` mid-run at 11:55:24 with content IDENTICAL
+    to HEAD -- `git status --porcelain` reports the path clean -- and this guard
+    then named 11:55:24 as the moment the record moved. It had not moved. The
+    verdict happened to be right for the wrong reason: the spoken copy WAS stale,
+    by 5 minutes against a real content change at 08:20:15, and the reason
+    printed sent a reader chasing a write that changed nothing. A right decision
+    recorded with a false reason is a defect in its own right in this project.
+
+    DIRTY -> mtime, because an uncommitted edit has no commit to date it by.
+    CLEAN and tracked -> the commit date of the last commit touching the path.
+    UNTRACKED, or no git at all -> mtime, which is the behaviour this replaces,
+    so the fallback can only be as good as before and never worse.
+    """
+    mtime = p.stat().st_mtime
+    try:
+        rel = p.relative_to(REPO)
+    except ValueError:
+        return mtime                       # outside the repo; git knows nothing
+    def git(*a):
+        return subprocess.run(["git", *a], cwd=REPO, capture_output=True,
+                              text=True, timeout=30)
+    try:
+        if git("status", "--porcelain", "--", str(rel)).stdout.strip():
+            return mtime                   # uncommitted edit: mtime is the truth
+        out = git("log", "-1", "--format=%ct", "--", str(rel)).stdout.strip()
+        return float(out) if out else mtime
+    except Exception:
+        return mtime                       # no git, or git refused: degrade
+
+
 def _spoken() -> pathlib.Path | None:
     d = pathlib.Path.home() / "Desktop" / "CDSFL_tts"
     if not d.is_dir():
@@ -83,12 +119,13 @@ class TestTheSpokenCopyIsCurrent:
             pytest.skip("no spoken copy on this machine; it lives outside the repo")
         srcs = _sources(mod)
         assert srcs, "no generator sources resolved"
-        newest = max(srcs, key=lambda p: p.stat().st_mtime)
-        if spoken.stat().st_mtime >= newest.stat().st_mtime:
+        newest = max(srcs, key=_content_changed_at)
+        if spoken.stat().st_mtime >= _content_changed_at(newest):
             return
         import datetime as dt
         def when(p):
-            return dt.datetime.fromtimestamp(p.stat().st_mtime).isoformat(timespec="seconds")
+            t = _content_changed_at(p) if p in srcs else p.stat().st_mtime
+            return dt.datetime.fromtimestamp(t).isoformat(timespec="seconds")
         pytest.fail(
             f"the spoken copy is OLDER than the record it reports, so it is "
             f"describing a state that has moved.\n"
@@ -97,3 +134,55 @@ class TestTheSpokenCopyIsCurrent:
             f"  Regenerate with: python3 scripts/morning_report_build_2026-10-12.py --write\n"
             f"  Measured 2026-11-13: a document frozen 8 h 55 m had 3 of its 4 "
             f"machine-checkable counts wrong.")
+
+
+class TestTheContentTimeHelperBehavesBothWays:
+    """Commissioning, driven on REAL files rather than on a described one.
+
+    A touch cannot be simulated honestly by patching `stat`, because the thing
+    under test is the DISAGREEMENT between mtime and git -- so these cases create
+    the disagreement for real inside a throwaway repository.
+    """
+
+    def _repo(self, tmp_path):
+        def git(*a):
+            return subprocess.run(["git", *a], cwd=tmp_path, capture_output=True,
+                                  text=True, timeout=30)
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        f = tmp_path / "rec.json"
+        f.write_text('{"a": 1}\n', encoding="utf-8")
+        git("add", "rec.json")
+        git("commit", "-q", "-m", "seed")
+        return git, f
+
+    def test_a_touch_that_changes_nothing_does_not_move_the_content_time(
+            self, tmp_path, monkeypatch):
+        git, f = self._repo(tmp_path)
+        monkeypatch.setattr(sys.modules[__name__], "REPO", tmp_path)
+        before = _content_changed_at(f)
+        os.utime(f, (f.stat().st_atime + 10_000, f.stat().st_mtime + 10_000))
+        assert f.stat().st_mtime > before + 1_000, "the touch did not take"
+        after = _content_changed_at(f)
+        assert after == before, (
+            "a rewrite with identical content moved the content time, which is "
+            "exactly the 2026-11-14 misattribution this helper removes")
+
+    def test_a_real_edit_does_move_it(self, tmp_path, monkeypatch):
+        git, f = self._repo(tmp_path)
+        monkeypatch.setattr(sys.modules[__name__], "REPO", tmp_path)
+        before = _content_changed_at(f)
+        f.write_text('{"a": 2}\n', encoding="utf-8")
+        os.utime(f, (f.stat().st_atime + 10_000, f.stat().st_mtime + 10_000))
+        after = _content_changed_at(f)
+        assert after > before, (
+            "an uncommitted content change did not move the content time, so a "
+            "genuinely stale spoken copy would pass")
+
+    def test_an_untracked_file_falls_back_to_its_mtime(self, tmp_path, monkeypatch):
+        git, _ = self._repo(tmp_path)
+        monkeypatch.setattr(sys.modules[__name__], "REPO", tmp_path)
+        u = tmp_path / "untracked.json"
+        u.write_text("{}\n", encoding="utf-8")
+        assert _content_changed_at(u) == u.stat().st_mtime

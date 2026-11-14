@@ -25,6 +25,23 @@ import subprocess
 import sys
 from pathlib import Path
 
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth, the shape
+# that stopped 13 scripts importing on 2026-09-24.
+#
+# ★ WHY A MUTATION HARNESS NEEDS THIS AT ALL, measured 2026-11-14. Run with a
+# typo'd flag this file read `sys.argv`, ignored it, executed the whole harness
+# -- which mutates live files and runs the guard 5 times, 52.86 s -- and exited
+# 0. An unrecognised argument that reads as success is the 118-day no-op, and
+# here it reads as success while WRITING TO THE TREE, so it is worse than the
+# class it belongs to. `answer_help` answers `--help` before any work and exits
+# 2 on anything else.
+for _cand in (Path(__file__).resolve().parent,
+              *Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
+from _cli_help import answer_help  # noqa: E402
+
 REPO = Path(__file__).resolve().parent.parent
 SUBJECT = REPO / "scripts" / "morning_report_build_2026-10-12.py"
 GUARD = (REPO / "bench" / "tests"
@@ -75,6 +92,8 @@ def _run_guard() -> bool:
 
 
 def main(argv=None) -> int:
+    # Before ANY work: this harness writes to live files.
+    answer_help(__doc__, __file__, argv)
     original = SUBJECT.read_bytes()
     text = original.decode("utf-8")
 

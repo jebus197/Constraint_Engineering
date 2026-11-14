@@ -116,7 +116,20 @@ def test_every_chat_raisable_kind_can_be_raised(hv):
     property, and it is the loop that proves `stm` is actually reachable.
     """
     raisable = [k for k in hv.KINDS if k not in hv.CHAT_EXCLUDED_KINDS]
-    assert len(raisable) == 5, (
+    #: ★ 5 -> 6 ON 2026-11-13, AND THE TRIPWIRE DID ITS JOB AGAIN. `frx`
+    #: became a kind of its own on his ruling of that day -- *"a fix request
+    #: should be marked by me as a 'frx' and a feature request should remain as
+    #: 'fr'"* -- and a fix request is a thing he says in CHAT, so it belongs in
+    #: the raisable set rather than in the exclusion. The figure moved; the
+    #: exclusion did not. Same handling as the 4 -> 5 move for `stm` recorded
+    #: above, and for the same reason: the count is a TRIPWIRE and the loop
+    #: below is the property.
+    #:
+    #: ★ THE BOARD COULD NOT HAVE CAUGHT THIS. This file is not among the
+    #: pre-commit board's entries, so `frx` landed on 2026-11-13 and the
+    #: tripwire stayed stale until the full suite ran the next day. It is 1 of 8
+    #: such failures that night, against 2 the board saw.
+    assert len(raisable) == 6, (
         f"{len(raisable)} chat-raisable kinds; the exclusion set has changed "
         "and this test's own figure is stale")
     for kind in raisable:

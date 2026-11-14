@@ -29,6 +29,20 @@ import json
 import pathlib
 import sys
 
+# `_cli_help` lives in scripts/. Locate it rather than assume a depth, the shape
+# that stopped 13 scripts importing on 2026-09-24.
+#
+# ★ WHY. Measured 2026-11-14: this script reads `sys.argv`, has no parser, and
+# ran its whole measurement on `--this-flag-does-not-exist`, exiting 0. It is
+# the 3rd of its class repaired that day and the only one carried over from the
+# 2026-11-13 baseline rather than introduced the night before.
+for _cand in (pathlib.Path(__file__).resolve().parent,
+              *pathlib.Path(__file__).resolve().parents):
+    if (_cand / "_cli_help.py").is_file():
+        sys.path.insert(0, str(_cand))
+        break
+from _cli_help import answer_help  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parents[1]
 LOGS = REPO / "bench" / "logs"
 RUNNER = REPO / "bench" / "reference_runner_v3.py"
@@ -343,6 +357,7 @@ def measure_consequence():
 
 
 def main(argv) -> int:
+    answer_help(__doc__, __file__, argv)
     #: ★ A `--help` MUST NEVER COST ANYTHING. This answers the flag and returns
     #: BEFORE the archive walk, because 15 of 17 runners once billed for a help
     #: request. Checked by `bench/tests/test_help_is_answered_2026-09-11.py`,
