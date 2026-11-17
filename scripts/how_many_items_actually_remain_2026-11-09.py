@@ -211,7 +211,11 @@ def _count_at(sha: str) -> tuple[int, int] | None:
             f.unlink()
             tmp.rmdir()
             tmp.parent.rmdir()
-        except Exception:
+        #: NARROWED from `except Exception: pass`. Filesystem teardown raises
+        #: OSError; catching Exception also swallowed NameError, AttributeError
+        #: and anything else the 3 lines could do wrong, which is how a fault
+        #: leaves no trace. Best-effort cleanup is still best-effort.
+        except OSError:
             pass
 
 

@@ -71,6 +71,9 @@ def main() -> int:
                 print(f"  RED    {label}")
                 for t in tail[:3]:
                     print(f"           -> {t.split('::')[-1]}")
+                if len(tail) > 3:
+                    print(f"           ... and {len(tail) - 3} more failing "
+                          f"test(s) not shown ({len(tail)} in total)")
             else:
                 print(f"  GREEN  {label}   <<< THE GUARD MISSED IT")
     finally:

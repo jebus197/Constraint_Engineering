@@ -275,8 +275,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  cross-check: the replay no longer reproduces the brief "
               f"({len(bad)} item(s)); the live decisions file has moved since "
               f"dispatch. Scoring proceeds from the frozen artefacts.")
-        for e, why in bad[:3]:
+        #: STATE THE REMAINDER. A list cut to N under a heading that reads as
+        #: complete is a silent falsehood, and this line was 1 of 6 offenders
+        #: `test_operational_scripts.py` names -- the only 1 of them written
+        #: on 2026-11-17, by me, in the same session that quoted the rule.
+        SHOWN = 3
+        for e, why in bad[:SHOWN]:
             print(f"    {e}: {why}")
+        if len(bad) > SHOWN:
+            print(f"    ... and {len(bad) - SHOWN} more item(s) not shown "
+                  f"({len(bad)} in total)")
     else:
         print("  cross-check: the replay still reproduces the delivered brief")
 

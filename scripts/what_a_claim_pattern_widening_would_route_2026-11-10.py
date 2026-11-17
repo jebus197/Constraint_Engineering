@@ -154,7 +154,10 @@ def _shadow(cfg, extra: dict):
         if hasattr(c, attr):
             try:
                 setattr(c, attr, None)
-            except Exception:                                  # noqa: BLE001
+            #: NARROWED from `except Exception`. A refused attribute set raises
+            #: AttributeError or TypeError; catching Exception hid every other
+            #: fault in the same breath and left no trace of it.
+            except (AttributeError, TypeError):
                 pass
     return c
 

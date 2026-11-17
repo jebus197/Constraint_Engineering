@@ -160,7 +160,12 @@ def scan(roots=("bench", "scripts"), base: pathlib.Path | None = None):
                             if ast.literal_eval(n.args[1]) == "verified":
                                 setattrs.append(
                                     (str(p.relative_to(base)), n.lineno, f, ""))
-                        except Exception:              # noqa: BLE001
+                        #: NARROWED from `except Exception`. A non-literal
+                        #: argument raises ValueError or SyntaxError, a missing
+                        #: one IndexError, and a wrong shape TypeError. Catching
+                        #: Exception also swallowed a genuine fault in
+                        #: relative_to or in the append, leaving no trace.
+                        except (ValueError, SyntaxError, IndexError, TypeError):
                             pass
                 if isinstance(n, ast.Assign):
                     for t in n.targets:

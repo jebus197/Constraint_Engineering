@@ -71,10 +71,13 @@ def main() -> int:
                                cwd=REPO, capture_output=True, text=True, timeout=600)
             if r.returncode != 0:
                 red += 1
-                fails = [l for l in r.stdout.splitlines() if l.startswith("FAILED")]
+                fails = [ln for ln in r.stdout.splitlines() if ln.startswith("FAILED")]
                 print(f"  RED    {label}")
                 for f in fails[:3]:
                     print(f"           -> {f.split('::')[-1]}")
+                if len(fails) > 3:
+                    print(f"           ... and {len(fails) - 3} more failing "
+                          f"test(s) not shown ({len(fails)} in total)")
             else:
                 print(f"  GREEN  {label}   <<< THE GUARD MISSED IT")
     finally:
