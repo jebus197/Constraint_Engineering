@@ -39,6 +39,9 @@ NO_ARG = {
     "why_are_the_open_entries_open_2026-11-17.py": "open",
     "the_shouted_word_predicate_spares_identifiers_2026-11-17.py": "controls",
     "what_a_cheap_preflight_is_worth_2026-11-17.py": "break-even",
+    "what_an_encoding_header_actually_carries_2026-11-17.py": "reproduces EXACTLY",
+    "does_anything_call_the_steering_surface_2026-11-17.py": "UNREACHED in this tree",
+    "the_parked_file_accumulates_duplicates_2026-11-17.py": "cannot see a restatement",
 }
 #: name -> (argv, needle). These carry a reduced mode so a guard can execute
 #: them without paying for the full measurement. The FULL run is what the

@@ -277,13 +277,21 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
-## B159 half 2: the memory index has 7 characters before sv refuses a save and entries_left is 0; every pointer a date-based archive cut would move is three-star and several governed tonight's work, so the archiving CRITERION is his
+## B159 half 2: `sv` refuses the next memory write because entries_left is 0, and the trim and the same-date grouping each free 0 characters when driven; every pointer a date-based archive cut would move carries 3 star characters and 5 of 10 governed the night's work, so the archiving criterion is his
 
 *Parked 2026-11-17T02:11:55+00:00.*
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
-## B159 half 2: the memory index has 15 characters of headroom and every criterion-free saving is exhausted; which older pointers move to the archive is his call
+
+## B161 remaining work: bench/cdsfl_registry/domain_proposer.py has 0 production callers and the caller belongs in the UX, which he deferred
+
+*Parked 2026-11-17T09:16:22+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+
+## B159 half 2, the memory index being full — SUPERSEDED, kept for the record: this is the same obstacle as the B159 item parked at 02:11:55 the same day, which states it with the trim and grouping evidence added. Nothing is owed on this heading; read the other one
 
 *Parked 2026-11-17T07:50:22+00:00.*
 
