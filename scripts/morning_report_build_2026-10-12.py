@@ -1600,6 +1600,47 @@ def ticket_id(ident: str) -> str:
     return _TICKET_IDS.get(str(ident).strip(), "")
 
 
+_TICKET_REFS: dict = {}
+
+
+def ticket_ref(ident: str) -> str:
+    """The ticket identifier AS RECORDED ON DISK: `kind:tid`, not the bare tid.
+
+    ★ WHY A SIBLING RATHER THAN A CHANGED RETURN VALUE. The founder asked on
+    2026-11-16 for "actual hash value recorded on disk", and what the decisions
+    file printed was `[4f09b9135a60]` where the store holds `pf:4f09b9135a60`.
+    The kind is not decoration: `tid_of` digests it, so the SAME sentence
+    recorded as a question and as a proposed fix takes 2 distinct identities,
+    and a bare digest cannot be looked up unambiguously with
+    `scripts/register.py --kind`. Changing `ticket_id` itself would break the 2
+    assertions that pin its contract in
+    `bench/tests/test_a_listed_item_carries_its_ticket_id_2026-11-08.py`, for a
+    gain that 1 new function delivers without touching anything.
+    """
+    if not _TICKET_REFS:
+        import json as _json
+        path = REPO / "bench" / "tickets" / "tickets.jsonl"
+        if not path.is_file():
+            _TICKET_REFS["__loaded__"] = ""
+            return ""
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line.strip():
+                continue
+            try:
+                row = _json.loads(line)
+            except Exception:                                  # noqa: BLE001
+                continue
+            ref = str(row.get("task_ref") or "").split(":")[-1].strip()
+            tid = str(row.get("tid") or "").strip()
+            kind = str(row.get("kind") or "").strip()
+            if ref and tid:
+                #: LAST WINS, matching `ticket_id`, because the store is
+                #: append-only and the newest row is the current state.
+                _TICKET_REFS[ref] = f"{kind}:{tid}" if kind else tid
+        _TICKET_REFS["__loaded__"] = ""
+    return _TICKET_REFS.get(str(ident).strip(), "")
+
+
 def ticket_tag(ident: str) -> str:
     """` [tid]` for rendering, or the empty string when no ticket exists."""
     t = ticket_id(ident)

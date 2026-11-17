@@ -1,8 +1,30 @@
-## ★ RESUME POINTER — 2026-11-14T13:37:25+00:00. SUPERSEDES EVERY POINTER BELOW.
+## ★ RESUME POINTER — 2026-11-17T01:36:40+00:00. SUPERSEDES EVERY POINTER BELOW.
+
+**STANDING INSTRUCTIONS, INHERITED AND NOT LEFT BEHIND.** `experimental_notes/CDSFL_MASTER_TASK_LIST.md` is the live surface and is minutes old; this tracker is updated at phase close and is the older of the 2 wherever they disagree. **1 COMMIT PER AGREED BATCH, NEVER PER FIX.** Re-run `scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py` before quoting any board-cost figure.
+
+**GIT SNAPSHOT, LABELLED NOT ASSERTED:** HEAD `bb315555`, in sync with `origin/sim/shakedown-2026-09-29`, 629 ahead of `origin/main`. **25 paths uncommitted as 1 batch**, held because he is unwell and resting.
+
+**HE ASKED FOR 2 THINGS. BOTH ARE DELIVERED.** His format for the 19 decisions, and the whole set put to the free panel blind.
+
+**THE FORMAT WAS NOT MET AND NOW IS.** Measured before touching anything: entry code in **0 of 19** headings, the on-disk hash prefix in **0 of 19**, 1 descriptor at **812 words**. All 3 closed; all 8 checks at **19 of 19**. Guard: `bench/tests/test_the_decision_heading_carries_his_four_fields_2026-11-17.py`, on the board.
+
+**THE PANEL: BLIND THEN JOINT, 0 PAID SEATS.** Rounds `bench/logs/the_nineteen_2026-11-17` and `..._joint`. **Both seats agreed with my recommendation on 12 of 19**, 0.631579, Wilson [0.410395, 0.808505]. They differed from each other on 4; the joint round resolved 3. fable used the local Wolfram Engine as second falsifier.
+
+**THE RESULT THAT MATTERS IS NOT THAT THEY AGREED 12 TIMES. A seat flagged a stale figure or a falsified premise on 10 of 19**, 0.526316, Wilson [0.317078, 0.726702]; **5 verified by my own execution.** B77's repair is live and called in both convergence arms; B142's selector returns 7 roles not 3; B171's hook already carries the narrowing it asks him to approve; B125's stamper was used by the brief the seats answered. **Each built 0 to 10 days AFTER its entry, entry never updated — my failure.** Producer: `scripts/how_many_of_the_nineteen_were_already_built_2026-11-17.py`.
+
+**3 RECOMMENDATIONS CHANGED — B197, B190, B160 — AND THE CHANGE NEARLY DID NOT REACH HIM.** The generator matches the exact phrase `is the recommendation`; my wording said *is NOW the recommendation*, so B190 and B197 still rendered the SUPERSEDED option. Found by CALLING `recommended_index`. All 3 now resolve correctly.
+
+**B195 PART 2 BUILT, WIRED, GUARDED.** `_git(stream=True)` with `_git_streamed`; **1 of 24 call sites streams**, the `git commit` at `scripts/cdsfl_sv.py:1354`. 6 tests, both arms driven against real git, **5 of 5 mutations red**. **B201 RAISED AND FIXED:** a guard restoring bytes but not the timestamp, found by running each of the 11 guards alone with the mtime sampled either side; the set went 1 failed to **122 of 122**.
+
+**WHAT TO DO NEXT, IN ORDER.** (1) Commit the 25 paths as 1 batch — the first WATCHABLE board. (2) His rulings on the 19, of which at least 4 are ratifications and B125 needs its option list rebuilt. (3) B170's merge to `main`. (4) B191 item 1. (5) B142's peer catalogue. **B56 is PARKED** — its work is COMMITTED and ruled 2026-11-02; the residue is that no live demotion mechanism exists to attach it to.
+
+---
+
+## ★ RESUME POINTER — 2026-11-14T13:37:25+00:00 [SUPERSEDED by the 2026-11-17 pointer above].
 
 **STANDING INSTRUCTIONS, INHERITED AND NOT LEFT BEHIND.** The master task list (`experimental_notes/CDSFL_MASTER_TASK_LIST.md`) is the live surface and is minutes old; this tracker is updated at phase close and must be read as the older of the 2 wherever they disagree. `experimental_notes/OUTSTANDING_QUEUE_to_BR2.md` is the live queue. Do not re-read the consolidated plan before this file. **His standing ruling on commit cadence governs how this window was worked: 1 COMMIT PER AGREED BATCH, NEVER PER FIX.** Re-run `scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py` before quoting any board-cost figure; the ledger is unversioned and gains a row per board.
 
-**GIT SNAPSHOT, LABELLED NOT ASSERTED — read it live with `git log --oneline -1` and `git rev-list --count origin/main..HEAD`:** branch `sim/shakedown-2026-09-29`, HEAD `6304f771`, **628 ahead of `origin/main`**, not pushed. B170, every commit for 43 days going to a non-default branch, is open against exactly that and is his; the merge is MECHANICAL, measured 2026-11-14T06:20Z, 1 conflicting path resolved to ours and nothing lost.
+**GIT SNAPSHOT, LABELLED NOT ASSERTED — read it live with `git log --oneline -1` and `git rev-list --count origin/main..HEAD`:** branch `sim/shakedown-2026-09-29`, HEAD **`bb315555`** after this batch landed at 2026-11-14T15:41Z and was PUSHED, 629 ahead of `origin/main` and in sync with its own remote. The batch took 2 boards: a refusal at 44:07 for 1 failure of 5074 that was mine, then a pass at 45:47. B170, every commit for 43 days going to a non-default branch, is open against exactly that and is his; the merge is MECHANICAL, measured 2026-11-14T06:20Z, 1 conflicting path resolved to ours and nothing lost.
 
 **THE FULL SUITE HAS RUN AGAINST A COMMITTED TREE AND IS RECORDED. IT IS NOT GREEN.** `resources/suite_record.json`: **17,760 passed, 32 failed, 40 skipped, 1 error in 11,825.11 s = 3:17:05 at `6304f771`**, exit code 1, `tree_clean_at_record_time` false — 3 files were modified at launch and they are named in `resources/RECOVERY.md` rather than hidden. The headline may not be quoted as a green board.
 

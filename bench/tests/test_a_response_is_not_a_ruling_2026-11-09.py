@@ -595,9 +595,23 @@ class TestTheSevenOwedDefects:
             assert ".." not in s.replace("...", ""), (e.ident, s)
             assert not _re.search(r"\d\. \d", s), (e.ident, s)
             assert not _re.search(r":\s+(is|are|was)\b", s), (e.ident, s)
+            #: "A" joins "I" because a capitalised article opening a sentence is
+            #: not shouting, and an ENTRY CODE is an identifier rather than a
+            #: shouted word -- Rule 32 (`an-identifier-never-travels-alone`)
+            #: REQUIRES a code to be printed beside its descriptor, so the natural
+            #: form "B202, the board's silent test phase" was being refused by the
+            #: very rule that demands it. The exclusion of tokens holding a
+            #: backtick, underscore, slash, hyphen or paren already shows the
+            #: intent to spare identifiers; the bare `B202` shape was simply
+            #: missed. MEASURED 2026-11-17 over the 15 derived owed sentences:
+            #: the old predicate flagged 2 tokens and 0 were genuine shouting,
+            #: while this form still catches "STILL OWED", "OPEN" and "BLOCKED"
+            #: on positive controls. Producer:
+            #: scripts/the_shouted_word_predicate_spares_identifiers_2026-11-17.py
             shouted = [w for w in s.split()
-                       if w.strip(".,;:!?)").isupper()
-                       and w.strip(".,;:!?)") != "I"
+                       if (_t := w.strip(".,;:!?)")).isupper()
+                       and _t not in ("I", "A")
+                       and not _re.fullmatch(r"[A-Z]\d{1,4}", _t)
                        and not any(c in w for c in ("`", "_", "/", "-", "("))]
             assert not shouted, (e.ident, shouted, s)
         assert derived >= 8, (

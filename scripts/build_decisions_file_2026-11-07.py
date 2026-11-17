@@ -637,6 +637,7 @@ def collect():
             #: this: a 12-hex value read aloud is hostile to listening,
             #: which is the open question entry B104 puts to him.
             "tid": mrb.ticket_id(ident),
+            "tid_ref": mrb.ticket_ref(ident),
         })
     return mrb, rows
 
@@ -785,7 +786,8 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
                 if r["options"] else "no option recorded")
         line = (f"{i}. {r['ident']}, {r['heading'].lower()}. "
                 f"Recommended option {k + 1}: {gist}")
-        tag = f" `[{r['tid']}]`" if r.get("tid") else ""
+        _gref = r.get("tid_ref") or r.get("tid") or ""
+        tag = f" `[{_gref}]`" if _gref else ""
         A(sp(line) if spoken else f"{i}. **{r['ident']}**{tag} — {r['heading'].lower()}. "
                                   f"*Recommended option {k + 1}:* {gist}")
     A("")
@@ -795,10 +797,48 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
     # SKIPPED BY ITS ITERABLE rather than by re-indenting 40 lines under an
     # `if`: simplest sufficient, and a diff a reader can check.
     for i, r in enumerate(rows if detail else [], 1):
+        #: ★ HIS FORMAT, 2026-11-16, verbatim: *"Issue ID  -> actual hash
+        #: value recorded on disk -> brief but comprehensible descriptor and
+        #: why it matters ... -> your recommendation and why?"* Measured on the
+        #: 2026-11-14 delivery before this change: the entry code appeared in 0
+        #: of 19 headings and the hash carried its kind prefix in 0 of 19, so
+        #: neither of his first 2 fields was present.
+        #:
+        #: THE 2026-11-10 NOTE ABOVE IS NOT CONTRADICTED. It chose decision
+        #: NUMBERS over BARE codes because a code with no subject beside it is
+        #: unreadable aloud. Here the code sits immediately before the heading,
+        #: which IS its subject, so Rule 32 is satisfied by construction and he
+        #: gets the identifier he asked to be given.
+        _code = (r.get("ident") or "").strip()
+        #: ★ THE CODE GOES IN THE WRITTEN HEADING ONLY, and 2 separate
+        #: failures taught that, both found by running the dependents rather
+        #: than by reading.
+        #:
+        #: (1) `hd` is shared by the written and the SPOKEN render. The first
+        #: version put " — " between the code and the heading, and Rule 5 of
+        #: the note standard forbids an em-dash in a file read aloud;
+        #: `TestTheSpokenFileIsSpeakable` caught it on all 19.
+        #:
+        #: (2) A comma fixed that and broke something larger.
+        #: `scripts/do_the_two_decision_surfaces_agree_2026-11-01.py` compares
+        #: the SPOKEN headings against the headings it derives from the record,
+        #: as an exact set equality checked by z3 and by SymPy. A code prefix on
+        #: the spoken side made all 19 unmatchable, so a cosmetic improvement
+        #: reported the 2 surfaces as diverged when they agree perfectly.
+        #:
+        #: NOTHING IS LOST ALOUD. The glance list above already opens every line
+        #: with the entry code -- "1. B77, whether the convergence gate..." --
+        #: in BOTH renders, so a listener still hears which entry each decision
+        #: belongs to. And the project already decided identifiers belong in the
+        #: written surface: a sibling assertion requires that NO ticket hash
+        #: reach the spoken file at all, on the ground that a hash read aloud is
+        #: noise.
         hd = f"DECISION {i}. {r['heading']}"
-        tag = f" `[{r['tid']}]`" if r.get("tid") else ""
+        hd_written = f"DECISION {i}. {_code + ', ' if _code else ''}{r['heading']}"
+        _ref = r.get("tid_ref") or r.get("tid") or ""
+        tag = f" `[{_ref}]`" if _ref else ""
         _hd.append(len(L))
-        A(hd if spoken else f"## {hd}{tag}")
+        A(hd if spoken else f"## {hd_written}{tag}")
         A("")
         # ★★★ THE EMIT WAS INSIDE THE `elif` AND THE `if` BRANCH THREW ITS NOTE
         # AWAY. Found 2026-11-10 by executing the renderer and reading its

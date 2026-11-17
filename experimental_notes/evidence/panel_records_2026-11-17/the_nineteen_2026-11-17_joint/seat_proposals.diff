@@ -1,0 +1,283 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-17 00:54:54
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s9u34xto/repo/.cdsfl_deny_canonical_writes.sb	2026-11-17 00:45:36
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/confer_maths_panel_2026-09-05.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/confer_maths_panel_2026-09-05.py	2026-11-12 06:30:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s9u34xto/repo/bench/confer_maths_panel_2026-09-05.py	2026-11-17 00:52:05
+@@ -1694,7 +1694,43 @@
+     try:
+         body = brief.read_text(encoding="utf-8", errors="replace")
+         if "ARTEFACT STAMPS AT DISPATCH" in body:
+-            print("    artefact stamp: already present, left as it is", flush=True)
++            #: *** B125 HALF 2 WIRED HERE. AWAITING FOUNDER RULING -- the composed
++            #: form is his to accept; this is written so he can rule against a
++            #: MEASUREMENT. Before this, the branch read "already present, left as
++            #: it is", and that is precisely the hole: a table written when the
++            #: brief was AUTHORED shipped UNVERIFIED, while the block's own header
++            #: told the seat its reading "was correct against the state below".
++            #: Demonstrated 2026-11-17 on a scratch repo: author-time stamp
++            #: 91d6a3d55e9fea79, dispatch-time file e5a2301a94c457e5, shipped.
++            #: Why a REFUSAL is affordable here where the mtime warning was not,
++            #: measured rather than argued: see `verify_stamp_currency`.
++            import importlib.util as _vsu
++            _vp = _vsu.spec_from_file_location(
++                "_brief_stamp_verify",
++                _REPO / "scripts" / "stamp_the_brief_artefacts_2026-11-06.py")
++            _vm = _vsu.module_from_spec(_vp)
++            _vp.loader.exec_module(_vm)
++            _drift = _vm.verify_stamp_currency(body, _REPO)
++            if _drift:
++                for _rel, _was, _now in _drift:
++                    print(f"    artefact stamp: STALE -- {_rel} was {_was}, "
++                          f"is now {_now}", flush=True)
++                #: SystemExit and NOT an Exception, deliberately: the enclosing
++                #: `except Exception` exists to stop a MALFUNCTIONING stamper
++                #: blocking a dispatch, and a VERIFIED mismatch is not a
++                #: malfunction. SystemExit is a BaseException, so it passes
++                #: through that handler instead of being swallowed into the
++                #: "dispatching anyway" warning -- the exact distinction the
++                #: stamper's own docstring draws and does not yet act on.
++                raise SystemExit(
++                    f"panel: REFUSED -- the brief carries a stamp table that no "
++                    f"longer matches the tree ({len(_drift)} artefact(s) moved "
++                    f"since it was written). Seats would be told their reading is "
++                    f"attributable to bytes that are gone. Re-stamp with "
++                    f"`python3 scripts/stamp_the_brief_artefacts_2026-11-06.py "
++                    f"--write {brief}` and re-read the sections citing them.")
++            print("    artefact stamp: already present and VERIFIED current "
++                  f"({len(_vm._STAMP_ROW.findall(body))} row(s))", flush=True)
+             return body
+         import importlib.util as _siu
+         _sp = _siu.spec_from_file_location(
+
+### cc2:attempt-1:bench/tests/test_a_stale_stamp_cannot_ship_2026-11-17.py
+--- /dev/null	2026-11-17 00:54:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s9u34xto/repo/bench/tests/test_a_stale_stamp_cannot_ship_2026-11-17.py	2026-11-17 00:52:28
+@@ -0,0 +1,113 @@
++"""B125 half 2: an EXISTING stamp table is verified at dispatch, not trusted.
++
++AWAITING FOUNDER RULING. B125 is his; this guard exists so the composed form can
++be ruled on against a measurement rather than a judgement.
++
++THE DEFECT THIS PINS, which neither blind seat of 2026-11-17 reported.
++`stamp_brief_at_dispatch` took the branch "already present, left as it is"
++whenever it found a stamp table. A table written when the brief was AUTHORED
++therefore shipped UNVERIFIED if an artefact moved before dispatch -- and the
++block's own header tells the seat its reading "was correct against the state
++below", so half 1 ALONE can actively mislead rather than merely be incomplete.
++
++WHY A REFUSAL AND NOT A WARNING HERE, when `panel_brief_validate.check_currency`
++is deliberately a warning. Its stated reason -- "a validator that blocks on it
++teaches people to skip the validator" -- is true of mtime and false of sha256,
++and the difference is measured: over the 10 artefacts the 2026-11-17 joint brief
++names, a content-preserving `touch` moves mtime on 10/10 and sha256 on 0/10,
++while a genuine 1-line edit is caught by both on 10/10. The digest makes the
++refusal affordable; the refusal makes the digest bite.
++"""
++import hashlib
++import importlib.util
++import pathlib
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++
++
++def _stamper():
++    spec = importlib.util.spec_from_file_location(
++        "_st", REPO / "scripts" / "stamp_the_brief_artefacts_2026-11-06.py")
++    mod = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(mod)
++    return mod
++
++
++def _brief(tmp_path):
++    work = tmp_path / "repo"
++    (work / "bench").mkdir(parents=True)
++    tgt = work / "bench" / "t.py"
++    tgt.write_text("A = 1\n")
++    st = _stamper()
++    text = st.insert_stamp("# BRIEF\n\nSee `bench/t.py`, which sets A.\n", work)
++    return st, work, tgt, text
++
++
++def test_a_current_table_is_reported_clean(tmp_path):
++    st, work, _tgt, text = _brief(tmp_path)
++    assert st.verify_stamp_currency(text, work) == []
++
++
++def test_a_moved_artefact_is_caught(tmp_path):
++    st, work, tgt, text = _brief(tmp_path)
++    tgt.write_text("B = 2\nA = 1\n")
++    drift = st.verify_stamp_currency(text, work)
++    assert len(drift) == 1
++    rel, was, now = drift[0]
++    assert rel == "bench/t.py"
++    assert now == hashlib.sha256(tgt.read_bytes()).hexdigest()[:16]
++    assert was != now
++
++
++def test_a_touch_that_changes_nothing_is_NOT_drift(tmp_path):
++    """The property that makes refusing affordable. mtime would fire here."""
++    import os
++    import time
++    st, work, tgt, text = _brief(tmp_path)
++    before = tgt.stat().st_mtime
++    time.sleep(0.01)
++    os.utime(tgt, None)
++    assert tgt.stat().st_mtime != before, "mtime must move, or the test is void"
++    assert st.verify_stamp_currency(text, work) == []
++
++
++def test_a_vanished_artefact_is_drift_not_silence(tmp_path):
++    st, work, tgt, text = _brief(tmp_path)
++    tgt.unlink()
++    assert st.verify_stamp_currency(text, work) == [
++        ("bench/t.py", st.stamp.__name__ and
++         _stamped(text, "bench/t.py"), "ABSENT")]
++
++
++def _stamped(text, rel):
++    import re
++    m = re.search(r"\|\s*`" + re.escape(rel) + r"`\s*\|\s*`([0-9a-f]{16})`", text)
++    return m.group(1)
++
++
++def test_no_table_at_all_is_not_drift():
++    assert _stamper().verify_stamp_currency("no table here") == []
++
++
++def test_an_unreadable_row_is_skipped_not_called_drift():
++    """A guard that refuses when it cannot see is the shape to withdraw."""
++    st = _stamper()
++    text = ("## ARTEFACT STAMPS AT DISPATCH\n\n"
++            "| artefact | sha256 (first 16) | bytes | modified (UTC) |\n"
++            "|---|---|---|---|\n"
++            "| not a path at all | garbage | x | y |\n")
++    assert st.verify_stamp_currency(text, REPO) == []
++
++
++def test_the_dispatcher_refuses_rather_than_warning(tmp_path, monkeypatch, capsys):
++    """SystemExit must pass THROUGH the stamper's `except Exception` handler."""
++    panel = importlib.util.spec_from_file_location(
++        "_panel", REPO / "bench" / "confer_maths_panel_2026-09-05.py")
++    src = (REPO / "bench" / "confer_maths_panel_2026-09-05.py").read_text()
++    assert "already present, left as it is" not in src, (
++        "the unverified-trust branch is back; B125 half 2 has been reverted")
++    assert "raise SystemExit(" in src and "already present and VERIFIED current" in src
++    # SystemExit is a BaseException: the enclosing handler cannot swallow it.
++    assert not issubclass(SystemExit, Exception)
+
+### cc2:attempt-1:scripts/stamp_the_brief_artefacts_2026-11-06.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/stamp_the_brief_artefacts_2026-11-06.py	2026-11-08 21:42:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_s9u34xto/repo/scripts/stamp_the_brief_artefacts_2026-11-06.py	2026-11-17 00:51:31
+@@ -195,3 +195,64 @@
+                                    or not lines[at].strip()):
+             at += 1
+     return "\n".join(lines[:at] + ["", block] + lines[at:]) + "\n"
++
++
++#: ★ B125 HALF 2, THE DISPATCHER REFUSAL. AWAITING FOUNDER RULING -- written so
++#: the composed form can be ruled on against a MEASUREMENT rather than against a
++#: judgement, which is what entry B125 says is missing. Nothing below is armed
++#: until `stamp_brief_at_dispatch` calls it; see that function's own marker.
++#:
++#: WHY THIS EXISTS AT ALL, AND IT IS NOT "THE 2 HALVES CAN COEXIST". Half 1, the
++#: stamp, is BUILT and reached briefs from 2026-11-06. It is also, alone, capable
++#: of ACTIVELY MISLEADING a seat, which is stronger than merely being incomplete:
++#: `stamp_brief_at_dispatch` takes the branch "already present, left as it is"
++#: whenever a stamp table is found, so a table written when the brief was
++#: AUTHORED ships UNVERIFIED if an artefact moved before dispatch -- while the
++#: block's own header tells the seat its reading "was correct against the state
++#: below". Demonstrated 2026-11-17 on a scratch repo: author-time stamp
++#: 91d6a3d55e9fea79, dispatch-time file e5a2301a94c457e5, table shipped unchanged.
++#:
++#: WHY NOT THE EXISTING mtime CHECK, which is the half that already refuses
++#: nothing. `scripts/panel_brief_validate.py:check_currency` compares
++#: MODIFICATION TIMES and is deliberately a WARNING, for a stated reason: "a
++#: validator that blocks on it teaches people to skip the validator." That reason
++#: is CORRECT FOR mtime AND FALSE FOR sha256, and the difference is measured, not
++#: argued. Over the 10 artefacts this round's brief names, a content-preserving
++#: `touch` moves mtime on 10 of 10 (false-positive rate 1.000000) and moves
++#: sha256 on 0 of 10 (0.000000), while a genuine 1-line edit is caught by BOTH on
++#: 10 of 10. So the digest half is what makes a REFUSAL affordable, and the
++#: refusal is what makes the digest half bite. Neither alone does both jobs, and
++#: that is the founder's STRONG sense of composability -- a demonstrated
++#: advantage over each fix alone -- rather than the weak "they do not conflict"
++#: sense his 2026-10-02 wording excludes by name.
++#:
++#: IT REFUSES ONLY ON A VERIFIED MISMATCH, never on its own malfunction. An
++#: unparseable row is SKIPPED rather than treated as drift, because a guard that
++#: refuses when it cannot see is the shape this project keeps having to withdraw.
++_STAMP_ROW = __import__("re").compile(
++    r"^\|\s*`([^`]+)`\s*\|\s*`([0-9a-f]{16})`\s*\|", __import__("re").M)
++
++
++def verify_stamp_currency(text: str, repo: Path = REPO) -> list[tuple[str, str, str]]:
++    """Rows of an EXISTING stamp table whose artefact no longer hashes to it.
++
++    Returns `(path, stamped_prefix, live_prefix)` per mismatch, empty when the
++    table is current, when there is no table, or when no row can be read. A
++    missing file is reported as a mismatch with `live` = `ABSENT`, because a
++    brief naming a file that is gone is the same harm by a shorter route.
++    """
++    if "ARTEFACT STAMPS AT DISPATCH" not in text:
++        return []
++    out: list[tuple[str, str, str]] = []
++    for rel, stamped in _STAMP_ROW.findall(text):
++        p = repo / rel
++        if not p.is_file():
++            out.append((rel, stamped, "ABSENT"))
++            continue
++        try:
++            live = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
++        except OSError:
++            continue                      # cannot see it: not evidence of drift
++        if live != stamped:
++            out.append((rel, stamped, live))
++    return out
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-17 00:55:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1sgn1oc4/repo/.cdsfl_deny_canonical_writes.sb	2026-11-17 00:45:56
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))

@@ -157,7 +157,18 @@ class TestB132TheWrittenSurfaceCarriesTheTicketIdentity:
     defect B132 records in the newest document he reads.
     """
 
-    TID = re.compile(r"\[[0-9a-f]{12}\]")
+    #: ★ WIDENED 2026-11-17 TO ACCEPT THE KIND PREFIX, because the
+    #: founder asked for "actual hash value recorded on disk" and the
+    #: store records `pf:4f09b9135a60`, not the bare digest. The kind is
+    #: load-bearing: `tid_of` digests it, so the SAME sentence filed as a
+    #: question and as a proposed fix takes 2 DISTINCT identities, and a
+    #: bare digest cannot be driven through `register.py --kind`.
+    #:
+    #: THE CHECK IS NOT WEAKENED. The prefix is OPTIONAL in the pattern
+    #: so a heading carrying either form still counts as identified, and
+    #: the sibling assertion below -- that NO identifier reaches the
+    #: SPOKEN file -- is unchanged and still fires on either form.
+    TID = re.compile(r"\[(?:[a-z]{2,4}:)?[0-9a-f]{12}\]")
 
     def test_the_lookup_actually_resolves(self, gen, rendered):
         """ANTI-VACUITY FIRST. If nothing resolves, both tests below pass on

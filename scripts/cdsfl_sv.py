@@ -825,11 +825,71 @@ def _reap_process_group(
     return sent
 
 
+
+def _git_streamed(
+    *args: str,
+    root: Path | None = None,
+    timeout: int = 30,
+    check: bool = True,
+) -> str:
+    """`_git` with the child's output echoed line by line as it arrives.
+
+    Separate function rather than a branch tangled through `_git`, so the
+    non-streaming path a reader is checking stays exactly the 20 lines it was.
+    Returns the SAME value `_git` returns -- the accumulated text, stripped --
+    so a caller swapping `stream=True` in loses nothing.
+
+    `stderr=STDOUT` because a board interleaves both and a watcher wants them in
+    the order they happened, not in 2 separate blocks after the fact.
+    """
+    import time as _time
+    proc = subprocess.Popen(
+        ["git", *args],
+        cwd=root or repo_root(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        start_new_session=True,
+    )
+    deadline = _time.monotonic() + timeout
+    lines: list[str] = []
+    try:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            lines.append(line)
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            if _time.monotonic() > deadline:
+                raise subprocess.TimeoutExpired(["git", *args], timeout)
+        proc.wait(timeout=max(1.0, deadline - _time.monotonic()))
+    except subprocess.TimeoutExpired:
+        sent = _reap_process_group(proc)
+        names = ", ".join(signal.Signals(s).name for s in sent) or "none"
+        print(
+            f"  git {args[0]}: timed out after {timeout}s — reaped the whole "
+            f"process group (signals sent: {names}), so no board is left "
+            f"running orphaned.",
+            file=sys.stderr,
+            flush=True,
+        )
+        raise subprocess.TimeoutExpired(["git", *args], timeout) from None
+    finally:
+        if proc.stdout is not None:
+            proc.stdout.close()
+    out = "".join(lines)
+    if check and proc.returncode != 0:
+        raise RuntimeError(
+            f"git {args[0]} failed (rc={proc.returncode}): {out.strip()[-800:]}")
+    return out.strip()
+
+
 def _git(
     *args: str,
     root: Path | None = None,
     timeout: int = 30,
     check: bool = True,
+    stream: bool = False,
 ) -> str:
     """Run a git command. Raises RuntimeError on failure if check=True.
 
@@ -842,7 +902,32 @@ def _git(
     credential helper, which answers without a tty. Where a credential ever
     did need one, the call would FAIL LOUDLY instead of hanging on a prompt
     nobody can see, which is the better of the 2 failures.
+
+    ★ `stream=True` MAKES THE CHILD WATCHABLE WHILE IT RUNS. ENTRY B195.
+    His standing directive is to keep a terminal showing the full current tail
+    of any running process. For the commit board -- the longest-running thing in
+    this project -- that was UNSATISFIABLE, and the cause is 2 lines here:
+    `communicate()` owns both pipes and returns only at exit, so not 1 byte of a
+    board is observable until the board is over. Measured 2026-11-14 by driving
+    both arms of `scripts/the_board_is_unwatchable_2026-11-14.py` against a
+    child printing 10 lines over 3 s: today's mechanism showed **0 of 10** lines
+    before exit across 11 watcher wake-ups; a line-buffered reader showed
+    **10 of 10**, the first at 0.02 s, with the full text still recoverable.
+
+    ★ WHY A PARAMETER AND NOT A CHANGE TO `_git` ITSELF. There are 24 call
+    sites. 23 of them -- branch reads, status probes, rev-list counts -- want
+    the captured string and would be harmed by 30 minutes of streamed output.
+    The default is False, so **0 of those 23 change behaviour**, which is the
+    measurement the additive standard asks of this repair.
+
+    ★ WHAT MUST SURVIVE, AND DOES. The timeout-and-reap block below is
+    load-bearing: it reaps the whole process group and SAYS what it abandoned,
+    which is the `a swallowed exception is not a record` repair. The streaming
+    path enforces the same deadline across its read loop and calls the same
+    reaper, rather than inheriting `communicate`'s.
     """
+    if stream:
+        return _git_streamed(*args, root=root, timeout=timeout, check=check)
     proc = subprocess.Popen(
         ["git", *args],
         cwd=root or repo_root(),
@@ -1253,7 +1338,21 @@ def _commit_and_push(
                 or os.environ.get("ANTHROPIC_MODEL", "").strip()):
             print("         (no model version recorded — this environment exposes "
                   "none; set ANTHROPIC_MODEL or CDSFL_SV_CO_AUTHOR)")
-    _git("commit", "-m", full_msg, root=root, timeout=commit_timeout(root))
+    #: ★ THE 1 CALL SITE THAT STREAMS, AND THE ONLY ONE. ENTRY B195.
+    #: `git commit` runs the pre-commit hook, so the board's whole output
+    #: arrives through this child -- about 29 minutes of it, and until now not 1
+    #: byte was observable until it ended. His standing directive is to keep a
+    #: terminal showing the full current tail of any running process, and this
+    #: is the call that made that unsatisfiable.
+    #:
+    #: THE OTHER 23 `_git` CALLS ARE UNTOUCHED: `stream` defaults to False, and
+    #: `bench/tests/test_the_commit_board_can_be_watched_2026-11-17.py` holds
+    #: that default executably rather than in prose. Both arms were driven
+    #: against real git and return the SAME string, and the timeout-and-reap
+    #: block bites on both. 5 of 5 mutations turn that guard red
+    #: (`scripts/the_watchable_board_mutations_2026-11-17.py`).
+    _git("commit", "-m", full_msg, root=root, timeout=commit_timeout(root),
+         stream=True)
 
     new_hash = _git("log", "--oneline", "-1", root=root)
     print(f"  Committed: {new_hash} ({n_files} files)")

@@ -1,0 +1,147 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 15264,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Locate sandbox root\"}",
+      "t_offset_s": 127.582
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def required_quiet_run|required_quiet_run\\\\(|def live_seat_count\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 130.13
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"pre_run_target\", \"path\": \"bench/reference_runner_v3.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 131.121
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/model_catalogue.py\", \"offset\": 60, \"limit\": 60}",
+      "t_offset_s": 132.007
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"hooks/work_not_narrate.py\", \"offset\": 880, \"limit\": 60}",
+      "t_offset_s": 132.828
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"failed_tests|drifted_mirror\", \"path\": \"resources/suite_record.json\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 133.829
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"BLOCKED\", \"path\": \"scripts/task_list_markers.py\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 134.716
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python -m pytest bench/tests/test_both_convergence_arms_are_roster_aware_2026-11-12.py bench/tests/test_the_roster_window_bound_is_sound_2026-11-02.py -q 2>&1 | tail -3\", \"description\": \"Run both B77 roster-window guards\"}",
+      "t_offset_s": 146.262
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python -m pytest bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py bench/tests/test_his_command_is_the_union_over_the_turn_2026-11-08.py -q 2>&1 | tail -3\", \"description\": \"Run B142 selector guard and B171 union guard\"}",
+      "t_offset_s": 148.026
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py 2>&1 && python -m pytest \\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py::test_c2_the_self_exclusion_is_reachable_and_moves_the_count\\\" -q 2>&1 | tail -4\", \"description\": \"Run the B185 currency guard test CC2 reports red\"}",
+      "t_offset_s": 149.97
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python -c \\\"\\nfrom bench.model_catalogue import known_roles\\nprint('all:', known_roles())\\nprint('structural:', known_roles('structural'))\\n\\\" 2>&1; ls -la bench/credential_store.py; grep -ci peer bench/model_catalogue.py bench/credential_store.py\", \"description\": \"Check known_roles output, credential store, peer occurrences\"}",
+      "t_offset_s": 151.911
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_both_convergence_arms_are_roster_aware_2026-11-12.py bench/tests/test_the_roster_window_bound_is_sound_2026-11-02.py -q 2>&1 | tail -2\", \"description\": \"Run both B77 roster-window guards\"}",
+      "t_offset_s": 153.905
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_interface_roles_reach_the_selector_2026-11-14.py bench/tests/test_his_command_is_the_union_over_the_turn_2026-11-08.py -q 2>&1 | tail -2\", \"description\": \"Run B142 selector guard and B171 union guard\"}",
+      "t_offset_s": 155.141
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py\\\" -q 2>&1 | tail -4\", \"description\": \"Run the full B185 currency producer guard\"}",
+      "t_offset_s": 156.2
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nfrom bench.model_catalogue import known_roles\\nprint('all:', known_roles())\\nprint('structural:', known_roles('structural'))\\n\\\" 2>&1\", \"description\": \"Check known_roles output both forms\"}",
+      "t_offset_s": 158.91
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -d .git 2>&1; sha256sum scripts/the_standards_currency_mutations_2026-11-13.py hooks/work_not_narrate.py bench/model_catalogue.py bench/reference_runner_v3.py 2>/dev/null | awk '{print substr($1,1,16), $2}'\", \"description\": \"Check .git presence and compare artefact hashes to brief stamps\"}",
+      "t_offset_s": 225.179
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"git\\\\|session\\\\|\\\\.env\\\" bench/tests/test_the_standards_currency_producer_holds_2026-11-13.py | head -10\", \"description\": \"Check what the currency guard test depends on\"}",
+      "t_offset_s": 226.294
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"def stamp_brief_at_dispatch\", \"path\": \"bench/confer_maths_panel_2026-09-05.py\", \"output_mode\": \"content\", \"-n\": true, \"-A\": 6}",
+      "t_offset_s": 227.636
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"bench/confer_maths_panel_2026-09-05.py\", \"offset\": 1663, \"limit\": 60}",
+      "t_offset_s": 236.856
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"2026-11-10\\\" experimental_notes/ --include=\\\"*.md\\\" 2>/dev/null | grep -v \\\"GENERATED\\\" | head -5; grep -rn \\\"moved file\\\\|adjudicated as error\\\\|joint brief\\\" experimental_notes/*.md 2>/dev/null | grep -v GENERATED | grep -i \\\"b125\\\\|stamp\\\\|moved\\\" | head -5\", \"description\": \"Search notes for the 2026-11-10 moved-file incident\"}",
+      "t_offset_s": 238.968
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/panel_brief_validate.py && grep -n \\\"CURRENCY\\\" scripts/panel_brief_validate.py | head -5\", \"description\": \"Verify the currency-warning validator exists\"}",
+      "t_offset_s": 309.488
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -40 bench/credential_store.py | grep -n \\\"2026-11-10\\\\|requirement\\\\|ruling\\\" ; grep -c \\\"BLOCKED ON\\\" experimental_notes/CDSFL_MASTER_TASK_LIST.md\", \"description\": \"Check credential store provenance and BLOCKED usage count\"}",
+      "t_offset_s": 310.723
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"10 of 10\\\\|0.722467\\\" .claude/CLAUDE.md | head -3\", \"description\": \"Verify the double-declaration 10/10 measurement record\"}",
+      "t_offset_s": 311.664
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport math\\n# B77: wired bound vs exact requirement, distribution-free claim + CC2's table spot-check\\n# Beta-mixed detection: p ~ Beta(a,b), rho = 1/(a+b+1), mean q.\\ndef f(n, q, rho):\\n    s = 1.0/rho - 1.0          # a+b\\n    a, b = q*s, (1-q)*s\\n    # E[(1-p)^n] = prod (b+i)/(a+b+i)\\n    m = 1.0\\n    for i in range(n):\\n        m *= (b+i)/(s+i)\\n    return -mat",
+      "t_offset_s": 321.305
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 's=1/0.236014-1; a=0.3*s; b=0.7*s; f[n_]:=-Log[Beta[a,b+n]/Beta[a,b]]; {3*f[6]/f[1], 3*f[6]/f[2], Table[N[3*f[6]/f[m]] <= Ceiling[18/m], {m,1,6}]}' 2>&1\", \"description\": \"Wolfram second check of B77 exact requirement vs wired bound\"}",
+      "t_offset_s": 339.939
+    }
+  ],
+  "n_tool_calls": 25,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 439.8,
+  "response": "All verification complete \u2014 Wolfram Language (local Wolfram Engine) returns 10.6052 / 6.1307, matching CC2's table and my Python derivation, with wired \u2265 exact at all 6 rosters. Final verdicts follow. **Every one of the 19 is the founder's to rule; I installed nothing \u2014 artefacts from my blind round remain marked AWAITING FOUNDER RULING in that round's harvest, and this round adds no installations.**\n\n---\n\n# JOINT-ROUND VERDICTS \u2014 SEAT FABLE\n\n## THE 4 STARRED ITEMS\n\n**B77 `pf:4f09b9135a60` \u2014 HOLD (and the disagreement is a label artefact, not a position).** Final: keep the wired `required_quiet_run` bound; do not adopt the exact version. Standard: **ADDITIVE clause 2 + SIMPLEST SUFFICIENT.** CC2's \"NONE of A/B/C\" and my \"A, as ratification of what is live\" are the **same ruling**: both keep `ceil(K\u00b7n_declared/n_live)` wired at `:10327`/`:11640`, both refuse the exact replacement absent a committed measurement. I re-ran the two named guards myself: **20 passed in 1.41s** (CC2's 34 presumably included extra files; both green). I reproduced CC2's exact-requirement table independently (Python: 11.04/10.61/10.03 at \u03c1=.236; Wolfram second falsifier: 10.6052, 6.1307) \u2014 and I add a result **stronger than either blind answer**: for `a_n = E[(1\u2212p)\u207f]`, Cauchy\u2013Schwarz gives `a_n\u00b2 \u2264 a_{n\u22121}a_{n+1}`, so `ln a_n` is convex with `a_0=1`, so `f(n)/n` is decreasing, so `K\u00b7f(6)/f(m) \u2264 18/m \u2264 ceil(18/m)` for **every** mixing distribution of p \u2014 verified by sweep over 2000 random (q, \u03c1) pairs \u00d7 6 rosters, zero violations. The wired bound's safety is **distribution-free**; the exact version's \u03c1-dependence buys quiet rounds only at rosters 1\u20132 and can never buy safety. CC2's strongest point \u2014 \"there is no single n_live to choose, it is per-round\" \u2014 I verified at `live_seat_count(:1694)` and endorse. What would change this back: a committed replay of the 3 degraded archive runs showing the bound costing materially more rounds at observed rosters \u2014 my blind refuter, still the right one. His to rule.\n\n**B125 `pf:9aa8db33d2a3` \u2014 HOLD: stamps (shipped) plus the existing currency check; do not add the refusal now.** Standard: **ADDITIVE clause 2 + SIMPLEST SUFFICIENT**, and CC2's own composability logic. CC2's strongest point: the stamper reads live bytes at joint-dispatch time, and \"nothing compares them against the blind half's snapshot\" \u2014 the refusal closes exactly that un-built half. **That premise is false against the dispatched tree, and I verified the counterexample:** `scripts/panel_brief_validate.py:975` \u2014 \"TASK A4: CURRENCY, checked at dispatch and reported as a WARNING\" \u2014 already compares a brief against post-write file movement. And the B125 task-list entry records this mechanism's one live engagement: on 2026-11-11 the defect recurred (6 line citations moved after the brief was written) and the CURRENCY WARNING **caught it before dispatch**; all 6 citations repaired and re-verified. So the warn-level comparator has a committed 1/1 success in precisely this defect class, while no recorded case shows a stamp-plus-warning failure that a refusal would have cured. CC2's B therefore asks to add a third mechanism beside two shipped ones with no measurement that the trio beats the pair \u2014 the exact demand CC2 correctly presses against the exact formula in B77 and against C here. Displacing my stamps-first position requires showing it outperformed; a named gap that turns out to be already-covered is not that showing. What would change me: an archived or future joint round where the stamp table and the currency warning were both in force and a seat's correct snapshot reading was still adjudicated as error \u2014 then warn\u2192refuse hardening becomes the evidenced residual, and I would adopt CC2's B. His to rule, and the entry's own text says the composability measurement he'd need does not exist yet.\n\n**B142 `pf:970ab5074a95` \u2014 CHANGE.** Final: **CC2's framing, with one retained addition of mine.** Standard: **ADDITIVE clause 2** \u2014 CC2's answer rests on verified live state; my blind A rested on two stale premises, and a position built on refuted premises is outperformed by definition. What changed me, each reproduced myself on artefacts hashing exactly as stamped: (1) `known_roles()` returns the 7, `known_roles(\"structural\")` the 3 \u2014 run live; (2) the guard passed (12 of my 33); (3) `FUNCTIONAL_TO_STRUCTURAL` at `model_catalogue.py:85-90` already answers the surjection I feared by **declaring** `classifier\u2192None`, `researcher\u2192None`, with the boundary \"changes 0 dispatch decisions\" documented at `:78-84` \u2014 so no unmeasured selection change exists to object to; (4) `bench/credential_store.py:4` \u2014 \"Founder requirement, 2026-11-10, in his own words\" \u2014 so my \"spec-less surface, write its section first\" was wrong: his direct requirement *is* the spec. What survives from my A: the **peer catalogue is genuinely absent** (0 occurrences \u2014 reproduced) and remains the one capability-adding build; I carry it forward as the still-owed work. The owed decision is as CC2 states: whether `classifier` and `researcher` get structural targets or the screen says they are labels \u2014 a pure judgement, no file manufactured. What would change me back: a dispatch where interface-selected `researcher` reaches a different seat than `worker` (CC2's refuter \u2014 I endorse it as the decisive test). His to rule.\n\n**B171 `pf:5292c9025d73` \u2014 HOLD (and this star, like B77's, marks a label difference, not a disagreement).** Final: the narrowed reset stands as the fix; nothing further owed. Standard: **ADDITIVE clause 2 \u2014 the incumbent already holds.** My \"B, as ratification\" and CC2's \"NONE \u2014 already implemented\" are the same ruling: both verified `if worked_since and (_new or not _is_bare_question(c))` at `work_not_narrate.py:888`, dated 2026-11-12. I re-read that line in the dispatched tree and re-ran the guard: **21 passed** (within my 33). CC2's strongest addition \u2014 fixture-driven proof that a bare mid-turn question preserves `had_d=True`, plus 7/7 mutation board RED \u2014 is evidence of a kind my blind answer lacked (I had only read the code), and I adopt it as verified-by-reproduction of the guard it sits on. CC2's correction of the \"9 times\" figure (repository records 34+ and 8, no \"9\") matches the discrepancy I flagged blind; I confirmed the `34+` in the hook's own comment at `:885`. Refuter unchanged: a post-2026-11-12 live transcript where a standing `d` is discarded. His to rule.\n\n## THE 15 AGREED \u2014 holds, with three verdicts carrying verified amendments\n\n**B84 `pf:4bcde489948b` \u2014 HOLD: C, adopting CC2's verified correction.** I confirmed `pre_run_target_description` at `:9942` and the write at `:21703` \u2014 field 1 of 4 is built, so C's remaining scope is **three** fields. Same option, corrected count. SIMPLEST SUFFICIENT. His to rule.\n\n**B94 `pf:bb28392e8a9e` \u2014 HOLD: C on v_bar, B on the 4 runners** (CC2 agrees). ADDITIVE both halves. CC2's unexecuted-refuter admission (role-flip replay not run) matches mine. His to rule.\n\n**B141 `pf:ffddb18b09a0` \u2014 HOLD: B.** CC2's masking argument (sequential asserts, file-count masks collected-count) is a *stronger* ground for the same split and I adopt it; CC2's corrected denominator (309 files, pin currently fresh) weakens neither. SIMPLEST SUFFICIENT. His to rule.\n\n**B143 `pf:18582c4fed35` \u2014 HOLD: A.** CC2's z3 unsat results independently confirm my SymPy/Wolfram collapse derivation; the reader/writer correction (1 reader, 1 writer, not-populated rather than unwritable) is accepted \u2014 it changes the honest description, not the option. ADDITIVE clause 1 + SIMPLEST SUFFICIENT. His to rule.\n\n**B154 `pf:10e2507dabf6` \u2014 HOLD: B** (CC2 agrees; its DRAFT-tier-is-inert finding sharpens, doesn't move, the verdict). ADDITIVE clause 2. His to rule.\n\n**B160 `pf:055a68c4f4ae` \u2014 HOLD: D** (CC2 agrees; its live \"19 of 54\" figure accepted as the current count). ADDITIVE removal clause. His to rule.\n\n**B170 `pf:ed54f9ccded2` \u2014 HOLD: B.** Both seats, same no-`.git` caveat \u2014 I re-confirmed this sandbox has no `.git`, so the branch figures stay quoted. CC2's repaired `sh()` returncode defect in the merge-safety script is a real independent find; its fix lives in CC2's harvest and is his to accept. ADDITIVE clause 1. His to rule.\n\n**B175 `pf:00cfce67090e` \u2014 HOLD: C, with the justification corrected on CC2's evidence, which I reproduced.** `resources/suite_record.json:20` carries the mirrors test in `failed_tests` \u2014 verified myself. My blind answer made the duplication claim the load-bearing pre-adoption check; CC2's finding (\"1 genuine end-to-end test, not 2\" + the test is currently RED) discharges that check in C's favour on different and stronger ground: the removal clause's measurement is suite cost (1032 s, committed) traded against one assertion **that is not currently passing**. ADDITIVE removal clause. His to rule.\n\n**B180 `pf:aa6f7b704f10` \u2014 HOLD: B** (CC2 agrees). My blind artefact in `hooks/cy_monitor_gate.py` (that round's harvest, AWAITING FOUNDER RULING) stands as the existing fix; CC2 proposes nothing displacing it, and CC2's self-disable refuter (MAX_REFUSALS exhaustion during a suite run) is the right pre-adoption test \u2014 I endorse running it before he rules. ADDITIVE symmetric clause. His to rule.\n\n**B182 `pf:9950e21f2aed` \u2014 HOLD: B.** CC2's independent 150-cell grid (30/150 refused, same 2 phrases caught) reproduces my structure exactly on a separately-built grid \u2014 two independent measurements, one mechanism. My measured widening (150/150 after, negations intact) remains the delivered fix in my blind harvest. ADDITIVE clause 2. His to rule.\n\n**B185 `pf:3142ce4958c8` \u2014 HOLD: C for the ceiling; own record for versions \u2014 and CC2's blocking fact is REFUTED on the stamped artefact.** I ran the full guard CC2 reports red: `test_the_standards_currency_producer_holds_2026-11-13.py` \u2014 **8 passed in 44.39s**, on a tree whose stamped artefacts hash **identically** to the brief's table (verified `b48ce146\u2026`, four files checked). So \"cannot be ruled on tonight\" does not survive TOOLS DECIDE in this sandbox; the red CC2 saw is a property of CC2's environment (plausibly its no-`.git` state), not of the instrument. CC2's *arithmetic* correction, by contrast, I verified and adopt: `1\u2212exp(\u2212\u03bbt)=0.01` at \u03bb=0.976190 gives **3.76 days**, at 0.005 gives **1.88**, and the item's 14.61 reproduces only from \u03bb=0.5 via the repo's `ceiling\u00b7730.5/\u03bb` form \u2014 the item's figures are real, its attribution wrong. SIMPLEST SUFFICIENT. His to rule.\n\n**B186 `pf:d0f37996a791` \u2014 CHANGE: B, in CC2's amended form \u2014 define the 4th standard BY REFERENCE to `cdsfl_core_formal.md` \u00a710's five material-defect categories \u2014 retaining my invocation rule that using it must NAME the consequence.** Standard: **ADDITIVE clause 2.** What changed me: CC2's displacement evidence is a committed measurement and I verified it at `.claude/CLAUDE.md:630` \u2014 10 of 10 uses of \"composability\" drifted to the excluded weak sense when one idea had two declarations, Wilson [0.722467, 1.000000]. My blind wording was a second declaration of materiality; CC2's by-reference form is the same standard with one home, and the measured cost of two homes is on the record. The two amendments are one wording, not a composition of fixes, so no composability measurement is owed. CC2's proposal artefact serves; I manufacture no duplicate. What would change me back: \u00a710's five categories failing to cover a real human-consequence case (CC2's own refuter \u2014 the enumeration check neither of us ran). His to rule, pure judgement.\n\n**B190 `pf:d837803feb6a` \u2014 HOLD: B now, C on the derivation** \u2014 same substance as CC2's \"B and C together, structural dependency, no composability claim\". Both of us refuse the word \"composed\" for a precondition relationship; that is agreement. ADDITIVE clause 1. His to rule.\n\n**B194 `pf:a3b5ccfe2d28` \u2014 HOLD: C, strictly matched** (CC2 agrees). CC2's self-test (8 of 16 blocks missing the marker, written knowingly) is the direct observation my warning-record argument predicted; the 8-word marker-list correction widens the hazard. My strict-match acceptance test (the live \"Drafted But Not In Force\" section must not trip) remains the falsifier the fix ships with. ADDITIVE clause 2. His to rule.\n\n**B197 `qs:633854939cf3` \u2014 HOLD: A, and I adopt CC2's stratification finding with one verified nuance.** CC2's branching-model objection (a BLOCKED-on-him entry is an absorbing state, not a branching individual) is correct and new; I verified `BLOCKED` in `STATES` at `task_list_markers.py:59` with a live parse branch (`\"BLOCKED ON\"` \u2192 BLOCKED, `:314-315`). Nuance: the phrase \"BLOCKED ON\" occurs on **4 lines** of the master task list, yet CC2 tallied 0 entries in that state \u2014 so the state is *reachable but unreached by the entries that qualify for it*, which slightly reframes CC2's \"addition nothing reaches\" into \"vocabulary the entries fail to use\"; either way stratification is the real repair and A moves the figure honestly now. ADDITIVE removal clause + SIMPLEST SUFFICIENT. His to rule.\n\n---\n\n## DISAGREEMENT WITH THE BRIEF'S FRAMING (required field)\n\n**Strongest: the round's starring mechanism diffed option letters, not rulings, and manufactured half its own disagreements.** B77 and B171 are starred as differences, yet both pairs of answers verify the same code, cite the same lines, and recommend the same end state \u2014 \"A as ratification\" vs \"NONE, already live\" is a taxonomy collision, not a disagreement. The genuine disagreements this round were **two** (B125, B142), not four, and a framework whose founding principle is TOOLS DECIDE should diff recommended end-states \u2014 checkable \u2014 rather than labels against an option list both seats had to answer around. The underlying cause is the one my blind disagreement already named: the option lists for B77 and B171 omitted the true status quo, so each seat described it in its own words and the comparison machinery read the words.\n\n**Second: the brief's instruction to treat the other seat's measurements as checkable claims proved its own worth asymmetrically.** One of CC2's load-bearing facts (B185's red guard) **failed to reproduce** on a sandbox hashing identically to the stamp table, while every other CC2 measurement I re-ran reproduced exactly. A seat-environment difference (no-`.git` sandboxes) can turn an instrument red for one seat and green for another; the brief should require a seat reporting a red guard to state what in its environment the guard touches, or the joint round inherits irreproducible blockers as facts.\n\n**Third: both blind answers were wrong on B125 in the same direction** \u2014 each argued stamp-vs-refusal while neither noticed the dispatched tree already carries a third mechanism, `panel_brief_validate.py`'s A4 CURRENCY check, with a recorded 1/1 live success in the incident class. The option list omitted it, and both seats answered inside the list. The right answer \u2014 stamps + the existing warning, refusal only on an evidenced failure of that pair \u2014 was in neither blind reply.\n\n*Wolfram-derived values above (10.6052, 6.1307, the 6-roster bound check) computed with Wolfram Language (local Wolfram Engine). All other figures: Python 3 / pytest, run in this sandbox on artefacts verified byte-identical to the brief's stamps.*",
+  "t_start_epoch": 1794876356.4680269,
+  "t_end_epoch": 1794876796.250438,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_1sgn1oc4/repo",
+      "built": false
+    }
+  ]
+}

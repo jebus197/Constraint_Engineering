@@ -1,0 +1,655 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-17 00:27:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/.cdsfl_deny_canonical_writes.sb	2026-11-17 00:12:21
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_the_merge_instrument_refuses_without_history_2026-11-17.py
+--- /dev/null	2026-11-17 00:27:13
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/bench/tests/test_the_merge_instrument_refuses_without_history_2026-11-17.py	2026-11-17 00:19:01
+@@ -0,0 +1,82 @@
++#!/usr/bin/env python3
++"""The merge-safety instrument must REFUSE without git, never report all-clear.
++
++★ THE DEFECT, found 2026-11-17 by a free panel seat answering entry B170 and
++REPRODUCED BEFORE IT WAS REPORTED. `scripts/what_is_safe_to_merge_to_main_2026-10-16.py`
++helper `sh()` discarded `returncode` and returned `stdout`. With no `.git`, every
++git call returned the empty string, so `changed()` returned `[]`, every
++classification bucket collapsed to 0, `interval()` printed `n=0`, and the script
++EXITED 0 while printing "a MERGE, not a fast-forward" and "B7's repair held."
++
++WHY A GUARD RATHER THAN A NOTE. The instrument exists to answer whether a
++620-plus-commit branch is safe to merge to `main`. "Could not look" rendering as
++"looked and found nothing" is the exact failure shape this project names
++repeatedly, and the repair is only additive if something reaches it -- the
++symmetric clause of `additive-standard`.
++
++WHY THE SUBJECT IS EXECUTED AND NOT GREPPED. `execute-do-not-grep`: a test that
++asserts the file contains the string `returncode` establishes only that the file
++describes itself consistently. `sh()` is CALLED here against a command that
++really fails, and `main()` is DRIVEN in a directory that really has no history.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++SUBJECT = REPO / "scripts" / "what_is_safe_to_merge_to_main_2026-10-16.py"
++
++
++@pytest.fixture(scope="module")
++def mod():
++    assert SUBJECT.is_file(), f"the merge instrument is missing: {SUBJECT}"
++    spec = importlib.util.spec_from_file_location("merge_instrument", SUBJECT)
++    m = importlib.util.module_from_spec(spec)
++    sys.path.insert(0, str(REPO / "scripts"))
++    try:
++        spec.loader.exec_module(m)
++    finally:
++        sys.path.pop(0)
++    return m
++
++
++def test_sh_raises_rather_than_returning_empty_on_a_failing_command(mod):
++    """A non-zero git call must raise, not hand back an empty string."""
++    assert hasattr(mod, "NoHistory"), (
++        "the instrument no longer declares a refusal type, so a failed git call "
++        "has nowhere to go but back to the caller as empty output")
++    with pytest.raises(mod.NoHistory):
++        # `--this-flag-does-not-exist` makes git exit non-zero in ANY directory,
++        # so this case does not depend on the test environment having no repo.
++        mod.sh("git", "rev-parse", "--this-flag-does-not-exist")
++
++
++def test_sh_still_returns_stdout_when_the_command_succeeds(mod):
++    """ANTI-VACUITY. A helper that raised on everything would pass the test
++    above while destroying the instrument, so the success path is pinned too."""
++    assert mod.sh("git", "--version").startswith("git version")
++
++
++def test_the_instrument_exits_non_zero_where_there_is_no_history(tmp_path):
++    """END TO END: run the real script in a directory with no `.git`.
++
++    Before the 2026-11-17 repair this exited 0 and printed an all-clear. The
++    assertion is on the EXIT STATUS, because that is what a caller reads.
++    """
++    r = subprocess.run([sys.executable, str(SUBJECT)],
++                       cwd=tmp_path, capture_output=True, text=True, timeout=120)
++    assert r.returncode != 0, (
++        "the merge instrument reported successfully from a directory with no "
++        f"git history; stdout was:\n{r.stdout[-800:]}")
++    blob = (r.stdout + r.stderr).lower()
++    assert "refus" in blob, (
++        "the instrument failed without SAYING it could not look, which leaves "
++        f"a reader unable to tell a refusal from a clean result:\n{blob[-800:]}")
++    assert "b7's repair held" not in blob, (
++        "the instrument printed its all-clear line while unable to read any "
++        "history at all")
+
+### cc2:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-17 00:17:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 13:49:20
+@@ -315,7 +315,7 @@
+ **The finding, and it is unambiguous.** A commit-time guard was discussed on 5 separate occasions between 2026-08-25 and 2026-09-07 and **was never built**. All 4 installed hooks are `UserPromptSubmit` context injectors: they make 0 subprocess calls, emit 0 blocking decisions, and always exit 0. There is no git hook (14 files in `.git/hooks`, all `.sample`), no continuous integration, and `core.hooksPath` is unset. Nothing anywhere inspects repository state before a commit. **Commit `57d5a0e` reached HEAD on 2026-09-09 at 08:16:17 with the suite red**, which is the proof rather than the theory.
+ 
+ **The design, and why it is small.** Run only the files named in the hook's `GUARDS` list and refuse on non-zero exit. **THIRD CORRECTION 2026-09-10 04:20 BST, and this time with an instrument: `scripts/precommit_gate_cost_2026-09-10.py`.** The entry said 4 files; the hook names **7**, having gained `test_done_markers_carry_evidence_2026-09-10.py` (V1) and `test_task_list_markers_2026-09-09.py` (M2) since the sentence was written. The entry said 56 tests; the 7 files collect **277** (see the fifth correction below). **The 2 previous corrections were applied INSIDE each other**, leaving the entry reading "56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: '28 tests in 1.26 s' never reproduced)' never reproduced)" — a sentence quoting its own earlier wording as the figure it refutes, which is no longer a claim about anything. Three prose corrections to one figure and no instrument at any point. **The script reads the file list out of the hook rather than typing it**, so it notices the list changing, which is what all 3 corrections missed; its first version token-scanned and reported 5 of 6, caught by running it against a known case before believing it. **A wall-clock figure is treated differently from a count**: the count is exact, the timing is reported as a median with its full range over repeated runs and with the machine named, because a single number to 2 decimal places implies a precision a wall clock does not have. **Measured 2026-09-10 15:22 BST: median 6.92 s over 3 runs, range 6.53 s to 7.10 s** — an 8th guard was added at 15:20, `test_stated_gate_count_matches_measurement_2026-09-07.py`, after `wilson_interval_consistency.py` caught 2 of this session's own errors within an hour and the hook did not run it, on macOS 26.5.1 arm64 with Python 3.13.3 — and taken while the full suite was running concurrently, so it is an upper bound under load rather than a best case. Against 669.92 s for the full suite, which is what makes it survivable per commit; a full-suite gate would be bypassed within a day. Guarded by `bench/tests/test_precommit_gate_cost_2026-09-10.py`, which pins the file count and the collected count and asserts nothing about the wall clock, because a timing assertion fails on a loaded machine for reasons unconnected to the gate. **FOURTH CORRECTION 2026-09-10 14:20 BST:** the count moved again, 169 to 174, when task V7 added 5 tests to one of the 6 guard files — and `bench/tests/test_precommit_gate_cost_2026-09-10.py` went RED exactly as its own docstring says it should, which is the first time this figure has been caught by a machine rather than by a reader. The 2 sentences that stood here were a duplicate of the preceding one and a stale "These 4 files" left by the third correction. **FIFTH CORRECTION 2026-09-10 20:25 BST, AND THIS ONE HAS A STRUCTURAL CAUSE WORTH NAMING.** The count moved 178 → **277** and the median to **7.09 s over 5 runs, range 6.39 s to 8.51 s** on the same machine. The cause is not another typo: `test_done_markers_carry_evidence_2026-09-10.py` **parametrises one test per DONE entry**, so the gate's cost is a function of the task list, and this evening closed 12 entries. **The figure will go stale every time an entry is closed** — it is not a fixed price, and 4 of the 5 corrections to it were made by readers who assumed it was. That is the diagnosis the previous 4 corrections lacked. The treadmill is kept deliberately rather than removed: `bench/tests/test_precommit_gate_cost_2026-09-10.py` going red on each closure is what has kept the number true since 14:20, and a figure nobody is forced to refresh is exactly how the first 3 corrections became possible. **SIXTH CORRECTION 2026-09-10 23:12 BST, AND IT CHANGES THE SHAPE RATHER THAN THE NUMBER.** The count is **347** over **7** files, median **11.77 s** over 5 runs, range 11.50 s to 14.51 s on macOS 26.5.1 arm64 with Python 3.13.3 under load. The figure had been written TWICE — once in this prose and once as a literal in `bench/tests/test_precommit_gate_cost_2026-09-10.py` — so every correction was 2 edits, and the fifth left the test asserting 277 while the hook collected 347. **Two representations of one truth with no comparator is the shape `execute-do-not-grep` names, and it was inside the test whose whole job is to be the comparator.** The number now lives in exactly 1 place, the declaration on the next line, and the test READS it. Refresh with `python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0`.
+-<!-- gate-cost: files=310 collected=5096 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
++<!-- gate-cost: files=309 collected=5088 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
+ 
+ **Three wiring conditions**, without which the hook is itself an addition nothing reaches: it must live under a versioned `hooks/` directory, `core.hooksPath` must be set by the onboarding script rather than by hand, and a test must execute the hook and prove it refuses a deliberately broken tree.
+ 
+
+### cc2:attempt-1:experimental_notes/Proposed_Fourth_Standard_Real_World_Applicability_2026-11-17.md
+--- /dev/null	2026-11-17 00:27:12
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/experimental_notes/Proposed_Fourth_Standard_Real_World_Applicability_2026-11-17.md	2026-11-17 00:21:19
+@@ -0,0 +1,86 @@
++# PROPOSED 4th FORMAL STANDARD — real-world applicability  [CDSFL:NOT-IN-FORCE]
++
++**[CDSFL:NOT-IN-FORCE] — THIS DOCUMENT BINDS NOTHING.** It is a free-panel seat's
++proposed wording for entry B186, written at the founder's request for a paragraph
++he could paste. **It awaits his ruling.** It is deliberately NOT written into
++`.claude/CLAUDE.md` or the global instruction file, because writing it there is
++installing it, and his words were *"I am considering"* and *"I would suggest"*.
++
++**[CDSFL:NOT-IN-FORCE]** The marker is on every blank-line-separated block of this
++file, per `cdsfl_core_formal.md` §"Drafted But Not In Force", which requires it per
++block and not per region. The marker is `_NOT_IN_FORCE_MARKER` in
++`bench/cdsfl_registry/composer.py:740`.
++
++## [CDSFL:NOT-IN-FORCE] The seat's recommendation, in one line
++
++[CDSFL:NOT-IN-FORCE] Adopt it — **but define it by REFERENCE to the five material-defect categories
++already live in `bench/directives/universal/cdsfl_core_formal.md` §10, rather than
++as fresh text.** One definition, two call sites.
++
++## [CDSFL:NOT-IN-FORCE] Why by reference, and it is measured rather than argued
++
++[CDSFL:NOT-IN-FORCE] The project has already paid for a standard that was declared twice in different
++words. `.claude/CLAUDE.md` records it: the composability standard reaches every
++panel seat through the dispatcher's SYSTEM prompt with the demonstration
++requirement intact, while the BRIEF TEMPLATE states the same standard as *"say
++whether the repairs compose, conflict, or are independent"* — the weak
++non-interference form the founder's own definition excludes by name. **2
++declarations of 1 standard exist and they disagree**, and the measured consequence
++was that 10 of 10 uses of the word across the decisions file and the morning
++report used the excluded sense, Wilson 95% [0.722467, 1.000000].
++
++[CDSFL:NOT-IN-FORCE] A 4th standard about whether a change *matters* would be the second declaration of
++materiality, because §10 already enumerates it: wrong result, hard-constraint
++violation, verification-integrity corruption, silent evidence loss,
++unreproducibility. That file is 33,108 characters and reaches every working seat
++through the composer. Writing a fresh definition of materiality beside it
++reproduces the exact fault above.
++
++## [CDSFL:NOT-IN-FORCE] Why a 4th standard is nonetheless not redundant
++
++[CDSFL:NOT-IN-FORCE] §10 scopes materiality to a FINDING inside a review round — what a reviewer may
++stop enumerating. It says nothing about a FIX. The existing 3 standards all govern
++the SHAPE of a fix: additive asks whether it fits the aims and fills a gap or
++beats an incumbent; simplest sufficient asks whether it is the smallest change
++reaching the root cause; composability asks whether a pair beats its parts. **None
++of the three asks whether the person using the system would notice.** That gap is
++real, and his wording names it.
++
++## [CDSFL:NOT-IN-FORCE] PROPOSED WORDING, for him to accept, amend or reject
++
++*[CDSFL:NOT-IN-FORCE]*
++> **4. REAL-WORLD APPLICABILITY.** A change must have a meaningful consequence
++> for the human in the loop. Invoking this standard requires NAMING that
++> consequence — which of the five material-defect categories of
++> `cdsfl_core_formal.md` §10 the change bears on (wrong result, hard-constraint
++> violation, verification-integrity corruption, silent evidence loss,
++> unreproducibility), and for whom. **Asserting that a consequence exists is not
++> naming one, and a change whose consequence cannot be named is not refused — it
++> is REPORTED as having none, and ranked accordingly.** This standard governs
++> PRIORITY, never admissibility: it decides what is worth doing first, and it may
++> not be used to refuse a fix that the other three standards admit. Where the
++> consequence falls outside the five categories, say so and describe it in full
++> rather than forcing it into one.
++
++## [CDSFL:NOT-IN-FORCE] The two guards this wording would need before it binds
++
++[CDSFL:NOT-IN-FORCE] 1. **It must be reachable.** `additive-standard`'s symmetric clause: a standard
++   nothing reaches is an addition that does nothing, and this project has 11
++   confirmed defects of exactly that shape since 2026-08-01 against 0 removals of
++   something needed. A 4th standard needs the same treatment the 3rd got — carried
++   into the dispatcher SYSTEM prompt, and the brief template's wording fixed at the
++   same time, or it will drift the way composability drifted.
++2. **It must not become a veto.** The scoping sentence above exists because a
++   materiality standard that can REFUSE work is a mechanism for declining
++   unglamorous repairs, and `cdsfl_core_formal.md`'s Objective section already
++   forbids exactly that: *"Never downgrade a material defect for being
++   uninteresting."* Priority-only keeps the two consistent.
++
++## [CDSFL:NOT-IN-FORCE] What would refute this recommendation
++
++[CDSFL:NOT-IN-FORCE] A case where a change has a real consequence for the human that maps to NONE of
++§10's five categories and is not describable as an extension of them. That would
++show the reference is too narrow and fresh text is needed after all. The
++repository can produce the test today: enumerate the open entries' stated
++consequences and check each against the five. It has not been run here, and this
++recommendation is therefore marked as resting on an unexecuted check.
+
+### cc2:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-11-17 00:25:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/experimental_notes/data/morning_report_decisions.json	2026-11-14 13:21:57
+@@ -1381,9 +1381,8 @@
+     "spoken_heading": "WHETHER THE CONVERGENCE GATE SHOULD KNOW HOW MANY SEATS ARE ANSWERING",
+     "still_owed": "a decision on whether to adopt the exact roster-aware requirement or the safe upper bound, and if the exact one, which of the 2 recorded correlation figures it should use: the pooled 0.405989 or the within-experiment 0.236014, where the gate is a within-run decision and the design currently defaults to the pooled one. It changes the requirement at 2 of 6 roster sizes.",
+     "title": "B77 — whether to adopt the roster-aware convergence window, which requires a run missing seats to stay quiet for proportionally longer before it may close",
+-    "what": "The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats raise fewer findings, so the gate cannot tell a quiet healthy panel from a quiet depleted one. The case is real rather than hypothetical, with 3 of 53 archived runs carrying a round in which fewer seats answered than were taking part. 3 candidate repairs exist, all written by seats and none adopted. They differ on 2 axes: whether the requirement is computed exactly, which costs a dependence on 2 measured correlation figures, or bounded safely, which costs extra quiet rounds; and whether the rule stays defined when the roster CHANGES between rounds, which is the only shape the archive actually holds. The full derivation, including where each design was falsified, is in the B77 entry of the master task list.",
+-    "why": "Yours because adopting it changes how a pre-registered convergence threshold is computed, and the standing directive on the decay curve reserves that surface to you. It also sits beside B76, where you already have the question of whether the 2 enabled convergence criteria may disagree, so the gate now carries 2 questions rather than 1. Nothing has been wired either way.",
+-    "_what_long_retired_2026-11-17": "The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats generate fewer findings, and the gate cannot tell a quiet healthy panel from a quiet depleted panel. An unadopted seat design written on 2026-10-07 repairs it by scaling the requirement, so a run missing seats has to stay quiet for proportionally longer before it may close. Its reasoning was checked rather than taken on trust, in 4 steps: the bound never asks for less than the exact requirement at any level of correlation between seats, 0 violations over 12,000 combinations, and it is exact rather than merely safe when seats are independent. 1 precondition the design does not state was found during that check, and is recorded with it: a panel whose critical rate is 0 gives an undefined requirement, and the design covers only the case of an empty roster. The case it addresses is real rather than hypothetical. 3 of 53 archived runs carry a round in which fewer seats answered than were taking part, and 1 of those is the failure of 18 July that the runner's own code describes in a comment. A SECOND REPAIR FOR THE SAME DEFECT WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED. A different seat, writing to the same brief on 2026-10-07, repaired it by counting quiet SEAT-ROUNDS rather than quiet rounds: the requirement becomes the roster size times the round count, and each round contributes however many seats actually answered. At a full roster, and at any roster that stays the same size, the 2 rules are literally the same rule, confirmed symbolically and over every roster size from 1 to 6 with 0 disagreements. They come apart when the roster CHANGES between rounds, which is the only shape the archive actually holds: all 3 degraded runs have a single short round with full rounds on at least 1 side. The first rule takes a single number for how many seats are live, so a run whose roster changed has to be given 1 value and the rule does not say which, and the 2 sensible choices disagree by as much as 6 rounds. On a run that lost 4 of 6 seats for 1 round and recovered, the second rule asks for 5 quiet rounds, while the first asks for 9 if you take the worst round and 3 if you take the last. The second rule has no such choice to make. It also aims at a bigger target: the stricter of the 2 convergence gates, which is the gate in force, has a fallback path where closing rests on the quiet count alone, and that gate takes 3 inputs of which none names the roster. A THIRD DESIGN WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED, which means this recommendation has changed twice. The same seat that wrote the first design also wrote a second design in the same brief, and that second design is the more complete. The 3 are not 3 rival answers once seen side by side. The first states the exact requirement and then takes a safe upper bound on it, which is why it needs no measured inputs. The third computes that same exact requirement, which costs it a dependence on 2 measured numbers. The second, from the other seat, restates the upper bound in a form that stays defined when the roster changes between rounds. The bound is never too small, checked over 36 combinations of roster size and correlation, and it is substantially looser: at a 1-seat roster it demands 18 quiet rounds where the exact requirement is 9 to 11, and at 2 seats 9 against 6 to 7. Every extra round is an extra round of every seat's time, and on a paid roster it is paid. WHAT DECIDES IT IS THAT THE THIRD DESIGN'S CASE FOR COMBINING ITS 2 PARTS IS MEASURED RATHER THAN ASSERTED, and it is the only such case found all day. Its own committed falsifier runs clean and shows each part curing a failure the other cannot: with only the record of who answered, the run is labelled degraded but still closes too early, at 2.4796 times its full-roster risk; with only the raised requirement, the risk is held but a reader sees the same record as a full-roster run; with both, it closes properly, is labelled degraded, and sits at 0.7125 of target. A healthy run pays nothing, and a run with no live seats does not converge at all. It also covers the gap the first design leaves, where a panel that never raises a critical finding gives an undefined requirement."
++    "what": "The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats generate fewer findings, and the gate cannot tell a quiet healthy panel from a quiet depleted panel. An unadopted seat design written on 2026-10-07 repairs it by scaling the requirement, so a run missing seats has to stay quiet for proportionally longer before it may close. Its reasoning was checked rather than taken on trust, in 4 steps: the bound never asks for less than the exact requirement at any level of correlation between seats, 0 violations over 12,000 combinations, and it is exact rather than merely safe when seats are independent. 1 precondition the design does not state was found during that check, and is recorded with it: a panel whose critical rate is 0 gives an undefined requirement, and the design covers only the case of an empty roster. The case it addresses is real rather than hypothetical. 3 of 53 archived runs carry a round in which fewer seats answered than were taking part, and 1 of those is the failure of 18 July that the runner's own code describes in a comment. A SECOND REPAIR FOR THE SAME DEFECT WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED. A different seat, writing to the same brief on 2026-10-07, repaired it by counting quiet SEAT-ROUNDS rather than quiet rounds: the requirement becomes the roster size times the round count, and each round contributes however many seats actually answered. At a full roster, and at any roster that stays the same size, the 2 rules are literally the same rule, confirmed symbolically and over every roster size from 1 to 6 with 0 disagreements. They come apart when the roster CHANGES between rounds, which is the only shape the archive actually holds: all 3 degraded runs have a single short round with full rounds on at least 1 side. The first rule takes a single number for how many seats are live, so a run whose roster changed has to be given 1 value and the rule does not say which, and the 2 sensible choices disagree by as much as 6 rounds. On a run that lost 4 of 6 seats for 1 round and recovered, the second rule asks for 5 quiet rounds, while the first asks for 9 if you take the worst round and 3 if you take the last. The second rule has no such choice to make. It also aims at a bigger target: the stricter of the 2 convergence gates, which is the gate in force, has a fallback path where closing rests on the quiet count alone, and that gate takes 3 inputs of which none names the roster. A THIRD DESIGN WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED, which means this recommendation has changed twice. The same seat that wrote the first design also wrote a second design in the same brief, and that second design is the more complete. The 3 are not 3 rival answers once seen side by side. The first states the exact requirement and then takes a safe upper bound on it, which is why it needs no measured inputs. The third computes that same exact requirement, which costs it a dependence on 2 measured numbers. The second, from the other seat, restates the upper bound in a form that stays defined when the roster changes between rounds. The bound is never too small, checked over 36 combinations of roster size and correlation, and it is substantially looser: at a 1-seat roster it demands 18 quiet rounds where the exact requirement is 9 to 11, and at 2 seats 9 against 6 to 7. Every extra round is an extra round of every seat's time, and on a paid roster it is paid. WHAT DECIDES IT IS THAT THE THIRD DESIGN'S CASE FOR COMBINING ITS 2 PARTS IS MEASURED RATHER THAN ASSERTED, and it is the only such case found all day. Its own committed falsifier runs clean and shows each part curing a failure the other cannot: with only the record of who answered, the run is labelled degraded but still closes too early, at 2.4796 times its full-roster risk; with only the raised requirement, the risk is held but a reader sees the same record as a full-roster run; with both, it closes properly, is labelled degraded, and sits at 0.7125 of target. A healthy run pays nothing, and a run with no live seats does not converge at all. It also covers the gap the first design leaves, where a panel that never raises a critical finding gives an undefined requirement.",
++    "why": "Yours because adopting it changes how a pre-registered convergence threshold is computed, and the standing directive on the decay curve reserves that surface to you. It also sits beside B76, where you already have the question of whether the 2 enabled convergence criteria may disagree, so the gate now carries 2 questions rather than 1. Nothing has been wired either way."
+   },
+   "task:B84": {
+     "evidence_line": "0 of 4 quantities the model needs are archive-derivable today: `confidence` and a HARD/SOFT class on 0 of 3,311 entries, Wilson [0.000000, 0.001159]; nu blocked by a missing baseline behind 224 of 962, 0.232848; 0 of 21 state keys describing the target across 59 runs; and 0 producers estimating d or p. 3 of the 4 are blocked by a missing recorded field, none by money. Substituting the archive's unusable nu proxy multiplies the floor by 2240/481 = 4.656965 and puts it above 1 at q = 0.2.",
+
+### cc2:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-17 00:17:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/hooks/pre-commit	2026-11-14 13:27:03
+@@ -584,7 +584,6 @@
+ bench/tests/test_an_exempt_span_covers_only_quotation_2026-11-14.py
+ bench/tests/test_the_board_cost_producer_runs_2026-11-14.py
+ bench/tests/test_the_suite_triage_producer_runs_2026-11-14.py
+-bench/tests/test_the_decision_heading_carries_his_four_fields_2026-11-17.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### cc2:attempt-1:scripts/build_decisions_file_2026-11-07.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/build_decisions_file_2026-11-07.py	2026-11-17 00:13:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/scripts/build_decisions_file_2026-11-07.py	2026-11-14 06:07:16
+@@ -637,7 +637,6 @@
+             #: this: a 12-hex value read aloud is hostile to listening,
+             #: which is the open question entry B104 puts to him.
+             "tid": mrb.ticket_id(ident),
+-            "tid_ref": mrb.ticket_ref(ident),
+         })
+     return mrb, rows
+ 
+@@ -796,22 +795,8 @@
+     # SKIPPED BY ITS ITERABLE rather than by re-indenting 40 lines under an
+     # `if`: simplest sufficient, and a diff a reader can check.
+     for i, r in enumerate(rows if detail else [], 1):
+-        #: ★ HIS FORMAT, 2026-11-16, verbatim: *"Issue ID  -> actual hash
+-        #: value recorded on disk -> brief but comprehensible descriptor and
+-        #: why it matters ... -> your recommendation and why?"* Measured on the
+-        #: 2026-11-14 delivery before this change: the entry code appeared in 0
+-        #: of 19 headings and the hash carried its kind prefix in 0 of 19, so
+-        #: neither of his first 2 fields was present.
+-        #:
+-        #: THE 2026-11-10 NOTE ABOVE IS NOT CONTRADICTED. It chose decision
+-        #: NUMBERS over BARE codes because a code with no subject beside it is
+-        #: unreadable aloud. Here the code sits immediately before the heading,
+-        #: which IS its subject, so Rule 32 is satisfied by construction and he
+-        #: gets the identifier he asked to be given.
+-        _code = (r.get("ident") or "").strip()
+-        hd = f"DECISION {i}. {_code + ' — ' if _code else ''}{r['heading']}"
+-        _ref = r.get("tid_ref") or r.get("tid") or ""
+-        tag = f" `[{_ref}]`" if _ref else ""
++        hd = f"DECISION {i}. {r['heading']}"
++        tag = f" `[{r['tid']}]`" if r.get("tid") else ""
+         _hd.append(len(L))
+         A(hd if spoken else f"## {hd}{tag}")
+         A("")
+
+### cc2:attempt-1:scripts/build_the_nineteen_panel_brief_2026-11-17.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/build_the_nineteen_panel_brief_2026-11-17.py	2026-11-17 00:17:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/scripts/build_the_nineteen_panel_brief_2026-11-17.py	2026-11-17 00:11:04
+@@ -312,7 +312,7 @@
+     print(f"  items: {len(OWED)}   hashes resolved: {len(tid_map)}   "
+           f"missing: {missing or 'none'}")
+     print(f"  brief length: {len(text)} chars, {len(text.splitlines())} lines")
+-    print("  recommendation markers surviving: 0 (the builder refuses otherwise)")
++    print(f"  recommendation markers surviving: 0 (the builder refuses otherwise)")
+     if a.dry_run:
+         print("  --dry-run: nothing written")
+         return 0
+
+### cc2:attempt-1:scripts/morning_report_build_2026-10-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/morning_report_build_2026-10-12.py	2026-11-17 00:13:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/scripts/morning_report_build_2026-10-12.py	2026-11-14 12:26:08
+@@ -1598,49 +1598,8 @@
+                 _TICKET_IDS[ref] = tid
+         _TICKET_IDS["__loaded__"] = ""
+     return _TICKET_IDS.get(str(ident).strip(), "")
+-
+ 
+-_TICKET_REFS: dict = {}
+-
+-
+-def ticket_ref(ident: str) -> str:
+-    """The ticket identifier AS RECORDED ON DISK: `kind:tid`, not the bare tid.
+ 
+-    ★ WHY A SIBLING RATHER THAN A CHANGED RETURN VALUE. The founder asked on
+-    2026-11-16 for "actual hash value recorded on disk", and what the decisions
+-    file printed was `[4f09b9135a60]` where the store holds `pf:4f09b9135a60`.
+-    The kind is not decoration: `tid_of` digests it, so the SAME sentence
+-    recorded as a question and as a proposed fix takes 2 distinct identities,
+-    and a bare digest cannot be looked up unambiguously with
+-    `scripts/register.py --kind`. Changing `ticket_id` itself would break the 2
+-    assertions that pin its contract in
+-    `bench/tests/test_a_listed_item_carries_its_ticket_id_2026-11-08.py`, for a
+-    gain that 1 new function delivers without touching anything.
+-    """
+-    if not _TICKET_REFS:
+-        import json as _json
+-        path = REPO / "bench" / "tickets" / "tickets.jsonl"
+-        if not path.is_file():
+-            _TICKET_REFS["__loaded__"] = ""
+-            return ""
+-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+-            if not line.strip():
+-                continue
+-            try:
+-                row = _json.loads(line)
+-            except Exception:                                  # noqa: BLE001
+-                continue
+-            ref = str(row.get("task_ref") or "").split(":")[-1].strip()
+-            tid = str(row.get("tid") or "").strip()
+-            kind = str(row.get("kind") or "").strip()
+-            if ref and tid:
+-                #: LAST WINS, matching `ticket_id`, because the store is
+-                #: append-only and the newest row is the current state.
+-                _TICKET_REFS[ref] = f"{kind}:{tid}" if kind else tid
+-        _TICKET_REFS["__loaded__"] = ""
+-    return _TICKET_REFS.get(str(ident).strip(), "")
+-
+-
+ def ticket_tag(ident: str) -> str:
+     """` [tid]` for rendering, or the empty string when no ticket exists."""
+     t = ticket_id(ident)
+
+### cc2:attempt-1:scripts/standards_currency_and_model_staleness_2026-11-13.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-13 02:56:11
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/scripts/standards_currency_and_model_staleness_2026-11-13.py	2026-11-17 00:16:35
+@@ -132,7 +132,7 @@
+         return False
+     if exclude_self:
+         try:
+-            if p.resolve().relative_to(REPO).as_posix() in APPARATUS:
++            if False and p.resolve().relative_to(REPO).as_posix() in APPARATUS:
+                 return False
+         except ValueError:
+             pass
+
+### cc2:attempt-1:scripts/what_is_safe_to_merge_to_main_2026-10-16.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/what_is_safe_to_merge_to_main_2026-10-16.py	2026-10-16 12:48:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_tmhseqoc/repo/scripts/what_is_safe_to_merge_to_main_2026-10-16.py	2026-11-17 00:18:39
+@@ -63,10 +63,48 @@
+ SHARED_STATE = ("bench/state/immune_memory.json",)
+ 
+ 
++class NoHistory(RuntimeError):
++    """This instrument was asked about git, and git was not there."""
++
++
+ def sh(*args: str) -> str:
+-    return subprocess.run(args, capture_output=True, text=True).stdout
++    """Run a git command, REFUSING rather than returning empty on failure.
+ 
++    ★ FOUND 2026-11-17 BY A FREE PANEL SEAT, and it is this project's own
++    recurring shape: a failure that does not look like a failure. This helper
++    discarded `returncode` and returned `stdout`, which is `""` when there is no
++    `.git`. Every caller then saw empty output: `changed()` returned `[]`, every
++    classification bucket collapsed to 0, `interval()` printed `n=0`, and the
++    script EXITED 0 while printing "a MERGE, not a fast-forward" and "B7's
++    repair held." A reader who did not already know git was absent would read an
++    all-zero all-clear. REPRODUCED, not reasoned: in the 2026-11-17 panel
++    sandbox, which carries no `.git`, the unpatched script exits 0 with 0 paths
++    differing and n=0 on every proportion.
+ 
++    WHY IT MATTERS HERE SPECIFICALLY. This instrument exists to answer whether a
++    620-plus-commit branch is safe to merge to `main` (entry B170, OPEN). An
++    instrument that answers "nothing differs, carry on" when it cannot see the
++    history is worse than no instrument, because its silence is
++    indistinguishable from a clean result.
++
++    NO NEW MECHANISM. `scripts/task_list_burndown_2026-09-11.py` already does
++    the right thing for the same cause -- "git log failed; refusing to report a
++    burn-down from no history" -- and that behaviour is reused rather than
++    reinvented, which is why this is a repair and not an addition.
++
++    AWAITS HIS RULING on entry B170 itself; this changes only whether the
++    instrument can lie, not what the merge decision should be.
++    """
++    r = subprocess.run(args, capture_output=True, text=True)
++    if r.returncode != 0:
++        detail = (r.stderr or "").strip().splitlines()
++        raise NoHistory(
++            f"`{' '.join(args)}` exited {r.returncode}; refusing to report a "
++            f"merge classification from no history. "
++            + (detail[0] if detail else ""))
++    return r.stdout
++
++
+ def changed() -> list[str]:
+     out = sh("git", "diff", "--name-only", f"{BASE}...HEAD")
+     return [l.strip() for l in out.splitlines() if l.strip()]
+@@ -170,4 +208,12 @@
+ 
+ if __name__ == "__main__":
+     answer_help(__doc__, __file__)
+-    raise SystemExit(main())
++    #: A REFUSAL IS A RESULT, AND IT MUST LOOK LIKE ONE. `NoHistory` is caught
++    #: here so the operator reads one plain line rather than a traceback, and the
++    #: exit status is non-zero so no caller can mistake "could not look" for
++    #: "looked and found nothing". See `sh` for the defect this closes.
++    try:
++        raise SystemExit(main())
++    except NoHistory as exc:
++        print(f"REFUSED: {exc}", file=sys.stderr)
++        raise SystemExit(2)
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-17 00:27:19
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/.cdsfl_deny_canonical_writes.sb	2026-11-17 00:12:41
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:experimental_notes/CDSFL_MASTER_TASK_LIST.md
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-17 00:17:51
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/experimental_notes/CDSFL_MASTER_TASK_LIST.md	2026-11-14 13:49:20
+@@ -315,7 +315,7 @@
+ **The finding, and it is unambiguous.** A commit-time guard was discussed on 5 separate occasions between 2026-08-25 and 2026-09-07 and **was never built**. All 4 installed hooks are `UserPromptSubmit` context injectors: they make 0 subprocess calls, emit 0 blocking decisions, and always exit 0. There is no git hook (14 files in `.git/hooks`, all `.sample`), no continuous integration, and `core.hooksPath` is unset. Nothing anywhere inspects repository state before a commit. **Commit `57d5a0e` reached HEAD on 2026-09-09 at 08:16:17 with the suite red**, which is the proof rather than the theory.
+ 
+ **The design, and why it is small.** Run only the files named in the hook's `GUARDS` list and refuse on non-zero exit. **THIRD CORRECTION 2026-09-10 04:20 BST, and this time with an instrument: `scripts/precommit_gate_cost_2026-09-10.py`.** The entry said 4 files; the hook names **7**, having gained `test_done_markers_carry_evidence_2026-09-10.py` (V1) and `test_task_list_markers_2026-09-09.py` (M2) since the sentence was written. The entry said 56 tests; the 7 files collect **277** (see the fifth correction below). **The 2 previous corrections were applied INSIDE each other**, leaving the entry reading "56 tests in 1.88 s (CORRECTED: '56 tests in 1.88 s (CORRECTED: '28 tests in 1.26 s' never reproduced)' never reproduced)" — a sentence quoting its own earlier wording as the figure it refutes, which is no longer a claim about anything. Three prose corrections to one figure and no instrument at any point. **The script reads the file list out of the hook rather than typing it**, so it notices the list changing, which is what all 3 corrections missed; its first version token-scanned and reported 5 of 6, caught by running it against a known case before believing it. **A wall-clock figure is treated differently from a count**: the count is exact, the timing is reported as a median with its full range over repeated runs and with the machine named, because a single number to 2 decimal places implies a precision a wall clock does not have. **Measured 2026-09-10 15:22 BST: median 6.92 s over 3 runs, range 6.53 s to 7.10 s** — an 8th guard was added at 15:20, `test_stated_gate_count_matches_measurement_2026-09-07.py`, after `wilson_interval_consistency.py` caught 2 of this session's own errors within an hour and the hook did not run it, on macOS 26.5.1 arm64 with Python 3.13.3 — and taken while the full suite was running concurrently, so it is an upper bound under load rather than a best case. Against 669.92 s for the full suite, which is what makes it survivable per commit; a full-suite gate would be bypassed within a day. Guarded by `bench/tests/test_precommit_gate_cost_2026-09-10.py`, which pins the file count and the collected count and asserts nothing about the wall clock, because a timing assertion fails on a loaded machine for reasons unconnected to the gate. **FOURTH CORRECTION 2026-09-10 14:20 BST:** the count moved again, 169 to 174, when task V7 added 5 tests to one of the 6 guard files — and `bench/tests/test_precommit_gate_cost_2026-09-10.py` went RED exactly as its own docstring says it should, which is the first time this figure has been caught by a machine rather than by a reader. The 2 sentences that stood here were a duplicate of the preceding one and a stale "These 4 files" left by the third correction. **FIFTH CORRECTION 2026-09-10 20:25 BST, AND THIS ONE HAS A STRUCTURAL CAUSE WORTH NAMING.** The count moved 178 → **277** and the median to **7.09 s over 5 runs, range 6.39 s to 8.51 s** on the same machine. The cause is not another typo: `test_done_markers_carry_evidence_2026-09-10.py` **parametrises one test per DONE entry**, so the gate's cost is a function of the task list, and this evening closed 12 entries. **The figure will go stale every time an entry is closed** — it is not a fixed price, and 4 of the 5 corrections to it were made by readers who assumed it was. That is the diagnosis the previous 4 corrections lacked. The treadmill is kept deliberately rather than removed: `bench/tests/test_precommit_gate_cost_2026-09-10.py` going red on each closure is what has kept the number true since 14:20, and a figure nobody is forced to refresh is exactly how the first 3 corrections became possible. **SIXTH CORRECTION 2026-09-10 23:12 BST, AND IT CHANGES THE SHAPE RATHER THAN THE NUMBER.** The count is **347** over **7** files, median **11.77 s** over 5 runs, range 11.50 s to 14.51 s on macOS 26.5.1 arm64 with Python 3.13.3 under load. The figure had been written TWICE — once in this prose and once as a literal in `bench/tests/test_precommit_gate_cost_2026-09-10.py` — so every correction was 2 edits, and the fifth left the test asserting 277 while the hook collected 347. **Two representations of one truth with no comparator is the shape `execute-do-not-grep` names, and it was inside the test whose whole job is to be the comparator.** The number now lives in exactly 1 place, the declaration on the next line, and the test READS it. Refresh with `python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0`.
+-<!-- gate-cost: files=310 collected=5096 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
++<!-- gate-cost: files=309 collected=5088 | refresh: python3 scripts/precommit_gate_cost_2026-09-10.py --write --repeats 0 -->
+ 
+ **Three wiring conditions**, without which the hook is itself an addition nothing reaches: it must live under a versioned `hooks/` directory, `core.hooksPath` must be set by the onboarding script rather than by hand, and a test must execute the hook and prove it refuses a deliberately broken tree.
+ 
+
+### fable:attempt-1:experimental_notes/data/morning_report_decisions.json
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/experimental_notes/data/morning_report_decisions.json	2026-11-17 00:25:18
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/experimental_notes/data/morning_report_decisions.json	2026-11-14 13:21:57
+@@ -1381,9 +1381,8 @@
+     "spoken_heading": "WHETHER THE CONVERGENCE GATE SHOULD KNOW HOW MANY SEATS ARE ANSWERING",
+     "still_owed": "a decision on whether to adopt the exact roster-aware requirement or the safe upper bound, and if the exact one, which of the 2 recorded correlation figures it should use: the pooled 0.405989 or the within-experiment 0.236014, where the gate is a within-run decision and the design currently defaults to the pooled one. It changes the requirement at 2 of 6 roster sizes.",
+     "title": "B77 — whether to adopt the roster-aware convergence window, which requires a run missing seats to stay quiet for proportionally longer before it may close",
+-    "what": "The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats raise fewer findings, so the gate cannot tell a quiet healthy panel from a quiet depleted one. The case is real rather than hypothetical, with 3 of 53 archived runs carrying a round in which fewer seats answered than were taking part. 3 candidate repairs exist, all written by seats and none adopted. They differ on 2 axes: whether the requirement is computed exactly, which costs a dependence on 2 measured correlation figures, or bounded safely, which costs extra quiet rounds; and whether the rule stays defined when the roster CHANGES between rounds, which is the only shape the archive actually holds. The full derivation, including where each design was falsified, is in the B77 entry of the master task list.",
+-    "why": "Yours because adopting it changes how a pre-registered convergence threshold is computed, and the standing directive on the decay curve reserves that surface to you. It also sits beside B76, where you already have the question of whether the 2 enabled convergence criteria may disagree, so the gate now carries 2 questions rather than 1. Nothing has been wired either way.",
+-    "_what_long_retired_2026-11-17": "The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats generate fewer findings, and the gate cannot tell a quiet healthy panel from a quiet depleted panel. An unadopted seat design written on 2026-10-07 repairs it by scaling the requirement, so a run missing seats has to stay quiet for proportionally longer before it may close. Its reasoning was checked rather than taken on trust, in 4 steps: the bound never asks for less than the exact requirement at any level of correlation between seats, 0 violations over 12,000 combinations, and it is exact rather than merely safe when seats are independent. 1 precondition the design does not state was found during that check, and is recorded with it: a panel whose critical rate is 0 gives an undefined requirement, and the design covers only the case of an empty roster. The case it addresses is real rather than hypothetical. 3 of 53 archived runs carry a round in which fewer seats answered than were taking part, and 1 of those is the failure of 18 July that the runner's own code describes in a comment. A SECOND REPAIR FOR THE SAME DEFECT WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED. A different seat, writing to the same brief on 2026-10-07, repaired it by counting quiet SEAT-ROUNDS rather than quiet rounds: the requirement becomes the roster size times the round count, and each round contributes however many seats actually answered. At a full roster, and at any roster that stays the same size, the 2 rules are literally the same rule, confirmed symbolically and over every roster size from 1 to 6 with 0 disagreements. They come apart when the roster CHANGES between rounds, which is the only shape the archive actually holds: all 3 degraded runs have a single short round with full rounds on at least 1 side. The first rule takes a single number for how many seats are live, so a run whose roster changed has to be given 1 value and the rule does not say which, and the 2 sensible choices disagree by as much as 6 rounds. On a run that lost 4 of 6 seats for 1 round and recovered, the second rule asks for 5 quiet rounds, while the first asks for 9 if you take the worst round and 3 if you take the last. The second rule has no such choice to make. It also aims at a bigger target: the stricter of the 2 convergence gates, which is the gate in force, has a fallback path where closing rests on the quiet count alone, and that gate takes 3 inputs of which none names the roster. A THIRD DESIGN WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED, which means this recommendation has changed twice. The same seat that wrote the first design also wrote a second design in the same brief, and that second design is the more complete. The 3 are not 3 rival answers once seen side by side. The first states the exact requirement and then takes a safe upper bound on it, which is why it needs no measured inputs. The third computes that same exact requirement, which costs it a dependence on 2 measured numbers. The second, from the other seat, restates the upper bound in a form that stays defined when the roster changes between rounds. The bound is never too small, checked over 36 combinations of roster size and correlation, and it is substantially looser: at a 1-seat roster it demands 18 quiet rounds where the exact requirement is 9 to 11, and at 2 seats 9 against 6 to 7. Every extra round is an extra round of every seat's time, and on a paid roster it is paid. WHAT DECIDES IT IS THAT THE THIRD DESIGN'S CASE FOR COMBINING ITS 2 PARTS IS MEASURED RATHER THAN ASSERTED, and it is the only such case found all day. Its own committed falsifier runs clean and shows each part curing a failure the other cannot: with only the record of who answered, the run is labelled degraded but still closes too early, at 2.4796 times its full-roster risk; with only the raised requirement, the risk is held but a reader sees the same record as a full-roster run; with both, it closes properly, is labelled degraded, and sits at 0.7125 of target. A healthy run pays nothing, and a run with no live seats does not converge at all. It also covers the gap the first design leaves, where a panel that never raises a critical finding gives an undefined requirement."
++    "what": "The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats generate fewer findings, and the gate cannot tell a quiet healthy panel from a quiet depleted panel. An unadopted seat design written on 2026-10-07 repairs it by scaling the requirement, so a run missing seats has to stay quiet for proportionally longer before it may close. Its reasoning was checked rather than taken on trust, in 4 steps: the bound never asks for less than the exact requirement at any level of correlation between seats, 0 violations over 12,000 combinations, and it is exact rather than merely safe when seats are independent. 1 precondition the design does not state was found during that check, and is recorded with it: a panel whose critical rate is 0 gives an undefined requirement, and the design covers only the case of an empty roster. The case it addresses is real rather than hypothetical. 3 of 53 archived runs carry a round in which fewer seats answered than were taking part, and 1 of those is the failure of 18 July that the runner's own code describes in a comment. A SECOND REPAIR FOR THE SAME DEFECT WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED. A different seat, writing to the same brief on 2026-10-07, repaired it by counting quiet SEAT-ROUNDS rather than quiet rounds: the requirement becomes the roster size times the round count, and each round contributes however many seats actually answered. At a full roster, and at any roster that stays the same size, the 2 rules are literally the same rule, confirmed symbolically and over every roster size from 1 to 6 with 0 disagreements. They come apart when the roster CHANGES between rounds, which is the only shape the archive actually holds: all 3 degraded runs have a single short round with full rounds on at least 1 side. The first rule takes a single number for how many seats are live, so a run whose roster changed has to be given 1 value and the rule does not say which, and the 2 sensible choices disagree by as much as 6 rounds. On a run that lost 4 of 6 seats for 1 round and recovered, the second rule asks for 5 quiet rounds, while the first asks for 9 if you take the worst round and 3 if you take the last. The second rule has no such choice to make. It also aims at a bigger target: the stricter of the 2 convergence gates, which is the gate in force, has a fallback path where closing rests on the quiet count alone, and that gate takes 3 inputs of which none names the roster. A THIRD DESIGN WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW RECOMMENDED, which means this recommendation has changed twice. The same seat that wrote the first design also wrote a second design in the same brief, and that second design is the more complete. The 3 are not 3 rival answers once seen side by side. The first states the exact requirement and then takes a safe upper bound on it, which is why it needs no measured inputs. The third computes that same exact requirement, which costs it a dependence on 2 measured numbers. The second, from the other seat, restates the upper bound in a form that stays defined when the roster changes between rounds. The bound is never too small, checked over 36 combinations of roster size and correlation, and it is substantially looser: at a 1-seat roster it demands 18 quiet rounds where the exact requirement is 9 to 11, and at 2 seats 9 against 6 to 7. Every extra round is an extra round of every seat's time, and on a paid roster it is paid. WHAT DECIDES IT IS THAT THE THIRD DESIGN'S CASE FOR COMBINING ITS 2 PARTS IS MEASURED RATHER THAN ASSERTED, and it is the only such case found all day. Its own committed falsifier runs clean and shows each part curing a failure the other cannot: with only the record of who answered, the run is labelled degraded but still closes too early, at 2.4796 times its full-roster risk; with only the raised requirement, the risk is held but a reader sees the same record as a full-roster run; with both, it closes properly, is labelled degraded, and sits at 0.7125 of target. A healthy run pays nothing, and a run with no live seats does not converge at all. It also covers the gap the first design leaves, where a panel that never raises a critical finding gives an undefined requirement.",
++    "why": "Yours because adopting it changes how a pre-registered convergence threshold is computed, and the standing directive on the decay curve reserves that surface to you. It also sits beside B76, where you already have the question of whether the 2 enabled convergence criteria may disagree, so the gate now carries 2 questions rather than 1. Nothing has been wired either way."
+   },
+   "task:B84": {
+     "evidence_line": "0 of 4 quantities the model needs are archive-derivable today: `confidence` and a HARD/SOFT class on 0 of 3,311 entries, Wilson [0.000000, 0.001159]; nu blocked by a missing baseline behind 224 of 962, 0.232848; 0 of 21 state keys describing the target across 59 runs; and 0 producers estimating d or p. 3 of the 4 are blocked by a missing recorded field, none by money. Substituting the archive's unusable nu proxy multiplies the floor by 2240/481 = 4.656965 and puts it above 1 at q = 0.2.",
+
+### fable:attempt-1:hooks/cy_monitor_gate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/cy_monitor_gate.py	2026-11-08 14:54:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/hooks/cy_monitor_gate.py	2026-11-17 00:21:38
+@@ -207,12 +207,24 @@
+     """
+     if os.environ.get("CDSFL_CY_NO_PGREP", "").strip():
+         return []            # test seam: isolate the pulse path from the machine
++    #: ★ B180, AWAITING FOUNDER RULING. The directive of 2026-05-18 says
++    #: "experiment or process", and on 2026-11-14 this gate was silent through
++    #: 2 full-suite runs of 3 h 19 m and 3 h 08 m because its only predicate was
++    #: the simulated-experiment runner. A 200-minute pytest over bench/tests is
++    #: a running process of this project; the pattern is scoped to the
++    #: repository's own suite so an unrelated pytest on this machine does not
++    #: refuse stops. The shell exclusion of 2026-11-08 applies to both patterns.
++    pids: list[str] = []
++    for pattern in ("run_simulated_experiment.py", r"pytest.*bench/tests"):
++        try:
++            out = subprocess.run(
++                ["pgrep", "-f", pattern],
++                capture_output=True, text=True, timeout=4)
++            pids.extend(x for x in (out.stdout or "").split() if x.strip())
++        except Exception:                                    # noqa: BLE001
++            continue
+     try:
+-        out = subprocess.run(
+-            ["pgrep", "-f", "run_simulated_experiment.py"],
+-            capture_output=True, text=True, timeout=4)
+-        pids = [x for x in (out.stdout or "").split() if x.strip()]
+-        return [p for p in pids if not _is_shell(p)]
++        return [p for p in dict.fromkeys(pids) if not _is_shell(p)]
+     except Exception:                                        # noqa: BLE001
+         return []
+ 
+
+### fable:attempt-1:hooks/local_resource_budget.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/local_resource_budget.py	2026-10-28 17:46:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/hooks/local_resource_budget.py	2026-11-17 00:21:18
+@@ -97,8 +97,19 @@
+ #: Negation suppresses BOTH, which is the whole point of the change.
+ _COMMAND_MENTION = re.compile(
+     r"\bpytest\b|python3?\s+-m\s+pytest", re.IGNORECASE)
++#: ★ B182, AWAITING FOUNDER RULING. Widened 2026-11-17 on the free panel's
++#: measurement: 120 of 150 genuine instructions on a verbs x noun-phrases x
++#: tails grid passed the gate, because only the phrasings the author tested
++#: ("the suite", "full board") were in this class. The widened set is the forms
++#: this project actually writes -- "test suite" covers "the/full/whole/entire
++#: test suite" by substring -- plus the bare path `bench/tests`, which stays in
++#: the NOUN class so it still needs a verb of execution nearby: a brief that
++#: merely CITES the path ("the guard lives in bench/tests/") must not trip the
++#: gate. The negation handling of 2026-10-17 is untouched.
+ _NOUN_MENTION = re.compile(
+-    r"\bfull board\b|\bthe suite\b|\bwhole suite\b|\bentire suite\b",
++    r"\bfull board\b|\bthe suite\b|\bwhole suite\b|\bentire suite\b|"
++    r"\bcomplete suite\b|\btest\s+suite\b|\ball tests\b|\bevery test\b|"
++    r"\btest battery\b|\bbench/tests\b",
+     re.IGNORECASE)
+ _IMPERATIVE = re.compile(
+     r"\b(run|runs|running|invoke|invokes|invoking|execute|executes|executing|"
+
+### fable:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-17 00:17:21
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/hooks/pre-commit	2026-11-14 13:27:03
+@@ -584,7 +584,6 @@
+ bench/tests/test_an_exempt_span_covers_only_quotation_2026-11-14.py
+ bench/tests/test_the_board_cost_producer_runs_2026-11-14.py
+ bench/tests/test_the_suite_triage_producer_runs_2026-11-14.py
+-bench/tests/test_the_decision_heading_carries_his_four_fields_2026-11-17.py
+ bench/tests/test_work_not_narrate_hook_2026-09-10.py
+ bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py
+ bench/tests/test_what_v_bar_counts_is_measured_2026-11-10.py
+
+### fable:attempt-1:scripts/build_decisions_file_2026-11-07.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/build_decisions_file_2026-11-07.py	2026-11-17 00:13:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/scripts/build_decisions_file_2026-11-07.py	2026-11-14 06:07:16
+@@ -637,7 +637,6 @@
+             #: this: a 12-hex value read aloud is hostile to listening,
+             #: which is the open question entry B104 puts to him.
+             "tid": mrb.ticket_id(ident),
+-            "tid_ref": mrb.ticket_ref(ident),
+         })
+     return mrb, rows
+ 
+@@ -796,22 +795,8 @@
+     # SKIPPED BY ITS ITERABLE rather than by re-indenting 40 lines under an
+     # `if`: simplest sufficient, and a diff a reader can check.
+     for i, r in enumerate(rows if detail else [], 1):
+-        #: ★ HIS FORMAT, 2026-11-16, verbatim: *"Issue ID  -> actual hash
+-        #: value recorded on disk -> brief but comprehensible descriptor and
+-        #: why it matters ... -> your recommendation and why?"* Measured on the
+-        #: 2026-11-14 delivery before this change: the entry code appeared in 0
+-        #: of 19 headings and the hash carried its kind prefix in 0 of 19, so
+-        #: neither of his first 2 fields was present.
+-        #:
+-        #: THE 2026-11-10 NOTE ABOVE IS NOT CONTRADICTED. It chose decision
+-        #: NUMBERS over BARE codes because a code with no subject beside it is
+-        #: unreadable aloud. Here the code sits immediately before the heading,
+-        #: which IS its subject, so Rule 32 is satisfied by construction and he
+-        #: gets the identifier he asked to be given.
+-        _code = (r.get("ident") or "").strip()
+-        hd = f"DECISION {i}. {_code + ' — ' if _code else ''}{r['heading']}"
+-        _ref = r.get("tid_ref") or r.get("tid") or ""
+-        tag = f" `[{_ref}]`" if _ref else ""
++        hd = f"DECISION {i}. {r['heading']}"
++        tag = f" `[{r['tid']}]`" if r.get("tid") else ""
+         _hd.append(len(L))
+         A(hd if spoken else f"## {hd}{tag}")
+         A("")
+
+### fable:attempt-1:scripts/build_the_nineteen_panel_brief_2026-11-17.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/build_the_nineteen_panel_brief_2026-11-17.py	2026-11-17 00:17:04
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/scripts/build_the_nineteen_panel_brief_2026-11-17.py	2026-11-17 00:11:04
+@@ -312,7 +312,7 @@
+     print(f"  items: {len(OWED)}   hashes resolved: {len(tid_map)}   "
+           f"missing: {missing or 'none'}")
+     print(f"  brief length: {len(text)} chars, {len(text.splitlines())} lines")
+-    print("  recommendation markers surviving: 0 (the builder refuses otherwise)")
++    print(f"  recommendation markers surviving: 0 (the builder refuses otherwise)")
+     if a.dry_run:
+         print("  --dry-run: nothing written")
+         return 0
+
+### fable:attempt-1:scripts/morning_report_build_2026-10-12.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/morning_report_build_2026-10-12.py	2026-11-17 00:13:32
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_uqmbeh6z/repo/scripts/morning_report_build_2026-10-12.py	2026-11-14 12:26:08
+@@ -1598,49 +1598,8 @@
+                 _TICKET_IDS[ref] = tid
+         _TICKET_IDS["__loaded__"] = ""
+     return _TICKET_IDS.get(str(ident).strip(), "")
+-
+ 
+-_TICKET_REFS: dict = {}
+-
+-
+-def ticket_ref(ident: str) -> str:
+-    """The ticket identifier AS RECORDED ON DISK: `kind:tid`, not the bare tid.
+ 
+-    ★ WHY A SIBLING RATHER THAN A CHANGED RETURN VALUE. The founder asked on
+-    2026-11-16 for "actual hash value recorded on disk", and what the decisions
+-    file printed was `[4f09b9135a60]` where the store holds `pf:4f09b9135a60`.
+-    The kind is not decoration: `tid_of` digests it, so the SAME sentence
+-    recorded as a question and as a proposed fix takes 2 distinct identities,
+-    and a bare digest cannot be looked up unambiguously with
+-    `scripts/register.py --kind`. Changing `ticket_id` itself would break the 2
+-    assertions that pin its contract in
+-    `bench/tests/test_a_listed_item_carries_its_ticket_id_2026-11-08.py`, for a
+-    gain that 1 new function delivers without touching anything.
+-    """
+-    if not _TICKET_REFS:
+-        import json as _json
+-        path = REPO / "bench" / "tickets" / "tickets.jsonl"
+-        if not path.is_file():
+-            _TICKET_REFS["__loaded__"] = ""
+-            return ""
+-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+-            if not line.strip():
+-                continue
+-            try:
+-                row = _json.loads(line)
+-            except Exception:                                  # noqa: BLE001
+-                continue
+-            ref = str(row.get("task_ref") or "").split(":")[-1].strip()
+-            tid = str(row.get("tid") or "").strip()
+-            kind = str(row.get("kind") or "").strip()
+-            if ref and tid:
+-                #: LAST WINS, matching `ticket_id`, because the store is
+-                #: append-only and the newest row is the current state.
+-                _TICKET_REFS[ref] = f"{kind}:{tid}" if kind else tid
+-        _TICKET_REFS["__loaded__"] = ""
+-    return _TICKET_REFS.get(str(ident).strip(), "")
+-
+-
+ def ticket_tag(ident: str) -> str:
+     """` [tid]` for rendering, or the empty string when no ticket exists."""
+     t = ticket_id(ident)

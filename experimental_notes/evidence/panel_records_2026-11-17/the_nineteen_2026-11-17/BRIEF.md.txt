@@ -1,0 +1,351 @@
+# BRIEF — the 19 decisions the founder owes, put to the free panel blind
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `experimental_notes/Decisions_Awaiting_You_2026-11-14_GENERATED.md` | `8d974251ee716fbe` | 87048 | 2026-11-14T14:38:33+00:00 |
+| `experimental_notes/CDSFL_MASTER_TASK_LIST.md` | `8a43f6f8f2861b66` | 2104704 | 2026-11-14T13:49:20+00:00 |
+| `scripts/register.py` | `11323e2a58405b59` | 11878 | 2026-10-31T01:52:08+00:00 |
+| `bench/dm/_manager.py` | `1371196a63e7758c` | 72005 | 2026-08-27T00:01:46+00:00 |
+| `bench/tests/test_precommit_gate_cost_2026-09-10.py` | `4189941fd6112722` | 14479 | 2026-11-13T07:47:07+00:00 |
+| `hooks/cy_monitor_gate.py` | `575ba790ccd07763` | 14034 | 2026-11-08T14:54:35+00:00 |
+| `hooks/local_resource_budget.py` | `387f4c7de3a4aeb9` | 13692 | 2026-10-28T17:46:45+00:00 |
+
+## REQUIRED SECTION 1 — The question
+
+**For each of the 19 numbered items below, recommend ONE of its stated options, or propose a better option the list does not contain, and say which of the project's formal standards your choice rests on.** Each item is a decision the founder has not yet made. Several carry an earlier ruling of his on a DIFFERENT question; where that is so the item says so, and the question put to you is the later one.
+
+**THE 3 FORMAL STANDARDS, IN THE FOUNDER'S OWN WORDS. Use them by name. A verdict that recommends an option without naming the standard it rests on has not answered.**
+
+**1. ADDITIVE — his wording of 2026-11-16, which REFINES the standing text and is the version in force for this round:** *"'additive' means that it must conform to the project's overall aims, objectives and specification, in addition to only applying a fix when a proposed fix can be shown to meaningfully enhance these if no previous fix exists and/or when it replaces/outperforms an existing fix, either previously in place, or proposed by you, or another model."* Read that as 2 clauses. A fix must FIT the project's aims, objectives and specification; and it must either fill a gap where no fix exists, or demonstrably outperform a fix that does exist — including one proposed by another seat in this very round. The standing form adds a third clause that still binds: an addition nothing reaches is not additive either, so a flag, gate or entry point with no caller and no test fails this standard as surely as a removal does.
+
+**2. SIMPLEST SUFFICIENT.** The smallest change that addresses the ROOT CAUSE and the downstream consequences, not the smallest change that makes a symptom go away. Complexity that cannot be done without is justified; complexity that merely could be used is not.
+
+**3. COMPOSABILITY — his words, 2026-10-02, verbatim:** *"Composability doesn't mean composing two solutions just because they can be composed. It means this principle should be applied where two composed solutions demonstrably provide a better, more robust and/or more efficient solution than either fix in isolation. Where a single fix out performs a composed one, that fix should continue to be preferred. In all cases any fix should also take the first two conditions fully into consideration also."* **So composability is a claim that REQUIRES A MEASUREMENT.** Reporting that 2 repairs do not conflict is the weak non-interference sense his definition excludes by name, and will be recorded as not having answered. Recommend a composition only with a measurement showing it beats either part alone on a NAMED property; where a single fix does as well, prefer the single fix.
+
+**WHAT YOU ARE NOT TOLD, DELIBERATELY.** This brief does not carry any recommendation of mine, and the options under each item have been SHUFFLED so their order carries no signal. **Do not open `experimental_notes/Decisions_Awaiting_You_2026-11-14_GENERATED.md`, its spoken twin, or any `Morning_Report_*_GENERATED*` file**: those hold my recommendations and the point of this round is an independent answer. Everything else in the repository is yours to read and run.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form the answer by RUNNING the machinery, not by writing about it. A seat that returns prose without having executed anything has not answered. The repository holds the producers behind most of these items under `scripts/`, their guards under `bench/tests/`, the live task list at `experimental_notes/CDSFL_MASTER_TASK_LIST.md`, and the ticket register reachable through `scripts/register.py --id <hash>`. Where an item names a file, read it. Where it names a producer, run it. Where a figure in an item matters to your choice, re-derive it rather than trusting the sentence.
+
+**EVERY NUMBER INSIDE THE 19 ITEMS IS QUOTED, NOT DECLARED, AND THAT IS SAID HERE RATHER THAN LEFT FOR YOU TO DISCOVER.** The items below are rendered from the committed decision records, so their figures are as those records state them. They are NOT re-executed by this brief's validator, which checks declared figures only. **Treat any number in an item as a claim about evidence rather than evidence**, and where one decides your recommendation, re-derive it from the named producer and say so. A figure you could not reproduce is itself a finding worth more than the verdict it was supporting.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+**For each item, deliver a verdict; where your recommendation implies code or text, WRITE IT INTO THE SANDBOX TREE at its real path.** A fix described in prose is not delivered, and a fix written to scratch space is destroyed when the sandbox is torn down. Where an item is a pure judgement with no artefact — whether a standard is adopted, whether a branch is merged — say so and give the reasoning instead; do not manufacture a file to satisfy this section.
+
+**A HARD CONSTRAINT ON EVERY ANSWER.** All 19 are the founder's to rule. Deliver analysis and any proposed artefact, and state plainly in each verdict that it awaits his ruling. Do not install anything as though it were settled.
+
+## REQUIRED SECTION 4 — What would refute you
+
+For each item, state the single observation that would show your recommendation wrong, and say whether the repository can produce that observation today. An item where nothing could refute your choice is an item where you are expressing a preference, and saying so plainly is a better answer than dressing it as a finding. **Where you disagree with the framing of an item — where the question as put is the wrong question — say so and give the right one. That is a finding, not a refusal.**
+
+## REQUIRED SECTION 5 — Output shape
+
+One block per item, in the order given, each carrying: the item code and hash; your chosen option letter or your own better option; the standard or standards your choice rests on, by name; the reasoning in at most a short paragraph; and your refuter. If you cannot reach a view on an item, say which item and why, rather than padding.
+
+**Disagreement with the brief's own framing — a REQUIRED field, and the last thing your reply must carry.** State your strongest disagreement with how this brief frames the work: an item posed as the wrong question, an option list that omits the real answer, a standard applied where it does not bear, or a figure quoted here that your own run contradicts. **Disagreement is preserved as information and is not to be smoothed: there is NO compelled convergence in this round.** A reply with nothing in this field is accepted only if you say so explicitly.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop when every one of the 19 carries a verdict, a named standard and a refuter. Do not continue past that to re-examine items already settled in your own answer, and do not spend the remaining budget enumerating immaterial observations.
+
+---
+
+## THE 19 ITEMS
+
+### ITEM 1. B77 — `pf:4f09b9135a60`
+
+**Headline.** The convergence gate's count side is ROSTER-BLIND, and a repair whose maths now checks out has sat unadopted since 2026-10-07.
+
+**What it is.** The live convergence check takes 10 parameters and not 1 of them names the roster. That matters because 1 of its 2 sides counts consecutive rounds in which no new critical finding arrived, and that count gets easier to satisfy as the roster shrinks: fewer seats generate fewer findings, and the gate cannot tell a quiet healthy panel from a quiet depleted panel. An unadopted seat design written on 2026-10-07 repairs it by scaling the requirement, so a run missing seats has to stay quiet for proportionally longer before it may close. Its reasoning was checked rather than taken on trust, in 4 steps: the bound never asks for less than the exact requirement at any level of correlation between seats, 0 violations over 12,000 combinations, and it is exact rather than merely safe when seats are independent. 1 precondition the design does not state was found during that check, and is recorded with it: a panel whose critical rate is 0 gives an undefined requirement, and the design covers only the case of an empty roster. The case it addresses is real rather than hypothetical. 3 of 53 archived runs carry a round in which fewer seats answered than were taking part, and 1 of those is the failure of 18 July that the runner's own code describes in a comment. A SECOND REPAIR FOR THE SAME DEFECT WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW. A different seat, writing to the same brief on 2026-10-07, repaired it by counting quiet SEAT-ROUNDS rather than quiet rounds: the requirement becomes the roster size times the round count, and each round contributes however many seats actually answered. At a full roster, and at any roster that stays the same size, the 2 rules are literally the same rule, confirmed symbolically and over every roster size from 1 to 6 with 0 disagreements. They come apart when the roster CHANGES between rounds, which is the only shape the archive actually holds: all 3 degraded runs have a single short round with full rounds on at least 1 side. The first rule takes a single number for how many seats are live, so a run whose roster changed has to be given 1 value and the rule does not say which, and the 2 sensible choices disagree by as much as 6 rounds. On a run that lost 4 of 6 seats for 1 round and recovered, the second rule asks for 5 quiet rounds, while the first asks for 9 if you take the worst round and 3 if you take the last. The second rule has no such choice to make. It also aims at a bigger target: the stricter of the 2 convergence gates, which is the gate in force, has a fallback path where closing rests on the quiet count alone, and that gate takes 3 inputs of which none names the roster. A THIRD DESIGN WAS FOUND ON 2026-11-02 AND IT IS THE DESIGN NOW, which means this recommendation has changed twice. The same seat that wrote the first design also wrote a second design in the same brief, and that second design is the more complete. The 3 are not 3 rival answers once seen side by side. The first states the exact requirement and then takes a safe upper bound on it, which is why it needs no measured inputs. The third computes that same exact requirement, which costs it a dependence on 2 measured numbers. The second, from the other seat, restates the upper bound in a form that stays defined when the roster changes between rounds. The bound is never too small, checked over 36 combinations of roster size and correlation, and it is substantially looser: at a 1-seat roster it demands 18 quiet rounds where the exact requirement is 9 to 11, and at 2 seats 9 against 6 to 7. Every extra round is an extra round of every seat's time, and on a paid roster it is paid. WHAT DECIDES IT IS THAT THE THIRD DESIGN'S CASE FOR COMBINING ITS 2 PARTS IS MEASURED RATHER THAN ASSERTED, and it is the only such case found all day. Its own committed falsifier runs clean and shows each part curing a failure the other cannot: with only the record of who answered, the run is labelled degraded but still closes too early, at 2.4796 times its full-roster risk; with only the raised requirement, the risk is held but a reader sees the same record as a full-roster run; with both, it closes properly, is labelled degraded, and sits at 0.7125 of target. A healthy run pays nothing, and a run with no live seats does not converge at all. It also covers the gap the first design leaves, where a panel that never raises a critical finding gives an undefined requirement.
+
+**Why it is his.** Yours because adopting it changes how a pre-registered convergence threshold is computed, and the standing directive on the decay curve reserves that surface to you. It also sits beside B76, where you already have the question of whether the 2 enabled convergence criteria may disagree, so the gate now carries 2 questions rather than 1. Nothing has been wired either way.
+
+**What is actually owed from him.** A decision on whether to adopt the exact roster-aware requirement or the safe upper bound, and if the exact one, which of the 2 recorded correlation figures it should use: the pooled 0.405989 or the within-experiment 0.236014, where the gate is a within-run decision and the design currently defaults to the pooled one. It changes the requirement at 2 of 6 roster sizes.
+
+**The options, shuffled.**
+A. **Adopt the safe upper bound instead**, in the seat-rounds form, if you would rather not depend on 2 measured numbers at all. It is never too small and it stays defined when the roster changes between rounds, at the cost of up to 9 extra quiet rounds at a very small roster.
+B. **Leave it unadopted** and accept that a run losing seats may close sooner than its pre-registered threshold intended. The status quo, and not neutral: at 2 live seats the chance of a falsely quiet window is 2.4796 times the full-roster value, and the gate cannot see the difference.
+C. **Adopt the exact version**, on the simplest sufficient and additive standards. It is 1 file, it holds the risk at or below the full-roster value at every roster size from 1 to 6, it costs a healthy run nothing, and its case for combining its 2 parts is the only measured one in this arc. Its reasoning is cross-checked 2 ways inside the design, agreeing with an independent numerical calculation to better than 1 part in 1,000,000,000, and a constraint solver confirms its 2 labels cannot both apply and that the quiet count alone cannot tell the 2 causes apart.
+
+### ITEM 2. B84 — `pf:4bcde489948b`
+
+**Headline.** (no headline)
+
+**What it is.** You ruled the ORDERING on 2026-11-01 — *"I accept your recommendation. Please implement it"* — against the recommendation that the difficulty estimator comes first, because until it exists the 4th convergence condition is *"a round counter wearing the name of a confidence measure"*. That ruling stands and is not reopened. **The question now before you is a different one, because the predicate-first check has since shown the estimator cannot be fitted at all.** Over 59 distinct archived runs — 65 directories less 6 identical twins — the structured run state holds 21 fields and 0 of them describe the TARGET before the run began.
+
+**Why it is his.** Every available field is an outcome, so the only features are produced by the very thing an estimator would predict: rounds against findings correlate at Pearson r = 0.836787, p = 1.533183e-16, confirmed by NumPy to 9 decimal places, with Spearman rho = 0.782540. An estimator fitted on those would return a number that rises with how many rounds have run — the exact failure your own words name, and it would then carry the authority of a measurement while being a counter. The variance is NOT the obstacle, which is worth saying because it would be the easy answer: rounds run 1 to 41 with a standard deviation of 7.5471, a coefficient of variation of 0.961729.
+
+**What is actually owed from him.** WHETHER TO RECORD A PRE RUN DESCRIPTION OF THE TARGET BEFORE BUILDING THE ESTIMATOR
+
+**The options, shuffled.**
+A. **Record only the 1 pre-run field this entry began with.** Narrower and still unblocks the difficulty estimator, at the price of leaving nu, q and the severity specification exactly where they are.
+B. **Write an estimator on the features that exist.** it would be fitted on outcomes and wrong in the way your own words predicted, and it would then carry the authority of a measurement while being a round counter.
+C. **Record the CLASS of missing reference points — 4 fields across 3 writers — and do not write any estimator yet.** Simplest sufficient: each is 1 field at a point that already writes, and the class costs little more than the instance while making 3 further quantities measurable. Additive: nothing is removed and no decision changes. The 4 are a pre-run target description, a baseline pass rate beside the post-fix one, and the 2 declared severity factors, `W(class)` and `confidence`.
+
+### ITEM 3. B94 — `pf:bb28392e8a9e`
+
+**Headline.** (no headline)
+
+**What it is.** Repairing the verified flag left 2 questions that are yours. First, `bench/dm/_manager.py:717` computes v-bar -- the mean verification score, 1 of the 4 capability dimensions (D_decay, v-bar, A, C) defined in the mathematical appendix and the glossary, and written `v_bar` in code -- as the fraction of a model's findings whose verified flag is true, and documents it as mean verification quality. It is 1 of the 4 fingerprint dimensions, and role assignment scores a model as the dot product of a role's weight vector with that fingerprint, with the tie-break placing v_bar second in an order whose own docstring says higher values win. The flag it reads can be set by an execution or by the model writing VERIFIED in its own reply, and nothing records which setter produced a value. Second, the same gate reading the same flag sits in 4 other runners, and in all 4 the only setter is `mark_verified` while none of them writes a falsifier verdict or references a sandbox verification anywhere.
+
+**Why it is his.** On v_bar: 38 of 50 archived observations are nonzero, so the dimension is not inert, but because the setter is unrecorded no claim is made that self-reporting has actually moved a role assignment, and that boundary is deliberate rather than cautious phrasing. The question is which quantity you want. If v_bar should measure how often this machine verified a model's findings, the parser should stop populating the flag from a reply and v_bar becomes a smaller honest number. If it should measure how often a model CLAIMS verification, it is correct today and the name is wrong. On the 4 runners: applying the canonical runner's new precondition there would make their close path unreachable instead of guarded, which is disabling a feature. This is the measured answer to your question about folding fixes back, and it is that a tested fix does not always fold back. The mislabel is also narrower than the defect: those 4 close with a bare resolve passing no adjudicator, so their closures are unlabelled rather than falsely attributed to a tool, which is why 840 of 1562 archived closures carry an empty adjudicator. The false tool label was v3 only and is fixed.
+
+**What is actually owed from him.** Your choice on 2 independent halves: whether v_bar keeps both the model's own claim and the machine's verification as 2 fields, and which of the 2 the fingerprint reads; and whether the 4 sibling runners get an execution path or keep a relabelled closure. They can be answered separately.
+
+**The options, shuffled.**
+A. **Or give the 4 runners an execution path, or leave them.** Porting falsifier machinery into runners whose experiments have already completed adds 0 reachable callers, which the symmetric form of the ADDITIVE standard counts as not additive. Leaving them is defensible on the ground that their archives are read rather than extended, but it leaves a close path resting on a model's word.
+B. **On the 4 runners, change their closure to record honestly what it rests on.** It is the SIMPLEST SUFFICIENT change that removes the untruth without removing the feature: a label change, not a behaviour change.
+C. **On v_bar, keep both and let you choose which the fingerprint reads.**, and it is the ADDITIVE option: record the model's claim and the machine's verification as 2 fields rather than 1, removing neither, and point the fingerprint at whichever you name. It was not taken unasked because changing what v_bar counts changes a measurement that drives the experiment.
+
+### ITEM 4. B125 — `pf:9aa8db33d2a3`
+
+**Headline.** A JOINT ROUND ASKED 2 SEATS ABOUT A FILE THAT HAD CHANGED SINCE THEY ANSWERED, SO THEIR CORRECT READING OF THE SNAPSHOT READ AS AN ERROR AGAINST THE LIVE STATE.
+
+**What it is.** A panel round runs in 2 halves. In the blind half each seat gets its own copy of the repository and answers without seeing the other. In the joint half both replies are put in front of each other, and the brief for that half refers to files by their path. The problem is that a seat's copy is a photograph taken when its sandbox was built, while the joint brief is read against the files as they are now. On this round a file gained 2 new sections between the halves, 35 minutes and 318 minutes after the blind replies landed, and 1 of those sections was written after the test board finished. A seat correctly reported that something was absent from the copy it could see, and the brief's wording presented that correct answer as a mistake.
+
+**Why it is his.** It needs your ruling because all 3 remedies cost something different and the choice is yours. It also matters more than an ordinary stale reference: it turns a seat's correct work into what looks like an invention, and that is the 1 kind of error a panel cannot catch itself, because the seat has no way to know the file moved under it. The seat said it nearly reported itself for fabricating, and was stopped only by comparing the opening bytes of its own copy against the quoted text.
+
+**What is actually owed from him.** WHETHER A JOINT PANEL BRIEF SHOULD QUOTE THE FILES IT REFERENCES, OR REFUSE WHEN THEY HAVE MOVED
+
+**The options, shuffled.**
+A. **Leave it to discipline: do not edit a referenced file between the 2 halves.** No code at all. This is the weakest of the 4 because this session broke that discipline twice without noticing, which is how the defect was found.
+B. **Only add the refusal.** Cheap and mechanical: compare each referenced file's hash against the blind half's copy and refuse to dispatch if they differ. It cannot see a file that was changed and then changed back, and it tells a seat nothing about what it should have been looking at.
+C. **Have the joint brief quote the state of every file it references, as at the blind half's dispatch, composed with a refusal when a referenced file has moved since.** Quoting makes what each seat actually saw checkable afterwards, which is the same reason the brief already quotes the seats' replies word for word. The refusal catches the other order of events, where the brief was written first and the file changed afterwards. Neither half does both jobs, so this is a composed fix and the reason is named. The cost is a longer brief and 1 more thing that can refuse a dispatch.
+D. **Only quote the files.** Makes the exposure verifiable without adding a way for a dispatch to fail, but a brief written before an edit still goes out carrying the older text with nothing to flag it.
+
+### ITEM 5. B141 — `pf:ffddb18b09a0`
+
+**Headline.** THE DESCRIPTOR RULE HE HAS NOW ASKED FOR TWICE, AND 9 GUARD FILES THAT WERE OFF THE COMMIT GATE.
+
+**What it is.** `bench/tests/test_precommit_gate_cost_2026-09-10.py` compares the guard-file count and the collected-test count declared in entry 1.1 against what `hooks/pre-commit` actually runs. It appears 0 times in that hook, so the guard whose whole job is to keep that declaration honest is itself outside the board it measures, and its assertion is unconditional with no skip. That is why the declaration was stale by 3 files before tonight while every commit came back green.
+
+**Why it is his.** A stale cost declaration is the only thing standing between the project and an undetected change in what the commit gate watches. 3 of 235 guard files were on the gate and undeclared, 0.012766, Wilson [0.004351, 0.036854]. The cost is that the collected-test half of the guard goes red by DESIGN whenever an entry closes, so putting the whole guard on the gate makes refreshing the pin mandatory at every commit.
+
+**What is actually owed from him.** Your ruling on which of the 3 options to take, since putting a guard on the commit gate changes what every future commit must satisfy and that is yours rather than mine
+
+**The options, shuffled.**
+A. LEAVE IT OFF, and accept that the declaration is checked only when the full suite is run. That is the status quo, and it is what allowed the 3-file drift.
+B. SPLIT IT, which is the recommendation: put the FILE-COUNT assertion on the gate, because that number only moves when someone deliberately edits the guard list, and leave the COLLECTED-COUNT assertion in the full suite where entry closures belong. This catches the drift found tonight at every commit and adds 0 forced refreshes.
+C. PUT THE WHOLE GUARD ON THE GATE. Nothing can drift, at the cost of refreshing the declaration whenever an entry closes -- which under your 2026-11-10 batching ruling is now rare rather than per-fix.
+
+### ITEM 6. B142 — `pf:970ab5074a95`
+
+**Headline.** THE SETTINGS SURFACE: THE ROLE SELECTOR CANNOT OFFER THE 4 ROLES THE UX BRIEF SPECIFIES, AND HIS CREDENTIAL STORE IS NOT IN THE BRIEF AT ALL.
+
+**What it is.** Section 10 of the authoritative UX design brief specifies a model-and-role selector whose Role column offers Orchestrator, Worker, Researcher and Classifier. The backend's `known_roles()` returns `collator`, `participant` and `player_manager` -- the harness's own panel roles -- so that column cannot be populated as designed. Measured against the brief, 3 of its 5 requirements are built; the roles and the peer catalogue are not. Separately, the password-protected credential store you described appears nowhere in the brief: its Advanced section lists the registry-tunable surface and the donation matrix, and the Advanced mockup is a stub.
+
+**Why it is his.** A registry role is not a label. It carries a merge signature and an alpha vector that the role-assignment scorer uses, so mapping 4 interface roles onto 3 harness roles changes how a run selects its models -- which B21 already records as your decision rather than mine. The alternative is a presentation layer the dispatcher ignores, which is honest but means the interface's roles never reach the harness. And the credential store touches secrets: today 10 keys sit in a plain-text environment file, so the direction of travel is clearly an improvement for how those keys are held, but how the store itself is built matters.
+
+**What is actually owed from him.** Your ruling on whether the 4 interface roles map onto the harness's 3 or remain labels, and whether the credential store is built now or after the runway
+
+**The options, shuffled.**
+A. DEFER the role work until after the runway and build only the peer catalogue, which adds capability without touching selection. If the runway matters more than the interface.
+B. ADD a presentation layer only: the interface offers the 4 names and the dispatcher keeps its own 3. Nothing about run selection changes, and the role column becomes labelling rather than control — which is honest only if the screen says so.
+C. **MAP the 4 interface roles onto the 3 harness roles, which is the recommendation**, with the mapping written down and executed by a test so it cannot drift. The interface's roles then really reach the dispatcher. The cost is that it changes how a run selects models, which is why it is yours and not mine.
+
+### ITEM 7. B143 — `pf:18582c4fed35`
+
+**Headline.** (no headline)
+
+**What it is.** You asked tonight whether severity had been abandoned in favour of a model vote. It had not: the model-asserted number is the original design, required by the finding schema since the 30th of March 2026, 7 months before the first severity panel, and 12 panel rounds since have been attempts to replace it. The real finding is narrower and worse. The formula in section 7.7 of the appendix needs 2 inputs. Reading the runner by syntax tree rather than by text search: the hard-or-soft class has 1 reader and 0 writers, and the confidence has 1 reader and 2 writers, neither of which writes the object the reader reads. So the formula defaults both inputs on every finding and the switch that would enable it stands off.
+
+**Why it is his.** 3 things follow, and each was verified here rather than taken from the panel record. First, the 1 confidence value the codebase does collect is parsed out of a model's own verdict text with a default of 0.5, which is the self-report your directive of the 8th of November declares inadmissible, so pointing the formula at the value that exists would reinstall the vote. Second, the proof mechanism proves the wrong quantity: it accepts a reproduction of the residual-risk number as evidence for a severity claim, and over 652 archived findings the 2 correlate at minus 0.5538, p = 1.152e-53, so the proof moves against the number it licenses. Third, and this answers your question about magic tricks directly: with only 2 consequence weights, 0.5 and 1.0, no cut above 0.5 can test consequence magnitude at all. Z3 returns unsat for a counterexample and SymPy gives the supremum of the soft branch as exactly 0.5, so moving the cut from 0.7 to 0.8, 0.9 or 0.95 reclassifies 0 findings. A real mathematician would see that immediately, which is why it must be fixed before Bench Run 2 rather than after.
+
+**What is actually owed from him.** Your ruling on whether the severity proof is repointed at the number it licenses, and whether the maths gains a 3rd consequence weight. The repoint has a different measured cost at each of its 3 call sites and is not reversible by a flag, so it is yours rather than mine. Collecting the 2 missing fields is already authorised by your ruling of the 8th of November and needs nothing further.
+
+**The options, shuffled.**
+A. REPOINT THE PROOF AND ADD A THIRD WEIGHT, which is the recommendation, taken in that order and with the collection done first by me without troubling you. Collecting the 2 fields is already yours by the ruling of the 8th of November, and B87, the entry on the severity specification asking for an inadmissible quantity, classes it as carrying out an instruction rather than a decision, so it proceeds either way. Repointing the proof makes a release door depend on a proof about the number it actually releases. Adding a third consequence weight strictly between 0.5 and 1.0 is the only change that makes any cut a test of magnitude, and section 7.7's own caution 3 used to point at 5 material-defect categories as a scale that exists, and that citation was found dead on the 11th of November and replaced: the file it named is 39 lines long, has no such section, and nothing in the repository enumerates those categories.
+B. COLLECT THE FIELDS AND STOP THERE, leaving both the proof and the weights as they are. This is the smallest step, it makes the formula computable in shadow, and it changes no gate, but it leaves the number carrying no consequence meaning.
+C. REPOINT THE PROOF ONLY and leave the maths at 2 weights, accepting that the critical cut tests the class and the belief but never the magnitude, and saying so plainly in the paper rather than letting a reader assume otherwise.
+
+### ITEM 8. B154 — `pf:10e2507dabf6`
+
+**Headline.** 2 DECISIONS ARE OWED TO HIM FROM THE NIGHT'S ENCODING WORK: WHERE THE FAILURE-MODE CRITICAL LEVEL SITS, AND WHETHER 22 DRAFT BOXES GO TO THE PANEL
+
+**What it is.** 2 decisions came out of the encoding work of the 11th and 12th of November, and neither blocks any other item, so both are reported rather than raised as blockers. The first is where the critical level sits on the engineering severity scale. The engineering domain now declares the AIAG-VDA failure-mode severity scale, whose published landmarks are 7 to 8 for high consequence and 9 to 10 for safety or regulatory consequence. The manifest declares the critical level at 7. The second is the 22 new expert encodings written against current published standards, all of them tagged DRAFT, which were authorised for panel adjudication in the morning.
+
+**Why it is his.** On the first: 7 is the conservative cut, because it admits MORE findings as critical than the standard's own safety line would. Moving it to 9 would align the declaration with the standard it cites, and would LOOSEN what the gate admits. A change that loosens a gate changes which findings reach a human, so it is not a change to take from a reading of a standard. On the second: the tier ladder is DRAFT, then CROSS_VERIFIED, then VALIDATED by a human, then OPERATIONAL. A panel moves a box exactly 1 rung, to CROSS_VERIFIED, and not to the top; the human validation rung stays separate and stays his. All 22 are tagged DRAFT on purpose so that 142 lines of detail is never mistaken for adjudicated authority, because density is not provenance.
+
+**What is actually owed from him.** Your ruling on whether the engineering critical level stays at 7 or moves to 9, and when the 22 draft encodings go to the panel. The free panel has answered the level question twice, blind and joint, and both seats recommend 7. The level is yours because it decides which findings the gate admits as critical.
+
+**The options, shuffled.**
+A. HOLD THE PANEL DISPATCH UNTIL THE 28 OLDER ENCODINGS ARE ENRICHED, SO THE PANEL SEES AN EVEN CORPUS. Defensible, and it delays adjudication of 22 boxes that are already written and already in use by the composer. The 22 would stay DRAFT meanwhile, which is the correct state for them, so the cost is time rather than risk.
+B. LEAVE THE ENGINEERING CRITICAL LEVEL AT 7 AND SEND THE 22 DRAFT ENCODINGS TO THE PANEL AT HIS CONVENIENCE. 7 is the conservative cut and nothing is lost by holding it: a finding admitted as critical that turns out not to be gets a second look, while a finding excluded by a looser cut gets none. The panel dispatch costs nothing on the free seats and moves the 22 boxes exactly 1 rung.
+C. MOVE THE ENGINEERING CRITICAL LEVEL TO 9 TO MATCH THE PUBLISHED SAFETY AND REGULATORY LINE. This is defensible and it is what the standard's own text says, but it loosens the gate, so the consequence of being wrong falls on findings that would no longer reach a human at all.
+
+### ITEM 9. B160 — `pf:055a68c4f4ae`
+
+**Headline.** THE FIGURE THE TURN HOOK PRINTS TO HIM RESTS ON A PROXY NO SIBLING PREDICATE AGREES WITH ON ANY ENTRY IT APPLIES TO
+
+**What it is.** Every turn prints a line saying how many open items await your ruling. For an item that already carries a ruling of yours, the test deciding whether anything is still owed is whether ANY date anywhere in that item's text is later than the ruling date. The intent behind it is exact and correct: a question raised after a ruling cannot have been answered by it. The implementation is a stand-in for that intent, and a dated progress note of mine is not a question. 3 tests for the same idea were computed side by side. The first is the one in use. The second asks whether a later date sits inside the asking sentence itself. The third asks whether an asking sentence is positioned after the first post-ruling date.
+
+**Why it is his.** They disagree on all 4 of the items they apply to, and not 1 of the 4 gets the same answer from all 3. The convergence gate item is yes, no, yes. The difficulty estimator item is yes, yes, no. The verified-flag item is yes, no, no. The joint-round item is yes, yes, no. The line you read says 8 of 12 open items await you, and 4 of those 8 are these. If the test in use is wrong, that figure is wrong, and the defensible floor is 4 rulings you have never given plus 4 permissions. No 4th test was written, deliberately, on this project's own rule that a surface defeating 3 predicates is the point to stop and raise it rather than to try a 5th time.
+
+**What is actually owed from him.** Your choice among the 4 options for the predicate behind the count the turn hook prints to you. Nothing further is owed on the measurement: the 3 candidate tests disagree on every entry they apply to, so no measurement can choose between them and the choice is a judgement about which direction of error you prefer.
+
+**The options, shuffled.**
+A. REPLACE IT WITH THE POSITION TEST, so an item is treated as awaiting you only when an asking sentence sits after the first post-ruling date. This would move 3 of the 4 off your list, leaving 5 of 12. It reads a document as if it were chronological, which these entries are not.
+B. LEAVE THE TEST AS IT IS AND CHANGE NOTHING. It errs toward telling you about an item rather than hiding it, and the suppression direction is the one this project has already had to withdraw once, on the 9th of November, after retiring asking sentences removed live questions from your list. The cost is that the printed figure can overstate what you owe, which a report can say in words instead.
+C. REPLACE IT WITH THE SENTENCE TEST, so an item is treated as awaiting you only when a later date sits inside the asking sentence itself. This would move the verified-flag item and the convergence gate item off your list, leaving 6 of 12 rather than 8. It is the tightest of the 3 and the most likely to hide something.
+D. KEEP THE TEST AND REPORT THE DISAGREEMENT BESIDE THE COUNT, so the line says 8 and the report names the 4 that 3 tests cannot agree on. Nothing is hidden and nothing is overstated without a note, at the cost of a longer line.
+
+### ITEM 10. B170 — `pf:ed54f9ccded2`
+
+**Headline.** (no headline)
+
+**What it is.** You checked the public repository and were told the recent severity work is not there, even though the last commit reads as very recent. Both halves of that are true. The shakedown branch carries a commit pushed at 18:46 on the 12th of November, which is the recent one you saw. The main branch carries a commit from the 30th of September, and the repository's default view is main, so what a reader browses is 43 days old. Nothing failed to push. The work is on GitHub, on a branch no default view shows. Checked file by file: the domain manifest, the severity panel full record, the severity proxy producer and the per-domain cut guard are all absent from main, and the mathematical appendix is present but 43 days stale, which is worse than absent because a reader cannot tell.
+
+**Why it is his.** This is not a discovery so much as a warning nobody acted on. Sv prints on every single commit that it is not on main, quotes your own ruling that main is the only branch that gets updated unless there is a stated reason to open an experimental branch, and warns that drift is what left main 16 days stale in August. The current drift is 2.7 times worse than that incident, and the merge has been listed as owed to you in the recovery document since at least the 7th of November. A warning that fires on every one of them and changes nothing is the loudest possible form of a mechanism nothing reaches, and that half is mine to fix. The ruling is yours because the branch was opened for a stated reason your own rule permits, so the question is whether the shakedown is over, and because a merge of over 620 commits across 43 days is not casually reversible.
+
+**What is actually owed from him.** WHETHER THE 620-PLUS COMMITS ON THE SHAKEDOWN BRANCH MERGE TO MAIN, OR THE SHAKEDOWN BRANCH BECOMES THE REPOSITORY DEFAULT
+
+**The options, shuffled.**
+A. KEEP THE SPLIT DELIBERATELY AND SAY SO PUBLICLY, with a note on main naming the active branch. Honest and nearly free, but it accepts that the default view stays stale and relies on a reader noticing the note.
+B. MERGE THE 620-PLUS COMMITS TO MAIN AND KEEP COMMITTING THERE. It restores your own stated rule, makes the work visible to any reader including the external models you check with, and removes the drift at its cause rather than warning about it. The cost is one merge with a real conflict surface across 43 days, and a full board afterwards before anything else lands.
+C. MERGE AND THEN RETIRE THE SHAKEDOWN BRANCH ENTIRELY, so there is one line of development. Simplest end state, largest single step, and it forecloses going back to a separate experimental branch without opening a new one.
+D. MAKE THE SHAKEDOWN BRANCH THE REPOSITORY DEFAULT. Cheapest by far, 1 setting on GitHub, and it makes every reader see the current work immediately. It leaves main as a 43-day-old artefact that still looks authoritative to anyone who navigates to it directly, which is the condition that caused this.
+
+### ITEM 11. B171 — `pf:5292c9025d73`
+
+**Headline.** HIS MID-TURN MESSAGE SILENTLY DISCARDS HIS OWN STANDING `d`, SO THE STOP GATE PRODDED PAST A BARRIER ITS OWN DOCUMENTATION CALLS NEVER OVERRIDDEN
+
+**What it is.** The stop gate lists 3 exemptions and its own documentation calls the first one, your instruction to discuss rather than proceed, never overridden. On the 12th of November it refused a stop 9 times in a turn whose message ended with that very instruction. Measured on the live transcript: the gate reads your commands as none. The founder messages in the window carry the discussion marker 3 times and then, fourth, your mid-turn question about a documentation sweep, which carries no command at all. 2 lines of the gate wipe the command set whenever a message of yours arrives after any tool call of mine, so your question wiped your own instruction.
+
+**Why it is his.** This is the same fault as the one repaired on the 8th of November arriving through a different door. Then it was your own next line that erased your command, and the repair was to take the union of commands across the turn rather than the last line alone. The union fixed the line path and left the mid-turn message path open. The reset is not wrong in itself, which is why this is not a simple revert: its own comment names the opposite failure it prevents, that a discussion marker from an earlier turn would otherwise silence the gate indefinitely. Both failures are real. The discriminator comes from your own rulings rather than from invention: an unmarked comment that ends in a question mark is a question, and a discussion marker is a barrier rather than an item in a sequence, so answering a question does not lift the barrier.
+
+**What is actually owed from him.** WHETHER TO ALLOW THE EDIT TO THE STOP HOOK THAT STOPS YOUR MID-TURN MESSAGES DISCARDING YOUR OWN DISCUSSION MARKER
+
+**The options, shuffled.**
+A. ALLOW A NARROWER EDIT that exempts only the discussion marker from the reset and leaves every other command resetting as now. Smaller change, but it treats 1 marker specially for no stated reason beyond this incident.
+B. ALLOW THE EDIT, so the reset clears your commands only when the new message carries at least 1 command, or is an imperative not ending in a question mark. A bare question then leaves a standing discussion marker standing, and any instruction from you still clears it, so a stale marker still cannot silence the gate indefinitely.
+C. LEAVE IT AND ACCEPT THE PRODDING, on the grounds that a mid-turn message is genuinely new input and the gate cannot know your intent. Costs nothing to build and means your discussion markers keep being discarded whenever you add a thought mid-turn.
+
+### ITEM 12. B175 — `pf:00cfce67090e`
+
+**Headline.** THE CLEAN SUITE MUTATES THE WORKING TREE AND THE GIT INDEX WHILE MEASURING THEM, AND 1 TEST COSTS 17 MINUTES TO ASSERT SOMETHING ITS OWN SUBJECT DOES NOT NEED
+
+**What it is.** 2 tests write to the live repository during a full-suite run, and 1 of them stages a file into the git index. Those 2 writes are mine to fix and the environment seam, an environment variable the generator honours so a test can redirect its writes, is already prepared and proven at 12 checks of 12. THIS DECISION IS THE THIRD PART AND IT IS YOURS: the mirrors test currently asserts that the whole commit hook exits successfully, which drags the whole guard board along. Asserting instead the effect of the hook's FIRST stage would let the test run in a throwaway repository, stop the index being written, and remove about 17 minutes from every full suite run.
+
+**Why it is his.** A measurement that alters its subject cannot speak about the subject, and the staged file would also enter the next commit unasked. But the 17-minute change is not a repair with a right answer: it changes WHAT A TEST ASSERTS. The hook's first stage sits 368 lines before the guard board, and the mirror ordering is the only thing the test claims to examine, so asserting the stage is the narrower and more honest claim. The cost is that it stops incidentally proving the whole hook passes -- real coverage, standing at 1 assertion over the hook's entire exit path, and precisely what costs the 17 minutes. The end-to-end behaviour is already covered by 2 other tests.
+
+**What is actually owed from him.** Your ruling on the 3rd part only. The 2 live-tree writes are mine to fix and the environment seam is already prepared and proven at 12 checks of 12. What is yours is whether the mirrors test asserts the effect of the hook's 1st stage instead of its exit code, because that changes what the test asserts, and it trades about 17 minutes off every full suite run against 1 assertion of end-to-end coverage.
+
+**The options, shuffled.**
+A. Give the mirrors test a scratch repository: REFUTED, the test's own comment records why a copied tree produces a false red.
+B. An environment seam the generator honours and the test sets for every generator: prepared, and P-passed at 12 checks of 12.
+C. Have the mirrors test assert the effect of the hook's first stage rather than its exit code: removes the real-repository run, stops the staging, and takes about 17 minutes off every full suite. And the argument against it is stated rather than hidden: it removes an assertion, so the removal clause of the additive standard applies and needs a committed measurement that the replacement dominates on a named property. The named property is suite cost at about 17 minutes a run, measured; what it loses is end-to-end coverage, at 1 assertion over the hook's whole exit path already duplicated by 2 other tests.
+
+### ITEM 13. B180 — `pf:aa6f7b704f10`
+
+**Headline.** THE GATE THAT ENFORCES HIS 60-SECOND MONITORING DIRECTIVE WAS INERT THROUGH BOTH OF TODAY'S 3-HOUR MEASUREMENTS
+
+**What it is.** `hooks/cy_monitor_gate.py` enforces your standing directive of 2026-05-18 to monitor a running experiment at about 60-second cadence. Its predicate is `pgrep -f "run_simulated_experiment.py"` and nothing else. Measured by execution while the B165 full-suite measurement was running: `cy.live_runs()` returned an empty pair while `pgrep -f "pytest bench/tests"` returned 1 pid. So through the 3 h 19 m 43 s run that ended 07:30:43 and the 3 h 07 m 58 s run that ended 12:40:10, the gate was silent. The monitoring happened because the directive is in the instruction files and was followed by hand; the gate itself was inert, which is the symmetric half of the additive standard.
+
+**Why it is his.** It is yours because widening it changes how often a gate interrupts you. A 200-minute pytest is plainly a running process and your directive says experiment or process, so I believe it should be seen. But that is a judgement about your own interruptions, not about correctness, and 2 full-suite runs a day would mean the gate prodding through both.
+
+**What is actually owed from him.** Your ruling on whether the monitoring gate widens to see a full-suite run. The gate exists to enforce your own 60-second directive, so widening it changes what prods you and when, which makes the scope yours. The measurement is already in hand: the gate was silent through both of the 3-hour measurements.
+
+**The options, shuffled.**
+A. Leave it scoped to simulated experiments. The status quo, and not neutral: the directive is then enforced only by my reading the instruction files each session, which is exactly the arrangement the additive standard calls an addition nothing reaches.
+B. Widen it to see a full-suite run, which is the recommendation. The directive is then enforced by a mechanism rather than by my remembering it, at the cost of the gate prodding during every suite run.
+
+### ITEM 14. B182 — `pf:9950e21f2aed`
+
+**Headline.** (no headline)
+
+**What it is.** `~/.claude/hooks/local_resource_budget.py` runs before every delegated Agent, Task and Workflow call and stops delegated work launching the project's heavy verification on a machine with 8 cores, 8 GiB and a measured heavy budget of 1. On 2026-11-13 it refused 2 adversarial-review briefs of mine, both of which FORBADE delegated heavy runs in as many words. Chasing that refusal, its live predicate was imported and driven over a systematic grid: 5 ordinary verbs of execution x 10 noun phrases this project uses for its own suite x 3 sentence tails, 150 cells, every one a genuine instruction that should be refused. 126 pass straight through.
+
+**Why it is his.** The gate's own docstring records the over-refusal class from 2026-10-17 and claims to have fixed it by requiring an imperative mention outside a negation. That half HOLDS: 3 of 3 prohibitions are correctly not refused. The other direction was never checked. 8 of the 10 noun phrases are completely blind, 15 of 15 each, including `bench/tests/` - the literal path a brief would name - and `the full test suite`, the most natural phrasing. Only `the suite` and `the full board` are caught, and those are the 2 phrasings the gate's author tested. The gate's own docstring argues why under-catching is the dangerous half: an author who cannot state a limit drops it or rewords around the matcher, and a delegated agent with no stated limit is more likely to invoke the tooling.
+
+**What is actually owed from him.** Your permission to edit the resource-budget hook, which by design cannot be changed without it, and your choice between widening the noun-phrase side and leaving the gate as it stands. The measured gap is 126 of 150 real instructions passing the gate.
+
+**The options, shuffled.**
+A. Leave the gate as it is and rely on the briefs themselves to state the limit. Cheapest, and defensible only if delegated briefs are always written by something that states limits - which is the assumption the gate exists because it failed.
+B. Widen the noun-phrase side to the forms this project actually writes, and add a case for a bare path such as `bench/tests/`. It closes the measured 0.84 gap and leaves the negation handling, which works, untouched.
+
+### ITEM 15. B185 — `pf:3142ce4958c8`
+
+**Headline.** EXPERT ENCODINGS GO STALE AGAINST CHANGING STANDARDS, AND THE ARCHIVE CANNOT SAY WHICH VERSION ANY PAST RESULT USED
+
+**What it is.** Standards revise slowly - 0.976190 per year combined across the 4 feeds - so the textbook-obsolescence risk is real but low-grade. The faster decay is that the archive cannot be re-interpreted: when a standard does change, nothing records which past results used the old scale. The design agreed with him is 3 files, not 1: formal standards, user preferences, and confirmations.
+
+**Why it is his.** The 3 files have radically different change rates, and that is what makes the split dominate rather than being taste. Tamper detection is not built from scratch: the project already seals directories into RFC 9162 Merkle chains with SHA-256 and refuses on tamper.
+
+**What is actually owed from him.** Your choice of exposure ceiling for the encoding currency check, 1 per cent against 0.5 per cent, and whether model and client version share the standards record or get their own. Neither is a correctness question: both trade how often you are prompted against how long a superseded standard can sit unnoticed.
+
+**The options, shuffled.**
+A. A tighter 0.5 per cent ceiling, needing a 7.31-day backstop. More checks, little gain given the session cadence.
+B. Model and client version recorded in the same file as standards, or in their own. They drift far faster - the installed client is 70 patch releases behind what the newest model needs.
+C. Exposure ceiling of 1 per cent, giving a 14-day backstop for absences, with the primary check on every session start. On his measured session pattern 0 of 74 gaps exceeded that ceiling, so the backstop fired 0 times over that pattern.
+
+### ITEM 16. B186 — `pf:d0f37996a791`
+
+**Headline.** HE PROPOSES A 4th FORMAL PROJECT STANDARD, REAL-WORLD APPLICABILITY UNDER A HUMAN-CONSEQUENCE CAVEAT, AND IT IS NOT YET ADOPTED
+
+**What it is.** The project has 3 formal standards: simplest sufficient, additive, and composability requires a measurement. Each is written in both instruction files with a decision rule a reader can apply. He has proposed a 4th, real-world applicability, scoped to where a change has a meaningful consequence for the human in the loop.
+
+**Why it is his.** It is raised rather than adopted because his words were 'I am considering' and 'I would suggest'. Adopting a standard from a deliberation would be an inference, and this project records a defect class where tentative or rejected advice acquired his authority through my prose. It is not redundant: the existing 3 all govern the SHAPE of a fix and none asks whether the fix matters to the person using it.
+
+**What is actually owed from him.** WHETHER TO ADOPT REAL-WORLD APPLICABILITY AS AN ADDITIONAL FORMAL STANDARD, AND IN WHAT EXACT WORDS
+
+**The options, shuffled.**
+A. Leave it as a consideration and decide later. Costs nothing now, but the case that prompted it recurs.
+B. Adopt it scoped exactly as he worded it, governing only where a change has a meaningful consequence for the human in the loop, and require that invoking it NAMES the consequence rather than merely asserting that a consequence exists.
+C. Fold it into the existing additive standard as a clause rather than standing it up as a 4th. Fewer standards to hold, at the cost of burying the one question the others do not ask.
+
+### ITEM 17. B190 — `pf:d837803feb6a`
+
+**Headline.** A PANEL ANSWERED A QUESTION HE ASKED AND THE ANSWER REACHED NO DOCUMENT HE HAS EVER BEEN GIVEN
+
+**What it is.** The standards-currency brief put 5 sub-questions to the free seats. 4 are reported in the spoken file he received. The 5th, on commensuration, is not reported in it at all - neither the spoken copy nor its markdown twin contains the words commensuration, disjunction or incommensurable.
+
+**Why it is his.** The seats did answer it. The full record holds 8 occurrences of the question and 10 of disjunction, including the resolution that disjunction is the unique fail-safe aggregator, which makes the remaining question a policy one and therefore his. The answer exists in a 115,529-byte record he has not been given, and the question it hands him reached neither a spoken file nor an entry.
+
+**What is actually owed from him.** Your ruling on whether the disjunction over per-scale critical cuts is adopted now or deferred, and your authorisation for severity-record stamping. The stamping is the precondition for measuring the aggregator at all, so deferring the first without authorising the second leaves the question unmeasurable.
+
+**The options, shuffled.**
+A. Defer the aggregator until severity-record stamping is built, so the choice can be measured rather than reasoned.
+B. Authorise the severity-record stamping separately - it is the precondition for measuring anything about commensuration.
+C. Adopt the disjunction, which is the recommendation: it cannot under-report a critical finding in any scale, so it is the fail-safe member. The empirical comparison cannot be run until severity records carry a scale field.
+
+### ITEM 18. B194 — `pf:a3b5ccfe2d28`
+
+**Headline.** (no headline)
+
+**What it is.** The composer builds every working seat's prompt from the core directive file. It classifies each block of that file as a HARD constraint by keyword, so a block containing MUST, NEVER or HARD is carried to every seat verbatim, and a block containing none of those words is not carried at all. An unratified draft split across 2 blocks therefore delivers its binding sentence and drops the header saying the draft is not binding. Part 1 is built and is mine: a marker that suppresses a block whatever its keywords, so a draft can sit in the canonical file and reach 0 prompts. PART 2 IS YOURS: whether the composer should also REFUSE a block whose own text announces it as proposed while carrying no marker.
+
+**Why it is his.** The defect was found by the cc2 seat, which was asked to write the paragraph you would paste for your proposed 4th standard and declined to write it where the brief pointed. Its stated reason was verified here by calling the predicate rather than taking its word: the header returns False and a 1-sentence body containing MUST returns True. Part 2 is yours and not mine because it is a TIGHTENING. It would refuse a commit that is currently allowed, and the author it refuses is the author who did not know the not-in-force marker exists, which is the whole population the fix is for. A tightening that fires on the people it is meant to help can be worse than the hazard, and that trade is a judgement rather than a measurement.
+
+**What is actually owed from him.** Your ruling on part 2 only. Part 1 is built, tested and on the gate, and needs nothing from you. What is yours is whether the composer should REFUSE an unmarked block that announces itself as proposed, because that is a tightening: it would refuse work currently allowed, and the author it refuses is the author who did not know the not-in-force marker exists.
+
+**The options, shuffled.**
+A. Leave part 1 as the whole fix: the marker exists, the directive documents it, and an author who misses it installs an unratified rule silently as before. Cheapest, and it keeps the refusal surface unchanged, but it relies on each author reading a section of a 32,000-character file, which is the arrangement the additive standard calls an addition nothing reaches.
+B. Report rather than refuse: warn on an unmarked announcing block and let the commit through. It preserves the evidence without blocking anyone, and it is weaker than it sounds here, because the author who missed the marker is also the author who will not read the warning.
+C. Require the marker: refuse any block whose text announces itself as proposed, draft or awaiting a ruling while carrying no marker. It is the only option that reaches the author who does not know the not-in-force marker exists, which is the population the whole fix is for, and the refusal names the marker, so the refusal itself teaches it. The cost is a new way for a commit to be refused, and the refusal can be wrong: a live directive discussing ratification would trip it unless the announcing phrase is matched strictly.
+
+### ITEM 19. B197 — `qs:633854939cf3`
+
+**Headline.** THE TASK LIST'S BRANCHING POINT ESTIMATE HAS CROSSED 1, SO THE LIST IS NOW GROWING ON BALANCE AND NOT MERELY FAILING TO EXCLUDE GROWTH.
+
+**What it is.** The full suite of 2026-11-14 failed the subcriticality check on the task list. The branching ratio is 1.033088 with a 95 per cent interval of [0.874617, 1.220273], over 281 entries added against 272 closed across 406 snapshots. You ruled on 2026-11-08 that an interval crossing 1 was accepted and the instruction was to keep closing. The guard was then narrowed to fire only on the point estimate, precisely so it would stay silent on what you had settled. It has now fired on the stronger condition.
+
+**Why it is his.** An interval crossing 1 says growth cannot be excluded. A point estimate above 1 says growth is the central estimate. Those are different claims and only the first carries your ruling. What moved it is visible in the last 2 snapshots: 322 entries with 274 closed on 2026-11-13, against 340 with 275 on 2026-11-14, so 18 were added and 1 closed in 2 days. Most of the 13 entries worked through overnight remain open because they await you, which is their correct state and is also the reason the ratio moved.
+
+**What is actually owed from him.** WHETHER THE BRANCHING RATIO REACHING 1 AS A POINT ESTIMATE, RATHER THAN AS AN INTERVAL THAT CROSSES IT, CHANGES YOUR 2026-11-08 RULING
+
+**The options, shuffled.**
+A. Direct a verified closing pass over open entries whose evidence is now green, which would move it honestly rather than by moving a threshold.
+B. Accept it and retire the subcriticality assertion entirely, keeping the figure as a reported number with no gate. This costs the alarm.
+C. Rule again that the ratio of 1.033088 stands and the instruction is still to keep closing, and re-scope the guard a second time to the interval's LOWER bound crossing 1, which is the next strictly stronger fact. The measurement stays, it is still reported, and it can still fire on something you have not ruled on.
+

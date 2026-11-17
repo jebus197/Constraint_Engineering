@@ -271,6 +271,18 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B56 the demotion operating point: work is COMMITTED and ruled 2026-11-02; the residue is that no live demotion mechanism exists to connect it to
+
+*Parked 2026-11-17T01:36:32+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## B159 half 2: the memory index has 7 characters before sv refuses a save and entries_left is 0; every pointer a date-based archive cut would move is three-star and several governed tonight's work, so the archiving CRITERION is his
+
+*Parked 2026-11-17T02:11:55+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (38)

@@ -556,7 +556,32 @@ class TestMemoryIndexAudit:
         for i in range(10):
             (memory_dir / f"file_{i}.md").write_text("body\n")
         audit = sv._audit_memory_index(memory_dir)
-        assert audit.headroom == sv._MEMORY_INDEX_LIMIT_CHARS - audit.chars
+        #: ★ AGAINST `sv`'s OWN REFUSAL, NOT THE LOADER'S LIMIT. This line
+        #: asserted `_MEMORY_INDEX_LIMIT_CHARS - chars` and so PINNED THE
+        #: DEFECT: `headroom` was deliberately changed on 2026-11-08 to measure
+        #: the distance to the point at which `_check_memory_index_size`
+        #: REFUSES, because the loader-limit form overstated every runway figure
+        #: by exactly the reserve -- its own docstring records 1,326 characters
+        #: and room for 11 entries reported where 76 characters and 0 remained.
+        #: This assertion has been red since that fix landed, which is the
+        #: `a guard can pin the defect as current behaviour` shape: the guard
+        #: went red BECAUSE the subject was repaired.
+        #:
+        #: THE 2 FRAMES BOTH EXIST AND MUST NOT BE CONFLATED, which is the same
+        #: error found in this project's own prose on 2026-11-17: the index sat
+        #: 7 characters from the refusal point and 507 from the loader's 25,000,
+        #: and a sentence pairing the first figure with the second's frame is
+        #: wrong in the direction that matters -- it reads as room that is not
+        #: there. The operative number for whether a save succeeds is the
+        #: distance to the REFUSAL, so that is what `headroom` reports and what
+        #: is asserted here. The loader relationship is asserted separately
+        #: below so neither frame is lost.
+        assert audit.headroom == audit.refuse_chars - audit.chars
+        assert audit.refuse_chars == int(
+            sv._MEMORY_INDEX_LIMIT_CHARS * sv._MEMORY_INDEX_REFUSE_FRACTION)
+        assert audit.headroom < sv._MEMORY_INDEX_LIMIT_CHARS - audit.chars, (
+            "the refusal-point headroom must be the SMALLER of the 2, or the "
+            "reserve has gone and the report is overstating the runway again")
         assert audit.median_entry > 0
         # THE PROPERTY, NOT THE FORMULA. This asserted the chars-only
         # quotient until 2026-10-29, which PINNED the defect: the loader

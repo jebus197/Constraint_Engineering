@@ -25,6 +25,8 @@ WHAT THIS PINS
 """
 from __future__ import annotations
 
+import contextlib
+import os
 import json
 import pathlib
 import re
@@ -47,6 +49,31 @@ def _run(*args, expect=None):
         assert r.returncode == expect, (
             f"exit {r.returncode}, expected {expect}\n{r.stdout[-900:]}")
     return r
+
+
+#: ★ A RESTORE THAT LEAVES THE MTIME MOVED IS A PARTIAL RESTORE, 2026-11-17.
+#: 2 tests below mutate the LIVE `morning_report_decisions.json`, run the
+#: generator against it, and restore the original bytes in a `finally`. The
+#: bytes come back; the MODIFICATION TIME does not. That is enough to break a
+#: sibling guard: `test_the_spoken_copy_is_not_older_than_its_record_2026-11-13`
+#: compares the delivered spoken copy against its sources, and for a file with
+#: uncommitted edits it compares MTIMES -- so running this file made that one
+#: red, every time, on a record whose content had not changed at all.
+#:
+#: FOUND EMPIRICALLY RATHER THAN BY READING: each of the 11 guards naming the
+#: record was run alone with the mtime sampled either side, and exactly 1 moved
+#: it -- this file. `a restore is itself a mutation` is already recorded in this
+#: project; this is that lesson applied to a timestamp instead of to bytes.
+@contextlib.contextmanager
+def _detail_restored_completely():
+    """Restore the live record's BYTES and its TIMESTAMPS on the way out."""
+    original = DETAIL.read_text(encoding="utf-8")
+    st = DETAIL.stat()
+    try:
+        yield original
+    finally:
+        DETAIL.write_text(original, encoding="utf-8")
+        os.utime(DETAIL, (st.st_atime, st.st_mtime))
 
 
 class TestItAgreesWithTheMarkers:
@@ -183,33 +210,28 @@ class TestTheTwoHalvesCannotDisagree:
         g = importlib.util.module_from_spec(spec)
         sys.modules["g2"] = g
         spec.loader.exec_module(g)
-        original = DETAIL.read_text(encoding="utf-8")
-        d = json.loads(original)
-        live_keys = [f"task:{i['ident']}" for i in g.task_items()
-                     if f"task:{i['ident']}" in d]
-        if not live_keys:
-            pytest.skip("no live item currently carries authored detail")
-        victim = live_keys[0]
-        d.pop(victim)
-        try:
+        with _detail_restored_completely() as original:
+            d = json.loads(original)
+            live_keys = [f"task:{i['ident']}" for i in g.task_items()
+                         if f"task:{i['ident']}" in d]
+            if not live_keys:
+                pytest.skip("no live item currently carries authored detail")
+            victim = live_keys[0]
+            d.pop(victim)
             DETAIL.write_text(json.dumps(d, indent=1, ensure_ascii=False),
                               encoding="utf-8")
             r = _run("--check", expect=3)
             assert f"NO AUTHORED DETAIL for a live item: {victim}" in r.stdout
-        finally:
-            DETAIL.write_text(original, encoding="utf-8")
 
     def test_authored_detail_for_a_dead_item_refuses(self):
-        original = DETAIL.read_text(encoding="utf-8")
-        d = json.loads(original)
-        d["task:THIS_ITEM_DOES_NOT_EXIST"] = {"title": "x", "what": "x", "why": "x"}
-        try:
+        with _detail_restored_completely() as original:
+            d = json.loads(original)
+            d["task:THIS_ITEM_DOES_NOT_EXIST"] = {"title": "x", "what": "x",
+                                                  "why": "x"}
             DETAIL.write_text(json.dumps(d, indent=1, ensure_ascii=False),
                               encoding="utf-8")
             r = _run("--check", expect=3)
             assert "no longer live: task:THIS_ITEM_DOES_NOT_EXIST" in r.stdout
-        finally:
-            DETAIL.write_text(original, encoding="utf-8")
 
     def test_underscore_keys_are_not_treated_as_items(self):
         """The file's own `_what_this_is` preamble must not read as a stale item."""
