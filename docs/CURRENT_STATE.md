@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 November 2026 06:01 GMT (2026-11-17T06:01:57+00:00)
+Generated: 17 November 2026 07:03 GMT (2026-11-17T07:03:40+00:00)
 
 ---
 
@@ -18,34 +18,28 @@ Generated: 17 November 2026 06:01 GMT (2026-11-17T06:01:57+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `bb315555` The full suite ran against a committed tree, and 8 of its 10 new failures were invisible to the board that passed it
-- **Committed:** 2026-11-14 14:55:49 +0000
-- **Remote (as of the snapshot, before the sv push):** up to date with origin/sim/shakedown-2026-09-29
+- **Last commit (the PARENT of the commit containing this file):** `725ec976` A board fix that was half a fix, and the 1-line completion that would have turned the gate into a rubber stamp
+- **Committed:** 2026-11-17 06:01:58 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 1
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `A  bench/logs/the_nineteen_2026-11-17/sandbox_harvest/cc2/attempt-1/files/experimental_notes/data/morning_report_decisions.json`
-- `A  bench/logs/the_nineteen_2026-11-17/sandbox_harvest/fable/attempt-1/files/experimental_notes/data/morning_report_decisions.json`
-- `M  bench/tests/test_a_response_is_not_a_ruling_2026-11-09.py`
-- `M  bench/tests/test_sv_rulings.py`
-- `A  bench/tests/test_the_board_verdict_reaches_the_refusal_2026-11-17.py`
-- `A  bench/tests/test_the_commit_board_can_be_watched_2026-11-17.py`
-- `A  bench/tests/test_the_decision_heading_carries_his_four_fields_2026-11-17.py`
-- `M  bench/tests/test_the_decisions_file_is_generated_2026-11-07.py`
-- `M  bench/tests/test_the_morning_report_is_generated_2026-10-12.py`
-- `A  bench/tests/test_the_nineteen_producers_run_2026-11-17.py`
-- `M  bench/tickets/sv_completions.jsonl`
-- `MM bench/tickets/tickets.jsonl`
-- `MM bench/tickets/tickets_searches.jsonl`
-- `M  docs/CURRENT_STATE.md`
-- `M  experimental_notes/CDSFL_Agent_Operational_Plan.md`
-- … and 50 more, not shown (list capped at 15 of 65 — run `git status --porcelain` for the full set)
+- `M bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py`
+- `M bench/tests/test_the_nineteen_producers_run_2026-11-17.py`
+- `M bench/tickets/sv_completions.jsonl`
+- `M bench/tickets/tickets.jsonl`
+- `M experimental_notes/CDSFL_MASTER_TASK_LIST.md`
+- `M experimental_notes/data/morning_report_decisions.json`
+- `M experimental_notes/data/output_hashes.json`
+- `?? experimental_notes/A_Fix_That_Would_Have_Disabled_The_Gate_2026-11-17.md`
+- `?? scripts/the_mirror_ordering_mutations_2026-11-17.py`
+- `?? scripts/what_a_cheap_preflight_is_worth_2026-11-17.py`
 
 ---
 
 ## Tests
 
-**17912 tests collected** at 17 November 2026 06:01 GMT, HEAD `bb315555` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**17925 tests collected** at 17 November 2026 07:03 GMT, HEAD `725ec976` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -75,6 +69,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `725ec976 A board fix that was half a fix, and the 1-line completion that would have turned the gate into a rubber stamp`
 - `bb315555 The full suite ran against a committed tree, and 8 of its 10 new failures were invisible to the board that passed it`
 - `6304f771 The 3 panel rounds he ordered, run blind and joint, and every round refuted something in my own brief`
 - `4a802768 One batch, as he instructed: his 16 verdicts worked through, the encoding layer built, and a sentence every seat is given that was false`
@@ -84,4 +79,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `e37fed9d sv: the Stop hook was overactive on his report, 4 faults fixed, 7 of 7 mutations red, and re-armed only after a green board -- plus 5 errors of my own caught before any of them shipped`
 - `b18b397f sv: the steering fix built on his lift, 11 of 11 source-text assertions resolved, my own orphan figure corrected from 33 to 6, and 6 new defects found by trying to carry out his instructions`
 - `3cb05d66 sv: the hook fix is installed on his word, a --help could have edited the tree, and the figure telling him he owes 8 rulings rests on a proxy no sibling predicate agrees with`
-- `75832cda sv: the board refused on 2 faults of mine and both are fixed; B155 owed 2 repairs where I had counted 1; 0 of the 12 open entries are now mine`

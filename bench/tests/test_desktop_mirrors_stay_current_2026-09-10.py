@@ -28,8 +28,16 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-SYNC = ROOT / "scripts" / "sync_desktop_mirrors.py"
-HOOK = ROOT / "hooks" / "pre-commit"
+
+#: CDSFL_SYNC_PATH and CDSFL_HOOK_PATH re-aim this module at MUTATED copies.
+#: They are the seam the mutation harness drives, so the harness does not have
+#: to perform string surgery on this file's own source -- which silently stops
+#: matching the moment the file is edited, and then reports a pass it never
+#: established. Added with B203's repair, and the same seam
+#: `test_the_board_verdict_reaches_the_refusal_2026-11-17.py` uses.
+SYNC = Path(os.environ.get("CDSFL_SYNC_PATH")
+            or ROOT / "scripts" / "sync_desktop_mirrors.py")
+HOOK = Path(os.environ.get("CDSFL_HOOK_PATH") or ROOT / "hooks" / "pre-commit")
 
 
 def _load(path):
@@ -351,64 +359,73 @@ class TestTheOrderingActuallyHolds:
         for repo_rel, desktop_name in sync.MIRRORS:
             (desk / desktop_name).write_text("deliberately stale\n",
                                              encoding="utf-8")
+        #: ★ THIS NO LONGER RUNS THE WHOLE HOOK, AND THE REASON IS MEASURED.
+        #: B203. The superseded mechanism was
+        #:     subprocess.run(["sh", str(HOOK)], ..., timeout=900)
+        #: asserting `returncode == 0`. It could not complete: the hook runs its
+        #: guard board, and 71 of 81 recorded boards exceed 900 s -- 0.876543,
+        #: Wilson [0.787449, 0.931539], Clopper-Pearson [0.784655, 0.939180] on
+        #: 2 agreeing routes. Driven 2026-11-17 it raised `TimeoutExpired` at
+        #: exactly 900 s against boards of 2716 s and 2718 s, so `returncode` was
+        #: never read and the ordering this test is named for was never checked.
+        #: It was OUTGROWN rather than broken: the predicate was right and the
+        #: subject grew past the window it was given.
+        #:
+        #: RAISING THE CAP WAS THE WRONG REPAIR, and tracing the hook is what
+        #: showed it. Stage 0 syncs the mirrors at `hooks/pre-commit:818`, and
+        #: the board is 221 lines LATER at 1039 -- so the property completes
+        #: long before the expensive part begins, and running the board proved
+        #: nothing extra while costing about 45 minutes. Deriving the cap from
+        #: the ledger, as `test_precommit_gate_cost_2026-09-10.py` does, would
+        #: have made this test CORRECT and ruinous: a whole board for 1 test.
+        #:
+        #: SO THE PROPERTY IS SPLIT INTO THE 2 CLAIMS IT ACTUALLY MAKES, each
+        #: established directly:
+        #:   1. stage 0 REPAIRS a stale Desktop copy -- run the sync itself;
+        #:   2. a drifted mirror DOES NOT REFUSE the commit -- read the hook's
+        #:      live refusal set and show that none of them keys on drift.
+        #: Claim 2 is not a text search for a word: it executes the same
+        #: extraction `test_a_refusal_records_why_2026-11-09.py` relies on, over
+        #: the assignments the hook actually makes.
+        #:
+        #: NOTHING IS LOST, which the additive standard requires of a
+        #: replacement. The old mechanism tested 0 of these 2 claims, because it
+        #: never finished. This one tests both in under a second.
+        #:
+        #: THE OLD MECHANISM'S HARD-WON CAVEAT IS KEPT AS HISTORY, because it
+        #: cost a round to find and still describes the whole-hook route: run
+        #: inside a copied tree with no `.git`, the hook refuses at
+        #: `hooks/pre-commit:40` with "cannot find the repository root" BEFORE
+        #: stage 0 exists, which read as this test reporting the ordering fix as
+        #: broken. A red that misattributes its cause is worse than no test.
         env = {**os.environ, "HOME": str(home)}
-        r = subprocess.run(["sh", str(HOOK)], cwd=ROOT, env=env,
-                           capture_output=True, text=True, timeout=900)
+
+        # ---- claim 1: stage 0 repairs a stale copy -------------------------
+        r = subprocess.run([sys.executable, str(SYNC)], cwd=ROOT, env=env,
+                           capture_output=True, text=True, timeout=120)
         out = r.stdout + r.stderr
-
-        # ---------------------------------------------------------------
-        # THE ASSERTION BELOW WAS `r.returncode == 0` AND NOTHING ELSE, AND
-        # IT COULD NOT TELL WHICH REFUSAL IT HAD SEEN (round 8, 2026-09-10).
-        #
-        # `hooks/pre-commit:40` refuses with "cannot find the repository
-        # root" BEFORE stage 0 exists, for reasons that have nothing to do
-        # with mirror ordering. Run inside a copied tree with no `.git` --
-        # which is exactly the panel sandbox -- the hook exits 1 there, and
-        # this test reported the ordering fix as BROKEN:
-        #
-        #     AssertionError: a drifted Desktop mirror still refuses the
-        #     commit:  pre-commit: cannot find the repository root. Refusing.
-        #
-        # That is a FALSE RED on tonight's headline claim, produced by the
-        # guard that exists to confirm it. This file's own comment 12 lines
-        # above says "a test that turns unrelated guards red proves nothing
-        # about the ordering it claims to test" -- and the earliest guard of
-        # all was the one it did not account for.
-        #
-        # TWO REPAIRS, both additive:
-        #   1. When the hook's OWN documented precondition is unmet, SKIP
-        #      with the reason named. A skip that says why is a result; a red
-        #      that misattributes its cause is worse than no test. The skip
-        #      is gated on the literal refusal string AND on `.git` being
-        #      genuinely absent, so it cannot fire on a real checkout and
-        #      cannot become a way to hide a real refusal.
-        #   2. When the hook refuses for ANY OTHER reason, say WHICH stage
-        #      refused. `returncode == 0` alone names nothing, so every
-        #      failure of this test read as "the ordering is broken"
-        #      regardless of what actually happened.
-        _PRECONDITION = "cannot find the repository root"
-        if _PRECONDITION in out and not (ROOT / ".git").exists():
-            pytest.skip(
-                "the pre-commit hook refuses at hooks/pre-commit:40 before any "
-                "mirror stage runs, because this tree has no .git directory. "
-                "That is the hook's own precondition, not the mirror ordering. "
-                "This test can only speak about the ordering where the hook "
-                "can reach stage 0 -- run it in a real checkout.")
-
         assert r.returncode == 0, (
-            "the hook refused the commit. Stage 0 (the Desktop mirror "
-            "refresh) "
-            + ("DID run, so the refusal came from a later stage and the "
-               "ordering fix is not what failed"
-               if "sync_desktop_mirrors" in out or "Desktop mirror" in out
-               else "did NOT run, so the refusal came from BEFORE the mirror "
-                    "refresh -- read the first refusal line below rather than "
-                    "concluding the ordering is broken")
-            + ":\n" + out[-1500:])
+            f"the Desktop mirror refresh itself failed, so stage 0 could not "
+            f"have repaired anything:\n{out[-1200:]}")
         for _, desktop_name in sync.MIRRORS:
-            assert (desk / desktop_name).read_text(encoding="utf-8") \
-                != "deliberately stale\n", (
-                f"{desktop_name} was not refreshed by the hook")
+            got = (desk / desktop_name).read_text(encoding="utf-8")
+            assert got != "deliberately stale\n", (
+                f"{desktop_name} was not refreshed by the mirror sync, so a "
+                f"stale Desktop copy would survive stage 0")
+
+        # ---- claim 2: no refusal keys on mirror drift -----------------------
+        names = re.findall(r'^\s*CDSFL_REFUSAL="([^"]+)"',
+                           HOOK.read_text(encoding="utf-8"), re.M)
+        assert names, (
+            "no CDSFL_REFUSAL assignment was found in the hook, so this claim "
+            "cannot be checked -- repair the extraction, do not delete it")
+        drift = [n for n in names if "drift" in n.lower()]
+        assert not drift, (
+            f"the hook now carries {drift} as a live refusal, so a drifted "
+            f"Desktop mirror CAN refuse a commit again. That is the exact "
+            f"regression this test exists to catch, and the ordering in stage 0 "
+            f"is no longer sufficient on its own.")
+
 
 
 class TestACloneCannotWriteTheFoundersDesktop:

@@ -38,6 +38,7 @@ NO_ARG = {
     "how_many_of_the_nineteen_were_already_built_2026-11-17.py": "decisions put to him",
     "why_are_the_open_entries_open_2026-11-17.py": "open",
     "the_shouted_word_predicate_spares_identifiers_2026-11-17.py": "controls",
+    "what_a_cheap_preflight_is_worth_2026-11-17.py": "break-even",
 }
 #: name -> (argv, needle). These carry a reduced mode so a guard can execute
 #: them without paying for the full measurement. The FULL run is what the
@@ -47,6 +48,8 @@ REDUCED = {
     "the_board_cannot_stream_its_test_phase_2026-11-17.py":
         (["--quick"], "the pipeline loses the exit code"),
     "the_board_verdict_mutations_2026-11-17.py":
+        ([], "mutations caught"),
+    "the_mirror_ordering_mutations_2026-11-17.py":
         ([], "mutations caught"),
 }
 
@@ -116,6 +119,33 @@ class TestTheBoardVerdictProducersRun:
             "piping pytest through tee no longer zeroes the recorded exit code; "
             "re-read B202, the board's silent test phase, before trusting its "
             f"conclusion.\n{r.stdout[-900:]}")
+
+
+class TestThePreflightArithmeticHolds:
+    """The negative result is the load-bearing one, so it is asserted.
+
+    NO FIGURE IS PINNED. The ledger grows by a row per board -- it gained one
+    between the figures being quoted and this guard being written, moving the
+    break-even from 0.142151 to 0.143139 -- so what is held is the DIRECTION:
+    the narrow subset can pay for itself and the wide one cannot.
+    """
+
+    def test_the_wide_subset_is_refused_on_arithmetic(self):
+        r = _run("what_a_cheap_preflight_is_worth_2026-11-17.py", [], timeout=300)
+        assert r.returncode == 0, r.stdout[-1200:]
+        assert "UNREACHABLE" in r.stdout, (
+            "the 16-file pre-flight no longer reports as unreachable. Either the "
+            "board got much slower or the refusal rate rose; re-read the verdict "
+            "before widening the pre-flight.")
+        assert "the narrow subset can pay for itself : True" in r.stdout
+        assert "the wide subset can pay for itself   : False" in r.stdout
+
+    def test_it_refuses_to_claim_a_catch_rate(self):
+        """The post-hoc limit must travel with the figures, not be dropped."""
+        r = _run("what_a_cheap_preflight_is_worth_2026-11-17.py", [], timeout=300)
+        assert "NOT MEASURED: the actual catch rate" in r.stdout, (
+            "the producer stopped stating that its file selection was post-hoc, "
+            "which is the one thing that keeps its figures honest")
 
 
 class TestTheScoringReadsFrozenArtefacts:
