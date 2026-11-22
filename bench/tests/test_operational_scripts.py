@@ -1512,15 +1512,40 @@ class TestUsageTextAdvertisesOnlyImplementedFlags:
         # required flag and 0 carry a required positional, so supplying the
         # named flags covers the whole directory.
         if "the following arguments are required" in proc.stderr:
-            _required = re.findall(
-                r"(?<![\w-])(--[A-Za-z][\w-]*)",
-                proc.stderr.split("the following arguments are required:", 1)[1])
-            assert _required, (
+            # ★ POSITIONALS TOO, AND THE 2026-11-04 PREMISE ABOVE IS STALE IN
+            # BOTH HALVES. It reads "1 script carries a required flag and 0
+            # carry a required positional". RE-MEASURED 2026-11-22 by walking
+            # every `add_argument` call in `scripts/` with `ast` -- not by
+            # executing them, because running a parserless script with a stray
+            # flag runs its BODY, and one such probe took over 60 s and had to
+            # be abandoned -- it is now **6 required flags and 1 required
+            # positional**. The positional is `terms`, in
+            # `has_this_already_been_found_2026-11-22.py`.
+            #
+            # SO THE FLAG-ONLY REGEX FOUND NOTHING FOR THAT SCRIPT and this
+            # check accused it of being unprobeable. The script is CORRECT:
+            # given its positional it answers "unrecognized arguments:
+            # --this-flag-does-not-exist" and exits 2, measured. **The PROBE was
+            # wrong, and the probe is what is fixed here** -- changing a correct
+            # script to satisfy a broken check is repairing the measurement,
+            # which is the 9-of-36 class this test names 15 lines above.
+            #
+            # THE NAMES COME FROM ARGPARSE'S OWN MESSAGE, never from source, so
+            # a renamed argument cannot silently fall out of coverage. Raised by
+            # the free panel's joint round on 2026-11-22 and verified here
+            # before adoption rather than taken on the seat's word.
+            _tokens = [x.strip() for x in
+                       proc.stderr.split("the following arguments are required:", 1)[1]
+                       .splitlines()[0].split(",") if x.strip()]
+            _flags = [x for x in _tokens if x.startswith("-")]
+            _positionals = [x for x in _tokens if not x.startswith("-")]
+            assert _tokens, (
                 f"{script.name} requires an argument this probe cannot name, so "
                 f"the unknown-flag path was never reached:\n{proc.stderr[:600]}")
             proc = subprocess.run(
                 [sys.executable, str(script),
-                 *[a for f in _required for a in (f, "PROBE")],
+                 *[a for f in _flags for a in (f, "PROBE")],
+                 *["PROBE" for _ in _positionals],
                  "--this-flag-does-not-exist"],
                 capture_output=True, text=True, timeout=60, cwd=str(REPO_ROOT),
             )

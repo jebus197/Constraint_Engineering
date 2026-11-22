@@ -126,28 +126,40 @@ class TestTheMeasuredAnswers:
         assert total > 100, total
         from statsmodels.stats.proportion import proportion_confint
         lo, hi = proportion_confint(valid, total, method="wilson")
-        #: ★ RESTATED 2026-11-06. THIS GUARD WAS OUTGROWN, NOT BROKEN. It
-        #: asserted `hi < 0.6` on the A1 finding that the chain covers a
-        #: MINORITY. Coverage then ROSE, and the complete board of 2026-11-05
-        #: failed here with [47.6717%, 60.4188%] -- the guard's own message
-        #: already said the A1 answer needed restating, so it failed for the
-        #: right reason. Measured 2026-11-06: 125 valid of 231 = 0.541126,
-        #: Wilson [0.476717, 0.604188] by statsmodels and by an mpmath closed
-        #: form agreeing to 1e-12, Clopper-Pearson [0.474528, 0.606654].
+        #: ★ RESTATED A 2ND TIME, 2026-11-22, AND THE GUARD ASKED FOR IT BY
+        #: FAILING -- which is what it was built to do. The history, so a reader
+        #: sees which way this has moved and how often:
         #:
-        #: THE INTERVAL STRADDLES 0.5, so the honest finding is now that
-        #: coverage is INDISTINGUISHABLE FROM HALF: not a clear minority
-        #: (`hi < 0.5` is False) and not a clear majority (`lo > 0.5` is
-        #: False). The pin is that straddle, NOT a loosened ceiling. Raising
-        #: `hi < 0.6` to `hi < 0.7` would hide the next move; this form goes
-        #: red the moment coverage becomes a clear majority, at which point the
-        #: finding is restated again. A guard that must be restated when the
-        #: system improves is working.
-        assert lo < 0.5 < hi, (
-            f"coverage is [{lo:.4%}, {hi:.4%}], which no longer straddles 50%. "
-            f"The A1 answer that the chain's coverage is indistinguishable from "
-            f"half needs restating: it is now a clear "
-            f"{'majority' if lo >= 0.5 else 'minority'}.")
+        #:     original    a clear MINORITY                      (A1's 1st answer)
+        #:     2026-11-06  125 of 231, Wilson [0.476717, 0.604188]  straddles 0.5
+        #:     2026-11-22  160 of 266, Wilson [0.541626, 0.658492]  CLEARS 0.5
+        #:
+        #: Today's interval excludes 0.5 at its lower bound of 0.541626, on 2
+        #: routes agreeing to 0.00e+00 (statsmodels Wilson and an mpmath closed
+        #: form), with Clopper-Pearson [0.539926, 0.660794]. So "indistinguishable
+        #: from half" is no longer supportable and A1's answer becomes: the chain
+        #: covers a MAJORITY of the rows offered for verification.
+        #:
+        #: ★★ AND THE TEMPTING SENTENCE IS FALSE. "Coverage ROSE" is NOT
+        #: supported. Against 2026-11-06's 125 of 231 = 0.541126: Fisher exact
+        #: odds ratio 1.280000, p = 2.030093e-01; Yates chi-square 1.604023,
+        #: p = 2.053340e-01 as a 2nd route. The 2 measurements are NOT
+        #: distinguishable from each other. What changed is that the INTERVAL
+        #: narrowed enough to clear 0.5 -- the denominator grew from 231 to 266 --
+        #: not that the underlying proportion is shown to have moved. Writing
+        #: only the first half and calling it an improvement would be the
+        #: flattering reading this project has been caught by before.
+        #:
+        #: THE PIN IS THE MAJORITY, NOT A WIDENED CEILING. This form goes red the
+        #: moment coverage stops being a clear majority, at which point the
+        #: finding is restated a 3rd time. The 2026-11-06 note refused to raise
+        #: `hi < 0.6` to `hi < 0.7` on the grounds that it "would hide the next
+        #: move"; this is that next move, and it was not hidden.
+        assert lo > 0.5, (
+            f"coverage is [{lo:.4%}, {hi:.4%}], which no longer clears 50% at its "
+            f"lower bound. The A1 answer that the chain covers a MAJORITY needs "
+            f"restating: it is now "
+            f"{'indistinguishable from half' if hi > 0.5 else 'a clear minority'}.")
 
     def test_rows_written_after_the_migration_are_reported(self, mod):
         """The half that is a defect rather than honest history."""

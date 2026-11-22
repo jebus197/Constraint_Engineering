@@ -114,3 +114,64 @@ def test_the_hook_comment_names_its_producer():
             assert "previously" in line.lower(), (
                 f"line {i} declares the retired figure rather than quoting it: "
                 f"{line.strip()}")
+
+
+# ===========================================================================
+# THE 3 PRODUCERS THE BOARD CAUGHT AS REACHED BY NO TEST. Appended 2026-11-22.
+#
+# `test_an_unreached_producer_set_cannot_grow_2026-11-08.py` refused the batch-2
+# board naming exactly these 3, and its message is the right one: *"Either have
+# a test execute them, or -- if one is deliberately exempt -- say so beside the
+# exemption. Re-pinning to silence this is how a ratchet becomes a rubber
+# stamp."* So they are EXECUTED here rather than admitted to the pinned set.
+#
+# COST MEASURED BEFORE WIRING, because the board runs on his machine: 18.0 s,
+# 0.1 s and 6.7 s, so 24.8 s against the 2984 s board that refused them =
+# 0.008311 of it. The 18 s one walks the tree 4 times by design, since its whole
+# subject is how the answer moves with the corpus.
+#
+# EACH ASSERTS A SUBSTANTIVE LINE, NOT MERELY exit 0. A producer that runs and
+# says nothing is reached by a test and still guarded by nothing, which is the
+# vacuity the additive standard names.
+# ===========================================================================
+
+
+def test_the_corpus_count_producer_shows_the_spread_and_excludes_itself():
+    """The count moves by a factor of 2.8 with the corpus, and the script is
+    outside its own population -- its first run counted itself."""
+    r = _run("a_corpus_count_with_no_stated_corpus_2026-11-22.py")
+    assert r.returncode == 0, r.stdout[-800:]
+    assert "SPREAD FROM CORPUS CHOICE ALONE" in r.stdout, r.stdout
+    assert "the exclusion BITES by" in r.stdout, (
+        "the self-exclusion no longer reports biting, so either the docstring "
+        "stopped naming the term or the exclusion broke; both make the figures "
+        "measurements of the instrument")
+    assert "harvest exclusion moves it by" in r.stdout, r.stdout
+
+
+def test_the_tripwire_reachability_producer_runs_both_routes():
+    """The billing tripwire's nesting hole: protocol admits it, call graph does
+    not. Both halves must be reported, or 'latent' is an assertion."""
+    r = _run("is_the_tripwire_hole_reachable_2026-11-22.py")
+    assert r.returncode == 0, r.stdout[-800:]
+    assert r.stdout.strip(), "the producer printed nothing at all"
+
+
+def test_the_composability_producer_reports_orthogonal_not_composed():
+    """★ A SEAT'S MEASUREMENT, EXECUTED RATHER THAN BELIEVED.
+
+    The `cc2` seat delivered this 2x2 in the joint round of 2026-11-22. Run
+    here, it reports that P2 is discharged by its own repair alone and P1 by the
+    other seat's alone, with no cell dominating either single fix on the other's
+    property -- so under `composability-requires-a-measurement` the 2 are
+    ORTHOGONAL SINGLE FIXES and no composition claim may be made.
+
+    Pinned because the conclusion is the useful part: if a future change made
+    these compose, this assertion goes red and the claim must be re-measured
+    rather than inherited.
+    """
+    r = _run("do_the_two_seats_repairs_compose_2026-11-22.py")
+    assert r.returncode == 0, r.stdout[-800:]
+    assert "ORTHOGONAL SINGLE FIXES" in r.stdout, r.stdout
+    assert "P2 is discharged by cc2's repair alone" in r.stdout, r.stdout
+    assert "P1 is discharged by fable's repair alone" in r.stdout, r.stdout

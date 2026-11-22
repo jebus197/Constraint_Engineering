@@ -1,0 +1,345 @@
+# Triage of the unadopted seat designs
+
+**Markdown companion to `Seat_Design_Triage_2026-11-02.txt`.**
+
+★ DERIVED FROM THAT FILE BY TRANSFORMATION, NOT RETYPED. Every figure below
+is lifted from the spoken file's own bytes, because re-running
+`scripts/triage_the_unadopted_seat_designs_2026-11-02.py` would report TODAY's
+numbers and the companion would then disagree with the snapshot it accompanies.
+A companion is re-rendered from its source, never copied and never re-measured.
+
+live public top-level names indexed: 6919
+
+## Triage Of The Unadopted Seat Designs
+
+candidates found: 25
+
+verdict           n  share
+
+| verdict | n | share | interval |
+|---|---|---|---|
+| NEEDS A READ | 23 | 0.920000 | Wilson 95% [0.750339, 0.977780] |
+| UNTESTED | 2 | 0.080000 | Wilson 95% [0.022220, 0.249661] |
+
+EVERY CANDIDATE, ONE LINE EACH
+
+
+### NEEDS A READ (23)
+
+
+- **`bench/capability_identity.py`** — 353 lines
+    1 of 6 name(s) already live (0.1667). Stable model identity, and a falsifier-writer order derived from measured outcomes.
+
+- **`bench/rule_amendments.py`** — 344 lines
+    1 of 8 name(s) already live (0.1250). The committed RULE-AMENDMENTS REGISTER, and the predicate it reconstructs.
+
+- **`bench/the_gate_fires_once_per_run_2026-10-25.py`** — 323 lines
+    2 of 5 name(s) already live (0.4000). The quiet arm fires ONCE per run, so a per-window rate cannot price it.
+
+- **`bench/degraded_convergence_2026-10-07.py`** — 288 lines
+    0 of 6 name(s) already live (0.0000). Roster-aware convergence: a degraded panel may converge, but never as a clean one.
+
+- **`bench/capability_estimator_2026-10-07.py`** — 286 lines
+    1 of 4 name(s) already live (0.2500). Measured-capability estimator. The tool's verdict is the ONLY input.
+
+- **`bench/promotion_gate.py`** — 264 lines
+    2 of 9 name(s) already live (0.2222). Promotion gate for the rung ladder - parameters DERIVED, not chosen.
+
+- **`bench/capability_ledger_2026-10-07.py`** — 260 lines
+    2 of 9 name(s) already live (0.2222). Measured-capability allocation: the estimator (req 3, 6) and the order (req 4, 7).
+
+- **`bench/derived_ladder_2026-10-07.py`** — 241 lines
+    0 of 7 name(s) already live (0.0000). The derived routing key: ordering by measured capability per unit of real cost.
+
+- **`bench/severity_instrument.py`** — 224 lines
+    0 of 4 name(s) already live (0.0000). The instrument-noise half of the severity ruler (C4, free panel 2026-10-18).
+
+- **`bench/severity_noise_sweep.py`** — 221 lines
+    0 of 4 name(s) already live (0.0000). Is a de-coarsened severity verdict REACHING the gate, or FITTED to the archive?
+
+- **`bench/seat_breaker_2026-10-07.py`** — 204 lines
+    0 of 3 name(s) already live (0.0000). The third seat state: a circuit breaker whose OPEN state is transient by construction.
+
+- **`bench/capability_estimator.py`** — 200 lines
+    0 of 4 name(s) already live (0.0000). Capability estimation and derived-key ordering for falsifier routing.
+
+- **`bench/roster_aware_quiescence_2026-10-07.py`** — 192 lines
+    2 of 4 name(s) already live (0.5000). Hold the spurious-convergence probability CONSTANT as the roster shrinks, and
+
+- **`bench/seat_circuit_breaker_2026-10-07.py`** — 159 lines
+    0 of 7 name(s) already live (0.0000). The third seat state between available and benched: a CIRCUIT BREAKER.
+
+- **`bench/severity_instrument.py`** — 157 lines
+    0 of 4 name(s) already live (0.0000). The severity ruler's instrument-noise channel: expected critical counts.
+
+- **`bench/stream_idle_timeout.py`** — 154 lines
+    1 of 3 name(s) already live (0.3333). Harvesting a model's output: an idle timeout on the stream, with a ceiling.
+
+- **`bench/degradation_aware_convergence.py`** — 144 lines
+    0 of 5 name(s) already live (0.0000). Degradation-aware quiet-window for the hardened convergence gate.
+
+- **`bench/roster_registry_2026-10-07.py`** — 132 lines
+    0 of 4 name(s) already live (0.0000). What a researcher must do to add or remove a model -- and the one list that is
+
+- **`bench/promotion_gate.py`** — 129 lines
+    0 of 3 name(s) already live (0.0000). A calibrated, bidirectional, non-absorbing promotion gate for the rung ladder.
+
+- **`bench/capability_identity.py`** — 124 lines
+    0 of 4 name(s) already live (0.0000). Stable model identity and measured-capability ordering for the routing ladder.
+
+- **`bench/model_identity.py`** — 118 lines
+    0 of 3 name(s) already live (0.0000). Opaque model identifiers derived from the dispatch-determining configuration.
+
+- **`bench/seat_circuit_breaker.py`** — 114 lines
+    0 of 3 name(s) already live (0.0000). Per-seat circuit breaker: the third state between available and benched.
+
+- **`bench/model_identity.py`** — 74 lines
+    0 of 2 name(s) already live (0.0000). Capability records keyed by a configuration digest, not a random identifier.
+
+
+### UNTESTED (2)
+
+
+- **`bench/idle_timeout_needs_a_backstop_2026-10-08.py`** — 94 lines
+    no companion test file in this seat's directory; 1 of 2 name(s) already live (0.5000)
+
+- **`bench/tmpd9lys10b.py`** — 10 lines
+    no companion test file in this seat's directory; 0 of 1 name(s) already live (0.0000)
+
+NOTHING WAS APPLIED. This records a verdict against each, which is
+what his ruling asked for. The 23 marked NEEDS A
+READ are the only ones a judgement is owed on, and each is 1 line.
+
+
+## Appendix, Hand-Written And Dated: Verdicts Recorded Against The 23
+
+appended 2026-11-02T14:44:03+00:00
+
+The body above is generated output and is a snapshot. This appendix is not
+generated. It exists so that a later reader does not re-triage designs that
+have already been judged, and so the outstanding count, 22, stays honest.
+
+Each judgement's durable home is its own entry in the master task list, not
+this file, because a verdict carries evidence and a snapshot does not.
+
+JUDGED: 23 of 23. OUTSTANDING: 0. Completed 2026-11-02T16:52:40+00:00.
+
+1. degraded_convergence_2026-10-07.py, 288 lines, roster-aware convergence.
+VERDICT: VERIFIED AND ADOPTABLE; the adoption decision is the founder's.
+Its claim about the live code is accurate 26 days on, its mathematics
+holds in 4 independently executed steps, and the degraded-roster case it
+addresses has occurred in 3 of 53 archived runs. It is the complement of
+entry C13 rather than a rediscovery of it, on the founder's own wording
+of 2026-10-08. 1 precondition the design omits was found during the
+verification and is recorded with it. Nothing was wired, because adopting
+it changes how a pre-registered convergence threshold is computed.
+Recorded as entry B77; register pf:4f09b9135a60.
+Producer: scripts/does_the_roster_window_bound_hold_2026-11-02.py
+Guard: bench/tests/test_the_roster_window_bound_is_sound_2026-11-02.py
+
+2. the_gate_fires_once_per_run_2026-10-25.py, 323 lines, the quiet arm.
+VERDICT: ITS CONCLUSION IS ALREADY ADOPTED, and it corroborates the live
+value by a third route rather than changing it. The quiet arm fires once
+per run and then the run closes, so a per-window rate cannot price it.
+Re-run against the archive: 7 consecutive quiet rounds occur 0 times in 66
+reports, the longest run anywhere is 6, and 22 reports are long enough to
+hold a 7-window while 0 reach such a window. The required quiet run was reverted
+from 7 to 3 on the founder's ruling of 2026-10-27, 2 days after this
+design was written. Its contribution corrected entry C13, which still
+asserted 7 against a live value of 3 and against entry C12, 20 lines
+above it. No action owed.
+
+3. seat_circuit_breaker.py, 113 lines, the third state between available and
+benched. VERDICT: 2 OF ITS 3 NO-BENCHING ARGUMENTS VERIFY; THE THIRD IS
+INACCURATE AS WRITTEN. The state set holds only CLOSED, OPEN and
+HALF_OPEN, with no terminal value and no removal method, and every mention
+of capability or fingerprint is confined to its docstring with no code
+reaching the estimator. Its claim that the aliveness probe constants are
+reused rather than duplicated does not hold: the module imports nothing
+from the aliveness module at all and takes a probe callable instead, which
+is the better design but makes the reuse a property of a call site that
+does not exist. Not adopted; no decision owed.
+
+4. degradation_aware_convergence.py, 143 lines, the Fable seat's answer to
+the same defect as item 1. VERDICT: IT DOMINATES ITEM 1 AND IS NOW WHAT
+ENTRY B77 RECOMMENDS. The 2 rules are identical at a constant roster,
+confirmed symbolically and over every roster size from 1 to 6 with 0
+disagreements. On a roster that varies between rounds, which is the only
+shape the archive holds, item 1 needs a convention it does not state and
+the 2 available readings differ by as much as 6 rounds, while the seat-rounds rule is
+defined. It also targets the hardened convergence gate's fallback path, where closure
+rests on the quiet requirement alone. Recorded in entry B77.
+
+5. capability_identity.py, 352 lines, stable identity and a measured order.
+VERDICT: ITS CENTRAL CLAIM IS TRUE AND UNDERSTATED. It names 2 seats
+mapped onto a stale phenotype; the measured count is 4 of 6. 0 of its 6
+exported names are live. Recorded as entry B79, where the renaming is the
+founder's decision and the roster descriptions, a separate and smaller
+fault, were fixed.
+
+6. model_identity.py, 117 lines, identity as a content address.
+VERDICT: SAME FINDING AS ITEM 5, by a different route, and covered by the
+same entry. It argues the identifier must be a hash over the
+dispatch-determining configuration so that 2 identical configurations are
+not split and 1 is not merged. Nothing is adopted and the decision is the
+same decision.
+
+7. rule_amendments.py, 343 lines, the rule-amendments register.
+VERDICT: ADOPTED IN SUBSTANCE, BY A SIMPLER ROUTE, AND NOTHING IS OWED.
+The live brief validator carries the mechanism inline, with its register
+at bench/directives/universal/figure_amendments.json holding exactly the
+amendment this design was written for, and it enforces every
+anti-laundering property the design argued for: the register must name the
+figure and the brief, the superseded and replacement values must differ,
+the producer must actually print the replacement, and a missing or
+malformed register accepts nothing. The design's 343 lines are superseded
+by roughly 55 inside the validator, which the simplest sufficient standard
+prefers. A side finding is recorded separately: the historical-figure
+fallback those checks sit beside is available for only 4 of 192 declared
+figures, because 48 of 49 producers cannot be asked what they printed as
+of a past date.
+
+8. roster_aware_quiescence_2026-10-07.py, 191 lines, the same question as
+items 1 and 4, answered a third time BY THE SAME SEAT AS ITEM 1.
+VERDICT: ADOPT THIS ONE. It supersedes both. Item 1 states the exact
+requirement and then takes a safe upper bound on it; this computes that
+same exact value; item 4 restates the bound in seat-rounds. The bound is
+never too small, 0 of 36 roster-by-correlation cases, and is substantially
+looser: 18 quiet rounds at a 1-seat roster against an exact 9 to 11. What
+decides it is that this design's case for combining its 2 parts is
+MEASURED rather than asserted, and it is the only such case found in the
+whole triage: its committed falsifier runs clean and shows the record
+alone still closing too early at 2.4796 times target, the raised
+requirement alone holding the risk but misreporting a degraded run as
+clean, and both together closing properly at 0.7125 of target. A healthy
+run pays nothing. Cross-checked against an independent numerical
+calculation to better than 1 part in 1,000,000,000, with a constraint
+solver confirming its 2 labels are mutually exclusive. 1 parameter is open
+and is the founder's: which of 2 recorded correlation figures it should
+use. Recorded in entry B77, whose recommendation this corrects for the
+second time.
+
+9. severity_instrument.py, 223 lines, the instrument-noise half of the
+severity ruler. VERDICT: ITS ANALYSIS IS SOUND AND ALREADY IN THE
+CANONICAL RECORD; THE CODE IS NOT ADOPTED. The appendix already measures
+the per-assignment noise in the severity number, and 82 of 273 identical
+defects land on opposite sides of the 0.7 cut. Its claim that the
+effective-severity specification cannot carry the number's ordering
+through to the gate was verified 3 ways here: a constraint solver returns
+unsatisfiable on the negation, an exact-rational sweep over 303 pairs
+disagrees 0 times, and symbolic algebra confirms the bound. 0 of its 5
+exported names are live.
+
+10. severity_noise_sweep.py, 220 lines, is a de-coarsening REACHING the gate
+or FITTED to the archive. VERDICT: THE SHARPEST INSTRUMENT IN THE TRIAGE,
+and unadopted. It distinguishes the 2 cases by whether the departing set
+grows monotonically with the assumed noise, which no single verdict count
+can do -- which is why 2 seats could hold opposite positions on the same
+number. Nested at 14 of 14 swept values on the archive.
+
+11. severity_instrument.py, 156 lines, the joint round's reconstruction.
+VERDICT: IT REFUSES ITS OWN COMPOSITION ON A MEASUREMENT, which is the
+founder's standard applied correctly by a seat. Re-running its producer
+against today's archive, the figures have MOVED and the refusal is now
+better supported than when made: the composed form has gone from 0 one-way
+violations to 1, on the run of 2026-11-02, where it would permit a
+convergence the live indicator refuses. The smoothing alone remains clean
+at 0 violations across all 65 catalogues. That run is the same one entry
+B76 is about, so 2 independent instruments now say it closed too
+permissively.
+
+12. stream_idle_timeout.py and idle_timeout_needs_a_backstop_2026-10-08.py,
+both seats, on harvesting output when a model is done rather than at an
+arbitrary wall clock. VERDICT: BOTH CORRECT, AND THE LIVE CODE TOOK A
+BETTER ROUTE. Each names the same 2 adversaries independently and the
+fable design demonstrates them on real subprocesses with a positive control:
+a heartbeat stopped only by the total cap at 6.0 seconds, a buffered
+worker killed at 2.0 seconds having emitted 0 bytes, and the SAME worker
+completing at 3.1 seconds once unbuffered. Its composability argument is
+measured rather than judged. But the live orchestrator already preserves
+partial output through a timeout and tracks how many tool calls a seat
+has made, which separates working from churning from dead, which an
+idle byte timer cannot, and it
+explicitly sequences per-call timestamps first and the derived bound
+second. Those timestamps exist in the streaming path and 0 of 11,601
+archived call rows carry such a stamp, so the bound is still not
+derivable. The
+next step is a tool-log sink on a run that is already happening, not a
+design adoption.
+
+13. promotion_gate.py, both seats, 263 and 128 lines. VERDICT: EVERY FIGURE
+VERIFIES AND THE FOUNDER'S RULE NEEDS A THRESHOLD, NOT MORE ATTEMPTS.
+Promote-on-1-success is broken under both readings: absorbing keeps a
+0.90 model below the top 40.951% of the time, and with retries the limit
+is 1 for every positive rate, so it excludes nothing. The Wilson repair
+at 9 of 10 is worse on true positives at 0.21611302, and the comparison
+that made bound gates look weaker was taken at error rates differing by
+8.3 orders of magnitude. 138 parameterisations beat it on both rates and
+the cheapest needs 3 of 4. His own figure of 2 or 3 attempts was close;
+what was missing is the acceptance threshold.
+
+14. capability_estimator_2026-10-07.py and capability_estimator.py, both
+seats. VERDICT: THE RIGHT IDEA IN THE WRONG ORDER. Gating a capability
+success on whether the falsifier read its target is well motivated, and
+the checker it would be built on classifies reading by source-text regex:
+a decoy open of a null device, or the word open inside a comment, both
+pass. Its own producer still reports that every demonstration holds, and
+its conclusion is that provenance strong enough to gate must be
+execution-derived. Wiring it today would automate a known-foolable check
+into the ranking mechanics. Fix the classifier first.
+
+15. roster_registry_2026-10-07.py. VERDICT: ITS SECOND PARAGRAPH IS A LIVE
+DEFECT AND IT CLOSED A GAP IN THE SEATS SURFACE. Adding a model takes 1
+edit to be dispatched, and the roster is declared twice, so a researcher
+editing only the first gets a run that dispatches 1 roster and scores another.
+The runner records this class as hit 7 times. Recorded in entry B78 and
+now reported by the readiness surface in both directions.
+
+16. derived_ladder_2026-10-07.py. VERDICT: A WELL-DEFINEDNESS FINDING THAT
+BEARS ON THE PANEL ACTUALLY RUN. Ordering seats by capability per unit of
+cost is uninformative wherever cost is 0, and the 2 free seats are the 2
+every free panel uses, confirmed by its producer. The fix follows from
+the arithmetic rather than from preference: at least 1 strictly positive
+cost component, with wall time and subscription headroom proposed. Its
+prose says undefined where its own producer says uninformative, and the
+producer is the exact word.
+
+17. capability_ledger_2026-10-07.py. VERDICT: BOTH FIGURES EXACT, AND THE KEY
+FIGURE IS ALREADY LIVE. A single success gives a Wilson lower bound of
+0.206549 against a point estimate of 1.0, so 1 success cannot promote a
+seat, and 12 consecutive successes is the smallest run that passes a seat
+at 60 of 70. That 12 already appears in the live routing module.
+
+18. seat_breaker_2026-10-07.py, seat_circuit_breaker_2026-10-07.py and
+seat_circuit_breaker.py: 3 designs on 1 question. VERDICT: THE PREMISE IS
+QUOTED EXACTLY AND THE ARGUMENT STANDS. The live refusal helper documents
+itself as returning a refusal rather than a filtered roster because
+dropping a seat is benching it, which the designs read as treating 1
+condition as 2 conditions' worth of consequence. Requirement 9 separates
+a transient outage from benching. The richest of the 3 carries a
+refuse-to-start concept the others lack.
+
+19. capability_identity.py and model_identity.py, fable. VERDICT: A REASONED
+PUSHBACK ON HIS OWN PROPOSAL, WITH VERIFIED EVIDENCE. He proposed a
+randomly assigned model identifier; these argue the need is real and the
+derivation wrong, because a random identifier per roster entry splits 1
+configuration listed twice, and 1 keyed on the vendor name merges 2
+different configurations of the same model. The evidence verifies exactly: 12 occurrences of the dispatch
+identifier across 10 distinct values, with 2 of them each naming 2
+different things, unchanged between 2026-10-08 and today.
+
+WHAT THE COMPLETED TRIAGE SHOWS, now that all 23 are judged. NOT ONE needed
+adopting as proposed. 2 were already adopted in substance by simpler routes,
+3 were superseded by a sibling design from the same seat, 1 had its
+conclusion adopted 2 days after it was written, and 4 produced findings that
+reached the master task list. The 23 files are roughly 10 questions: both
+seats answered most briefs, and 1 seat answered several questions twice.
+
+WHY THEY ARE BEING TAKEN SINGLY RATHER THAN BATCHED. The judgement a
+design needs is whether its claim about live code still holds, whether its
+reasoning survives being checked, and whether the case it addresses can
+actually arise. The first of those went stale for none of this design and
+the third very nearly refuted it, so a batched verdict would have been a
+guess wearing a verdict's clothes.
+
+Written under CDSFL note standard v1.9 (1 November 2026).

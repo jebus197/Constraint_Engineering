@@ -119,20 +119,45 @@ def test_the_printf_emits_parseable_json():
     #: below, and a refusal records its cause -- asserted end to end by
     #: bench/tests/test_a_refusal_records_why_2026-11-09.py, which RUNS the
     #: real hook in a throwaway repository rather than reading it.
+    #: ★ AND IT GAINED `guards` AND `staged` ON 2026-11-22, SO THE ROW CARRIES 7
+    #: FIELDS RATHER THAN 5. THIS GUARD CAUGHT THE CHANGE, which is what it is
+    #: for: the format string grew 2 specifiers while this driver still supplied
+    #: 5 arguments, so the last 2 rendered EMPTY and the row broke at column 79
+    #: with `"guards":,"staged":`. A sibling test written alongside the change
+    #: passed throughout, because it drove the NEW shape; only a driver pinned to
+    #: the OLD shape could see the mismatch.
+    #:
+    #: WHY THE 2 COVARIATES EXIST: the cost measurement in both CLAUDE.md files
+    #: states that the ledger rows carry no gate size, so the rising board cost
+    #: could be reported as a trajectory and never attributed. `guards` is the
+    #: gate's own list length and `staged` the size of the changeset, recorded at
+    #: the moment the board runs because neither is reconstructable later.
     r = subprocess.run(
-        ["sh", "-c", f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 123 0 abc1234 ''"],
+        ["sh", "-c", f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 123 0 abc1234 330 40 ''"],
         capture_output=True, text=True, timeout=30)
     assert r.returncode == 0, r.stderr
     row = json.loads(r.stdout.strip())
     assert row == {"at": "2026-01-01T00:00:00Z", "seconds": 123,
-                   "exit": 0, "head": "abc1234", "why": ""}, row
+                   "exit": 0, "head": "abc1234", "guards": 330, "staged": 40,
+                   "why": ""}, row
+    #: THE COVARIATES MUST BE JSON NUMBERS, not strings: every reader of this
+    #: ledger does arithmetic on them, and a quoted count parses while breaking
+    #: the first consumer that adds it up.
+    assert isinstance(row["guards"], int) and isinstance(row["staged"], int), row
     #: AND A REFUSAL'S CAUSE SURVIVES THE SAME FORMAT STRING.
     r2 = subprocess.run(
         ["sh", "-c",
-         f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 9 1 abc1234 guard-file-missing"],
+         f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 9 1 abc1234 330 40 guard-file-missing"],
         capture_output=True, text=True, timeout=30)
     assert r2.returncode == 0, r2.stderr
     assert json.loads(r2.stdout.strip())["why"] == "guard-file-missing"
+    #: ANTI-VACUITY: a ZERO count must still emit a number rather than an empty
+    #: field, which is the shape the `|| echo 0` defect produced.
+    r3 = subprocess.run(
+        ["sh", "-c", f"printf '{fmt}\\n' 2026-01-01T00:00:00Z 1 0 abc1234 0 0 ''"],
+        capture_output=True, text=True, timeout=30)
+    row3 = json.loads(r3.stdout.strip())
+    assert row3["guards"] == 0 and row3["staged"] == 0, row3
 
 
 def test_the_producer_runs_with_no_ledger_and_says_so(prod):

@@ -341,8 +341,40 @@ def message(live: list[dict], unwatched: list[dict], pids: list[str]) -> str:
     if _ld.is_dir():
         try:
             _now = time.time()
-            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
-                         if _now - p.stat().st_mtime <= _fresh)
+
+            #: ★ AGE COMES FROM THE PULSE'S OWN `written_at`, NOT FROM A FILE
+            #: MTIME, AND THE 2 ARE NOT THE SAME QUESTION. The status line above
+            #: already judges liveness by `written_at`; this branch judged it by
+            #: the WATCHDOG LOG's mtime, so the gate's advice and its own status
+            #: line could disagree about whether a watch was alive.
+            #:
+            #: WHY THE LOG'S MTIME IS THE WRONG CLOCK, MEASURED. The watchdog
+            #: writes its PULSE every ~60 s by construction but writes its LOG
+            #: only on an event, so between events the log goes quiet while the
+            #: run is perfectly healthy. `scripts/the_gate_decides_on_the_pulse_2026-11-22.py`
+            #: puts the share of a heartbeat cycle in which a HEALTHY watchdog
+            #: reads as ABSENT at 5/6 = 0.833333, on 2 agreeing routes (sympy and
+            #: fractions). So the old predicate gave artefact advice to 5 of 6
+            #: live runs and named the cause 'no cy_watchdog.log exists'.
+            #:
+            #: THE FALLBACK IS DELIBERATE: a pulse written by an older watchdog
+            #: carries no `written_at`, and mtime is then the only clock there
+            #: is. Falling back is weaker than refusing, and the alternative --
+            #: treating a field-less pulse as dead -- would silence the advice
+            #: for exactly the runs least likely to be instrumented.
+            def _pulse_age(_p):
+                try:
+                    _w = json.loads(_p.read_text()).get("written_at")
+                    if isinstance(_w, (int, float)):
+                        return _now - float(_w)
+                except Exception:                            # noqa: BLE001
+                    pass
+                return _now - _p.stat().st_mtime
+
+            _wd = sorted(p.parent / "cy_watchdog.log"
+                         for p in _ld.glob("*/cy_pulse.json")
+                         if _pulse_age(p) <= _fresh
+                         and (p.parent / "cy_watchdog.log").is_file())
         except Exception:                                    # noqa: BLE001
             _wd = []                    # cannot tell -> give the artefact advice
     if _wd:

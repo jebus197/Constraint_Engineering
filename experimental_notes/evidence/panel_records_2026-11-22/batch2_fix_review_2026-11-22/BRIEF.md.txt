@@ -1,0 +1,273 @@
+# PANEL BRIEF — check my batch-2 fixes, 2026-11-22
+
+## WHY YOU ARE BEING ASKED
+
+The founder handed the work up to the bounded orchestrator run to this instance
+on 2026-11-21, reserving himself for 4 categories only: computationally
+irreducible, safety, legal or ethical, and a fundamental change in how CDSFL
+works as a whole. He instructed that every batch of work go to a free panel and
+that any fix the panel proposes be TESTED before adoption.
+
+**So your verdict is a hypothesis, not a fix.** It will be executed against the
+tree before anything is adopted, exactly as my own fixes were. Say what you
+would need to see to be wrong, and prefer a falsifier I can run over an argument
+I have to weigh.
+
+**NO COMPELLED CONVERGENCE.** Disagree with me and with the other seat where the
+evidence takes you. Disagreement is preserved as information, not smoothed.
+
+## HOW TO WORK
+
+You are in a writable sandbox copy of the repository. **RUN things.** Execute
+the tests, execute the producers, read the real files at their real paths. The
+tool output is the evidence; reasoning selects and interprets it and never
+substitutes for it. **Deliver every fix as a file written INTO the sandbox
+repository tree at its real path** — a fix left in prose or in scratch space is
+destroyed at teardown and does not reach me.
+
+For any fix you propose, supply a **runnable falsifier** and the output you got
+when you EXECUTED it. A fix you have not tried to break is a hypothesis.
+
+Where a proportion matters, give it with a **Wilson** interval and say what the
+denominator is; a bare count hides its own precision. The relevant instrument
+for Q4 below is specifically the Wilson interval and whether it clears one half.
+
+## THE 3 STANDARDS YOU ARE JUDGING AGAINST
+
+1. **ADDITIVE** — work adds to reliability, functionality, accuracy and
+   robustness. Nothing is removed unless a COMMITTED MEASUREMENT shows the
+   replacement dominates on a named property. **And symmetrically: an addition
+   nothing reaches is not additive either.** Every new flag, gate or entry point
+   must have a caller and be executed by a test.
+2. **SIMPLEST SUFFICIENT** — the smallest change addressing the root cause and
+   the consequences traced downstream of it.
+3. **COMPOSABILITY** — the founder's own words, 2026-10-02: *"Composability
+   doesn't mean composing two solutions just because they can be composed. It
+   means this principle should be applied where two composed solutions
+   demonstrably provide a better, more robust and/or more efficient solution than
+   either fix in isolation. Where a single fix out performs a composed one, that
+   fix should continue to be preferred."* **So a composability claim REQUIRES A
+   MEASUREMENT showing the composed fix dominates either part alone on a named
+   property.** Saying two repairs do not conflict is NOT the standard and will be
+   refused. If you cannot measure dominance, prefer the single fix and say so.
+
+---
+
+## Q1. IS THE RECORDING-ONLY SUPERVISOR PASS MINE TO RUN, OR THE FOUNDER'S?
+
+**FILE:** `bench/tools/cy_actuator_2026-11-03.py`.
+
+**THE CALL I MADE.** The supervisor has a 3-valued setting. The middle row —
+`--hil-review` on, `--act` WITHHELD — classifies what happened when a run
+stopped and writes the verdict down, re-invoking nothing. I judged that middle
+row mine to run, and the acting row (`--act`) his.
+
+**MY REASONING.** Against his 4 reserved categories the middle row scores 0 of
+4: not computationally irreducible; spends no money (simulated seats, and paid
+dispatch is refused at the transport layer); takes no action; changes nothing
+about how CDSFL works. Verified by execution: with `act=False`, `drive()`
+invokes the launch exactly once, sets `acted` False, and breaks after 1
+iteration whatever the verdict.
+
+**WHAT CUTS AGAINST IT.** A task-list sentence of 2026-11-08 says the switches
+remain his. I treated his 2026-11-21 handover as superseding that in scope. That
+is a judgement about which instruction governs, and I may have it wrong.
+
+**WHAT WOULD SHOW I AM WRONG.** An argument that RECORDING a verdict is itself a
+behaviour change, or that the 2026-11-08 sentence is specific enough to survive
+a later general handover. Run the actuator with `--contract` and without `--act`
+and say whether what you observe is a recording or an action.
+
+---
+
+## Q2. I FIXED A CHECKER BY INTROSPECTION RATHER THAN BY PARSING. BREAK IT.
+
+**FILES:** `bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py` (the
+checker I changed) and `bench/tests/test_precommit_gate_cost_2026-09-10.py` (its
+subject).
+
+**THE DEFECT.** The checker asserted that the gate-cost module carries a timeout
+mark with a value, and reported `assert []`. The mark EXISTS:
+`@pytest.mark.timeout(BOARD_BUDGET_SECONDS + 60)`. The checker accepted only an
+`ast.Constant`, so a computed bound was invisible to it — and its own docstring
+claimed it had been "CONVERTED FROM A SOURCE-TEXT ASSERTION" and read the mark
+"off the collected function". It did not: it parsed source and matched literals.
+
+**MY FIX, AND IT IS NOW IN THE TREE.** Import the module and walk its callables,
+DESCENDING INTO CLASSES, reading `pytestmark` off each function object. Executed
+against the real file it finds `TestItRuns.test_the_script_exits_zero` with the
+mark resolved to **6346**. 6 tests pass.
+
+**THE REJECTED ALTERNATIVE.** Teaching the AST walk to accept a `BinOp` is
+smaller and fixes this instance. I rejected it because the next form — a name, a
+call, a conditional — stays equally invisible.
+
+**WHAT I WANT YOU TO ATTACK, and I think there is something here.** My walk uses
+`dir()` and `getattr` on an IMPORTED module. That is not pytest collection. So:
+
+- Does it miss a mark applied by a decorator that pytest would see but
+  `pytestmark` does not carry — a parametrised mark, a mark on a fixture, a mark
+  applied at module level, a mark added by a plugin or a conftest?
+- Does importing the module to inspect it have a side effect that parsing did
+  not? Name it if so.
+- Is there a THIRD form, neither parse nor import, that is strictly better?
+
+**Write a falsifier that constructs a module whose timeout mark my walk misses,
+and execute it.** If you find one, deliver the repair as a file. If you cannot
+construct one after a real attempt, say that, and say what you tried — a failed
+attempt that is reported is evidence and an unreported one is not.
+
+---
+
+## Q3. THE SUPERVISOR ASKS FOR LESS CORROBORATION ON THE PATH THAT ACTS
+
+**FILE:** `bench/tools/cy_actuator_2026-11-03.py`, function `classify`.
+
+**THE FINDING, derived by enumerating all 28 states of exit code and pulse.**
+HOLD 22, DONE 4, RESUME 2. RESUME requires exit 42 AND a pulse naming a process
+that has exited.
+
+**THE ASYMMETRY.** At exit 0, a pulse that does NOT say `ended` gives HOLD —
+"the run exited cleanly but its watch never recorded it". At exit 42 the same
+missing `ended` gives RESUME anyway; the flag is not consulted on that path.
+
+**SO THE ONE PATH THAT TAKES AN ACTION ASKS FOR LESS CORROBORATION THAN THE PATH
+THAT DOES NOTHING.**
+
+**THE DEFENSIBLE READING** is that exit 42 is an explicit pause signal from the
+run itself, so the watch adds little. **I did not repair it**, because changing
+when the supervisor acts is the founder's category.
+
+**YOUR QUESTION:** is the defensible reading right, or is this a real hole that
+should be closed before `--act` is ever considered? **Name the concrete failure
+the asymmetry would permit — a sequence of states that produces a wrong resume —
+or say there is none and show why not.** Run `classify` over the state space
+yourself rather than reading it.
+
+---
+
+## Q4. IS "THE HASH CHAIN COVERS A MAJORITY" A FINDING, OR AN ARTEFACT OF A
+##     BIGGER DENOMINATOR?
+
+**FILES:** `bench/tests/test_open_brain_assessment_2026-09-10.py`, assertion A1;
+its producer `scripts/open_brain_assessment_2026-09-10.py`; and the figure
+producer written today, `scripts/is_the_hash_chain_majority_real_2026-11-22.py`.
+
+**RUN THE LAST OF THOSE FIRST.** Every figure below is declared and
+re-executable, so do not take my word for any of them.
+
+<!-- figure: live share | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 160 of 266 = 0.601504 -->
+<!-- figure: Wilson interval | scripts/is_the_hash_chain_majority_real_2026-11-22.py | [0.541626, 0.658492] -->
+<!-- figure: Clopper-Pearson interval | scripts/is_the_hash_chain_majority_real_2026-11-22.py | [0.539926, 0.660794] -->
+<!-- figure: Wilson route agreement | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 0.000e+00 -->
+<!-- figure: Clopper-Pearson route agreement | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 1.110e-16 -->
+<!-- figure: Fisher exact | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 2.030093e-01 -->
+<!-- figure: Yates chi-square | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 2.053340e-01 -->
+<!-- figure: prior observation | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 125 of 231 = 0.541126 -->
+<!-- figure: majority threshold | scripts/is_the_hash_chain_majority_real_2026-11-22.py | clear 0.5 -->
+
+**THE MEASUREMENT.** The chain covers 160 of 266 = 0.601504 of memories, with a
+**Wilson** interval of [0.541626, 0.658492] and Clopper-Pearson [0.539926,
+0.660794]. Each interval was computed on 2 independent routes, agreeing to
+0.000e+00 and 1.110e-16 respectively. The lower bound clears 0.5, so a guard
+pinning "indistinguishable from half" goes red and A1 needed restating. **I
+restated it from `assert lo < 0.5 < hi` to `assert lo > 0.5`.**
+
+**THE PART I REFUSED TO CLAIM.** Against the pinned earlier observation of
+125 of 231 = 0.541126: Fisher exact 2.030093e-01, Yates chi-square
+2.053340e-01. The 2 measurements are NOT distinguishable. So I wrote that
+coverage is above half and explicitly NOT that it rose — what demonstrably
+changed is the DENOMINATOR, which bought precision rather than coverage.
+
+**A DEFECT IN MY OWN WORK, FOUND WHILE WRITING THIS BRIEF, AND IT IS THE REASON
+THAT PRODUCER NOW EXISTS.** The Clopper-Pearson interval and both p-values were
+stated in that test's COMMENT with no committed script producing them. They
+reproduce exactly — but under `measured-rate-travels-with-its-script` a correct
+figure with no producer is still a figure nobody can check. **Tell me if the
+split that producer now draws between "is it above half" and "did it rise" is the
+right one.**
+
+**YOUR QUESTION:** is my restatement right? A reading I can see and reject is
+that the correct statement is weaker still — that nothing has been shown to
+change at all, and the guard should pin the straddle at a larger sample rather
+than assert a majority. A second reading I can see is that asserting a lower
+bound above 0.5 makes the guard fragile, because it now goes red if coverage
+drifts back down for a reason unrelated to what A1 is about. **Say which of the 3
+is right, recompute the intervals and both tests yourself, and if my arithmetic
+is wrong then that is the answer.**
+
+## Q5. I CLOSED A HOLE NOTHING REACHES. IS THAT ADDITIVE, OR IS IT THE SHAPE THE
+##     STANDARD WARNS ABOUT?
+
+**FILE:** `bench/tools/run_simulated_experiment.py`, `install_paid_tripwire`.
+
+**WHAT THE MECHANISM IS FOR.** It is a billing tripwire: it patches name
+resolution so that any attempt to reach a PAID model host during a simulated run
+raises rather than spending the founder's money.
+
+**THE HOLE.** Installing it twice and restoring once uninstalled the guard while
+the outer frame was still running. The nested install returned the ORIGINAL
+resolver, so an inner frame's `finally` handed back the real function and the
+billing guard was gone for the remainder of the outer run.
+
+**MY FIX.** A nested install now returns the PATCH. An inner frame's restore is
+therefore a no-op while the outermost still genuinely uninstalls — the returned
+value IS the token for whichever frame holds it, and no depth counter is needed.
+I replaced the single assertion that PINNED the hazard (`assert second is
+original`) with 3 tests, one of which drives 2 nested frames and asserts a paid
+host is still refused after the inner restore. 21 tests pass; 2 of 2 mutations
+go red; the subject restores byte-for-byte.
+
+**HERE IS THE PROBLEM WITH MY OWN FIX, AND IT IS WHY I AM ASKING.** The hole is
+**LATENT, NOT LIVE.** Two routes agreed the protocol admits it — 43 witnesses,
+shortest being install, install, restore, dispatch; solver satisfiable — while
+the call graph does not reach it, because the actuator drives the wrapper as a
+separate process. So I have spent work on a path no caller takes, and the
+additive standard's symmetric half says **an addition nothing reaches is not
+additive.** The record holds 11 confirmed defects of exactly that shape.
+
+**YOUR QUESTION, and please do not simply agree with me.** Is this fix justified,
+or is it the 12th such addition? The case FOR is that the cost of being wrong is
+the founder's money on a run he explicitly refused to pay for, which is not
+symmetric with an ordinary latent bug. The case AGAINST is that I cannot name a
+caller, and "it would be expensive if it happened" is the argument every unwired
+addition makes for itself.
+
+**If you judge it unjustified, say what should happen to it** — reverted, kept
+with the hazard re-pinned, or kept and WIRED so a caller exists. **If you judge
+it justified, name the property that distinguishes it from the 11**, because
+without that distinction the standard has no teeth and the next unwired addition
+will cite this one as precedent.
+
+**Do NOT propose composing my fix with the narrow one unless you can MEASURE the
+composed form dominating either alone on a named property.** Where the single fix
+performs as well, the single fix is preferred.
+
+---
+
+## OUTPUT
+
+Return these fields:
+
+- **verdict** — per question: AGREE, DISAGREE or UNDECIDED, with 1 sentence.
+- **reasoning** — what you ran and what it printed. Name files and line numbers.
+- **fix** — for each DISAGREE, the repair, delivered as a file in the sandbox
+  tree at its real path. Name the paths you wrote here.
+- **falsifier** — the runnable check for each fix you propose, and the output you
+  got when you EXECUTED it.
+- **refutation** — what evidence would overturn YOUR OWN answer. A seat that
+  cannot say what would refute it has given an opinion, not a finding.
+- **disagreement** — your strongest disagreement with the brief's own framing.
+  Where I have mis-stated the problem, say so here rather than answering the
+  question as I posed it. This field is not optional and "none" is an answer
+  only if you have looked for one.
+- **standards** — which of the 3 standards each verdict rests on, and for any
+  composability claim, the measurement showing dominance.
+
+## TERMINATION
+
+Stop at diminishing returns: when a further pass produces no new above-threshold
+finding. A finding is above threshold if missing it could cause a real failure,
+a wrong decision, or the founder's money to be spent. Do not generate findings
+for their own sake and do not police style — target correctness, safety and
+interface consistency. 5 substantiated findings beat 20 speculative ones.

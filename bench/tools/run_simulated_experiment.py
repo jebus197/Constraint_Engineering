@@ -91,13 +91,35 @@ def install_paid_tripwire():
     IDEMPOTENT ON PURPOSE. A resumable wrapper installs this and then calls the
     runner's own `main()`, which may reach code that installs it again; patching
     a patched resolver would chain them and make the error message name the
-    wrong layer. The already-installed case returns the ORIGINAL resolver, not
-    the patch, so a caller that restores on exit restores the real one.
+    wrong layer.
+
+    ★ A NESTED INSTALL RETURNS THE PATCH, NOT THE ORIGINAL -- CHANGED 2026-11-22,
+    AND THE REASON IS A BILLING HOLE RATHER THAN TIDINESS. This returned the
+    ORIGINAL on an already-installed call, so 2 nested frames each doing
+    `orig = install(); try: ... finally: getaddrinfo = orig` had the INNER
+    `finally` write the real resolver back while the OUTER frame was still
+    running. Every paid dispatch after that point would have billed, on a run
+    the founder has refused to pay for.
+
+    Returning the PATCH makes the inner restore a NO-OP -- it writes back the
+    patch that is already installed -- while the outermost caller still holds
+    the genuine original and still uninstalls correctly on exit. No depth
+    counter is needed: the returned value IS the token, and restoring it is
+    always the right action for whichever frame holds it.
+
+    LATENT, NOT LIVE, AND SAID SO PLAINLY: the actuator drives the wrapper as a
+    separate process, so 2 frames cannot coexist today. 2 routes agreed the
+    PROTOCOL admits the hole -- exhaustive enumeration to length 6 finds 43
+    witnesses, shortest `install, install, restore, dispatch`, and a solver
+    returns satisfiable -- while the call graph does not reach it. Producer:
+    `scripts/is_the_tripwire_hole_reachable_2026-11-22.py`.
     """
     import socket as _sock
     from live_dispatch_policy import PAID_HOSTS as _PAID   # ONE canonical copy
     if getattr(_sock.getaddrinfo, "_cdsfl_paid_tripwire", False):
-        return getattr(_sock.getaddrinfo, "_cdsfl_original")
+        #: THE PATCH, not the original: restoring it is a no-op, which is what
+        #: a nested frame must do. See the docstring.
+        return _sock.getaddrinfo
     _orig_gai = _sock.getaddrinfo
 
     def _no_paid(host, port, *a, **kw):

@@ -28,6 +28,10 @@ never a coined one. Renamed throughout the live tree on that date; the archived 
 and `experimental_notes/seat_evidence/` keep the old wording because they are a record of
 what was actually written.
 
+### Acceptance threshold
+
+The success level a candidate model must reach before a promotion gate advances it a rung on the [rung ladder](#rung-ladder). **NOT a live mechanism.** It belongs to a promotion-gate design proposed by panel seats on 2026-10-08 and never adopted into `bench/`; the proposal survives only under `experimental_notes/seat_evidence/rung_promotion_and_model_ids_2026-10-08/`. The design's own finding was that the founder's promotion rule needs a threshold rather than more attempts. Triaged in the Seat Design Triage note of 2 November 2026.
+
 ### Audit Observer
 
 The mechanism that confines a dispatched seat's file access
@@ -414,6 +418,10 @@ Parameter modelling a model's ability to produce correctly formatted output. Deg
 
 Hierarchical constraint enforcement system (`bench/cdsfl_registry/`). Five-layer cascade with monotonicity: lower layers cannot weaken higher-layer HARD constraints. Layers: foundation, domain, task, session, model-specific. Not "the registry" (standing correction).
 
+### Quiet arm
+
+The threshold-free side of the two-sided convergence gate: the run must see K consecutive rounds with no new critical finding (default 3) before convergence is permitted. It is the insurance endpoint of the same diminishing-returns curve that gamma measures, and it must agree with the gamma side for the gate to fire — neither alone. Named at `bench/reference_runner_v3.py:1562`. It fires at most once per run, so a per-window rate cannot price it; what can be priced is the false-quiet chance, measured by `bench/the_false_quiet_rate_is_not_the_gates_rate_2026-10-08.py`.
+
 ### Relay Mode
 
 Communication topology where models exchange messages through the insect brain as central relay. Models see each other's reasoning. Three sub-modes: findings, conversational, directed. Contrast with star (blackboard) topology.
@@ -429,6 +437,10 @@ Immune pipeline cell type. Stage 6 reconciliation. Final gate that ensures consi
 ### Runner
 
 The Python program that orchestrates a multi-model analysis session. Since Experiment 40 there is one active runner, `bench/reference_runner_v3.py`, driven by the shared launcher `bench/launch_exp42.py` and selected per experiment by a committed config under `bench/expNN_configs/`; the launcher's name is historical, not Experiment-42-specific. `bench/reference_runner.py` is the frozen Experiment 38/39 baseline. Experiments 29–37 each have their own standalone script (e.g. `run_exp36_evidence.py`), retained as records. All share infrastructure from `runner_core.py` and `experiment_11_orchestrator.py`.
+
+### Rung ladder
+
+The ordered tiers of model capability a seat is routed through, weakest rung first, with a stronger rung consumed only when the weaker one fails to settle the question. A 2-rung ladder ending in an opus-class rung reached 7 of 7 on the measurement recorded at `bench/routing.py:18`. A ladder earned on single successes under-promotes capable models, which is why promotion is gated rather than granted on one pass. See also [Acceptance threshold](#acceptance-threshold).
 
 ### S_k Tristate, and NO_SCORE
 

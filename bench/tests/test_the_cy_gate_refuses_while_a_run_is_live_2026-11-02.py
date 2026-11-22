@@ -199,3 +199,108 @@ def test_a_live_run_beside_a_finished_one_still_refuses(tmp_path):
     assert code == 2
     assert "still_going" in err
     assert "finished" not in err.split("LIVE:")[-1]
+
+
+# ===========================================================================
+# THE ADVICE BRANCH MUST BE DECIDED BY THE PULSE, NOT BY THE LOG'S MTIME.
+# Appended 2026-11-22.
+#
+# The gate chose between "tail the run's cy_watchdog.log" and "no
+# cy_watchdog.log exists" by globbing `*/cy_watchdog.log` and keeping mtimes
+# within 300 s, justifying the window with "the watchdog writes on a ~60 s
+# cadence by construction, so a log belonging to a live run cannot be minutes
+# stale."
+#
+# THAT PREMISE IS FALSE AND THE CONSEQUENCE WAS OBSERVED. The watchdog polls
+# every 60 s but SPEAKS only when it matters: it writes the LOG on events and
+# on --heartbeat-minutes, default 30. So a quiet healthy watchdog is invisible
+# for 1500 of every 1800 s = 0.833333, and 300 < 1800 makes that guaranteed
+# rather than occasional. Seen 7 times on 2026-11-22 as a SINGLE refusal
+# asserting both "pulse 18 s old. The watch is healthy" and "no cy_watchdog.log
+# exists" -- a self-contradiction a reader cannot act on.
+#
+# THE PULSE is written every interval and the gate's own status line ALREADY
+# judges liveness by its `written_at` field. These tests pin the branch to it,
+# and the 5th pins the MIRROR, because the pre-2026-11-21 gate had no freshness
+# test at all and advertised every DEAD run as watched. A repair that merely
+# always names the log reinstates that.
+# ===========================================================================
+
+def _watchdog_log(d, *, age):
+    """A cy_watchdog.log beside a planted pulse, aged by `age` seconds."""
+    import os, time
+    p = d / "cy_watchdog.log"
+    p.write_text("[cy 00:00:00] ARMED: ...\n")
+    t = time.time() - age
+    os.utime(p, (t, t))
+    return p
+
+
+def test_a_quiet_watchdog_is_still_a_watchdog(tmp_path):
+    """★ THE DEFECT. A healthy watchdog writes its log on a 30-minute heartbeat
+    by default, so a 20-minute-old log is NORMAL, not evidence of absence.
+    The pulse is 5 s old, which is what liveness actually means here.
+
+    This test FAILS before the fix and passes after it.
+    """
+    d = plant(tmp_path, age=5.0)
+    _watchdog_log(d, age=1200.0)          # quiet, healthy, within one heartbeat
+    _, err = run(tmp_path)
+    assert "no cy_watchdog.log exists" not in err, (
+        "the gate declared no watchdog while holding a 5 s old pulse written by "
+        "that same watchdog; it judged the LOG, which is silent by design, "
+        "instead of the PULSE, which is written every interval")
+    assert "cy_watchdog.log, matching" in err, (
+        "it should name the log as the thing to TAIL")
+
+
+def test_a_fresh_log_also_takes_the_watchdog_branch(tmp_path):
+    """ANTI-OVER-CORRECTION. The branch must not stop working for the case it
+    already handled."""
+    d = plant(tmp_path, age=5.0)
+    _watchdog_log(d, age=10.0)
+    _, err = run(tmp_path)
+    assert "no cy_watchdog.log exists" not in err
+
+
+def test_no_log_at_all_still_takes_the_other_branch(tmp_path):
+    """ANTI-VACUITY. If the no-watchdog branch can never fire, the first test
+    above proves nothing. A run with a pulse and NO log is a real case: a plain
+    pytest run writes no watchdog log at all."""
+    plant(tmp_path, age=5.0)              # pulse only, no cy_watchdog.log
+    _, err = run(tmp_path)
+    assert "no cy_watchdog.log exists" in err, (
+        "with no log present the gate must point at what the run DOES write")
+
+
+def test_the_two_branches_are_mutually_exclusive(tmp_path):
+    """Whichever fires, the refusal must not contain both pieces of advice --
+    which is exactly what a reader saw on 2026-11-22."""
+    d = plant(tmp_path, age=5.0)
+    _watchdog_log(d, age=1200.0)
+    _, err = run(tmp_path)
+    said_none = "no cy_watchdog.log exists" in err
+    said_tail = "cy_watchdog.log, matching" in err
+    assert said_none != said_tail, (
+        f"the gate gave both or neither branch: none={said_none} tail={said_tail}")
+
+
+def test_a_DEAD_watchdog_does_not_take_the_watchdog_branch(tmp_path):
+    """★ THE MIRROR, which the first version of this guard missed.
+
+    `scripts/the_gate_decides_on_the_pulse_2026-11-22.py` records that this
+    defect has TWO directions. Before 2026-11-21 the gate globbed historical
+    logs with NO freshness test, so the branch always fired and every DEAD run
+    looked watched. The freshness filter fixed that and created the opposite
+    error. A repair that merely always names the log reinstates the first.
+
+    So: a STALE pulse means the watchdog has stopped writing. Its log may still
+    be on disk and may even be recent, and the gate must NOT tell the reader to
+    tail a watchdog that is no longer running.
+    """
+    d = plant(tmp_path, age=600.0)        # pulse stale: the watchdog is dead
+    _watchdog_log(d, age=10.0)            # but its log is recent
+    _, err = run(tmp_path)
+    assert "cy_watchdog.log, matching" not in err, (
+        "the gate told the reader to tail a watchdog whose pulse is 600 s old; "
+        "a dead watch must not be advertised as the delivery channel")

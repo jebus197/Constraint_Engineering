@@ -135,17 +135,64 @@ class TestTheTripwireRefusesAPaidHost:
         finally:
             socket.getaddrinfo = original
 
-    def test_the_installer_is_idempotent_and_returns_the_original(self, wrapper):
-        """A resumable wrapper installs this and then calls the runner, which may
-        install it again; chaining 2 patches would make the error name the wrong
+    def test_the_outermost_install_returns_the_original(self, wrapper):
+        """The 1st caller holds the real resolver, so its restore genuinely
+        uninstalls. Chaining 2 patches would make the error name the wrong
         layer and would break restoration."""
         import run_simulated_experiment as rse
         original = socket.getaddrinfo
         try:
             first = rse.install_paid_tripwire()
-            second = rse.install_paid_tripwire()
             assert first is original
-            assert second is original
+            assert socket.getaddrinfo is not original, "it must actually patch"
+        finally:
+            socket.getaddrinfo = original
+
+    def test_a_NESTED_install_returns_the_patch_not_the_original(self, wrapper):
+        """★ CHANGED 2026-11-22, AND THE OLD ASSERTION PINNED A BILLING HOLE.
+
+        This read `assert second is original`. That is exactly what made 2
+        nested frames dangerous: each does
+        `orig = install(); try: ... finally: getaddrinfo = orig`, so the INNER
+        finally wrote the REAL resolver back while the OUTER frame was still
+        running, leaving every later paid dispatch unguarded on a run the
+        founder has refused to pay for.
+
+        Returning the PATCH makes that inner restore a no-op. No depth counter
+        is needed: the returned value IS the token for whichever frame holds it.
+        """
+        import run_simulated_experiment as rse
+        original = socket.getaddrinfo
+        try:
+            first = rse.install_paid_tripwire()
+            patched = socket.getaddrinfo
+            second = rse.install_paid_tripwire()
+            assert first is original, "the outermost caller still gets the real one"
+            assert second is patched, (
+                "a nested install must hand back the PATCH, so restoring it "
+                "leaves the guard in place")
+            assert second is not original
+        finally:
+            socket.getaddrinfo = original
+
+    def test_a_nested_restore_leaves_the_guard_INSTALLED(self, wrapper):
+        """★ THE HOLE ITSELF, DRIVEN. 2 frames, inner restores, and a paid host
+        must STILL be refused while the outer frame is in flight. This is the
+        property the whole change exists for, and it is executed rather than
+        argued."""
+        import live_dispatch_policy as pol
+        import run_simulated_experiment as rse
+        original = socket.getaddrinfo
+        host = sorted(pol.PAID_HOSTS)[0]
+        try:
+            outer = rse.install_paid_tripwire()          # frame 1
+            inner = rse.install_paid_tripwire()          # frame 2
+            socket.getaddrinfo = inner                   # frame 2 "restores"
+            with pytest.raises(RuntimeError, match="PAID DISPATCH"):
+                socket.getaddrinfo(host, 443)            # frame 1 still running
+            socket.getaddrinfo = outer                   # frame 1 restores
+            assert socket.getaddrinfo is original, (
+                "the outermost restore must genuinely uninstall")
         finally:
             socket.getaddrinfo = original
 

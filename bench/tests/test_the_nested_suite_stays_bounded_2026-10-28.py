@@ -122,23 +122,48 @@ def test_the_long_nested_test_raises_its_own_limit_rather_than_the_global_one():
     checked is the one that matters: the expensive test raises its OWN ceiling
     rather than the suite's. `execute-do-not-grep`.
     """
-    import ast
+    # ★ THE MARK IS NOW GENUINELY READ OFF THE COLLECTED FUNCTION, 2026-11-22.
+    # The 2026-10-28 rewrite replaced a source-TEXT assertion with an `ast.parse`
+    # that accepted only `ast.Constant`, and this docstring has claimed ever
+    # since that the value is "read off the collected function". It was not: a
+    # parse is still a syntactic check. The live mark is
+    # `@pytest.mark.timeout(BOARD_BUDGET_SECONDS + 60)`, a `BinOp`, so the AST
+    # walk scored 0 and the assertion below reported a MISSING bound that has
+    # been present throughout -- a detector resolving 1 form of a thing and
+    # reporting a false 0 for the other, which is this project's most repeated
+    # shape. Importing and reading `pytestmark` resolves the expression to the
+    # NUMBER (measured: 6346 against a global 300) and costs 0.117 s.
+    #
+    # CLASSES ARE DESCENDED INTO. The live mark sits on a METHOD, so a walk over
+    # module-level names alone also scores 0 -- which the first version of this
+    # repair did, and it is why the probe is written out rather than assumed.
     import configparser
+    import importlib.util
+    import inspect
+    import sys
     mod = REPO / "bench/tests/test_precommit_gate_cost_2026-09-10.py"
-    tree = ast.parse(mod.read_text(encoding="utf-8"))
+    spec = importlib.util.spec_from_file_location("_gate_cost_for_bound_check", mod)
+    _m = importlib.util.module_from_spec(spec)
+    sys.modules["_gate_cost_for_bound_check"] = _m
+    spec.loader.exec_module(_m)
+
+    def _callables(obj, seen=()):
+        for name in dir(obj):
+            if name.startswith("__"):
+                continue
+            o = getattr(obj, name, None)
+            if inspect.isclass(o) and getattr(o, "__module__", "") == _m.__name__:
+                yield from _callables(o, seen + (name,))
+            elif callable(o):
+                yield ".".join(seen + (name,)), o
+
     marks: list[int] = []
-    for node in ast.walk(tree):
-        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            continue
-        for dec in node.decorator_list:
-            if not isinstance(dec, ast.Call):
-                continue
-            f = dec.func
-            if getattr(f, "attr", None) != "timeout":
-                continue
-            for a in dec.args:
-                if isinstance(a, ast.Constant) and isinstance(a.value, (int, float)):
-                    marks.append(int(a.value))
+    for _qual, _fn in _callables(_m):
+        for _mk in getattr(_fn, "pytestmark", []) or []:
+            if getattr(_mk, "name", "") == "timeout" and _mk.args:
+                _v = _mk.args[0]
+                if isinstance(_v, (int, float)):
+                    marks.append(int(_v))
     assert marks, (
         "no test in the gate-cost module carries a timeout mark with a value, so "
         "either it will be killed at the global limit or the global limit has "

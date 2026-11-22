@@ -55,10 +55,45 @@ _cdsfl_on_exit() {
         # IT CAN NEVER FAIL A COMMIT. Every command here is redirected and the
         # block returns nothing; an unwritable spool costs a line of history
         # and not a commit.
-        printf '{"at":"%s","seconds":%s,"exit":%s,"head":"%s","why":"%s"}\n' \
+        # ★ 2 COVARIATES ADDED 2026-11-22, AND THEY CLOSE A BOUND THIS PROJECT
+        # STATED AGAINST ITSELF. The cost measurement in both CLAUDE.md files
+        # carries the sentence "the ledger rows carry no gate size, so this
+        # measures DURATION against TIME and cannot attribute the rise to guard
+        # count, machine load, or anything else." A trend with no covariate is a
+        # trajectory and never a cause, so the 2 candidate drivers are recorded
+        # here AT THE MOMENT THE BOARD RUNS, which is the only time they are
+        # knowable: a later reader cannot reconstruct how many guards the gate
+        # carried, because GUARDS has moved since.
+        #
+        # `guards` is the gate's own list length. `staged` is the size of the
+        # changeset, the other plausible driver, since the note ratchet and the
+        # per-entry parametrised guards both scale with what is being committed.
+        # NEITHER IS A CAUSE ON ITS OWN -- they make the question answerable,
+        # and an unmeasured attribution is what the bound forbids.
+        #
+        # BOTH DEFAULT TO 0 AND NEITHER CAN FAIL A COMMIT. Every substitution is
+        # redirected and falls back to 0, so an unreadable hook or a missing git
+        # costs a covariate and not a commit -- the property the block above
+        # already states and which an added field must not quietly break.
+        # ★ NO `|| echo 0` HERE, AND THE FIRST VERSION HAD IT. `grep -c` PRINTS
+        # its count AND EXITS 1 when the count is zero, so `$(grep -c ... || echo 0)`
+        # emits BOTH -- the literal 2-line value "0\n0" -- and the printf below
+        # then wrote a ledger row that is not valid JSON. Caught by parsing the
+        # emitted line rather than by reading it: the guards line looked correct
+        # only because it happened to have matches, so the identical fault sat
+        # masked beside the one that showed.
+        #
+        # A fallback that fires ALONGSIDE a successful print is not a fallback.
+        # `grep -c` always prints exactly one number, so the substitution needs
+        # no fallback at all; `head -1` bounds it to a single line whatever a
+        # future pipeline does, and `${...:-0}` covers the empty case.
+        _cdsfl_guards=$(printf '%s\n' "$GUARDS" | grep -c 'bench/tests/' 2>/dev/null | head -1)
+        _cdsfl_staged=$(git diff --cached --name-only 2>/dev/null | grep -c . 2>/dev/null | head -1)
+        printf '{"at":"%s","seconds":%s,"exit":%s,"head":"%s","guards":%s,"staged":%s,"why":"%s"}\n' \
             "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)" \
             "$_cdsfl_secs" "$_rc" \
             "$(git rev-parse --short HEAD 2>/dev/null)" \
+            "${_cdsfl_guards:-0}" "${_cdsfl_staged:-0}" \
             "${CDSFL_REFUSAL:-}" \
             >> .cdsfl_tmp/precommit_durations.jsonl 2>/dev/null
     fi
@@ -329,6 +364,14 @@ cd "$REPO" || exit 1
 # answer to it is the tier split he has yet to make, not leaving new guards off
 # the board, which is this file's own stated position.
 GUARDS="bench/tests/test_documentation_drift_guards_2026-08-25.py
+bench/tests/test_the_failing_set_is_recorded_not_guessed_2026-11-22.py
+bench/tests/test_a_restore_returns_the_timestamp_too_2026-11-22.py
+bench/tests/test_the_already_found_check_requires_every_term_2026-11-22.py
+bench/tests/test_the_dry_run_scorer_cannot_pass_vacuously_2026-11-22.py
+bench/tests/test_the_risked_guards_come_from_the_diff_2026-11-22.py
+bench/tests/test_the_majority_and_the_rise_are_2_questions_2026-11-22.py
+bench/tests/test_a_spoken_deliverable_has_a_repository_twin_2026-11-22.py
+bench/tests/test_the_ledger_row_is_valid_json_2026-11-22.py
 bench/tests/test_the_gate_board_is_not_the_suite_2026-11-04.py
 bench/tests/test_a_cited_path_must_exist_2026-10-30.py
 bench/tests/test_a_guard_cannot_refuse_his_own_remedy_2026-11-03.py

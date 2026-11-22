@@ -81,7 +81,24 @@ LABELLED = [
     # guard rather than to a feature. Putting it in the gate raises the gate's
     # cost, which is entry B81's subject and his decision, so it is recorded
     # here and not done unilaterally.
-    ("I23: exhausted_round_threshold defaults to 8 while max_rounds is 8", True),
+    #: ★ THE I23 CASE WAS REMOVED 2026-11-22, FINISHING A REPAIR OF 2026-09-17.
+    #: It read `("I23: exhausted_round_threshold defaults to 8 while max_rounds
+    #: is 8", True)` and was the ONLY entry in this list expecting True, which
+    #: requires the LIVE task list to still carry something waiting on I23.
+    #: `blocks_progress` returns False today -- "no entry declares a dependency
+    #: on it; it is mentioned but nothing is waiting" -- so the case went red
+    #: when the backlog cleared, reporting a CLEARED BACKLOG as a broken
+    #: predicate. That is the exact defect `test_it_can_say_BLOCK` was repaired
+    #: for on 2026-09-17, in its own words: "An anti-vacuity test must depend on
+    #: its own fixture, never on the state it happens to be surrounded by."
+    #: That repair reached the sibling and left this case, so the fix is the
+    #: same fix applied where it was missed.
+    #:
+    #: NO COVERAGE IS LOST. The True branch is held by `test_it_can_say_BLOCK`,
+    #: which builds its own 2-entry list, and by
+    #: `test_the_block_fixture_is_not_vacuous`, which proves that same fixture
+    #: returns False without the dependency. Every remaining entry below expects
+    #: False and is robust against ANY list that does not name it.
     ("I31: update_drift has no production caller, wire it or retire it", False),
     ("sk_enabled is false in the exp56 arms", False),
     ("bench/reference_runner_v3.py has a stale line citation", False),

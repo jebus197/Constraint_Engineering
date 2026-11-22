@@ -309,6 +309,12 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## B165 full-suite run needs a CLEAN tree for 2h17m; batch 2 must edit the tree first
+
+*Parked 2026-11-22T08:03:04+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (38)

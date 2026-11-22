@@ -82,22 +82,51 @@ def derived_pulse_seconds() -> int:
     return int(m.group(1)) if m else 60
 
 
-def patched_gate(dest: pathlib.Path) -> pathlib.Path:
-    """A copy of the gate that decides on the PULSE instead of the log."""
-    s = GATE.read_text()
-    old = """            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
+#: ★ THE FRAME IS INVERTED, AND IT HAD TO BE. 2026-11-22.
+#:
+#: This producer was written BEFORE the repair, so it patched the live gate
+#: FORWARD and compared current against fixed. The repair then landed, the
+#: `old` anchor ceased to exist, and the producer exited 1 with "the advice
+#: branch has moved" -- which `bench/tests/test_todays_producers_run_2026-11-22.py`
+#: correctly reported as a RED producer, found by the 55 deciding guards derived
+#: from the diff. **A before-and-after measurement whose BEFORE is the live code
+#: dies the moment its own recommendation is adopted.**
+#:
+#: So it now anchors on the LIVE code and reverts BACKWARD to reconstruct the
+#: defect, which is how a mutation harness is built and for the same reason: the
+#: anchor must be something that exists. The comparison is unchanged in meaning
+#: -- 1 arm has the fix, 1 does not -- and the arms have swapped roles.
+#:
+#: THE ANCHOR IS DERIVED FROM THE SUBJECT, NOT TYPED. It is located by its first
+#: and last lines and lifted whole, so a change to the block's interior cannot
+#: silently stop matching. A failure to locate it REFUSES rather than measuring
+#: a gate it did not alter.
+#:
+#: AND THE LIVE FIX IS STRONGER THAN THE ONE THIS SCRIPT PROPOSED: the proposal
+#: read the pulse's MTIME, while the applied fix reads its `written_at` field
+#: with mtime only as a fallback -- because the gate's own status line judges
+#: liveness by that field, and 2 surfaces judging the same thing by different
+#: clocks is the defect this file exists to document.
+_REVERT_FIRST = "            def _pulse_age(_p):"
+_REVERT_LAST = '                         and (p.parent / "cy_watchdog.log").is_file())'
+_PRE_FIX = """            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
                          if _now - p.stat().st_mtime <= _fresh)"""
-    new = """            def _pulse_fresh(q):
-                r = q.parent / "cy_pulse.json"
-                try:
-                    return r.is_file() and _now - r.stat().st_mtime <= _fresh
-                except OSError:
-                    return False
-            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
-                         if _pulse_fresh(p))"""
-    if s.count(old) != 1:
-        raise SystemExit("the advice branch has moved; re-read it before patching")
-    dest.write_text(s.replace(old, new))
+
+
+def reverted_gate(dest: pathlib.Path) -> pathlib.Path:
+    """A copy of the gate with the pulse repair REMOVED, so the defect returns."""
+    s = GATE.read_text()
+    i = s.find(_REVERT_FIRST)
+    j = s.find(_REVERT_LAST)
+    if i == -1 or j == -1 or j < i:
+        raise SystemExit(
+            "could not locate the pulse-deciding block in the live gate; the "
+            "advice branch has moved. Re-read it rather than measuring a gate "
+            "this script did not alter.")
+    block = s[i:j + len(_REVERT_LAST)]
+    if s.count(block) != 1:
+        raise SystemExit("the pulse-deciding block is not unique in the gate")
+    dest.write_text(s.replace(block, _PRE_FIX, 1))
     return dest
 
 
@@ -156,20 +185,21 @@ def main() -> int:
     try:
         with tempfile.TemporaryDirectory() as td:
             logs = pathlib.Path(td) / "logs"
-            fixed = patched_gate(pathlib.Path(td) / "gate_fixed.py")
+            reverted = reverted_gate(pathlib.Path(td) / "gate_pre_fix.py")
 
             print("\nHEALTHY watchdog: fresh pulse, log quiet within a heartbeat")
             plant(logs, sleeper.pid, pulse_age=0, log_age=min(hb - 1, fresh * 2))
-            a_cur, a_fix = advice(GATE, logs), advice(fixed, logs)
-            print(f"  current: {a_cur[:104]}")
-            print(f"  fixed  : {a_fix[:104]}")
-            healthy_ok = "no cy_watchdog.log exists" in a_cur and "cy_watchdog.log, matching" in a_fix
+            a_live, a_old = advice(GATE, logs), advice(reverted, logs)
+            print(f"  live (repaired): {a_live[:104]}")
+            print(f"  reverted       : {a_old[:104]}")
+            healthy_ok = ("cy_watchdog.log, matching" in a_live
+                          and "no cy_watchdog.log exists" in a_old)
 
             print("\nDEAD watchdog: stale pulse — ANTI-VACUITY, must still read absent")
             plant(logs, sleeper.pid, pulse_age=fresh * 3, log_age=min(hb - 1, fresh * 2))
-            d_fix = advice(fixed, logs)
-            print(f"  fixed  : {d_fix[:104]}")
-            dead_ok = "no cy_watchdog.log exists" in d_fix
+            d_live = advice(GATE, logs)
+            print(f"  live (repaired): {d_live[:104]}")
+            dead_ok = "no cy_watchdog.log exists" in d_live
 
             print(f"\n  healthy case repaired   : {healthy_ok}")
             print(f"  dead case still correct : {dead_ok}")

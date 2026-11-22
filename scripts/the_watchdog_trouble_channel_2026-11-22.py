@@ -139,8 +139,20 @@ def main() -> int:
     print(f"  lines the current regex flags : {len(flagged)}")
     print(f"  still flagged after the fix   : {len(kept)}")
     print(f"  dropped by the word boundary  : {len(dropped)}")
-    for d in dropped[:4]:
+    #: ★ THE CAP IS KEPT AND THE REMAINDER IS NAMED. 4 examples is the useful
+    #: number -- a reader wants to see the SHAPE of what the word boundary
+    #: removed, not every instance -- but a list cut to 4 under a heading that
+    #: already printed the full count reads as complete, which is a silent
+    #: falsehood. Raised by the free panel's joint round on 2026-11-22 and
+    #: confirmed by running the project's own guard rather than on the seat's
+    #: word: `TestTruncatedListsStateTheirRemainder` was RED on this line.
+    _SHOW = 4
+    for d in dropped[:_SHOW]:
         print(f"      dropped: {d.strip()[:92]}")
+    if len(dropped) > _SHOW:
+        print(f"      ... and {len(dropped) - _SHOW} more not shown "
+              f"({len(dropped)} dropped in all; this listing is capped at "
+              f"{_SHOW} examples)")
 
     if flagged:
         from statsmodels.stats.proportion import proportion_confint
