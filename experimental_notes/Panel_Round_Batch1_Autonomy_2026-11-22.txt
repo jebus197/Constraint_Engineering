@@ -1,0 +1,71 @@
+THE FIRST PANEL ROUND UNDER THE AUTONOMY HANDOVER, AND EVERY SEAT WAS WRONG ABOUT SOMETHING
+
+22 November 2026, 01:50 GMT
+
+SUMMARY
+
+A 2 seat free panel reviewed the 6 repairs making up the first batch of work done under the founder's autonomy handover of 21 November 2026. The round found 1 genuine defect that had survived the author's own falsification. The author then found 3 errors in the panel's account of that defect. Both halves are recorded here, because the value of the round lies in the disagreement rather than in any verdict.
+
+The handover carries a standing instruction that a panel's proposals are tested before they are adopted. Under the project's own rule that no model vote counts as evidence, a seat's verdict is a hypothesis and nothing more. Every claim below was re-run locally before anything was changed.
+
+WHAT WAS DISPATCHED
+
+The round is recorded in the batch 1 autonomy directory under the bench logs folder. 2 seats answered. The first, cc2, is Claude Opus 4.7 reached through the command line interface, and it took 1026.1 seconds across 63 tool calls. The second, fable, is Fable 5.1 by the same route, and it took 1121.3 seconds across 91 tool calls. Both returned a complete reply.
+
+The brief asked whether each of 6 repairs holds on its own evidence, and whether any pair needs composing in the founder's sense of that word, which requires a measurement showing the composed fix dominates either part alone.
+
+THE SEATS DISAGREED, AND THE DISAGREEMENT WAS THE FINDING
+
+On 4 of the 6 repairs the seats agreed. On 2 they did not.
+
+On entry B205 part c, the Stop gate's stand down predicate, cc2 returned FAILS and fable returned HOLDS.
+
+On entry B182, the budget gate's heavy work detector, cc2 returned FAILS as a closure claim and fable returned HOLDS.
+
+Where 2 independent readers of the same artefact return opposite verdicts, at most 1 can be right and both may be wrong. Each claim was therefore reproduced rather than adjudicated.
+
+THE DEFECT THAT WAS REAL
+
+Seat cc2 reported that the commit board predicate in the blocker triage script had lost the fail safe direction its own documentation promises. That documentation states that any failure of the predicate returns the empty string, so a fault costs the protection and never the triage.
+
+The predicate's exclusions are all questions put to the ps command. The ancestry walk asks for a parent process. The shell discriminator asks for a command name. Both are documented to fail toward detecting a run, which is the correct direction for the cy monitor gate, which also uses them, and where the cost of missing a run is an unobserved 3 hour measurement. It is the wrong direction in the triage. Where the ps command cannot answer while the pgrep command still can, both exclusions pass everything through and the predicate returns a process identifier.
+
+This sits above the threshold for action because the cost is not confined to the triage. The Stop gate in the work not narrate hook stands its entire mechanism down whenever this predicate is truthy. An over report therefore switches off the gate that compels continued work, which is the disabling of a feature that the project's additive standard forbids.
+
+THE 3 ERRORS IN THE REPORT OF IT
+
+The first error was attribution. The seat presented the defect as introduced by the B205 part c repair, calling it a repair that achieved the opposite of its stated purpose. Running the same experiment against the copy of the function at the previous commit gives identical results in both arms, so the defect predates that repair. The ancestry exclusion added by B205 part c can only make the predicate return the empty string more often, never less.
+
+The second error was that 1 of the 2 reported arms does not reproduce. The seat reported that a shell was detected as a running board even while the ps command was answering normally. The command used to plant that shell was a single command, which the shell replaces itself with rather than waiting on, so what the probe actually tested was a sleep process and not a shell at all. The same artefact was reproduced here before the probe was corrected. With a plant that stays a shell, that arm returns the empty string and the discriminator is sound.
+
+The third error was a factual claim contradicted by the other seat and settled by counting. On whether the project writes the word rerun without a hyphen, cc2 reported 398 occurrences and fable reported 0, concluding the risk was unexercised. Counted directly across the project's own markdown, Python and text files, there are 444 unhyphenated against 7,162 hyphenated. That is an unhyphenated share of 0.058375, with a Wilson interval of 0.053326 to 0.063870 and a Clopper Pearson interval of 0.053210 to 0.063881 on 2 agreeing routes. So cc2 was substantially right that the form occurs, and fable was right that the hyphenated form dominates. Neither had it whole. The word boundary behaviour explains the split, because a hyphen is a word boundary, so a pattern matching the word run catches re-run and catches nothing inside rerun.
+
+WHAT THE OTHER SEAT FOUND THAT THE FIRST DID NOT
+
+Seat fable returned 2 findings about the evidence for the repairs rather than about the repairs themselves, and both were verified and acted on.
+
+The first was a figure with no producer. A comment in the work not narrate hook declared that a predicate had been driven over 5 cases and was correct in 5 of 5. No script reproduced it. The project's rule that a measured figure travels with its script binds a code comment exactly as it binds a note, and a number existing only as prose is a claim about evidence rather than evidence. The producer now exists and reports 6 of 6, the 6th case being the seat's own addition, with the never claim a commit property counted separately from the hit rate.
+
+The second was a guard that passed or failed by accident of timing. The parking tests in the blocker triage guard call a function that refuses before any write while a commit board is running. The product carries an environment seam built for exactly this situation, and the string naming it appeared 0 times in the test file. On the day of the round all 5 of those tests failed while a verification run was genuinely alive, and the code they exercise was healthy throughout. A red result implicating healthy code is a false record. The seam is now used, scoped to the parking classes so that the tests of the detector itself continue to observe the real machine.
+
+WHAT CHANGED AS A RESULT
+
+The polarity is restored by a separate probe asking whether the ps command can answer at all. That is the cheapest question it can be asked, and its answer is known in advance, so a failure is about the command rather than about any particular process. Where it cannot answer, the predicate returns the empty string as documented.
+
+The budget gate's vocabulary was widened to admit 4 further forms: board on its own, the bench tests path in its bare form, guards in the plural, and the unhyphenated form of rerun. 2 of the phrasings it previously missed are sentences this project writes at itself. 1 is the gate's own refusal message. The other is section 2 of the brief dispatched to this very panel. Both are instructions of precisely the shape the gate exists to refuse, and both passed through it.
+
+This was measured in 3 directions before and after, because widening a predicate that accepts is a tightening, and every instruction newly caught risks a prohibition newly refused. Instructions that should be refused went from 1 of 10 to 10 of 10. Prohibitions that must not be refused stayed at 6 of 6. Descriptive prose that must not be refused stayed at 4 of 4. The widening is therefore strictly dominant on the named property at no cost to either safety direction.
+
+COMPOSABILITY
+
+No pair of the 6 repairs warrants composing. For the 1 pair the brief predicted would tempt a claim, the refusal is a measurement rather than a judgement.
+
+Entry B205 part c and entry B180 both concern a gate noticing a long running process, and they already share 2 pieces of code by duplication. Unifying them is the obvious composed fix. It cannot work, because the 2 callers require opposite values from the same helper under the same condition. Measured directly, with the ps command denied, the cy monitor gate's runner list still returns the planted identifier, which is correct for it, while the triage must return the empty string. A single shared helper cannot satisfy both. The single fix, local to the file whose polarity is violated, strictly dominates the composed one on the stated property.
+
+STATUS OF THE REPAIRS
+
+All 6 repairs are built and tested. Entries B205, B204, B182 and B180 carry executing guards. The 2 repairs raised by this round carry new guards of their own. The board detector guard was proven able to fail, because with the repair reversed it goes red on 2 of its 7 tests, and the file is restored by the harness that reverses it.
+
+A single pre-existing failure remains in the blocker triage guard, the labelled set case recorded as the documented single miss in that instrument's 9 of 10 accuracy. It is untouched by this work.
+
+Written under CDSFL note standard v1.9, 1 November 2026.

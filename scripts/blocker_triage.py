@@ -372,11 +372,102 @@ class BoardIsRunning(RuntimeError):
 #: saw no board, and the append voided a measurement whose entire point is a
 #: clean tree. Verified by execution against that live run before the change:
 #: the old pattern returned '' and the new one returned the suite's pid.
-_BOARD_PATTERNS = ("cdsfl_sv.py --commit", "pytest bench/tests")
+#: ★★★ AND THAT 2026-11-13 WIDENING FIXED ONE INVOCATION SHAPE RATHER THAN THE
+#: CLASS, SO IT BIT AGAIN ON 2026-11-21. `"pytest bench/tests"` requires those
+#: words ADJACENT, and a real invocation puts flags between them:
+#: `pytest -q -p no:cacheprovider bench/tests/...`. Verified by execution
+#: against a LIVE 317-file board census, which is exactly the case B155 and the
+#: 2026-11-13 note were both written for: `pgrep -f "pytest bench/tests"`
+#: returned 0 matches while `pgrep -f "pytest.*bench/tests"` returned its pid.
+#: So the Stop gate that stands down for a running board kept prodding for tree
+#: edits during a measurement over the very files being edited, which is how a
+#: census gets corrupted by the session that launched it.
+#:
+#: THE WIDENING COSTS NOTHING, and that was checked rather than assumed. It also
+#: matches a waiter shell whose command line merely NAMES pytest -- and
+#: `cy._is_shell` already returns True for that shell and False for the real
+#: pytest, so the shell exclusion documented above removes the only false
+#: positive this introduces. Entry B205.
+_BOARD_PATTERNS = ("cdsfl_sv.py --commit", "pytest.*bench/tests")
 
 #: RETAINED so nothing that imports the old name breaks. It is the first
 #: element rather than a second declaration of the same idea.
 _BOARD_PATTERN = _BOARD_PATTERNS[0]
+
+
+def _own_process_chain() -> set:
+    """This process and every ancestor of it, as strings. Entry B205.
+
+    FAIL-SAFE TOWARD DETECTING A BOARD: any failure returns just this pid, so a
+    fault here can only make the predicate MORE cautious, never less. That is
+    the opposite direction from `a_commit_board_is_running`'s own fail-safe, and
+    deliberately so: there, failing open costs the protection; here, failing
+    open would hide a live board.
+    """
+    chain = {str(os.getpid())}
+    try:
+        pid = os.getpid()
+        for _ in range(16):                 # bounded: no cycle can trap this
+            out = subprocess.run(["ps", "-o", "ppid=", "-p", str(pid)],
+                                 capture_output=True, text=True, timeout=4)
+            parent = (out.stdout or "").strip()
+            if not parent or not parent.isdigit() or int(parent) <= 1:
+                break
+            chain.add(parent)
+            pid = int(parent)
+    except Exception:                                        # noqa: BLE001
+        #: NOT `pass`. A silently swallowed failure leaves no trace anywhere,
+        #: which `test_operational_scripts.py` refuses and is right to. The
+        #: PARTIAL chain is returned explicitly: behaviourally identical to
+        #: falling through, and it says in code that a short chain is a
+        #: possible outcome rather than an impossible one. Direction is
+        #: unchanged -- a partial chain excludes fewer pids, so the caller
+        #: becomes MORE cautious, never less.
+        return chain
+    return chain
+
+
+def _ps_can_answer() -> bool:
+    """Can `ps` report on a pid at all on this machine, right now?
+
+    ★ RAISED BY THE PANEL 2026-11-22, VERIFIED BEFORE ADOPTION, AND THE
+    ATTRIBUTION IT CAME WITH WAS WRONG. Seat cc2 reported that the B205(c)
+    repair had inverted this predicate's fail-safe direction. Running the same
+    experiment against HEAD's own copy of the function shows the IDENTICAL
+    behaviour, so the defect PREDATES B205(c) and the ancestry exclusion added
+    there can only make the predicate return '' more often, never less. The
+    seat also reported a second arm -- a shell detected as a board while `ps`
+    was answering normally -- and that one does NOT reproduce: `/bin/zsh -c
+    "sleep 90"` is a single command, so zsh exec-optimises itself away and the
+    plant is a `sleep`, not a shell. The same artefact was reproduced here
+    before the probe was corrected. Producer:
+    `scripts/does_the_board_detector_hold_its_polarity_2026-11-22.py`.
+
+    WHY THE GUARD IS NEEDED. Every exclusion this predicate relies on is a `ps`
+    question: `_own_process_chain` walks parents with `ps -o ppid=`, and
+    `cy._is_shell` reads `ps -o comm=`. Both are documented to fail toward
+    DETECTING a run, which is correct for `hooks/cy_monitor_gate.py`, whose
+    cost of under-firing is an unobserved 3-hour run. It is the WRONG direction
+    here: this predicate says of itself that a fault "costs the protection and
+    never the triage". With `ps` unavailable and `pgrep` still answering, both
+    exclusions silently pass everything through and a bare pid is returned.
+
+    AND THE COST IS NOT CONFINED TO THE TRIAGE, which is what lifts it above
+    threshold. `hooks/work_not_narrate.py` stands its ENTIRE Stop gate down when
+    this predicate is truthy, so an over-report switches off the gate that
+    compels continued work -- disabling a feature, which the additive standard
+    forbids.
+
+    IT IS A SEPARATE PROBE, NOT AN INFERENCE FROM A FAILED CALL. Asking about
+    this process is the cheapest question `ps` can be asked and its answer is
+    known in advance, so a failure is about `ps` rather than about the pid.
+    """
+    try:
+        out = subprocess.run(["ps", "-p", str(os.getpid()), "-o", "comm="],
+                             capture_output=True, text=True, timeout=4)
+    except Exception:                                        # noqa: BLE001
+        return False
+    return out.returncode == 0 and bool((out.stdout or "").strip())
 
 
 def a_commit_board_is_running() -> str:
@@ -403,12 +494,37 @@ def a_commit_board_is_running() -> str:
             pids += [x for x in (out.stdout or "").split() if x.strip()]
         if not pids:
             return ""
+        #: ★ POLARITY GUARD, 2026-11-22. Both exclusions below are `ps`
+        #: questions and both fail toward DETECTING a run. Where `ps` cannot
+        #: answer they let every pid through, which is the opposite of this
+        #: function's documented direction. Returning '' here restores it.
+        if not _ps_can_answer():
+            return ""
         import importlib.util
         spec = importlib.util.spec_from_file_location(
             "bt_cy_gate", REPO / "hooks" / "cy_monitor_gate.py")
         cy = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cy)
+        mine = _own_process_chain()
         for pid in pids:
+            #: ★ A BOARD THAT IS RUNNING *ME* IS NOT A BOARD I COULD DISTURB.
+            #: Entry B205, 2026-11-21, and this clause is the cost of widening
+            #: the pattern above. The old adjacent pattern accidentally missed
+            #: a real `pytest -q -p no:cacheprovider bench/tests/...` because
+            #: of the flags between the words; widening it to match correctly
+            #: ALSO made this predicate see the suite that TESTS it, so
+            #: `test_blocker_triage_2026-09-10.py` went red -- the triage
+            #: refusing against its own harness, which is precisely the failure
+            #: the shell exclusion above was written for in a different costume.
+            #:
+            #: ANCESTRY IS THE RIGHT DISCRIMINATOR, not a narrower pattern. The
+            #: question this predicate answers is "would writing now corrupt a
+            #: run in flight". A run that is my own ancestor is the one
+            #: EXERCISING me, and the 317-file census that motivated the
+            #: widening was a SIBLING process, so it is still detected. Checked
+            #: both ways by execution before this clause was written.
+            if pid in mine:
+                continue
             if not cy._is_shell(pid):
                 return pid
         return ""

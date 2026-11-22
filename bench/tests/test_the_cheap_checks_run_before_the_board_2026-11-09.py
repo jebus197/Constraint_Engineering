@@ -42,7 +42,28 @@ def _at(src: str, needle: str) -> int:
     return i
 
 
-BOARD = "OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS"
+#: ★ RE-ANCHORED 2026-11-21, ENTRY B202, THE BOARD'S SILENT TEST PHASE. The
+#: board was `OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1)` and
+#: is now a log file with a background follower, so that literal no longer
+#: exists anywhere in the hook and all 3 tests below went red against CORRECT
+#: code. The PROPERTIES are unchanged -- cheap checks first, names set before
+#: the block, 3 refusals kept, the board still refuses -- only the position of
+#: the board had to be re-found. The anchor is deliberately LIVE CODE and not
+#: the section comment, because `a detector must not spell out its own
+#: pattern`: the comment explains the removed form and a prose anchor would
+#: drift every time that explanation is reworded. It is the same string
+#: `test_the_boards_guard_phase_streams_2026-11-21.py` anchors on, so the 2
+#: newest instruments agree on one anchor instead of pinning 2 shapes.
+BOARD = '_CDSFL_BOARD_LOG="${TMPDIR:-/tmp}/cdsfl_board_$$.log"'
+
+#: Where the board SECTION begins, which is its comment rather than its first
+#: live line. Kept SEPARATE from BOARD on purpose. `_lint_block` slices up to
+#: here, and slicing to BOARD instead would pull 36 lines of B202 commentary
+#: into something named "the lint block": harmless today because `_live` strips
+#: comments, but it would make the helper's contract false and would fire
+#: `test_every_name_the_block_reads_is_set_before_it` the first time that
+#: commentary mentioned a `$NAME` which is live elsewhere in the block.
+BOARD_SECTION = "# ── ★ THE GUARD PHASE STREAMS, ENTRY B202"
 LINT = "# ── 5th guard: LINT THE NOTES BEING COMMITTED"
 
 
@@ -50,7 +71,7 @@ def _lint_block(src: str) -> str:
     """The lint block ONLY. It ends where the board section begins -- slicing
     to the file's final `exit 0` swallowed the board and made 2 tests wrong."""
     start = _at(src, LINT)
-    end = _at(src, BOARD)
+    end = _at(src, BOARD_SECTION)
     assert start < end
     return src[start:end]
 
@@ -62,8 +83,10 @@ def _live(text: str) -> str:
 
 class TestTheOrderIsCheapFirst:
     def test_the_note_lint_runs_before_the_board(self, src):
-        lint = _at(src, "# ── 5th guard: LINT THE NOTES BEING COMMITTED")
-        board = _at(src, "OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS")
+        # ★ was a second, inline copy of the board literal, which is how one
+        # anchor becomes two that can drift apart. It reads the constant now.
+        lint = _at(src, LINT)
+        board = _at(src, BOARD)
         assert lint < board, (
             "the note lint is back below the board, so a commit refused by a "
             "1-second check pays for a 1230 s board first")

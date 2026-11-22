@@ -640,7 +640,16 @@ bench/tests/test_tonights_two_producers_run_2026-11-09.py
 bench/tests/test_what_models_are_in_use_is_derived_2026-11-10.py
 bench/tests/test_the_researcher_encoding_holds_2026-11-13.py
 bench/tests/test_the_board_verdict_reaches_the_refusal_2026-11-17.py
-bench/tests/test_the_nineteen_producers_run_2026-11-17.py"
+bench/tests/test_the_nineteen_producers_run_2026-11-17.py
+bench/tests/test_the_index_can_never_stop_filling_2026-11-21.py
+bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py
+bench/tests/test_his_copy_carries_the_entrys_status_2026-11-21.py
+bench/tests/test_todays_producers_run_2026-11-21.py
+bench/tests/test_the_standing_goal_survives_compaction_2026-11-22.py
+bench/tests/test_was_this_batch_reviewed_2026-11-22.py
+bench/tests/test_the_board_detector_fails_toward_writing_2026-11-22.py
+bench/tests/test_the_preflight_population_is_the_gates_2026-11-22.py
+bench/tests/test_todays_producers_run_2026-11-22.py"
 # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
 # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
 # was run 5 times to discover 2 classes of defect that a commit-time check catches
@@ -839,6 +848,60 @@ command -v python3 >/dev/null 2>&1 || {
     exit 1
 }
 
+# ── ★ THE GUARD GAP IS REPORTED BEFORE THE BOARD, AND REFUSES NOTHING ───────
+#
+# ENTRY B204, HIS RULING 2026-11-21: *"I accept your recommendation"* on option
+# 1, report and refuse nothing.
+#
+# WHY HERE AND NOWHERE ELSE. B103's rule is that every guard dated on or after
+# 2026-10-29 belongs on the GUARDS list above. On 2026-11-21 the census found 4
+# of 245 missing and all 4 were written that day -- so a board passed 5,131
+# tests having run 0 of that batch's own 70. The gap was 33 of 220 on
+# 2026-11-13, meaning it had been closed down to exactly the files that night
+# added, and nothing said so.
+#
+# THE POSITION IS LOAD-BEARING, BOTH WAYS. AFTER the `command -v python3` check
+# directly above, because this runs python3 and
+# `test_it_runs_after_python3_is_known_to_exist` pins that ordering. BEFORE the
+# board, because the existing reach line near the foot of this file already
+# prints the gate's size and arrives about 31 minutes too late to act on -- the
+# entire complaint was that the 4 reached a reader 44 minutes after the board,
+# not before it.
+#
+# IT REFUSES NOTHING, DELIBERATELY. A gate on this quantity would have to be a
+# RATCHET on growth, and that moves the decision about how long every future
+# board takes away from whoever writes the guard. That is his call and he has
+# not made it; the 3rd candidate was the only one offered as mine to apply.
+#
+# AND IT FAILS OPEN. `|| true` and a discarded stderr, because a fault in a
+# REPORT must never refuse a commit. A census that cannot run says nothing
+# rather than stopping the work.
+if [ -f scripts/b103s_rule_is_not_being_followed_2026-11-13.py ]; then
+    _CDSFL_GAP=$(python3 scripts/b103s_rule_is_not_being_followed_2026-11-13.py 2>/dev/null \
+        | grep -E 'NOT on the gate' | head -1 | sed 's/^[[:space:]]*//' || true)
+    if [ -n "$_CDSFL_GAP" ]; then
+        echo "pre-commit: B103 guard gap, reported not gated -- $_CDSFL_GAP" >&2
+    fi
+fi
+
+# ★ HIS STANDING INSTRUCTION OF 2026-11-21, MADE MECHANICAL. He asked, in the
+# same message as the autonomy handover and calling it equally important, that
+# every meaningful batch of work be put to a free panel before it is adopted.
+# A commit is the unit of a batch under his 2026-11-10 ruling, so this is the
+# one moment the question has a definite answer.
+#
+# IT REPORTS AND NEVER REFUSES, for the same reason the B103 gap report above
+# does: a false refusal here costs about 27 minutes of his 8-core machine, and
+# this project has already recorded a case where a false positive is why a rule
+# went unenforced. If the line turns out to be ignored, THAT is the evidence for
+# escalating it to a refusal. Every failure path falls open with `|| true`.
+if [ -f scripts/was_this_batch_reviewed_2026-11-22.py ]; then
+    _CDSFL_PANEL=$(python3 scripts/was_this_batch_reviewed_2026-11-22.py --quiet 2>/dev/null | head -1 || true)
+    if [ -n "$_CDSFL_PANEL" ]; then
+        echo "pre-commit: $_CDSFL_PANEL" >&2
+    fi
+fi
+
 # ★ N4, 2026-11-09. HOISTED ABOVE THE BOARD. This block used to run AFTER
 # the 235-guard board, so a commit refused by a 1-second lint first paid for a
 # board whose mean cost is 1615.30 s over 10 recorded runs. All the cheap
@@ -1036,8 +1099,53 @@ if [ -n "$STAGED_NOTES" ]; then
 fi
 
 
-OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1)
+# ── ★ THE GUARD PHASE STREAMS, ENTRY B202, HIS RULING 2026-11-21 ─────────────
+#
+# This was `OUT=$(python3 -m pytest ... 2>&1)` and a command substitution
+# captures every byte, so the longest phase of the board -- 2555.93 s, 2524.70 s
+# and 2557.57 s on the last 3 full boards -- produced NOTHING observable until it
+# ended. His standing directive of 2026-05-18 is to keep a terminal showing the
+# full current tail of any running process, and this line is what made that
+# unsatisfiable. The `sv` side was already repaired on 2026-11-17 under entry
+# B195 and forwards the child's output line by line, so this capture was the
+# only remaining link in the chain.
+#
+# ★ WHY NOT `| tee`, WHICH IS THE OBVIOUS FIX AND SILENTLY DISABLES THE GATE.
+# A POSIX shell reports the exit status of the LAST element of a pipeline, which
+# is `tee`, and `tee` succeeds whatever pytest did. Measured by
+# `scripts/the_board_can_stream_without_losing_its_verdict_2026-11-21.py` against
+# real subprocesses in a real /bin/sh: the tee form returns 0 on a tree rigged to
+# exit 1 AND on one rigged to exit 2 -- 0 of 3 correct -- so a red board would be
+# recorded as passing and the commit would go through. `${PIPESTATUS[0]}` is
+# bash-only and 0-indexed while zsh spells it `${pipestatus[1]}` and 1-indexes
+# it, and this file is `#!/bin/sh`, so the portable-looking repair is also
+# shell-dependent. This project has already lost an exit code to exactly that
+# difference twice, on 2026-10-02 and again on 2026-11-21.
+#
+# THE FORM BELOW WAS THE ONLY ONE OF 3 CORRECT ON ALL 3 COUNTS: 3 of 3 exit codes
+# kept, output observed 1.2 s before the child exited, and the captured text
+# BYTE-IDENTICAL to the old capture -- which matters because 6 downstream greps
+# in this file read `$OUT` and a changed byte changes what they match.
+#
+# `python3 -u` is load-bearing: redirected to a file, Python block-buffers stdout
+# in 8 KiB chunks, so `-q`'s progress dots would surface about once per 8,000
+# tests and a 5,145-test board would stream nothing at all.
+#
+# `>>` rather than `>` because `tail -f` is already following the file and a
+# truncating redirect can drop what it had positioned on.
+_CDSFL_BOARD_LOG="${TMPDIR:-/tmp}/cdsfl_board_$$.log"
+: > "$_CDSFL_BOARD_LOG"
+tail -n +1 -f "$_CDSFL_BOARD_LOG" >&2 &
+_CDSFL_TAIL_PID=$!
+python3 -u -m pytest -q -p no:cacheprovider $GUARDS >> "$_CDSFL_BOARD_LOG" 2>&1
 CODE=$?
+# The tail is killed before anything reads $CODE, and the parent reaps the whole
+# process group on a timeout (`start_new_session=True` in `_git`), so neither a
+# refusal nor a timeout can leave a follower running on his machine.
+kill "$_CDSFL_TAIL_PID" 2>/dev/null
+wait "$_CDSFL_TAIL_PID" 2>/dev/null
+OUT=$(cat "$_CDSFL_BOARD_LOG" 2>/dev/null)
+rm -f "$_CDSFL_BOARD_LOG" 2>/dev/null
 if [ "$CODE" -ne 0 ]; then
     echo "" >&2
     echo "pre-commit: REFUSED. The cheap guards are red." >&2

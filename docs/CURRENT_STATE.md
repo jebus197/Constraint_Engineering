@@ -1,6 +1,6 @@
 # CDSFL Current State
 
-Generated: 17 November 2026 09:34 GMT (2026-11-17T09:34:32+00:00)
+Generated: 22 November 2026 05:16 GMT (2026-11-22T05:16:34+00:00)
 
 ---
 
@@ -18,27 +18,34 @@ Generated: 17 November 2026 09:34 GMT (2026-11-17T09:34:32+00:00)
 > `git log -1 --stat -- docs/CURRENT_STATE.md`.
 
 - **Branch:** sim/shakedown-2026-09-29
-- **Last commit (the PARENT of the commit containing this file):** `fa0fcb48` 7 entries closed by running their evidence, and 6 silent failures found by doing it
-- **Committed:** 2026-11-17 08:10:46 +0000
-- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 3
+- **Last commit (the PARENT of the commit containing this file):** `b1d5d5db` 4 entries investigated, 4 wrong claims of mine corrected, and a hand-edit caught by its own guard
+- **Committed:** 2026-11-17 09:34:32 +0000
+- **Remote (as of the snapshot, before the sv push):** ahead of origin/sim/shakedown-2026-09-29 by 4
 - **Working tree at snapshot time:** DIRTY — snapshot-time working tree listed below (NOT the sv commit's file list)
 
 Uncommitted files at snapshot time — the working tree as it stood before the sv commit, NOT that commit's file list:
-- `M bench/tests/test_the_nineteen_producers_run_2026-11-17.py`
-- `M bench/tickets/sv_completions.jsonl`
-- `M experimental_notes/CDSFL_MASTER_TASK_LIST.md`
-- `M experimental_notes/PARKED_FOR_THE_FOUNDER.md`
-- `M experimental_notes/data/morning_report_decisions.json`
-- `M experimental_notes/data/output_hashes.json`
-- `?? scripts/does_anything_call_the_steering_surface_2026-11-17.py`
-- `?? scripts/the_parked_file_accumulates_duplicates_2026-11-17.py`
-- `?? scripts/what_an_encoding_header_actually_carries_2026-11-17.py`
+- `M  bench/tests/test_a_prior_ruling_is_acknowledged_2026-11-03.py`
+- `M  bench/tests/test_a_refusal_names_every_failure_2026-11-09.py`
+- `M  bench/tests/test_blocker_triage_2026-09-10.py`
+- `M  bench/tests/test_desktop_mirrors_stay_current_2026-09-10.py`
+- `A  bench/tests/test_his_copy_carries_the_entrys_status_2026-11-21.py`
+- `A  bench/tests/test_the_board_detector_fails_toward_writing_2026-11-22.py`
+- `M  bench/tests/test_the_board_verdict_reaches_the_refusal_2026-11-17.py`
+- `A  bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py`
+- `M  bench/tests/test_the_cheap_checks_run_before_the_board_2026-11-09.py`
+- `A  bench/tests/test_the_index_can_never_stop_filling_2026-11-21.py`
+- `A  bench/tests/test_the_preflight_population_is_the_gates_2026-11-22.py`
+- `A  bench/tests/test_the_standing_goal_survives_compaction_2026-11-22.py`
+- `A  bench/tests/test_todays_producers_run_2026-11-21.py`
+- `A  bench/tests/test_todays_producers_run_2026-11-22.py`
+- `A  bench/tests/test_was_this_batch_reviewed_2026-11-22.py`
+- … and 71 more, not shown (list capped at 15 of 86 — run `git status --porcelain` for the full set)
 
 ---
 
 ## Tests
 
-**17958 tests collected** at 17 November 2026 09:34 GMT, HEAD `fa0fcb48` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**18276 tests collected** at 22 November 2026 05:16 GMT, HEAD `b1d5d5db` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 
@@ -68,6 +75,7 @@ For a pass count, run the suite offline and record the result with its own date 
 
 ## Recent Commits
 
+- `b1d5d5db 4 entries investigated, 4 wrong claims of mine corrected, and a hand-edit caught by its own guard`
 - `fa0fcb48 7 entries closed by running their evidence, and 6 silent failures found by doing it`
 - `b8f556d3 A guard that ran a 45-minute board to prove something that finishes 221 lines earlier`
 - `725ec976 A board fix that was half a fix, and the 1-line completion that would have turned the gate into a rubber stamp`
@@ -77,4 +85,3 @@ For a pass count, run the suite offline and record the result with its own date 
 - `84fd2253 B169: the permission predicate under-reported a residue, and composing was measured rather than asserted`
 - `665a4b41 B165: the clean-tree full-suite measurement, and what it caught doing`
 - `846c4ffe fix: 21 anchored corrections, 4 entries raised, 7 guards repaired`
-- `e37fed9d sv: the Stop hook was overactive on his report, 4 faults fixed, 7 of 7 mutations red, and re-armed only after a green board -- plus 5 errors of my own caught before any of them shipped`

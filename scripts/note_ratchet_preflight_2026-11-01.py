@@ -46,6 +46,84 @@ def _findings(path: pathlib.Path, logical: str | None = None) -> int | None:
     return int(m.group(1)) if m else None
 
 
+#: THE GATE'S OWN POPULATION, AND IT IS NOT THE ONE `changed_notes` RETURNS.
+#: Measured 2026-11-22 against hooks/pre-commit, which selects:
+#:     git diff --cached --name-only --diff-filter=ACM
+#:       | grep -E '^experimental_notes/.*\.md$'
+#:       | grep -v '^experimental_notes/seat_evidence/'
+#: `changed_notes` is wider on 4 axes and so disagreed with the gate in BOTH
+#: directions. FALSE POSITIVE: it refused on `resources/RECOVERY.md` 81 -> 83,
+#: a file the gate never lints, and the hook's own comment names that risk --
+#: a guard that fires on the ordinary case teaches people to reach for
+#: --no-verify by reflex. FALSE NEGATIVE, which is the expensive one: it scores
+#: the WORKING TREE while the gate scores the INDEX, and it reports a NEW file
+#: without ever refusing on it, while the gate holds a new note to a baseline
+#: of 0. Both halves fired on 2026-11-22 -- the batch-1 full record read 0 in
+#: the tree and 3 in the index, and `BRIEF.md.txt` printed 33 findings beside
+#: an exit code of 0.
+#:
+#: THE WIDE SCAN IS KEPT AND DEMOTED, NOT REMOVED. It is the only thing
+#: watching `.txt` companions and `resources/`, which the gate does not judge
+#: but the note standard does. It now reports; it no longer decides.
+GATE_DIR = "experimental_notes/"
+GATE_EXCLUDE = "experimental_notes/seat_evidence/"
+
+
+def gate_population() -> list[str]:
+    """The files the commit gate's note ratchet will actually judge."""
+    r = subprocess.run(["git", "diff", "--cached", "--name-only",
+                        "--diff-filter=ACM"],
+                       capture_output=True, text=True, cwd=REPO, check=True)
+    out = []
+    for line in (r.stdout or "").splitlines():
+        path = line.strip()
+        if (path.startswith(GATE_DIR) and path.endswith(".md")
+                and not path.startswith(GATE_EXCLUDE)):
+            out.append(path)
+    return sorted(set(out))
+
+
+def _score_rev(rev: str, f: str) -> int | None:
+    """Score the blob at `rev` for path `f`, as the gate does. None if absent."""
+    r = subprocess.run(["git", "show", f"{rev}:{f}"],
+                       capture_output=True, text=True, cwd=REPO)
+    if r.returncode != 0:
+        return None
+    with tempfile.NamedTemporaryFile("w", suffix=pathlib.Path(f).suffix,
+                                     delete=False) as tmp:
+        tmp.write(r.stdout)
+        tmp_path = pathlib.Path(tmp.name)
+    try:
+        return _findings(tmp_path, logical=f)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+def gate_verdict() -> tuple[list, list, list, list]:
+    """(rows, worse, divergent, unreadable) over the gate's own population.
+
+    THE EMPTY `rev` IS THE INDEX. `git show :path` reads the staged blob, and
+    the f-string below supplies that colon -- passing ":" as `rev` builds
+    `git show ::path`, which fails and scores every file as unreadable.
+    """
+    rows, worse, divergent, unreadable = [], [], [], []
+    for f in gate_population():
+        staged = _score_rev("", f)
+        if staged is None:
+            unreadable.append(f)
+            continue
+        head = _score_rev("HEAD", f)
+        base = 0 if head is None else head   # a NEW note is held to the standard
+        tree = _findings(REPO / f, logical=f) if (REPO / f).is_file() else None
+        bad = staged > base
+        rows.append((f, head, staged, bad))
+        if tree is not None and tree != staged:
+            divergent.append((f, staged, tree))
+        if bad:
+            worse.append((f, base, staged, head is None))
+    return rows, worse, divergent, unreadable
+
+
 def changed_notes() -> list[str]:
     r = subprocess.run(["git", "status", "--porcelain"], capture_output=True,
                        text=True, cwd=REPO, check=True)
@@ -60,56 +138,81 @@ def changed_notes() -> list[str]:
 
 
 def main() -> int:
-    notes = changed_notes()
     print("=" * 74)
     print("NOTE RATCHET PRE-FLIGHT — the stage that runs after the suite")
     print("=" * 74)
-    if not notes:
-        print("\nno changed notes; the ratchet cannot refuse this commit.")
-        return 0
-    worse, new, unreadable = [], [], []
+
+    # ---- the half that DECIDES: exactly what the gate will judge ----
+    gate = gate_population()
+    rows, worse, divergent, gate_unreadable = gate_verdict()
+    _st = subprocess.run(["git", "diff", "--cached", "--name-only"],
+                         capture_output=True, text=True, cwd=REPO, check=True)
+    staged_paths = {ln.strip() for ln in (_st.stdout or "").splitlines() if ln.strip()}
     print()
-    for f in notes:
-        cur = _findings(REPO / f)
-        if cur is None:
-            unreadable.append(f)
-            print(f"  {f:<58} UNREADABLE")
-            continue
-        head_ok = subprocess.run(["git", "cat-file", "-e", f"HEAD:{f}"],
-                                 capture_output=True, cwd=REPO).returncode == 0
-        if not head_ok:
-            new.append((f, cur))
-            print(f"  {f:<58} new file, {cur} finding(s)")
-            continue
-        with tempfile.NamedTemporaryFile("w", suffix=pathlib.Path(f).suffix,
-                                         delete=False) as tmp:
-            blob = subprocess.run(["git", "show", f"HEAD:{f}"], capture_output=True,
-                                  text=True, cwd=REPO, check=True).stdout
-            tmp.write(blob)
-            tmp_path = pathlib.Path(tmp.name)
-        try:
-            base = _findings(tmp_path, logical=f)
-        finally:
-            tmp_path.unlink(missing_ok=True)
-        flag = ""
-        if base is not None and cur > base:
-            worse.append((f, base, cur))
-            flag = "   <-- WORSE, the gate will refuse this"
-        print(f"  {f:<58} HEAD={base} now={cur}{flag}")
+    print("THE GATE'S OWN POPULATION — staged, under experimental_notes, .md,")
+    print("excluding seat_evidence. This half alone sets the exit code.")
+    if not gate:
+        print("  (nothing staged that the gate's note ratchet judges)")
+    for f, head, staged, bad in rows:
+        base = "new" if head is None else head
+        flag = "   <-- WORSE, the gate WILL refuse this" if bad else ""
+        print(f"  {f:<58} HEAD={base} staged={staged}{flag}")
+
+    # A DIVERGENCE IS A FINDING IN ITS OWN RIGHT. A note fixed in the working
+    # tree but not staged reads clean to every tree-based check and is refused
+    # by the gate, which reads the index. That is what happened on 2026-11-22.
+    # ---- the half that REPORTS: everything else the note standard governs ----
+    advisory = [f for f in changed_notes() if f not in set(gate)]
+    if advisory:
+        print()
+        print("ADVISORY — changed notes the gate does NOT judge (.txt companions,")
+        print("resources/, docs/). These never refuse a commit here.")
+        for f in advisory:
+            cur = _findings(REPO / f, logical=f) if (REPO / f).is_file() else None
+            if cur is None:
+                print(f"  {f:<58} UNREADABLE")
+                continue
+            head = _score_rev("HEAD", f)
+            # THE SAME TREE-OR-INDEX QUESTION, ASKED OF EVERY STAGED FILE.
+            # A file outside the gate's population is still RECORDED by the
+            # commit from the index, so an unstaged fix is lost there too --
+            # it simply is not refused. Reported wherever it is staged.
+            if f in staged_paths:
+                st = _score_rev("", f)
+                if st is not None and st != cur:
+                    divergent.append((f, st, cur))
+            if head is None:
+                print(f"  {f:<58} new file, {cur} finding(s)")
+            else:
+                mark = "   <-- worse than HEAD" if cur > head else ""
+                print(f"  {f:<58} HEAD={head} tree={cur}{mark}")
+
+    if divergent:
+        print()
+        print("TREE AND INDEX DISAGREE — the gate reads the INDEX:")
+        for f, staged, tree in divergent:
+            hint = "fixed but NOT STAGED; run: git add " + f
+            if tree > staged:
+                hint = "the tree is worse than what is staged"
+            print(f"  {f}: staged={staged} tree={tree}  ({hint})")
 
     print()
-    if unreadable:
-        print(f"{len(unreadable)} note(s) the linter could not score; treat as unknown.")
-    for f, base, cur in worse:
-        print(f"REFUSED IN PRE-FLIGHT: {f} {base} -> {cur}")
+    if gate_unreadable:
+        print(f"{len(gate_unreadable)} staged note(s) the linter could not score;")
+        print("    a count read off a failed run is not a count. Treat as REFUSE.")
+        return 1
+    for f, base, staged, was_new in worse:
+        shown = "new file, no baseline" if was_new else f"{base}"
+        print(f"REFUSED IN PRE-FLIGHT: {f} {shown} -> {staged}")
         print(f"    see the findings with: python3 scripts/note_vagueness_lint.py {f}")
     if worse:
-        print("\njudged per file, exactly as the gate judges it: a commit that")
+        print()
+        print("judged per file, exactly as the gate judges it: a commit that")
         print("cleans one note may not smuggle a new violation into another.")
+        print("A NEW note carries no baseline and is held to the whole standard.")
         return 1
-    print("OK — no changed note is worse than its committed version.")
-    if new:
-        print(f"     {len(new)} new note(s) carry no baseline; their counts are above.")
+    print("OK — no STAGED note under experimental_notes is worse than its")
+    print("     committed version, and no new one carries a finding.")
     return 0
 
 

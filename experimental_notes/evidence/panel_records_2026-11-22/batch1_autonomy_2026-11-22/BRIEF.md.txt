@@ -1,0 +1,199 @@
+# PANEL BRIEF — batch 1 of the autonomy handover, 2026-11-21
+
+DRAFT, held in scratch until the board census completes. The census result is
+appended as section 1b before dispatch; everything else below is final.
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `hooks/work_not_narrate.py` | `fd8fcd135d92e4a6` | 59979 | 2026-11-22T00:16:57+00:00 |
+| `hooks/local_resource_budget.py` | `6138f48818aea6a3` | 16438 | 2026-11-22T00:39:53+00:00 |
+| `scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py` | `a5c0ba5f67c84dcd` | 6011 | 2026-11-13T16:23:33+00:00 |
+
+## REQUIRED SECTION 1 — The question
+
+**Do these 6 repairs each hold on their own evidence, and does any pair of them
+need to be composed rather than taken singly?**
+
+Context. On 2026-11-21 the founder handed the remaining work up to the bounded
+orchestrator run to this instance, with the human in the loop reserved for
+questions that are computationally irreducible, or about safety, legality, or a
+fundamental change in how the system works. He ruled on 11 open decisions in one
+pass and accepted the recommendation on each. Batch 1 implements 6 of them plus
+every guard the board census names. He also instructed that every meaningful
+batch be put to a free panel, and that any fix the panel proposes be TESTED
+before it is adopted.
+
+The 6 repairs under review, each by path:
+
+1. **B205**, 3 defects in `hooks/work_not_narrate.py`, the Stop gate that compels
+   continued work. (a) Its commit flag is set by the literal string `git commit`
+   appearing anywhere in the turn's transcript, so merely READING
+   `hooks/pre-commit` — which carries `git commit --no-verify` as remediation
+   advice — makes it report a commit that never happened; HEAD was unmoved
+   across 6 such reports. (b) Its message says *"The next unstarted entry is
+   X"* where `_first_movable` deliberately returns STARTED entries last, so the
+   word is false whenever no unstarted entry is available, which is currently
+   always. (c) Its stand-down predicate `a_commit_board_is_running()` is scoped
+   to commit boards and returned falsy while 2 pytest processes ran the board's
+   own 317 guards, so the gate prods for tree edits during a measurement over
+   the files being edited.
+2. **B204**, `hooks/pre-commit`: report the count of guards missing from the
+   gate's own `GUARDS` list in the pre-flight, refusing nothing.
+3. **B182**, `~/.claude/hooks/local_resource_budget.py`: widen the noun-phrase
+   side of the heavy-work detector and add a case for a bare path such as
+   `bench/tests/`, while leaving the negation handling, which works, untouched.
+   **DECLARED FIGURES, RE-EXECUTED BY THIS VALIDATOR RATHER THAN TRUSTED, AND
+   THEY MOVED WHILE THE BRIEF WAS BEING WRITTEN.**
+   `scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py` builds a
+   grid of 5 verbs by 10 nouns by 3 tails -- 150 cells, every one a genuine
+   instruction the gate SHOULD refuse -- and reports how many pass through.
+
+   **BEFORE the repair, measured 2026-11-21 and NOT declared below because the
+   producer no longer prints it:** 126 of 150 = 0.840000, Wilson from 0.772960
+   to 0.890060, Clopper-Pearson from 0.771351 to 0.894713. Those are a dated
+   historical reading, not a live figure, and this brief states them as such
+   precisely because a declared figure must be re-executable and these are not.
+
+   **AFTER, and declared:** the noun widening took it to 30 of 150, and the
+   residual was exactly 10 nouns by 3 tails by 1 verb -- every remaining miss
+   was the phrase `kick off`, absent from the imperative alternation. Adding it
+   closed the grid. The negation half is unchanged and still correct, which is
+   the falsification that matters: widening an accepting predicate risks
+   turning prohibitions into refusals, and it did not.
+
+   <!-- figure: budget gate blind rate after the repair | scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py | 0.000000 -->
+   <!-- figure: budget gate blind Wilson upper after the repair | scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py | 0.024970 -->
+   <!-- figure: budget gate blind Clopper-Pearson upper after the repair | scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py | 0.024293 -->
+
+   **WHAT TO ATTACK HERE.** The verb was found by arithmetic rather than by
+   reading, and `kick off` may not be the only idiom missing. Name another the
+   project actually writes, and the claim that the grid is closed is a claim
+   about the grid rather than about the vocabulary.
+
+4. **B180**, the gate enforcing the 60-second monitoring directive: widen it to
+   see a full-suite run, which it did not see through either of 2 three-hour
+   measurements.
+5. **B190**: authorise severity-record stamping now, treating the disjunction
+   over per-scale critical cuts as provisional until it can be measured.
+6. **B197**: run a verified closing pass over open entries whose evidence is now
+   green, rather than re-scoping the branching-ratio threshold a second time.
+
+## REQUIRED SECTION 1b — The board census result
+
+RUN AND RESOLVED. All 317 files on the gate's `GUARDS` list, in 1 pass of
+2615.21 s: **34 failed, 5,129 passed, 27 skipped, 47 errors.**
+
+**81 red results, 1 cause.** Every failing and erroring file read the decisions
+surfaces, and the generator's own refusal explains all of it:
+`NO AUTHORED DETAIL for a live item: task:B205`. Entry B205 was raised at 18:40,
+after the last generator check, and given no authored block -- because it was
+classified as mine rather than the founder's and that was wrongly assumed to
+exempt it. The requirement is LIVE, not OWED. Adding 1 block took 81 to 8;
+regenerating the lagging outputs took 8 to 1; recording the founder's 15
+annotation verdicts took 1 to 0.
+
+**WHY THE CENSUS EXISTED AT ALL, since it bears on what you are asked to judge.**
+3 boards on 2026-11-21 refused on 3 DIFFERENT guards, each costing about 31
+minutes and revealing exactly 1 failure. Serial discovery costs k x 31 minutes
+against 1 run for all k, so break-even is k = 1 and this was k = 17 files.
+Discovered serially that was about 9 hours of a machine with 8 cores and 8 GiB.
+
+**A SECOND FINDING, ABOUT THE INSTRUMENT RATHER THAN THE SUBJECT.** The census
+duration was predicted at 24 minutes by scaling a 124-file run and took 43:35,
+because the guards that spawn subprocesses cluster LATE in the list. Every
+board-cost estimate in this project's record is count-scaled and therefore
+wrong in the same direction. Say so if you think that generalises further than
+stated.
+
+## REQUIRED SECTION 2 — Use the harness
+
+Form your answer by RUNNING the machinery, not by describing it. A seat that
+returns prose about a fix without having executed anything has not answered.
+
+Instruments that bear directly on this brief, with what each is expected to say:
+
+* **The severity model** bears on B190. Stamping is the precondition for
+  measuring the aggregator at all: without a stamped severity record there is
+  no series over which a disjunction and a per-scale cut can be compared. The
+  expected finding is that authorising stamping is strictly enabling and
+  decides nothing about the aggregator. Falsify by showing a route by which the
+  aggregator can be measured from records that carry no stamp.
+* **gamma**, the decay-curve convergence measure, bears on B197. The entry's
+  claim is that the task list's branching ratio has crossed 1, so the list grows
+  on balance. gamma is the project's own diminishing-returns measure and the
+  expected finding is that a closing pass over green-evidence entries lowers the
+  branching ratio without touching the threshold, which is the behaviour a
+  threshold that is moved whenever it fires cannot exhibit. Falsify by showing
+  the closing pass leaves the ratio at or above 1.
+* **The two-sided gate** is named here only to say it does NOT bear on this
+  brief, so that a seat does not reach for it: none of the 6 repairs changes a
+  convergence criterion. Say so if you disagree.
+
+Run the guards. `python3 -m pytest -q -p no:cacheprovider <path>` is the
+command; report the exact invocation and the output you saw.
+
+## REQUIRED SECTION 3 — Produce a fix, and test it
+
+A finding without a fix is incomplete. A fix without a runnable falsifier that
+you have EXECUTED is a hypothesis, not a fix. Report the command you ran and the
+output you saw, not a claim that it passed.
+
+**Deliver every fix as a FILE written INTO the sandbox repository tree at its
+real path.** A fix described in prose is not delivered. A fix written to scratch
+space is destroyed when the sandbox is torn down: rounds 5 and 6 of 2026-09-10
+returned 0 source files for exactly that reason while both seats reported
+writing and running working code.
+
+**Composability, as the founder defines it and not the weak form.** More than
+one repair is in play here, so this is live. Compose 2 repairs ONLY on a
+DEMONSTRATED advantage over each repair alone, where the demonstration is a
+MEASUREMENT on a named property and not a judgement, and prefer the single
+repair wherever it performs as well. Asking only whether the repairs compose,
+conflict or are independent is the weak non-interference reading his definition
+explicitly excludes. The pair most likely to tempt a composition claim is B205(c)
+and B180, since both concern a gate noticing a long-running process; if you
+claim they compose, measure it.
+
+## REQUIRED SECTION 4 — What would refute you
+
+Before concluding, state what evidence would overturn your own answer. A verdict
+with no stated refutation condition is an opinion.
+
+Specifically: for B205(a), name any consumer of the commit flag outside the
+message text, which would make it a defeatable gate rather than a false report.
+For B205(b), name an open entry that is both unstarted and not the founder's,
+which would make the word "unstarted" true rather than vacuous. For B204, name a
+surface that already reports the guard gap where it would be read.
+
+## REQUIRED SECTION 5 — Output shape
+
+Return, field by field, so replies can be compared without a parser guessing:
+
+* `verdict` — per repair, one of HOLDS, FAILS, UNDECIDED.
+* `reasoning` — why, grounded in what you ran.
+* `falsifier` — the command, and `falsifier_result` — its executed output.
+* `fix` — the path written to, where you propose a change.
+* `composability` — for any pair you claim composes, the measurement and the
+  named property, or the explicit statement that no pair warrants composing.
+* `strongest_disagreement` — your strongest disagreement with this brief's own
+  framing, including with any figure it states.
+
+## REQUIRED SECTION 6 — Termination
+
+Stop on diminishing returns, the project's own criterion: when a further pass
+produces no new above-threshold findings. State how many passes you ran. A
+finding is above threshold if missing it could cause real-world failure, an
+unsafe condition, or a false record.
+
+---
+
+Written under CDSFL note standard v1.9 (1 November 2026).

@@ -109,14 +109,39 @@ def test_the_names_are_printed_before_the_detail():
 def test_the_pytest_invocation_is_untouched():
     """The fix must not disturb the command another guard pins.
 
-    `test_desktop_mirrors_stay_current_2026-09-10` asserts this exact string
-    and an ordering around it, so adding a flag such as `-ra` there would have
-    turned a second guard red to fix this one.
+    `test_desktop_mirrors_stay_current_2026-09-10` asserts an ordering around
+    this command, so adding a flag such as `-ra` here would have turned a
+    second guard red to fix this one.
+
+    ★ UPDATED 2026-11-21, ENTRY B202, THE BOARD'S SILENT TEST PHASE, AND THE
+    DOCSTRING ABOVE WAS WRONG BEFORE IT WAS UPDATED. It said the sibling guard
+    pins "this exact string". It does not: it pins the UNPREFIXED form
+    `python3 -m pytest -q -p no:cacheprovider $GUARDS`, 14 characters shorter,
+    and the 2 pins were never the same string. Adding `-u` broke BOTH, and
+    only this one was visible, because the sibling is not on the gate's own
+    `GUARDS` list -- so its failure was never reported by the board that its
+    own assertion is about. The board ran 5,131 tests and that was not one.
+
+    THE PROPERTY IS THE FLAGS, NOT THE WRAPPER. `-q` decides the output shape
+    that the 2 greps below parse, and `-p no:cacheprovider` keeps a board from
+    writing a cache into the tree. The old `OUT=$(...)` command substitution
+    was never the property -- it was the thing B202 had to replace, because a
+    substitution emits nothing until the child exits. So this asserts the
+    interpreter and its flags and says nothing about how the output is routed.
+
+    `-u` IS LOAD-BEARING AND IS ASSERTED. Redirected to a file, Python
+    block-buffers stdout in 8 KiB chunks and `-q` emits 1 character per test,
+    so without it a 5,145-test board surfaces progress about once per 8,000
+    tests -- which is to say never. Dropping `-u` is mutation 3 of
+    `scripts/the_streaming_board_mutations_2026-11-21.py`.
     """
     src = HOOK.read_text(encoding="utf-8")
-    assert "python3 -m pytest -q -p no:cacheprovider $GUARDS" in src, (
+    assert "python3 -u -m pytest -q -p no:cacheprovider $GUARDS" in src, (
         "the gate's pytest invocation changed; check "
-        "test_desktop_mirrors_stay_current_2026-09-10 before accepting it")
+        "test_desktop_mirrors_stay_current_2026-09-10 AND "
+        "test_the_cheap_checks_run_before_the_board_2026-11-09 before "
+        "accepting it -- both pin this command's position, and the first is "
+        "NOT on the gate's own GUARDS list, so the board cannot report it")
 
 
 def test_the_fallback_for_a_failure_with_neither_survives():

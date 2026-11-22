@@ -18,19 +18,42 @@ REPO = pathlib.Path(__file__).resolve().parent.parent
 GUARD = REPO / "bench" / "tests" / "test_the_board_verdict_reaches_the_refusal_2026-11-17.py"
 REAL_HOOK = REPO / "hooks" / "pre-commit"
 
-ORIGINAL = "OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1)"
+# ★ RE-TARGETED 2026-11-21, ENTRY B202, THE BOARD'S SILENT TEST PHASE. The
+# board stopped being a command substitution and became a log file with a
+# background follower, so the old ORIGINAL existed nowhere in the hook and the
+# assertion below fired with `the board line is not in the hook verbatim`.
+#
+# THE MUTATED STRING IS NOW THE PYTEST CALL ALONE, not the whole assignment,
+# because that call is the only part a wrong repair touches. 4 of the 5 forms
+# below inject a pipe, which moves `$?` off pytest; the 5th swallows the code
+# outright with `|| true` and injects NO pipe, so it can only be caught by
+# RUNNING the block. That one is why the executing tests are not redundant
+# with the source-level no-pipe assertion added to the guard the same day.
+#
+# OVERLAP WITH `scripts/the_streaming_board_mutations_2026-11-21.py` WAS
+# MEASURED BEFORE KEEPING BOTH: exactly 1 of these 5 forms (the tee pipeline)
+# is also covered there, and `cat`, `tee /dev/null`, `|| true` and `head -200`
+# are not. So this harness is additive rather than duplicated, which is what
+# the additive standard's removal clause requires before retiring either.
+ORIGINAL = ('python3 -u -m pytest -q -p no:cacheprovider $GUARDS'
+            ' >> "$_CDSFL_BOARD_LOG" 2>&1')
 
 MUTATIONS = {
     "tee_pipeline":
-        'OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1 | tee /dev/stderr)',
+        'python3 -u -m pytest -q -p no:cacheprovider $GUARDS 2>&1'
+        ' | tee -a "$_CDSFL_BOARD_LOG"',
     "cat_pipeline":
-        'OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1 | cat)',
+        'python3 -u -m pytest -q -p no:cacheprovider $GUARDS 2>&1'
+        ' | cat >> "$_CDSFL_BOARD_LOG"',
     "tee_to_file":
-        'OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1 | tee /dev/null)',
+        'python3 -u -m pytest -q -p no:cacheprovider $GUARDS 2>&1'
+        ' | tee /dev/null >> "$_CDSFL_BOARD_LOG"',
     "swallowed_code":
-        'OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1 || true)',
+        'python3 -u -m pytest -q -p no:cacheprovider $GUARDS'
+        ' >> "$_CDSFL_BOARD_LOG" 2>&1 || true',
     "head_pipeline":
-        'OUT=$(python3 -m pytest -q -p no:cacheprovider $GUARDS 2>&1 | head -200)',
+        'python3 -u -m pytest -q -p no:cacheprovider $GUARDS 2>&1'
+        ' | head -200 >> "$_CDSFL_BOARD_LOG"',
 }
 
 

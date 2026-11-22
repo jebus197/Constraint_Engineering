@@ -297,6 +297,18 @@ B20 is built, not blocked on work. Its own entry records 4 of 4 components built
 
 **Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
 
+## The agreed batch is uncommitted and its board has not run; editing the tree during a board produced 2 of 8 spurious failures, and the measured heavy-work budget on this machine is 1 concurrent process
+
+*Parked 2026-11-21T18:25:20+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no distinctive term to match against the entries.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
+## B205 edits hooks/work_not_narrate.py, which 9 guards in the running board_census read, so applying it now corrupts the census that enumerates every red guard
+
+*Parked 2026-11-21T22:59:18+00:00.*
+
+**Parked by `scripts/blocker_triage.py`, which classified it NOT BLOCKING: no entry declares a dependency on it; it is mentioned but nothing is waiting.** No fuller description was supplied at triage time, so this body is the classifier's own reason. Pass `--detail` to say more.
+
 ---
 
 # Settled — kept for the record, not for his attention (38)

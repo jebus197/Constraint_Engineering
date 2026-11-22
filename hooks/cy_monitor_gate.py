@@ -197,6 +197,57 @@ def _is_shell(pid: str) -> bool:
     return _shell_name(out.stdout or "") in _SHELLS
 
 
+#: ★ ENTRY B180, HIS RULING 2026-11-21: widen it to see a full-suite run.
+#:
+#: WHAT IT COULD NOT SEE. This gate enforces his standing directive of
+#: 2026-05-18 -- a long-running process must have a terminal showing its full
+#: current output -- and it watched for exactly 1 string,
+#: `run_simulated_experiment.py`. So it was INERT through both 3-hour
+#: measurements of 2026-11-13, which are precisely the kind of run the
+#: directive is about. A full suite is a long-running process by any reading;
+#: it simply was not a simulated experiment.
+#:
+#: WHY A SUITE RUN BELONGS HERE AND A 2-SECOND GUARD RUN DOES NOT: the cost is
+#: the point. `pytest.*bench/tests` matches a board or a suite sweep, which is
+#: where the 31-minute and 3-hour waits live. The flags-between form is used
+#: deliberately -- `pytest bench/tests` requires those words ADJACENT and a
+#: real invocation reads `pytest -q -p no:cacheprovider bench/tests/...`, which
+#: is the same adjacency defect found in `scripts/blocker_triage.py` on
+#: 2026-11-21 under B205.
+#:
+#: AND THE ANCESTRY EXCLUSION IS NOT OPTIONAL HERE. Widening to a pytest
+#: pattern makes this gate see the suite that TESTS it, so a run that is my own
+#: ancestor is excluded: it is the process EXERCISING me, not one I would
+#: disturb. Established by execution in blocker_triage before being copied
+#: here, where a sibling pytest was still detected and the harness was not.
+_RUNNER_PATTERNS = ("run_simulated_experiment.py", "pytest.*bench/tests")
+
+
+def _own_process_chain() -> set:
+    """This process and every ancestor, as strings. Entry B180.
+
+    FAIL-SAFE TOWARD DETECTING A RUN: any failure returns just this pid, so a
+    fault can only make the gate MORE cautious. That direction is deliberate --
+    this function's whole purpose is to stop the gate refusing against its own
+    harness, and the harm of refusing too often is a prod, while the harm of
+    refusing too rarely is an unobserved 3-hour run.
+    """
+    chain = {str(os.getpid())}
+    try:
+        pid = os.getpid()
+        for _ in range(16):                 # bounded: no cycle can trap this
+            out = subprocess.run(["ps", "-o", "ppid=", "-p", str(pid)],
+                                 capture_output=True, text=True, timeout=4)
+            parent = (out.stdout or "").strip()
+            if not parent or not parent.isdigit() or int(parent) <= 1:
+                break
+            chain.add(parent)
+            pid = int(parent)
+    except Exception:                                        # noqa: BLE001
+        pass
+    return chain
+
+
 def runner_processes() -> list[str]:
     """Live runner processes, for runs started BEFORE the pulse file existed.
 
@@ -208,11 +259,14 @@ def runner_processes() -> list[str]:
     if os.environ.get("CDSFL_CY_NO_PGREP", "").strip():
         return []            # test seam: isolate the pulse path from the machine
     try:
-        out = subprocess.run(
-            ["pgrep", "-f", "run_simulated_experiment.py"],
-            capture_output=True, text=True, timeout=4)
-        pids = [x for x in (out.stdout or "").split() if x.strip()]
-        return [p for p in pids if not _is_shell(p)]
+        pids: list[str] = []
+        for _pat in _RUNNER_PATTERNS:
+            out = subprocess.run(["pgrep", "-f", _pat],
+                                 capture_output=True, text=True, timeout=4)
+            pids += [x for x in (out.stdout or "").split() if x.strip()]
+        mine = _own_process_chain()
+        return [p for p in dict.fromkeys(pids)
+                if p not in mine and not _is_shell(p)]
     except Exception:                                        # noqa: BLE001
         return []
 
@@ -253,15 +307,65 @@ def message(live: list[dict], unwatched: list[dict], pids: list[str]) -> str:
             f"  LIVE: {len(pids)} runner process(es) {', '.join(pids[:4])} with NO "
             f"pulse file — a run started before the pulse existed, so nothing "
             f"machine-readable reports its state.")
+    #: ★ THE ADVICE FOLLOWS THE RUN IT FOUND, 2026-11-22. Entry B180 widened
+    #: detection to a full-suite run, and the first thing that widening did was
+    #: refuse a stop over a `pytest` run and a panel dispatch -- NEITHER of
+    #: which writes a `cy_watchdog.log`, because only
+    #: `bench/tools/run_simulated_experiment.py` spawns the watchdog. So the
+    #: refusal was right and its remedy was unfollowable, which is a guard
+    #: telling the reader to do something impossible and is how a correct gate
+    #: teaches people to ignore it.
+    #:
+    #: THE DISCRIMINATOR IS THE ARTEFACT, not the kind of run: if a watchdog log
+    #: exists, name it, because it keeps the 60 s cadence the directive asks
+    #: for. If none does, say so and point at what the run DOES produce. Both
+    #: branches keep the `tail -f` warning, because that failure mode is about
+    #: the DELIVERY channel and is identical either way.
+    #: `logs_dir()` and not a constant: it is overridable so this hook can be
+    #: TESTED against a scratch directory, and a hard-coded path here would
+    #: silently read the real tree during a test.
+    #: ★ A LIVE WATCHDOG, NOT ANY WATCHDOG, and the first version of this got it
+    #: wrong. Globbing `*/cy_watchdog.log` matched 12 HISTORICAL logs from past
+    #: runs, so the watchdog branch was taken every time and the advice stayed
+    #: unfollowable for precisely the case it was written for -- `a mechanism
+    #: can be inert at its default`, caught by asking which branch actually
+    #: fires rather than by assuming the one intended did.
+    #:
+    #: FRESHNESS IS THE TEST because the watchdog writes on a ~60 s cadence by
+    #: construction, so a log belonging to a live run cannot be minutes stale.
+    #: The window is generous against a slow machine and still excludes every
+    #: finished run.
+    _ld = logs_dir()
+    _fresh = 300.0                      # seconds; 5x the watchdog's own cadence
+    _wd = []
+    if _ld.is_dir():
+        try:
+            _now = time.time()
+            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
+                         if _now - p.stat().st_mtime <= _fresh)
+        except Exception:                                    # noqa: BLE001
+            _wd = []                    # cannot tell -> give the artefact advice
+    if _wd:
+        _how = ("    Monitor on the run's cy_watchdog.log, matching "
+                "'OUTCOME|CLOSED|TROUBLE|PROCESS GONE|HEARTBEAT'\n"
+                "The watchdog keeps the ~60 s cadence; the Monitor delivers it.")
+    else:
+        _how = ("    Monitor on the artefact THIS run writes — no "
+                "cy_watchdog.log exists, so there is no watchdog to tail.\n"
+                "    A suite or board run: its output file, or `pgrep` on the "
+                "invocation, emitting a line when it exits.\n"
+                "    A panel round: its log directory, emitting a line as each "
+                "seat's json appears.\n"
+                "Emit on EVERY terminal state, not only success: a filter that "
+                "matches the happy path alone is silent through a crash, and "
+                "silence is indistinguishable from still running.")
     out.append(
-        "\nDO NOT go idle. Arm a BOUNDED wait that wakes on the watchdog's own "
+        "\nDO NOT go idle. Arm a BOUNDED wait that wakes on the run's own "
         "events, in ONE call, rather than polling by hand:\n"
-        "    Monitor on the run's cy_watchdog.log, matching "
-        "'OUTCOME|CLOSED|TROUBLE|PROCESS GONE|HEARTBEAT'\n"
-        "The watchdog keeps the ~60 s cadence; the Monitor delivers it. A "
-        "`tail -f | grep` under a background shell delivers NOTHING, because "
-        "Bash background notifies on exit and `tail -f` never exits — that is "
-        "the exact failure of 2026-11-02, 0 notifications in 6 h 01 min.")
+        + _how + "\nA `tail -f | grep` under a background shell delivers "
+        "NOTHING, because Bash background notifies on exit and `tail -f` never "
+        "exits — that is the exact failure of 2026-11-02, 0 notifications in "
+        "6 h 01 min.")
     return "\n".join(out)
 
 

@@ -700,6 +700,62 @@ Every figure in this section is computed at the live count of {n}. Until the 9th
 """
 
 
+#: ★ STATUSES THAT MEAN THE WORK EXISTS. Note standard Rule 20's ladder is
+#: PROPOSED / BUILT / TESTED / COMMITTED / ENABLED, and everything from BUILT
+#: upward means there is a work product to look at.
+_BUILT_OR_BETTER = ("BUILT", "TESTED", "COMMITTED", "ENABLED")
+
+
+def entry_states(root: pathlib.Path = REPO) -> dict:
+    """ident -> (state, status) from the master task list's OWN markers.
+
+    Read from `scripts/task_list_markers.py:parse_entries`, which is the
+    canonical parser, rather than re-derived here -- re-deriving a population a
+    helper already defines produced 3 different counts from 3 instruments on
+    2026-11-12. A failure to read returns {} so a missing marker file costs a
+    flag and never the file.
+    """
+    try:
+        tlm = _load(root / "scripts" / "task_list_markers.py", "task_list_markers")
+        return {e.ident: (e.state, e.status) for e in tlm.parse_entries()}
+    except Exception:
+        return {}
+
+
+def status_flag(ident: str, row: dict, states: dict) -> str:
+    """The one fact that changes the NATURE of a decision, in plain words.
+
+    ★ WHY THIS EXISTS, AND WHY IT IS NOT A LENGTH FIX. On 2026-11-21 the
+    founder's Desktop copy of the decisions file was 8,482 bytes against the
+    repository copy's 95,259 at the same filename, and carried 0 of the 4
+    premise reversals a free panel had found on 2026-11-17. The obvious reading
+    is that his copy is truncated and should be restored to full length. THAT
+    READING IS WRONG AND WOULD UNDO HIS OWN RULING: the index-only Desktop copy
+    is the 2026-11-11 repair to his 2026-11-08 workload complaint -- *"at over
+    22,000 words ... an almost impossible workload"* -- and
+    `test_his_copy_is_not_cut_to_fit_2026-11-11.py` pins it.
+
+    SO THE DEFECT IS NOT THAT HIS COPY IS SHORT. It is that an index line says
+    what the decision ASKS and never what the entry's own record SAYS, so an
+    entry whose premise is already dead, or whose work is already built and
+    running, reads exactly like one that needs a fresh ruling. Measured
+    2026-11-21: 10 of his 21 open entries are BUILT-or-better, 0.476190, Wilson
+    [0.283440, 0.676305], and 3 of the panel's 4 falsified-premise entries are
+    among them. A ruling given without that fact is a ruling on a question that
+    no longer exists.
+
+    THE COST IS BOUNDED AND IS THE POINT: about 40 characters on a flagged line,
+    against the 368 the uncapped index was measured to add. Nothing is cut.
+    """
+    what = (row.get("what") or "").upper()
+    if "PREMISE OF THIS ENTRY NO LONGER HOLDS" in what:
+        return "premise already falsified, so ratify or close rather than rule"
+    state, status = states.get(ident, (None, None))
+    if state == "OPEN" and status in _BUILT_OR_BETTER:
+        return (f"already {status.lower()}, so ratify or close rather than rule")
+    return ""
+
+
 def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
     """Render the file. `detail=False` gives the INDEX ALONE.
 
@@ -779,16 +835,29 @@ def render(mrb, rows, spoken: bool, detail: bool = True) -> str:
               "section.")
     A(sp(_wrap_free(_lead)) if spoken else _wrap_free(_lead))
     A("")
+    #: ★ THE ENTRY'S OWN STATUS TRAVELS WITH THE QUESTION (2026-11-21). Read
+    #: once outside the loop: `parse_entries` walks a 2,000-line file and doing
+    #: it per row would read it 21 times to answer the same question.
+    _states = entry_states(REPO)
     for i, r in enumerate(rows, 1):
         k, _how = recommended_index(r["options"]) if r["options"] else (0, "")
         # ★ NO CAP WHEN THE INDEX IS THE WHOLE DOCUMENT (his ruling 2026-11-11).
         gist = (_gist(r["options"][k], limit=150 if detail else None)
                 if r["options"] else "no option recorded")
+        #: ★ COMPOSED ONCE FOR BOTH SURFACES, for the reason the comment above
+        #: `_lead` gives: this loop renders a spoken and a markdown line, and a
+        #: flag written into only one of them would make the 2 surfaces promise
+        #: different things. The spoken form carries NO brackets or asterisks,
+        #: per the TTS plain-text rule.
+        flag = status_flag(r["ident"], r, _states)
         line = (f"{i}. {r['ident']}, {r['heading'].lower()}. "
-                f"Recommended option {k + 1}: {gist}")
+                + (f"{flag[0].upper()}{flag[1:]}. " if flag else "")
+                + f"Recommended option {k + 1}: {gist}")
         _gref = r.get("tid_ref") or r.get("tid") or ""
         tag = f" `[{_gref}]`" if _gref else ""
-        A(sp(line) if spoken else f"{i}. **{r['ident']}**{tag} — {r['heading'].lower()}. "
+        _mflag = f" **[{flag.upper()}]**" if flag else ""
+        A(sp(line) if spoken else f"{i}. **{r['ident']}**{tag} — {r['heading'].lower()}."
+                                  f"{_mflag} "
                                   f"*Recommended option {k + 1}:* {gist}")
     A("")
     A("" if spoken else "---")

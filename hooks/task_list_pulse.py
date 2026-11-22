@@ -47,6 +47,33 @@ def find_repo(payload):
     return None
 
 
+def standing_goal(repo):
+    """His autonomy handover of 2026-11-21, read from the versioned file.
+
+    WHY A FILE AND NOT A STRING HERE. He asked for the instruction to survive
+    every compaction, and a hook already does that -- but a hardcoded string is
+    not a document he can read or amend, and this project's own record is that
+    a rule nobody can see is a rule nobody applies. The text lives in
+    experimental_notes/THE_STANDING_GOAL.md between explicit markers, so the
+    delivery mechanism and the instruction can be changed independently.
+
+    THE MARKERS ARE LITERAL, NOT A SHAPE. An earlier defect in this project came
+    from a detector inferring structure from formatting; a fixed delimiter
+    cannot drift. If either marker is absent the function returns "" and the
+    turn simply carries no goal line, which is the fail-safe this hook requires.
+    """
+    f = repo / "experimental_notes" / "THE_STANDING_GOAL.md"
+    try:
+        text = f.read_text()
+    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+        return ""
+    begin = text.find("<!-- INJECT-BEGIN -->")
+    end = text.find("<!-- INJECT-END -->")
+    if begin < 0 or end < 0 or end <= begin:
+        return ""
+    return text[begin + len("<!-- INJECT-BEGIN -->"):end].strip()
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -92,6 +119,23 @@ def main():
     if roster:
         ctx += ("\n[entries] print a code only WITH its descriptor — "
                 + roster)
+
+    # ★ HIS AUTONOMY HANDOVER, 2026-11-21 -- THE MOST IMPORTANT INSTRUCTION IN
+    # THE PROJECT BY HIS OWN ASSESSMENT, AND IT WAS GIVEN IN CHAT, WHICH DOES
+    # NOT SURVIVE A COMPACTION. His words: "implement it in a way that will
+    # survive every compaction event from now on." The same reasoning that put
+    # the task list in this hook applies with more force to the instruction
+    # that says what the task list is FOR.
+    try:
+        goal = standing_goal(repo)
+    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+        goal = ""
+    if goal:
+        # EVERY line carries the label, not just the first. The other 2 blocks
+        # this hook injects are single lines that identify themselves; a goal
+        # whose 2nd line onward arrives unmarked is indistinguishable from
+        # unrelated context, which is precisely the failure the labels prevent.
+        ctx += "".join("\n[goal] " + ln for ln in goal.splitlines() if ln.strip())
 
     print(json.dumps({
         "suppressOutput": True,

@@ -2346,16 +2346,21 @@ def _audit_memory_index(mem_dir: Path) -> _MemoryIndexAudit:
     # — a false orphan each, growing by every future archive pass. The file is still
     # pointed at, just from the sibling the index itself links to. Reading the archive
     # here keeps the orphan check honest: a genuinely unreferenced memory still shows.
-    _archive = mem_dir / _MEMORY_ARCHIVE_NAME
-    if _archive.is_file():
+    # GENERALISED 2026-11-21 from the archive alone to every sibling the index
+    # links to, because `relieve_memory_index_pressure` added a second one and a
+    # special case written twice is a special case that drifts.
+    for _sib_name in _MEMORY_POINTER_SIBLINGS:
+        _sib = mem_dir / _sib_name
+        if not _sib.is_file():
+            continue
         try:
-            for _ln in _archive.read_text(encoding="utf-8",
-                                          errors="replace").splitlines():
+            for _ln in _sib.read_text(encoding="utf-8",
+                                      errors="replace").splitlines():
                 for _t, _tgt, _n in _memory_index_pointers(_ln):
                     if _tgt.endswith(".md"):
                         targets.add(_tgt)
         except OSError:
-            pass          # an unreadable archive must not break the audit
+            pass          # an unreadable sibling must not break the audit
     audit.broken = sorted(t for t in targets if not (mem_dir / t).is_file())
 
     # glob() returns [] on a permission denial instead of raising, which
@@ -2603,6 +2608,49 @@ def _print_memory_index_report(audit: _MemoryIndexAudit) -> None:
 
 _MEMORY_ARCHIVE_NAME = "MEMORY_ARCHIVE.md"
 
+#: ★ THE OVERFLOW COMPANION, AND IT IS DELIBERATELY NOT THE ARCHIVE.
+#: `MEMORY_ARCHIVE.md` holds entries that aged out of `Project State`, which is
+#: history: a session summary from September is no longer true of today. A
+#: STANDING LESSON does not become false by being pushed out of the loaded
+#: window, so filing one under a heading that says "archive" would misdescribe
+#: it to the next reader. This file's own heading says the opposite -- read it
+#: in full on recovery -- and `rs` does.
+_MEMORY_OVERFLOW_NAME = "MEMORY_FEEDBACK_OVERFLOW.md"
+
+#: Siblings whose pointers COUNT as index pointers for the orphan scan. The
+#: archive earned this on 2026-10-04, when the first 18 entries it moved were
+#: each reported as a false orphan. The overflow companion has the identical
+#: property, so the special case became a list rather than being written twice.
+_MEMORY_POINTER_SIBLINGS = (_MEMORY_ARCHIVE_NAME, _MEMORY_OVERFLOW_NAME)
+
+#: ★ THE RESERVE THE PRESSURE RELIEF AIMS AT, BELOW THE REFUSAL.
+#: Measured 2026-11-21 by `scripts/the_index_can_never_stop_filling_2026-11-21.py`:
+#: the index gains 5.6190 memory files/day over the trailing 21 days at 113.5988
+#: characters a pointer, so 638.3173 characters a day. 1,500 characters is 2.35
+#: days of that growth -- wide enough that an ordinary `sv` does not immediately
+#: re-trigger the relief it just ran, narrow enough that the index still uses
+#: nearly all of what the loader will actually read.
+_MEMORY_RELIEF_RESERVE_CHARS = 1_500
+
+#: ★ WHY A CAP AND NOT A BIGGER TRIM. z3, same producer: with the index growing
+#: at a positive rate, `exists R . forall t >= 0 . total - R + rate*t <= refuse`
+#: is UNSAT for every finite R -- freeing the ENTIRE index buys 38.38 days. So
+#: no one-off relief can satisfy "it should never become full"; only a standing
+#: bound can, and `forall t` drops out of the cap formulation entirely (SAT).
+#: His instruction of 2026-11-21: *"sv should be trimming itself automatically
+#: so it never becomes full."*
+#:
+#: EVICTION ORDER IS SALIENCE FIRST, THEN AGE -- and the composition is what
+#: earns its place under `composability-requires-a-measurement`, measured on a
+#: named property (days a 3-star lesson stays in the loaded window):
+#:   age alone      15.31 days   -- evicts 3-star pointers from the first pass
+#:   salience alone  8.25 days   -- then runs out of evictable mass entirely
+#:   salience+age   19.43 days   <- dominates both, 1.2696x and 2.3545x
+#: SymPy: C - A = low/(2*rate), positive whenever any low-salience mass exists,
+#: so the composition dominates age alone unconditionally rather than on this
+#: index's particular numbers.
+
+
 #: The recent window the index keeps in full. The founder's description of what
 #: MEMORY.md is for, verbatim 2026-10-03: "a resource that keeps all the most
 #: recent and critical project information over a number of days, then trims out
@@ -2814,6 +2862,362 @@ def archive_stale_memory_entries(mem_dir: Path, today=None,
 
     report["ok"] = True
     report["reason"] = f"moved {len(moved)} entry/entries — {what}"
+    return report
+
+
+def _memory_unit_salience(unit: str) -> int:
+    """How many ★ the unit's own link titles carry. -1 means it carries no link.
+
+    The star is the index's own salience marker and it is already written down,
+    so reading it invents no ranking. A unit with no link is prose -- a bold
+    sub-heading sharing a line with pointers -- and is never a candidate for
+    eviction, which is what -1 encodes.
+    """
+    links = list(_MEMORY_LINK_RE.finditer(unit))
+    if not links:
+        return -1
+    return max(m.group(1).count("\u2605") for m in links)
+
+
+def _memory_unit_newest_date(unit: str):
+    """The newest date in the unit's link TARGETS, or None when it has none.
+
+    Scoped to targets, not to the whole unit, for the same reason
+    `_memory_line_newest_date` is: a date inside a hook ("measured 2026-11-04")
+    describes the finding, not the file, and ageing on it would move an entry
+    because of a sentence rather than because of its own vintage.
+    """
+    best = None
+    for m in _MEMORY_LINK_RE.finditer(unit):
+        d = _MEMORY_DATE_IN_NAME_RE.search(m.group(2))
+        if not d:
+            continue
+        try:
+            when = date(int(d.group(1)), int(d.group(2)), int(d.group(3)))
+        except ValueError:
+            continue
+        if best is None or when > best:
+            best = when
+    return best
+
+
+def _memory_split_units(line: str) -> tuple[str, list[str]]:
+    """A grouped index line as (bullet prefix, units), split on the join string.
+
+    `group_feedback_index_entries` packs many pointers onto one line joined by
+    `_MEMORY_POINTER_JOIN`, so the unit of eviction is a SEGMENT OF A LINE and
+    not a line. Splitting on the same constant the grouper joins with is what
+    keeps the two from disagreeing.
+    """
+    m = _MEMORY_BULLET_RE.match(line)
+    prefix = m.group(0) if m else ""
+    body = line[len(prefix):]
+    return prefix, body.split(_MEMORY_POINTER_JOIN)
+
+
+def _memory_render_units(prefix: str, units: list[str]) -> str:
+    return prefix + _MEMORY_POINTER_JOIN.join(units)
+
+
+def relieve_memory_index_pressure(mem_dir: Path, today=None,
+                                  reserve_chars: int = _MEMORY_RELIEF_RESERVE_CHARS,
+                                  dry_run: bool = False) -> dict:
+    """Hold the index under its own refusal line by moving the least load-bearing
+    `Feedback` pointers to `MEMORY_FEEDBACK_OVERFLOW.md`. Nothing is deleted.
+
+    ★ THIS IS THE FOURTH RELIEF AND THE FIRST ONE THAT CAN REACH THE SECTION THE
+    PRESSURE IS ACTUALLY IN. The founder's instruction of 2026-11-21: *"sv should
+    be trimming itself automatically so it never becomes full. That was always the
+    intent."* The trim HAS been automatic since 2026-10-03 and his memory of that
+    is correct -- what was wrong is its SCOPE. Measured the same day: ageing is
+    confined to `_MEMORY_AGEING_SECTIONS`, which reaches 1,566 of 24,486
+    characters (0.063955, Wilson [0.060958, 0.067088]), while `Feedback` holds
+    19,850 (0.810667, Wilson [0.805712, 0.815526]) and is excluded BY DESIGN and
+    for a good reason -- a standing rule does not go stale by the calendar, and
+    `test_standing_feedback_is_NEVER_moved_however_old` pins that. So all 3 earlier
+    reliefs freed 0 characters on that date while the index sat 14 characters from
+    refusing a save.
+
+    ★ THE FIRST INTERVAL ABOVE READ [0.060936, 0.067066] UNTIL 2026-11-21 AND
+    BELONGED TO A DIFFERENT MEASUREMENT. The repository-wide count/interval
+    consistency guard dated 2026-09-07 refused the commit over it, reporting 1
+    disagreement across 3,945 files scanned. Searched rather than guessed: the
+    stated interval is the exact Wilson interval for 1,565 of 24,479, so a
+    count taken at one moment was printed beside an interval computed 1
+    character and 7 characters earlier. Both figures were real; the PAIR was
+    not, which is why that guard's message says to correct BOTH rather than
+    either. The `Feedback` interval in the same sentence was exact all along,
+    so one computation here was stale and its neighbour was not -- which is
+    the reason to recompute a pair rather than eyeball it. Recomputed on 2
+    routes agreeing to 6.939e-18: statsmodels `proportion_confint` and a
+    hand-rolled mpmath Wilson taking its quantile from `erfinv` at 40 digits.
+
+    WHY A BOUND RATHER THAN A LARGER TRIM, and this is the part that makes the
+    mechanism answer his instruction instead of postponing it. z3, in
+    `scripts/the_index_can_never_stop_filling_2026-11-21.py`: no finite one-off
+    relief satisfies "never full" under positive growth -- emptying the whole
+    index buys 38.38 days at the measured 638.3173 characters/day. The same query
+    in cap form is SAT and `forall t` drops out of it. So this function is not a
+    bigger trim; it is a standing ceiling that re-asserts itself on every `sv`.
+
+    WHAT IS GIVEN UP, STATED PLAINLY BECAUSE IT IS REAL. An evicted pointer is
+    still reachable -- it is in the companion, the companion is linked from the
+    index, `rs` reads it and the orphan scan counts its pointers -- but it is no
+    longer in the window the loader injects on an ordinary turn. With unbounded
+    lesson growth and a bounded window that loss is arithmetic, not a design
+    choice: something must leave each time something arrives.
+
+    EVICTION ORDER: lowest salience first, oldest first within a salience tier.
+    The ★ count is the index's own marker, so the ranking is read rather than
+    invented, and no 3-star pointer moves while any lower-starred one remains.
+    The order's dominance over each half alone is measured in the constants block
+    above under `composability-requires-a-measurement`.
+
+    Returns a report dict; ``dry_run=True`` computes it and writes nothing.
+    """
+    today = today or date.today()
+    index = mem_dir / _MEMORY_INDEX_NAME
+    report = {"ok": False, "moved": 0, "freed_chars": 0, "target": 0,
+              "before": 0, "after": 0, "overflow": None, "backup": None,
+              "reason": "", "moved_titles": [], "kept_top_tier": 0}
+    if not index.is_file():
+        report["reason"] = f"no index at {index}"
+        return report
+    try:
+        text = index.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as err:
+        report["reason"] = f"index unreadable — {type(err).__name__}: {err}"
+        return report
+
+    refuse = int(_MEMORY_INDEX_LIMIT_CHARS * _MEMORY_INDEX_REFUSE_FRACTION)
+    target = refuse - reserve_chars
+    report["target"] = target
+    report["before"] = len(text)
+    if len(text) <= target:
+        report["ok"] = True
+        report["after"] = len(text)
+        report["reason"] = (f"index is {target - len(text):,} chars inside its "
+                            f"{target:,}-char target; nothing moved")
+        return report
+
+    overflow = mem_dir / _MEMORY_OVERFLOW_NAME
+    try:
+        old_overflow = (overflow.read_text(encoding="utf-8")
+                        if overflow.is_file() else "")
+    except (OSError, UnicodeDecodeError) as err:
+        report["reason"] = f"overflow unreadable — {type(err).__name__}: {err}"
+        return report
+
+    #: Parse once into records so selection and rendering cannot disagree about
+    #: what a unit is. kind: "line" (verbatim), "units" (an evictable bullet),
+    #: "heading" (a bold sub-heading that may be withdrawn if it empties).
+    records: list[dict] = []
+    section: str | None = None
+    for line in text.split("\n"):
+        if line.startswith("## "):
+            section = line[3:].strip()
+            records.append({"kind": "line", "text": line, "section": section})
+            continue
+        if section != _MEMORY_HEADED_SECTION:
+            records.append({"kind": "line", "text": line, "section": section})
+            continue
+        if _MEMORY_BOLD_HEADING.match(line.strip()) is not None:
+            records.append({"kind": "heading", "text": line, "section": section})
+            continue
+        if not _MEMORY_BULLET_RE.match(line) or not _MEMORY_LINK_RE.search(line):
+            records.append({"kind": "line", "text": line, "section": section})
+            continue
+        prefix, units = _memory_split_units(line)
+        records.append({"kind": "units", "prefix": prefix,
+                        "units": [{"text": u, "moved": False} for u in units],
+                        "section": section})
+
+    #: THE COMPANION'S OWN POINTER GOES IN FIRST, so its cost is inside the
+    #: measurement rather than added after the target was already met.
+    if _MEMORY_OVERFLOW_NAME not in text:
+        for i, rec in enumerate(records):
+            if rec["kind"] == "line" and rec["text"].startswith(
+                    f"## {_MEMORY_HEADED_SECTION}"):
+                records.insert(i + 1, {
+                    "kind": "line", "section": _MEMORY_HEADED_SECTION,
+                    "text": (f"- Lessons past the loaded window, every one still "
+                             f"binding: [{_MEMORY_OVERFLOW_NAME}]"
+                             f"({_MEMORY_OVERFLOW_NAME}) — READ IN FULL ON `rs`.")})
+                break
+
+    candidates: list[tuple[int, date, int, int, int]] = []
+    for ri, rec in enumerate(records):
+        if rec["kind"] != "units":
+            continue
+        for ui, unit in enumerate(rec["units"]):
+            sal = _memory_unit_salience(unit["text"])
+            if sal < 0:
+                continue          # prose on a shared line is never evictable
+            when = _memory_unit_newest_date(unit["text"])
+            #: ★ AN UNDATED POINTER SORTS LAST WITHIN ITS TIER, NOT FIRST, and
+            #: the first version of this used `date.min` and so evicted undated
+            #: pointers FIRST. That inverted a rule this file already states:
+            #: `_memory_line_newest_date` records that None means NO EVIDENCE OF
+            #: AGE and such a line is never archived, because "guessing an age
+            #: from position in the file would archive standing material on a
+            #: hunch". Sorting undated to `date.min` is exactly that guess.
+            #:
+            #: IT MATTERS BECAUSE THE STAR AND THE DATE ARE THE SAME VARIABLE ON
+            #: THIS INDEX, measured 2026-11-21: 98 of 102 three-star pointers are
+            #: dated and 65 of 66 unstarred ones are undated, phi = 0.928321,
+            #: Fisher exact p = 2.750833e-40, odds ratio 833. The star convention
+            #: began partway through the index's life and was never applied
+            #: backwards, so an UNSTARRED pointer is usually an OLD and
+            #: FOUNDATIONAL one -- `Tool constraint box`, `2 tools per claim`,
+            #: `Falsification gate`, `Read the clock` -- and not a minor one.
+            #:
+            #: THIS DOES NOT SOLVE THAT CONFOUND and must not be described as
+            #: solving it. With only 99 characters of DATED unstarred mass against
+            #: 1,486 that had to be freed, the undated pointers still move today;
+            #: protecting them absolutely would force 3-star evictions instead,
+            #: which is strictly worse. What this ordering fixes is the
+            #: DIRECTION, so that every dated pointer in a tier leaves before any
+            #: undated one in the same tier. Whether those foundational lessons
+            #: should carry stars is a judgement about which lessons matter, and
+            #: it is the founder's, not this function's.
+            #: ★ THE REAL DATE TRAVELS BESIDE THE SORT KEY, never instead of
+            #: it. The first version carried only the key and recovered the
+            #: undated case by comparing against the sentinel, so changing
+            #: the sentinel from `date.min` to `date.max` silently made every
+            #: undated pointer report as "9999-12-31" in the line the founder
+            #: reads. A sentinel is a sorting device and is not the value.
+            candidates.append((sal, when or date.max, ri, ui, when))
+    candidates.sort(key=lambda c: (c[0], c[1], c[2], c[3]))
+
+    def _render() -> str:
+        out: list[str] = []
+        for rec in records:
+            if rec["kind"] in ("line", "heading"):
+                out.append(rec["text"])
+                continue
+            kept = [u["text"] for u in rec["units"] if not u["moved"]]
+            if not kept:
+                continue          # the whole line emptied: drop it
+            out.append(_memory_render_units(rec["prefix"], kept))
+        #: A HEADING LEFT STANDING OVER NOTHING READS AS ENTRIES LOST, which is
+        #: the same reasoning `archive_stale_memory_entries` applies to a dormant
+        #: section's heading. Withdraw it only when nothing with a pointer
+        #: survives beneath it before the next heading or section.
+        pruned: list[str] = []
+        for i, line in enumerate(out):
+            if (_MEMORY_BOLD_HEADING.match(line.strip()) is not None
+                    and not line.startswith("## ")):
+                has_child = False
+                for nxt in out[i + 1:]:
+                    if (nxt.startswith("## ")
+                            or _MEMORY_BOLD_HEADING.match(nxt.strip()) is not None):
+                        break
+                    if _MEMORY_LINK_RE.search(nxt):
+                        has_child = True
+                        break
+                if not has_child:
+                    continue
+            pruned.append(line)
+        return "\n".join(pruned)
+
+    moved: list[tuple[int, date | None, str]] = []
+    for sal, _key, ri, ui, real_when in candidates:
+        if len(_render()) <= target:
+            break
+        records[ri]["units"][ui]["moved"] = True
+        moved.append((sal, real_when, records[ri]["units"][ui]["text"]))
+
+    new_text = _render().rstrip() + "\n"
+    report["after"] = len(new_text)
+    report["moved"] = len(moved)
+    report["freed_chars"] = len(text) - len(new_text)
+    report["kept_top_tier"] = sum(
+        1 for ri, rec in enumerate(records) if rec["kind"] == "units"
+        for u in rec["units"]
+        if not u["moved"] and _memory_unit_salience(u["text"]) >= 3)
+    report["moved_titles"] = [
+        (("undated" if w is None else w.isoformat()),
+         f"{s}-star",
+         (_MEMORY_LINK_RE.search(t).group(1) if _MEMORY_LINK_RE.search(t)
+          else t[:40]))
+        for s, w, t in moved]
+
+    if not moved:
+        report["reason"] = (
+            f"index is {len(text) - target:,} chars over its {target:,}-char "
+            f"target and NOTHING in {_MEMORY_HEADED_SECTION} could be moved — "
+            f"0 evictable pointers found")
+        return report
+
+    #: ★ NO POINTER MAY BE LOST, checked with the audit's OWN parser across the
+    #: index AND the companion together, because a pointer that left one and
+    #: arrived in the other has not been lost. The grouper compares the index
+    #: alone, which is right for a merge and would be wrong here.
+    def _pointers(*texts: str) -> list[str]:
+        #: ★ THE SIBLING FILES THEMSELVES ARE EXCLUDED, and the first version of
+        #: this check did not exclude them and REFUSED ITS OWN FIRST RUN: adding
+        #: the companion's navigation pointer to the index takes the set from
+        #: 201 to 202, which a set comparison reads as a change. A pointer TO a
+        #: sibling is navigation, not a lesson, so it is not part of the set
+        #: being conserved. The refusal was the right failure mode -- it left
+        #: the index untouched -- and it is what found this.
+        return sorted(tgt for t in texts for ln in t.splitlines()
+                      for _ti, tgt, _n in _memory_index_pointers(ln)
+                      if tgt not in _MEMORY_POINTER_SIBLINGS)
+
+    body = "\n".join(
+        ("- " + t.lstrip() if not _MEMORY_BULLET_RE.match(t) else t)
+        for _s, _w, t in moved) + "\n"
+    before_set, after_set = _pointers(text, old_overflow), _pointers(new_text, old_overflow, body)
+    if before_set != after_set:
+        lost = sorted(set(before_set) - set(after_set))
+        gained = sorted(set(after_set) - set(before_set))
+        report["reason"] = (
+            f"REFUSED: relief would change the pointer set "
+            f"({len(before_set)} -> {len(after_set)}); the index is unchanged. "
+            f"missing: {lost[:5]} unexpected: {gained[:5]}")
+        return report
+
+    if dry_run:
+        report["ok"] = True
+        report["reason"] = "dry run — nothing written"
+        return report
+
+    stamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    header = (f"\n## Moved out of the loaded window {today.isoformat()}\n\n"
+              f"{len(moved)} pointer(s) moved by `relieve_memory_index_pressure` "
+              f"at {stamp} to hold {_MEMORY_INDEX_NAME} under its "
+              f"{target:,}-character target. Lowest salience first, oldest first "
+              f"within a tier. **Every lesson below is still in force** — it is "
+              f"out of the auto-loaded window, not withdrawn.\n\n")
+    try:
+        backup = mem_dir / f"{_MEMORY_BACKUP_PREFIX}{datetime.now().strftime('%Y%m%dT%H%M%S')}.md"
+        backup.write_text(text, encoding="utf-8")
+        report["backup"] = backup.name
+        if old_overflow:
+            overflow.write_text(old_overflow + header + body, encoding="utf-8")
+        else:
+            overflow.write_text(
+                f"# CDSFL Persistent Memory — FEEDBACK PAST THE LOADED WINDOW\n\n"
+                f"Standing lessons moved out of {_MEMORY_INDEX_NAME} so the index "
+                f"stays inside the loader's limits. **Nothing here is retired.** "
+                f"The loader injects only {_MEMORY_INDEX_LIMIT_CHARS:,} characters "
+                f"of the index, and past that it silently drops the NEWEST "
+                f"entries — the ones a recovering session needs most — so the "
+                f"index is held below that by moving the least load-bearing "
+                f"pointers here. **READ THIS FILE IN FULL ON `rs`.** Every "
+                f"pointer below resolves in this same folder.\n"
+                + header + body, encoding="utf-8")
+        report["overflow"] = overflow.name
+        index.write_text(new_text, encoding="utf-8")
+    except OSError as err:
+        report["reason"] = f"write failed — {type(err).__name__}: {err}"
+        return report
+
+    report["ok"] = True
+    report["reason"] = (f"moved {len(moved)} pointer(s) to {_MEMORY_OVERFLOW_NAME}; "
+                        f"{len(text):,} -> {len(new_text):,} chars against a "
+                        f"{target:,} target")
     return report
 
 
@@ -3835,6 +4239,32 @@ def _preflight_completeness(
               f"— 0 pointers moved")
     elif not _fgrp.get("ok"):
         print(f"  memory index: Feedback grouping did not run — {_fgrp['reason']}")
+
+    # ★ THE FOURTH RELIEF, AND THE FIRST THAT CAN REACH THE SECTION THE PRESSURE
+    # IS IN — his instruction of 2026-11-21: *"sv should be trimming itself
+    # automatically so it never becomes full. That was always the intent."*
+    #
+    # The 3 above are automatic and have been since 2026-10-03, so his memory of
+    # the design is right; their SCOPE was the defect. On 2026-11-21 all 3 freed
+    # 0 characters while the index sat 14 characters from refusing a save, because
+    # ageing reaches 1,566 of 24,486 characters and `Feedback` holds 19,850 of
+    # them and is excluded by design. Ordered LAST so it only ever moves what the
+    # 3 cheaper, loss-free reliefs could not free by ageing or grouping.
+    _rel = relieve_memory_index_pressure(_mem_dir, dry_run=not apply)
+    if _rel.get("moved"):
+        _rverb = "would move" if not apply else "moved"
+        print(f"  memory index: {_rverb} {_rel['moved']} lowest-salience "
+              f"{_MEMORY_HEADED_SECTION} pointer(s) to {_MEMORY_OVERFLOW_NAME}, "
+              f"{_rel['before']:,} -> {_rel['after']:,} chars against a "
+              f"{_rel['target']:,} target — 0 pointers lost, "
+              f"{_rel['kept_top_tier']} 3-star pointer(s) kept in the window")
+        for _when, _tier, _title in _rel["moved_titles"][:6]:
+            print(f"                - {_tier} {_when}  {_title}")
+        if len(_rel["moved_titles"]) > 6:
+            print(f"                ... and {len(_rel['moved_titles']) - 6} more; "
+                  f"the full list is in {_MEMORY_OVERFLOW_NAME}")
+    elif not _rel.get("ok"):
+        print(f"  memory index: pressure relief did not run — {_rel['reason']}")
 
     audit = _audit_memory_index(_mem_dir)
 

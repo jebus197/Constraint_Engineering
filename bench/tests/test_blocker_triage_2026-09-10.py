@@ -213,8 +213,33 @@ class TestItCannotBeTrickedByACommonTerm:
         assert got is False, why
 
 
+#: ★ THE PARKING TESTS ARE ABOUT PARKING, NOT ABOUT BOARD DETECTION — 2026-11-22.
+#:
+#: RAISED BY THE PANEL AND VERIFIED BEFORE ADOPTION. `park()` refuses before any
+#: write when `a_commit_board_is_running()` is truthy, which is correct and is
+#: entry B155. But these tests never touched the `CDSFL_BT_BOARD` seam the
+#: product carries for exactly this purpose -- measured: the string appeared 0
+#: times in this file -- so whether they passed depended on whether a pytest run
+#: happened to be alive on the machine at that moment. On 2026-11-22 all 5 of
+#: them failed with `BoardIsRunning`, and a verification run WAS genuinely alive;
+#: the code they exercise was healthy throughout.
+#:
+#: WHY THAT IS MATERIAL AND NOT COSMETIC. A red result implicating healthy
+#: parking code is a FALSE RECORD, and this project's record is that a false
+#: positive is how a rule stops being enforced. The seam existed and reached no
+#: caller, which is the unwired-addition half of the additive standard.
+#:
+#: SCOPED DELIBERATELY TO THE PARKING CLASSES. The classes that test the
+#: DETECTOR must keep observing the real machine, so this fixture is attached to
+#: these two classes and is not autouse across the module.
+@pytest.fixture
+def no_board(monkeypatch):
+    """Force the board predicate to report 'no board' for parking tests."""
+    monkeypatch.setenv("CDSFL_BT_BOARD", "0")
+
+
 class TestTheParkingFileIsRealAndAppendOnly:
-    def test_parking_appends_rather_than_rewrites(self, B, tmp_path, monkeypatch):
+    def test_parking_appends_rather_than_rewrites(self, B, no_board, tmp_path, monkeypatch):
         f = tmp_path / "PARKED.md"
         monkeypatch.setattr(B, "PARKED", f)
         B.park("first item", "detail one", stamp="2026-09-10T00:00:00+01:00")
@@ -235,7 +260,7 @@ class TestParkingIsIdempotent:
     with copies of one decision, which is the opposite of what the file is for.
     """
 
-    def test_an_already_parked_item_is_not_appended_again(self, B, tmp_path,
+    def test_an_already_parked_item_is_not_appended_again(self, B, no_board, tmp_path,
                                                           monkeypatch):
         parked = tmp_path / "PARKED.md"
         monkeypatch.setattr(B, "PARKED", parked)
@@ -245,7 +270,7 @@ class TestParkingIsIdempotent:
         assert again is None, "the same title was parked twice"
         assert parked.read_text(encoding="utf-8").count("## A8") == 1
 
-    def test_a_wording_difference_is_not_a_new_decision(self, B, tmp_path,
+    def test_a_wording_difference_is_not_a_new_decision(self, B, no_board, tmp_path,
                                                         monkeypatch):
         """The pair this was found on differed by the word "the"."""
         parked = tmp_path / "PARKED.md"
@@ -254,7 +279,7 @@ class TestParkingIsIdempotent:
         again = B.park("A8: re-point the 20 note citations, or leave them", "detail")
         assert again is None, "one question parked twice over one article"
 
-    def test_a_status_note_on_a_heading_is_not_a_new_decision(self, B, tmp_path,
+    def test_a_status_note_on_a_heading_is_not_a_new_decision(self, B, no_board, tmp_path,
                                                               monkeypatch):
         """Headings in that file gain notes such as "SUPERSEDED" after an em
         dash; a heading that gained a note is still the same item."""
@@ -264,7 +289,7 @@ class TestParkingIsIdempotent:
         again = B.park("10.2: should the shell service be on", "d")
         assert again is None
 
-    def test_a_genuinely_different_item_is_still_parked(self, B, tmp_path,
+    def test_a_genuinely_different_item_is_still_parked(self, B, no_board, tmp_path,
                                                         monkeypatch):
         """ANTI-VACUITY. A check that refused everything would silently drop new
         decisions, which is far worse than listing one twice."""
@@ -386,7 +411,7 @@ class TestABareWordCannotDeclareADependency:
         got, why = B.blocks_progress(f"{self.TERM} needs a decision", tasks=tasks)
         assert got is True, f"a declaring form on an OPEN entry must block: {why}"
 
-    def test_the_other_declaring_phrases_are_untouched(self, B, tmp_path):
+    def test_the_other_declaring_phrases_are_untouched(self, B, no_board, tmp_path):
         """The narrowing must not have disturbed the alternatives beside it."""
         for phrasing in (f"`{self.TERM}` is the founder's call.",
                          f"This awaits his ruling on `{self.TERM}`.",

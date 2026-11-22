@@ -310,8 +310,25 @@ class TestTheHookRefreshesButCannotRefuse:
         was refused with the remedy present in the same script and unreachable.
         """
         src = HOOK.read_text(encoding="utf-8")
-        assert (src.index("sync_desktop_mirrors.py")
-                < src.index("python3 -m pytest -q -p no:cacheprovider $GUARDS")), (
+        # ★ RE-ANCHORED 2026-11-21, ENTRY B202, THE BOARD'S SILENT TEST PHASE.
+        # The board gained `-u` when it moved from a command substitution to a
+        # log file with a background follower, so the old literal vanished and
+        # `str.index` raised ValueError instead of asserting. THIS FAILURE WAS
+        # INVISIBLE TO THE BOARD: this file is not on the gate's own `GUARDS`
+        # list, so the 2026-11-21 board reported 18 failures and not this one,
+        # which is the 19th. `a gate board is not the suite`, again. The
+        # anchors are now looked up with `find` so a future rename fails with
+        # the message below rather than an opaque ValueError from the assert.
+        refresh = src.find("sync_desktop_mirrors.py")
+        board = src.find("python3 -u -m pytest -q -p no:cacheprovider $GUARDS")
+        assert refresh >= 0, "the mirror refresh call is gone from the hook"
+        assert board >= 0, (
+            "the board invocation is no longer the pinned literal; this test "
+            "holds an ORDERING, so re-aim it rather than deleting it. The "
+            "same literal is pinned by "
+            "test_a_refusal_names_every_failure_2026-11-09.py and "
+            "test_the_cheap_checks_run_before_the_board_2026-11-09.py")
+        assert refresh < board, (
             "the mirror refresh runs after the guards again, so a drifted "
             "mirror refuses the commit that would have repaired it")
 

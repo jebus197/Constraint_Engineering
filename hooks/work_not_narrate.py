@@ -817,6 +817,90 @@ def _first_movable(opens) -> str:
         return ""
 
 
+def _describe_entry(ident: str) -> str:
+    """`B205 (BUILT) — descriptor`, or the bare ident if nothing can be read.
+
+    ENTRY B205. 2 separate complaints of his are answered by 1 string. The
+    first is that a bare code costs him a lookup he cannot make, which is
+    `an-identifier-never-travels-alone`. The second is that this gate called an
+    entry "unstarted" when its work was BUILT, which is true of every entry the
+    selector returns from its deliberate started-last fallback.
+
+    IT READS THE ROSTER THAT ALREADY PAIRS A CODE WITH ITS DESCRIPTOR rather
+    than parsing the task list again: `scripts/task_list_markers.py:open_roster`
+    was built for exactly this and is already injected into every turn, so a
+    second derivation here would be 2 definitions of one descriptor.
+
+    FAIL-SAFE TOWARD THE BARE IDENT. Any failure returns what it was given, so
+    a fault here costs the descriptor and never the prod.
+    """
+    if not ident:
+        return ident
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "_wnn_markers", REPO / "scripts" / "task_list_markers.py")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules.setdefault("_wnn_markers", mod)
+        spec.loader.exec_module(mod)
+        status = ""
+        for e in mod.parse_entries(REPO / "experimental_notes"
+                                   / "CDSFL_MASTER_TASK_LIST.md"):
+            if e.ident == ident:
+                status = str(getattr(e, "status", "") or "").upper()
+                break
+        desc = ""
+        for item in mod.open_roster().split(";"):
+            item = item.strip()
+            if item.startswith(ident + " "):
+                desc = item[len(ident) + 1:].strip()
+                break
+        out = ident
+        if status:
+            out += f" ({status})"
+        if desc:
+            out += f" — {desc}"
+        return out
+    except Exception:                                          # noqa: BLE001
+        return ident
+
+
+def _a_commit_landed_since(turn_iso: str) -> bool:
+    """Did HEAD's commit land at or after this turn began? Entry B205.
+
+    ASKS GIT RATHER THAN MATCHING PROSE. The predicate this replaces searched
+    the transcript for the literal `git commit`, which appears in
+    `hooks/pre-commit` as its own bypass advice -- so reading that file made the
+    gate announce a commit that had not happened.
+
+    FAIL-SAFE TOWARD NOT CLAIMING, which is the direction this module uses
+    everywhere else: an unreadable timestamp, an absent repository, a git that
+    will not answer, all return False. A gate that wrongly says "you committed"
+    is a false record; one that wrongly says "you did not" is merely quiet.
+
+    NO NEW STATE. The turn's own clock reading is already decided by the caller,
+    so this takes it as an argument rather than finding the turn a second time.
+    """
+    if not turn_iso:
+        return False
+    try:
+        import datetime as _dt
+        import subprocess as _sp
+        r = _sp.run(["git", "-C", str(REPO), "log", "-1", "--format=%cI"],
+                    capture_output=True, text=True, timeout=10)
+        if r.returncode != 0 or not (r.stdout or "").strip():
+            return False
+        head = _dt.datetime.fromisoformat(r.stdout.strip())
+        turn = _dt.datetime.fromisoformat(turn_iso.strip().replace("Z", "+00:00"))
+        if head.tzinfo is None:
+            head = head.replace(tzinfo=_dt.timezone.utc)
+        if turn.tzinfo is None:
+            turn = turn.replace(tzinfo=_dt.timezone.utc)
+        return head >= turn
+    except Exception:                                          # noqa: BLE001
+        return False
+
+
 def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
     """(tool calls, prose chars, a commit ran, the user's message carried `d`).
 
@@ -846,6 +930,7 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
     # failure and just as bad.
     cmds: set = set()
     worked_since = False
+    start_iso = ""
     for i, line in enumerate(lines):
         if ('"type":"assistant"' in line or '"type": "assistant"' in line) \
                 and '"tool_use"' in line:
@@ -889,14 +974,46 @@ def turn_signals(transcript: pathlib.Path) -> tuple[int, int, bool, bool]:
             cmds = set()
         cmds |= _new
         start = i
+        #: ★ THE TURN'S OWN CLOCK READING, captured where the turn's start is
+        #: already decided rather than re-derived. Entry B205: the commit check
+        #: below needs to know WHEN this turn began, and `_turn_key` finds the
+        #: same entry by the same predicate -- so taking it here keeps 1
+        #: definition of "the turn started", not 2 that can disagree.
+        start_iso = str(d.get("timestamp") or "")
         worked_since = False
     had_d = "d" in cmds
 
     calls = prose = 0
-    commit = False
+    #: ★ A COMMIT IS ASKED OF GIT, NOT MATCHED IN PROSE. Entry B205, 2026-11-21.
+    #: This read `if "git commit" in line` over every transcript line of the
+    #: turn, and `hooks/pre-commit` carries `git commit --no-verify` as its
+    #: bypass advice -- so merely READING that hook set the flag. Reproduced:
+    #: this gate reported a commit 6 times in 1 turn while `git rev-parse HEAD`
+    #: never left `b1d5d5db`. `a substring is not a call`, applied to a verb.
+    #:
+    #: THE SEVERITY IS BOUNDED AND THAT MATTERS: `commit` is consumed at
+    #: exactly 1 site, the message head below, and `verdict` decides on
+    #: `had_d`, `n_open` and `blocker_raised` alone. So this was a FALSE REPORT
+    #: TO ME and never a defeatable gate -- checked before being called a
+    #: defect, because the 2 are different severities.
+    #:
+    #: DRIVEN OVER 6 CASES, correct in 6 of 6, AND THE FIGURE IS RE-EXECUTABLE:
+    #: `scripts/the_commit_flag_asks_git_2026-11-22.py`. The cases are this
+    #: turn False; a turn predating HEAD True; HEAD's own timestamp True; 1 s
+    #: after HEAD False; an unparseable timestamp False; an empty timestamp
+    #: False. The last two are the fail-safe -- the predicate never CLAIMS a
+    #: commit, matching this module's rule that a broken predicate costs the
+    #: protection and never the work, and the producer counts that direction
+    #: separately rather than folding it into the hit rate.
+    #:
+    #: ★ THE PRODUCER EXISTS BECAUSE THE PANEL CAUGHT ITS ABSENCE, 2026-11-22.
+    #: This comment previously declared "correct in 5 of 5" with no committed
+    #: script behind it. `measured-rate-travels-with-its-script` binds a code
+    #: comment exactly as it binds a note: a number that exists only as prose
+    #: is a claim about evidence, not evidence. The 6th case is the panel's
+    #: addition.
+    commit = _a_commit_landed_since(start_iso)
     for line in lines[start + 1:]:
-        if "git commit" in line:
-            commit = True
         try:
             d = json.loads(line)
         except Exception:
@@ -952,7 +1069,7 @@ def verdict(calls: int, prose: int, commit: bool, had_d: bool,
     return True, (
         f"{head}\n"
         f"{n_open} items are still OPEN and nothing is blocking. Do not stop here.\n"
-        f"The next unstarted entry is {nxt}. Work it.\n"
+        f"The next entry to carry forward is {nxt}. Work it.\n"
         f"If something genuinely prevents progress, classify it first:\n"
         f"    python3 scripts/blocker_triage.py --title '<the obstacle>'\n"
         f"A PARK verdict is not a reason to stop -- park it and carry on. Only a "
@@ -1008,6 +1125,25 @@ def main() -> int:
     t = payload.get("transcript_path") or ""
     calls, prose, commit, had_d = turn_signals(pathlib.Path(os.path.expanduser(t)))
     n_open, nxt = open_items()
+    #: ★ THE NAMED ENTRY CARRIES ITS STATUS AND ITS DESCRIPTOR. Entry B205,
+    #: 2026-11-21. `_first_movable` deliberately returns STARTED entries LAST
+    #: rather than skipping them -- the B158 repair, and correct, because an
+    #: entry at BUILT may genuinely need more work. The MESSAGE did not say so,
+    #: and announced every such entry as "the next unstarted entry". Measured:
+    #: of 50 open entries 21 classify as owed to him and 0 are both unstarted
+    #: and not his, so the word was false on every prod. It sent a session into
+    #: an entry whose work was already built.
+    #:
+    #: DECORATED HERE AND NOT IN THE SELECTOR, because
+    #: `test_a_movable_entry_is_not_one_that_merely_asks_nothing_2026-11-12.py`
+    #: calls `_first_movable` at 5 sites and asserts a BARE IDENT comes back.
+    #: Changing its return type to carry the status would turn that guard red
+    #: to fix a sentence, so the contract stays and the message does the work.
+    #:
+    #: THE DESCRIPTOR IS NOT DECORATION EITHER: `an-identifier-never-travels-
+    #: alone` exists because a bare code costs a lookup, and the roster this
+    #: reads already holds the descriptors, so printing one costs nothing.
+    nxt = _describe_entry(nxt)
     # A BLOCKER RAISED THIS TURN IS A LEGITIMATE REASON TO STOP, and it is
     # detected from the transcript rather than trusted: the triage script must
     # actually have been run and returned BLOCK.

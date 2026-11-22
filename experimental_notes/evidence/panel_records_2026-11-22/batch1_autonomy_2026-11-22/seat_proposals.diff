@@ -1,0 +1,1200 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-22 01:33:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/.cdsfl_deny_canonical_writes.sb	2026-11-22 01:14:33
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_the_board_detector_fails_toward_writing_2026-11-22.py
+--- /dev/null	2026-11-22 01:33:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/bench/tests/test_the_board_detector_fails_toward_writing_2026-11-22.py	2026-11-22 01:24:44
+@@ -0,0 +1,138 @@
++"""The triage's board detector must fail toward WRITING, as it documents.
++
++ENTRY B205(c) / B180, PANEL FINDING 2026-11-22. `a_commit_board_is_running`
++promises "any failure of this predicate returns ''". It leans on 2 exclusions
++that both fail the OTHER way by design, because both were written for
++`hooks/cy_monitor_gate.py`:
++
++    _own_process_chain  "FAIL-SAFE TOWARD DETECTING A RUN"
++    cy._is_shell        "unreadable -> KEEP, fail toward refusing"
++
++Where `ps` is absent or refused by sandbox policy, those go inert and a planted
++shell is reported as a running commit board. `hooks/work_not_narrate.py` stands
++its entire Stop gate down on this value, so the consequence is a DISABLED gate,
++not a noisy one.
++
++These tests pin the direction, not the implementation.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import subprocess
++import sys
++import time
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++
++
++def _load(name, path):
++    spec = importlib.util.spec_from_file_location(name, path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    spec.loader.exec_module(mod)
++    return mod
++
++
++@pytest.fixture()
++def bt():
++    return _load("bt_polarity", REPO / "scripts" / "blocker_triage.py")
++
++
++class _R:
++    def __init__(self, out):
++        self.stdout, self.stderr, self.returncode = out, "", 0
++
++
++def _run_with(bt, shell_pid, deny_ps):
++    """The predicate with pgrep stubbed to ONE shell pid, ps optionally denied."""
++    real = bt.subprocess.run
++
++    def fake(cmd, *a, **k):
++        if cmd and str(cmd[0]) == "pgrep":
++            return _R(shell_pid + "\n")
++        if cmd and str(cmd[0]) == "ps" and deny_ps:
++            raise PermissionError(1, "Operation not permitted: 'ps'")
++        return real(cmd, *a, **k)
++
++    bt.subprocess.run = fake
++    try:
++        return bt.a_commit_board_is_running()
++    finally:
++        bt.subprocess.run = real
++
++
++@pytest.fixture()
++def planted_shell():
++    proc = subprocess.Popen(["/bin/zsh", "-c", "sleep 20"])
++    time.sleep(0.3)
++    try:
++        yield str(proc.pid)
++    finally:
++        proc.kill()
++
++
++def test_a_shell_is_not_a_board_even_when_ps_is_denied(bt, planted_shell):
++    """THE DEFECT ITSELF. No pytest runs in this test; the only match is a
++    shell. The documented answer is '' and it must not depend on `ps`."""
++    assert _run_with(bt, planted_shell, deny_ps=True) == "", (
++        "a shell was reported as a running commit board while `ps` was denied; "
++        "work_not_narrate stands its whole Stop gate down on this value")
++
++
++def test_the_same_holds_with_ps_available(bt, planted_shell):
++    """ANTI-VACUITY in the other direction: the answer is '' either way, so the
++    test above is not merely restating the sandbox's `ps` policy."""
++    assert _run_with(bt, planted_shell, deny_ps=False) == ""
++
++
++def test_ps_unavailability_is_distinguishable_from_no_board(bt):
++    """The probe that makes the repair possible must actually probe. Without a
++    way to tell "cannot tell" from "nothing there", the polarity cannot be
++    chosen at all."""
++    assert hasattr(bt, "_ps_can_answer"), (
++        "the predicate can no longer distinguish an unreadable `ps` from an "
++        "absent board; the fail-safe direction is then unchooseable")
++    real = bt.subprocess.run
++
++    def deny(cmd, *a, **k):
++        if cmd and str(cmd[0]) == "ps":
++            raise PermissionError(1, "denied")
++        return real(cmd, *a, **k)
++
++    bt.subprocess.run = deny
++    try:
++        assert bt._ps_can_answer() is False
++    finally:
++        bt.subprocess.run = real
++
++
++def test_a_real_board_is_still_detected(bt, monkeypatch):
++    """THE WIDENING IS NOT WEAKENED. The repair must not buy its polarity by
++    giving up detection -- that would be the removal half of the additive
++    standard."""
++    monkeypatch.setenv("CDSFL_BT_BOARD", "1")
++    assert bt.a_commit_board_is_running() == "forced-by-seam"
++
++
++def test_the_monitor_gate_keeps_the_opposite_polarity():
++    """cy_monitor_gate must NOT be 'fixed' to match. Its cost of over-firing is
++    a prod; its cost of under-firing is an unobserved 3-hour run, so failing
++    toward detecting is correct THERE and only there."""
++    cy = _load("cy_polarity", REPO / "hooks" / "cy_monitor_gate.py")
++    real = cy.subprocess.run
++
++    def deny(cmd, *a, **k):
++        if cmd and str(cmd[0]) == "ps":
++            raise PermissionError(1, "denied")
++        return real(cmd, *a, **k)
++
++    cy.subprocess.run = deny
++    try:
++        assert cy._is_shell("1") is False, (
++            "cy_monitor_gate stopped failing toward refusing; that direction is "
++            "deliberate and the triage repair must not have propagated here")
++    finally:
++        cy.subprocess.run = real
+
+### cc2:attempt-1:bench/tests/test_the_budget_gate_sees_the_projects_own_idiom_2026-11-22.py
+--- /dev/null	2026-11-22 01:33:37
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/bench/tests/test_the_budget_gate_sees_the_projects_own_idiom_2026-11-22.py	2026-11-22 01:29:28
+@@ -0,0 +1,80 @@
++"""The heavy-work detector must see the sentences this project actually writes.
++
++ENTRY B182, PANEL FINDING 2026-11-22. The B182 repair closed its 150-cell grid
++to 0 blind. The grid is not the vocabulary: its 10 nouns were chosen by the
++same hand that wrote the pattern, so the measurement could only report that the
++listed phrasings are caught.
++
++Counted over this repository's own .md/.py/.txt at the time of the finding:
++bare "the board" 1816, "bench/tests" with no trailing slash 1048, "the guards"
++525, unhyphenated "rerun" 398. All passed through. Two of them are sentences
++the project writes AT ITSELF -- the hook's own refusal text says "run the board
++ONCE yourself", and the 2026-11-21 panel brief says "Run the guards."
++
++THE NEGATION ARM IS PINNED TOO. Widening an accepting predicate is exactly how
++a gate starts refusing the briefs that FORBID the tooling, which is the failure
++B182 was raised for in the first place.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import sys
++
++import pytest
++
++REPO = pathlib.Path(__file__).resolve().parents[2]
++HOOK = REPO / "hooks" / "local_resource_budget.py"
++
++
++@pytest.fixture(scope="module")
++def instructs():
++    spec = importlib.util.spec_from_file_location("lrb_vocab", HOOK)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["lrb_vocab"] = m
++    try:
++        spec.loader.exec_module(m)
++    except SystemExit:
++        pass
++    return m._instructs_heavy_verification
++
++
++#: Each is a genuine instruction to run the project's heavy verification.
++@pytest.mark.parametrize("text", [
++    "run the board ONCE yourself, save the result",   # the hook's OWN remedy
++    "Run the guards.",                                # the panel brief's own words
++    "run the guards and report the result",
++    "run the board's own 317 guards",
++    "run the board",
++    "run the whole board",
++    "run the entire board",
++    "rerun the full test suite",
++    "rerunning the suite and tell me what fails",
++    "run bench/tests and tell me what fails",
++])
++def test_a_real_instruction_is_refused(instructs, text):
++    assert instructs(text.lower()), (
++        f"{text!r} passed through the gate that exists to refuse it; this is a "
++        "phrasing counted in the project's own corpus, not an invented one")
++
++
++#: THE HALF THAT MUST NOT MOVE. A brief forbidding the tooling has to be
++#: writable without tripping the guard that forbids it.
++@pytest.mark.parametrize("text", [
++    "do not run the full test suite",
++    "do not run the board",
++    "never rerun the suite",
++    "you must not run the guards",
++    "without running bench/tests",
++    "rather than running the board, consult the cached result",
++])
++def test_a_prohibition_still_passes_through(instructs, text):
++    assert not instructs(text.lower()), (
++        f"{text!r} was refused; widening the noun and verb sides must not turn "
++        "prohibitions into refusals -- that is the 2026-10-17 failure")
++
++
++def test_ambiguity_is_still_allowed(instructs):
++    """A bare noun with no verb and no negation stays AMBIGUOUS. Refusing on
++    ambiguity produced both false positives of 2026-10-17."""
++    assert not instructs("the board reported 18 failed and 5,131 passed")
+
+### cc2:attempt-1:hooks/cy_monitor_gate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/cy_monitor_gate.py	2026-11-22 01:16:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/hooks/cy_monitor_gate.py	2026-11-22 00:48:04
+@@ -307,65 +307,15 @@
+             f"  LIVE: {len(pids)} runner process(es) {', '.join(pids[:4])} with NO "
+             f"pulse file — a run started before the pulse existed, so nothing "
+             f"machine-readable reports its state.")
+-    #: ★ THE ADVICE FOLLOWS THE RUN IT FOUND, 2026-11-22. Entry B180 widened
+-    #: detection to a full-suite run, and the first thing that widening did was
+-    #: refuse a stop over a `pytest` run and a panel dispatch -- NEITHER of
+-    #: which writes a `cy_watchdog.log`, because only
+-    #: `bench/tools/run_simulated_experiment.py` spawns the watchdog. So the
+-    #: refusal was right and its remedy was unfollowable, which is a guard
+-    #: telling the reader to do something impossible and is how a correct gate
+-    #: teaches people to ignore it.
+-    #:
+-    #: THE DISCRIMINATOR IS THE ARTEFACT, not the kind of run: if a watchdog log
+-    #: exists, name it, because it keeps the 60 s cadence the directive asks
+-    #: for. If none does, say so and point at what the run DOES produce. Both
+-    #: branches keep the `tail -f` warning, because that failure mode is about
+-    #: the DELIVERY channel and is identical either way.
+-    #: `logs_dir()` and not a constant: it is overridable so this hook can be
+-    #: TESTED against a scratch directory, and a hard-coded path here would
+-    #: silently read the real tree during a test.
+-    #: ★ A LIVE WATCHDOG, NOT ANY WATCHDOG, and the first version of this got it
+-    #: wrong. Globbing `*/cy_watchdog.log` matched 12 HISTORICAL logs from past
+-    #: runs, so the watchdog branch was taken every time and the advice stayed
+-    #: unfollowable for precisely the case it was written for -- `a mechanism
+-    #: can be inert at its default`, caught by asking which branch actually
+-    #: fires rather than by assuming the one intended did.
+-    #:
+-    #: FRESHNESS IS THE TEST because the watchdog writes on a ~60 s cadence by
+-    #: construction, so a log belonging to a live run cannot be minutes stale.
+-    #: The window is generous against a slow machine and still excludes every
+-    #: finished run.
+-    _ld = logs_dir()
+-    _fresh = 300.0                      # seconds; 5x the watchdog's own cadence
+-    _wd = []
+-    if _ld.is_dir():
+-        try:
+-            _now = time.time()
+-            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
+-                         if _now - p.stat().st_mtime <= _fresh)
+-        except Exception:                                    # noqa: BLE001
+-            _wd = []                    # cannot tell -> give the artefact advice
+-    if _wd:
+-        _how = ("    Monitor on the run's cy_watchdog.log, matching "
+-                "'OUTCOME|CLOSED|TROUBLE|PROCESS GONE|HEARTBEAT'\n"
+-                "The watchdog keeps the ~60 s cadence; the Monitor delivers it.")
+-    else:
+-        _how = ("    Monitor on the artefact THIS run writes — no "
+-                "cy_watchdog.log exists, so there is no watchdog to tail.\n"
+-                "    A suite or board run: its output file, or `pgrep` on the "
+-                "invocation, emitting a line when it exits.\n"
+-                "    A panel round: its log directory, emitting a line as each "
+-                "seat's json appears.\n"
+-                "Emit on EVERY terminal state, not only success: a filter that "
+-                "matches the happy path alone is silent through a crash, and "
+-                "silence is indistinguishable from still running.")
+-    out.append(
+-        "\nDO NOT go idle. Arm a BOUNDED wait that wakes on the run's own "
++    out.append(
++        "\nDO NOT go idle. Arm a BOUNDED wait that wakes on the watchdog's own "
+         "events, in ONE call, rather than polling by hand:\n"
+-        + _how + "\nA `tail -f | grep` under a background shell delivers "
+-        "NOTHING, because Bash background notifies on exit and `tail -f` never "
+-        "exits — that is the exact failure of 2026-11-02, 0 notifications in "
+-        "6 h 01 min.")
++        "    Monitor on the run's cy_watchdog.log, matching "
++        "'OUTCOME|CLOSED|TROUBLE|PROCESS GONE|HEARTBEAT'\n"
++        "The watchdog keeps the ~60 s cadence; the Monitor delivers it. A "
++        "`tail -f | grep` under a background shell delivers NOTHING, because "
++        "Bash background notifies on exit and `tail -f` never exits — that is "
++        "the exact failure of 2026-11-02, 0 notifications in 6 h 01 min.")
+     return "\n".join(out)
+ 
+ 
+
+### cc2:attempt-1:hooks/local_resource_budget.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/local_resource_budget.py	2026-11-22 00:39:53
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/hooks/local_resource_budget.py	2026-11-22 01:29:39
+@@ -121,10 +121,27 @@
+ #: admissible as a bare stem where it would be reckless in a pattern that
+ #: decided alone. The 2 false positives of 2026-10-17 came from refusing on
+ #: AMBIGUITY, and that behaviour is untouched.
+-_NOUN_MENTION = re.compile(
+-    r"\bbench/tests/"
++#: * THE GRID WAS CLOSED; THE VOCABULARY WAS NOT. Panel finding 2026-11-22.
++#: B182 measured 0 of 150 blind and the figure is real, but the grid holds 10
++#: nouns chosen by the same hand that wrote the pattern, so it could only
++#: report that the listed phrasings are caught. Counted over this repository's
++#: own .md/.py/.txt: bare "the board" 1816, "bench/tests" with NO trailing
++#: slash 1048, "the guards" 525. All 3 passed straight through, and 2 of them
++#: are sentences this project writes AT ITSELF -- this hook's own remedy line
++#: says "run the board ONCE yourself", and the 2026-11-21 panel brief says
++#: "Run the guards.". A gate blind to its own remedy is the shape already
++#: recorded here as "the passing input cannot test a defence".
++#:
++#: BARE `board` IS ADMISSIBLE FOR THE REASON BARE `suite` ALREADY IS, stated
++#: above: this half of the pattern CANNOT fire without an imperative in the
++#: window and fires for nothing inside a negation. The adjective list was never
++#: load-bearing; it was the author's sample.
++_NOUN_MENTION = re.compile(
++    r"\bbench/tests\b/?"
+     r"|\b(?:the\s+|a\s+)?(?:full\s+|whole\s+|entire\s+)?(?:test\s+)?suite\b"
+-    r"|\b(?:the\s+|a\s+)?(?:full|commit|verification|guard|test)\s+board\b",
++    r"|\b(?:the\s+|a\s+)?(?:full\s+|whole\s+|entire\s+|commit\s+|"
++    r"verification\s+|guard\s+|test\s+)?board\b"
++    r"|\b(?:the\s+|all\s+(?:the\s+)?|\d+\s+)?guards\b",
+     re.IGNORECASE)
+ #: ★ `kick off` ADDED 2026-11-21, AND IT WAS FOUND BY THE NOUN FIX RATHER THAN
+ #: BY READING. Entry B182's ruling covered the noun side; widening that took the
+@@ -146,7 +163,11 @@
+     r"\b(run|runs|running|invoke|invokes|invoking|execute|executes|executing|"
+     r"call|calls|calling|launch|launches|launching|start|starts|starting|"
+     r"fire|fires|spawn|spawns|"
+-    r"kick[\s-]?off|kicks[\s-]?off|kicking[\s-]?off)\b", re.IGNORECASE)
++    r"kick[\s-]?off|kicks[\s-]?off|kicking[\s-]?off|"
++    #: `rerun` UNHYPHENATED, panel finding 2026-11-22. `\brun\b` already
++    #: catches `re-run`, because the hyphen is a word boundary; it catches
++    #: nothing in `rerun`, where it is not. 398 occurrences in this repository.
++    r"rerun|reruns|rerunning)\b", re.IGNORECASE)
+ _NEGATION = re.compile(
+     r"\b(do not|don't|dont|never|must not|mustn't|cannot|can't|without|avoid|"
+     r"refrain|no need to|skip|forbid|forbidden|prohibit|prohibited|"
+
+### cc2:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-22 01:31:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/hooks/pre-commit	2026-11-22 00:27:37
+@@ -644,9 +644,7 @@
+ bench/tests/test_the_index_can_never_stop_filling_2026-11-21.py
+ bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py
+ bench/tests/test_his_copy_carries_the_entrys_status_2026-11-21.py
+-bench/tests/test_todays_producers_run_2026-11-21.py
+-bench/tests/test_the_standing_goal_survives_compaction_2026-11-22.py
+-bench/tests/test_was_this_batch_reviewed_2026-11-22.py"
++bench/tests/test_todays_producers_run_2026-11-21.py"
+ # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
+ # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
+ # was run 5 times to discover 2 classes of defect that a commit-time check catches
+@@ -878,24 +876,6 @@
+         | grep -E 'NOT on the gate' | head -1 | sed 's/^[[:space:]]*//' || true)
+     if [ -n "$_CDSFL_GAP" ]; then
+         echo "pre-commit: B103 guard gap, reported not gated -- $_CDSFL_GAP" >&2
+-    fi
+-fi
+-
+-# ★ HIS STANDING INSTRUCTION OF 2026-11-21, MADE MECHANICAL. He asked, in the
+-# same message as the autonomy handover and calling it equally important, that
+-# every meaningful batch of work be put to a free panel before it is adopted.
+-# A commit is the unit of a batch under his 2026-11-10 ruling, so this is the
+-# one moment the question has a definite answer.
+-#
+-# IT REPORTS AND NEVER REFUSES, for the same reason the B103 gap report above
+-# does: a false refusal here costs about 27 minutes of his 8-core machine, and
+-# this project has already recorded a case where a false positive is why a rule
+-# went unenforced. If the line turns out to be ignored, THAT is the evidence for
+-# escalating it to a refusal. Every failure path falls open with `|| true`.
+-if [ -f scripts/was_this_batch_reviewed_2026-11-22.py ]; then
+-    _CDSFL_PANEL=$(python3 scripts/was_this_batch_reviewed_2026-11-22.py --quiet 2>/dev/null | head -1 || true)
+-    if [ -n "$_CDSFL_PANEL" ]; then
+-        echo "pre-commit: $_CDSFL_PANEL" >&2
+     fi
+ fi
+ 
+
+### cc2:attempt-1:hooks/task_list_pulse.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/task_list_pulse.py	2026-11-22 01:28:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/hooks/task_list_pulse.py	2026-11-14 03:34:54
+@@ -47,33 +47,6 @@
+     return None
+ 
+ 
+-def standing_goal(repo):
+-    """His autonomy handover of 2026-11-21, read from the versioned file.
+-
+-    WHY A FILE AND NOT A STRING HERE. He asked for the instruction to survive
+-    every compaction, and a hook already does that -- but a hardcoded string is
+-    not a document he can read or amend, and this project's own record is that
+-    a rule nobody can see is a rule nobody applies. The text lives in
+-    experimental_notes/THE_STANDING_GOAL.md between explicit markers, so the
+-    delivery mechanism and the instruction can be changed independently.
+-
+-    THE MARKERS ARE LITERAL, NOT A SHAPE. An earlier defect in this project came
+-    from a detector inferring structure from formatting; a fixed delimiter
+-    cannot drift. If either marker is absent the function returns "" and the
+-    turn simply carries no goal line, which is the fail-safe this hook requires.
+-    """
+-    f = repo / "experimental_notes" / "THE_STANDING_GOAL.md"
+-    try:
+-        text = f.read_text()
+-    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+-        return ""
+-    begin = text.find("<!-- INJECT-BEGIN -->")
+-    end = text.find("<!-- INJECT-END -->")
+-    if begin < 0 or end < 0 or end <= begin:
+-        return ""
+-    return text[begin + len("<!-- INJECT-BEGIN -->"):end].strip()
+-
+-
+ def main():
+     try:
+         payload = json.load(sys.stdin)
+@@ -120,23 +93,6 @@
+         ctx += ("\n[entries] print a code only WITH its descriptor — "
+                 + roster)
+ 
+-    # ★ HIS AUTONOMY HANDOVER, 2026-11-21 -- THE MOST IMPORTANT INSTRUCTION IN
+-    # THE PROJECT BY HIS OWN ASSESSMENT, AND IT WAS GIVEN IN CHAT, WHICH DOES
+-    # NOT SURVIVE A COMPACTION. His words: "implement it in a way that will
+-    # survive every compaction event from now on." The same reasoning that put
+-    # the task list in this hook applies with more force to the instruction
+-    # that says what the task list is FOR.
+-    try:
+-        goal = standing_goal(repo)
+-    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+-        goal = ""
+-    if goal:
+-        # EVERY line carries the label, not just the first. The other 2 blocks
+-        # this hook injects are single lines that identify themselves; a goal
+-        # whose 2nd line onward arrives unmarked is indistinguishable from
+-        # unrelated context, which is precisely the failure the labels prevent.
+-        ctx += "".join("\n[goal] " + ln for ln in goal.splitlines() if ln.strip())
+-
+     print(json.dumps({
+         "suppressOutput": True,
+         "hookSpecificOutput": {
+
+### cc2:attempt-1:scripts/blocker_triage.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/blocker_triage.py	2026-11-22 00:21:57
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/scripts/blocker_triage.py	2026-11-22 01:24:57
+@@ -393,6 +393,27 @@
+ #: RETAINED so nothing that imports the old name breaks. It is the first
+ #: element rather than a second declaration of the same idea.
+ _BOARD_PATTERN = _BOARD_PATTERNS[0]
++
++
++def _ps_can_answer() -> bool:
++    """Can `ps` be asked about this process at all?
++
++    THE 2 EXCLUSIONS IN `a_commit_board_is_running` BOTH REST ON `ps`, and both
++    were written for `hooks/cy_monitor_gate.py`, whose fail-safe runs the other
++    way. Where `ps` is absent or refused by sandbox policy they go quietly
++    inert, and a predicate this file documents as failing toward '' returns a
++    pid instead. This probe lets the caller tell "no board" apart from "cannot
++    tell", which is the distinction that was missing.
++
++    FAILS TOWARD "CANNOT ANSWER", so an unreadable `ps` costs the protection and
++    never the triage -- the direction `a_commit_board_is_running` promises.
++    """
++    try:
++        out = subprocess.run(["ps", "-o", "ppid=", "-p", str(os.getpid())],
++                             capture_output=True, text=True, timeout=4)
++    except Exception:                                        # noqa: BLE001
++        return False
++    return out.returncode == 0 and bool((out.stdout or "").strip())
+ 
+ 
+ def _own_process_chain() -> set:
+@@ -443,6 +464,37 @@
+                                  capture_output=True, text=True, timeout=4)
+             pids += [x for x in (out.stdout or "").split() if x.strip()]
+         if not pids:
++            return ""
++        #: * BOTH EXCLUSIONS BELOW NEED `ps`, AND WITHOUT IT THEY INVERT THIS
++        #: PREDICATE'S OWN FAIL-SAFE. Found 2026-11-22 by the panel on batch 1.
++        #:
++        #: This function's docstring promises to fail TOWARD WRITING -- "any
++        #: failure of this predicate returns ''". The 2 exclusions it relies on
++        #: were both written for `hooks/cy_monitor_gate.py`, where the opposite
++        #: direction is correct, and each says so in its own docstring:
++        #: `_own_process_chain` is "FAIL-SAFE TOWARD DETECTING A RUN", and
++        #: `cy._is_shell` is "unreadable -> KEEP, fail toward refusing". Where
++        #: `ps` is absent or refused, the ancestry exclusion loses every
++        #: ancestor and the shell exclusion keeps every shell, so a predicate
++        #: documented to return '' returns a pid instead.
++        #:
++        #: MEASURED, NOT ARGUED, by
++        #: `scripts/the_shell_exclusion_is_inert_without_ps_2026-11-22.py`: a
++        #: planted `/bin/zsh` with NO pytest running anywhere came back as a
++        #: running commit board.
++        #:
++        #: THE COST IS NOT CONFINED HERE. `hooks/work_not_narrate.py` stands its
++        #: whole Stop gate down on this value, so a shell whose command line
++        #: merely names pytest switched the gate OFF -- the opposite of what
++        #: B205(c) set out to do.
++        #:
++        #: THE WIDENING STAYS AND ONLY THE POLARITY IS RESTORED, which is the
++        #: additive reading: nothing is removed, and the one case that cannot be
++        #: decided is resolved the way this function already promises.
++        #: `cy_monitor_gate` is deliberately NOT changed -- failing toward
++        #: detecting a run is right for a gate whose cost of over-firing is a
++        #: prod and whose cost of under-firing is an unobserved 3-hour run.
++        if not _ps_can_answer():
+             return ""
+         import importlib.util
+         spec = importlib.util.spec_from_file_location(
+
+### cc2:attempt-1:scripts/the_budget_gates_grid_was_closed_but_its_vocabulary_was_not_2026-11-22.py
+--- /dev/null	2026-11-22 01:33:34
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/scripts/the_budget_gates_grid_was_closed_but_its_vocabulary_was_not_2026-11-22.py	2026-11-22 01:26:14
+@@ -0,0 +1,127 @@
++#!/usr/bin/env python3
++"""B182 closed the grid. The grid is not the vocabulary.
++
++PANEL FINDING 2026-11-22, answering the attack the 2026-11-21 brief invited:
++"`kick off` may not be the only idiom missing. Name another the project
++actually writes, and the claim that the grid is closed is a claim about the
++grid rather than about the vocabulary."
++
++THE DECLARED FIGURES REPRODUCE EXACTLY and are not in dispute: 0 of 150,
++Wilson upper 0.024970, Clopper-Pearson upper 0.024293. The objection is to what
++they cover. The 10 nouns were chosen by the same hand that wrote the pattern,
++so the measurement can only report that the listed phrasings are caught.
++
++THE 3 IDIOMS BELOW WERE NOT CHOSEN BY READING THE PATTERN EITHER. They were
++counted in this repository's own .md/.py/.txt:
++
++    bare "the board", not full/commit/verification/guard/test   1816
++    "bench/tests" with NO trailing slash                        1048
++    "the guards"                                                 525
++    "rerun"/"reruns"/"rerunning", unhyphenated                   398
++
++2 of them are sentences this project writes AT ITSELF. The hook's own refusal
++message says "run the board ONCE yourself, save the result". The 2026-11-21
++panel brief says, in its section 2, "Run the guards." Both passed straight
++through the gate that exists to refuse them.
++
++BOTH DIRECTIONS ARE MEASURED, because widening an accepting predicate is
++exactly how a gate starts refusing prohibitions -- the failure B182's own note
++calls the one that matters. The negation arm must stay at 0.
++"""
++from __future__ import annotations
++
++import importlib.util
++import itertools
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++REPAIRED = REPO / "hooks" / "local_resource_budget.py"
++LIVE = pathlib.Path.home() / ".claude" / "hooks" / "local_resource_budget.py"
++
++VERBS = ["run", "execute", "please run", "kick off", "start", "rerun"]
++#: The 10 of B182's grid, plus the 3 counted above.
++NOUNS = ["the suite", "the test suite", "the full test suite",
++         "the entire test suite", "the whole test suite",
++         "the full suite", "bench/tests/", "the full board",
++         "the commit board", "the verification board",
++         "the board", "bench/tests", "the guards"]
++TAILS = ["", " and report the result", " and tell me what fails"]
++
++#: Prohibitions over the SAME extended grid. Every one MUST pass through.
++NEGATIONS = ["do not {}", "never {}", "you must not {}", "without instruction to {}",
++             "rather than {}", "instead of asking you to {}"]
++
++#: Sentences this project actually writes at itself.
++NATIVE = [
++    "run the board ONCE yourself, save the result",
++    "Run the guards.",
++    "run the board's own 317 guards",
++    "rerun the full test suite and report the result",
++    "python3 -m pytest -q -p no:cacheprovider bench/tests",
++]
++
++
++def predicate(path):
++    spec = importlib.util.spec_from_file_location("lrb_" + path.parent.name, path)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["lrb_" + path.parent.name] = m
++    try:
++        spec.loader.exec_module(m)
++    except SystemExit:
++        pass
++    return m._instructs_heavy_verification
++
++
++def grid():
++    return [f"{v} {n}{t}" for v, n, t in itertools.product(VERBS, NOUNS, TAILS)]
++
++
++def report(label, fn):
++    cases = grid()
++    through = [c for c in cases if not fn(c.lower())]
++    print(f"  {label}")
++    print(f"    extended grid {len(VERBS)}x{len(NOUNS)}x{len(TAILS)} = {len(cases)} cells,"
++          f" every one a genuine instruction")
++    print(f"    LET THROUGH: {len(through)} of {len(cases)} = {len(through)/len(cases):.6f}")
++    blind = {}
++    for noun in NOUNS:
++        sub = [f"{v} {noun}{t}" for v, t in itertools.product(VERBS, TAILS)]
++        n = sum(1 for c in sub if not fn(c.lower()))
++        if n:
++            blind[noun] = (n, len(sub))
++    for noun, (n, d) in blind.items():
++        print(f"      {n}/{d} through  {noun!r}")
++    neg = [t.format(c) for t, c in itertools.product(NEGATIONS, grid()[:40])]
++    wrongly = [c for c in neg if fn(c.lower())]
++    print(f"    NEGATION ARM: {len(wrongly)} of {len(neg)} prohibitions wrongly refused")
++    nat = [c for c in NATIVE if not fn(c.lower())]
++    print(f"    THIS PROJECT'S OWN SENTENCES: {len(nat)} of {len(NATIVE)} through")
++    for c in nat:
++        print(f"      through: {c!r}")
++    print()
++    return len(through), len(wrongly)
++
++
++def main() -> int:
++    print()
++    if LIVE.is_file() and LIVE.read_bytes() != REPAIRED.read_bytes():
++        before, nb = report("BEFORE  (~/.claude/hooks, as dispatched)", predicate(LIVE))
++    else:
++        before = nb = None
++        print("  BEFORE: the live hook is identical to the repaired one; no contrast\n")
++    after, na = report("AFTER   (hooks/local_resource_budget.py, repaired)",
++                       predicate(REPAIRED))
++    if before is not None:
++        print(f"  blind cells {before} -> {after};"
++              f" prohibitions wrongly refused {nb} -> {na}")
++    if na:
++        print("  REGRESSION: the widening broke the negation half. Not acceptable.")
++        return 1
++    print("  the negation half is unchanged and still correct, which is the")
++    print("  falsification that matters for a widened accepting predicate.")
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_shell_exclusion_is_inert_without_ps_2026-11-22.py
+--- /dev/null	2026-11-22 01:33:35
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_t25_xvp1/repo/scripts/the_shell_exclusion_is_inert_without_ps_2026-11-22.py	2026-11-22 01:23:12
+@@ -0,0 +1,130 @@
++#!/usr/bin/env python3
++"""The shell exclusion the B205 widening relies on is inert where `ps` is denied.
++
++WHAT THE CODE CLAIMS. `scripts/blocker_triage.py` widened `_BOARD_PATTERNS` to
++`pytest.*bench/tests` under B205 and justified the one false positive it admits:
++
++    It also matches a waiter shell whose command line merely NAMES pytest --
++    and `cy._is_shell` already returns True for that shell and False for the
++    real pytest, so the shell exclusion documented above removes the only false
++    positive this introduces.
++
++THE CLAIM IS CONDITIONAL ON `ps` AND DOES NOT SAY SO. `cy._is_shell` is
++documented "unreadable -> KEEP, fail toward refusing", which is the correct
++direction for `hooks/cy_monitor_gate.py` and the WRONG one for the triage,
++whose own docstring promises the opposite:
++
++    FAIL-SAFE TOWARD WRITING: any failure of this predicate returns ''.
++
++So where `ps` is unavailable or refused by sandbox policy, a SHELL that merely
++names pytest is reported as a running commit board.
++
++WHY THAT IS NOT CONFINED TO THE TRIAGE. `hooks/work_not_narrate.py` stands its
++entire Stop gate down on this predicate:
++
++    if _a_commit_board_is_running():
++        return 0
++
++A shell naming pytest therefore switches the Stop gate OFF. B205(c) set out to
++make the gate stand down DURING a board; this makes it stand down for a string
++on a command line.
++
++HOW THIS IS MEASURED. A real shell is planted, and `pgrep` is stubbed to return
++ONLY that shell, so the correct answer is unambiguously ''. `ps` is left real in
++arm A and denied in arm B. On a machine where `ps` works, arm A returns '' and
++arm B returns the pid -- that difference IS the defect. On a sandbox where `ps`
++is already denied, both arms return the pid. It edits nothing.
++
++NOTE ON WHAT THIS DOES NOT CLAIM. It does not claim the predicate is wrong
++whenever it fires. Where a real board is also running the verdict is right and
++only the pid attributed is wrong. The defect is the case where NO board runs.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import subprocess
++import sys
++import time
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++
++
++def _load(name, path):
++    spec = importlib.util.spec_from_file_location(name, path)
++    mod = importlib.util.module_from_spec(spec)
++    sys.modules[name] = mod
++    try:
++        spec.loader.exec_module(mod)
++    except SystemExit:
++        pass
++    return mod
++
++
++def _arm(bt, shell_pid: str, deny_ps: bool) -> str:
++    """a_commit_board_is_running() with pgrep stubbed to the planted shell."""
++    real = bt.subprocess.run
++
++    class _R:
++        def __init__(self, out):
++            self.stdout, self.stderr, self.returncode = out, "", 0
++
++    def fake(cmd, *a, **k):
++        if cmd and str(cmd[0]) == "pgrep":
++            return _R(shell_pid + "\n")
++        if cmd and str(cmd[0]) == "ps" and deny_ps:
++            raise PermissionError(1, "Operation not permitted: 'ps'")
++        return real(cmd, *a, **k)
++
++    bt.subprocess.run = fake
++    # cy_monitor_gate is imported fresh inside the predicate, so `ps` denial has
++    # to reach ITS module too; the predicate loads it by path each call.
++    cy_path = REPO / "hooks" / "cy_monitor_gate.py"
++    cy = _load("bt_cy_gate", cy_path)
++    cy_real = cy.subprocess.run
++
++    def cy_fake(cmd, *a, **k):
++        if cmd and str(cmd[0]) == "ps" and deny_ps:
++            raise PermissionError(1, "Operation not permitted: 'ps'")
++        return cy_real(cmd, *a, **k)
++
++    cy.subprocess.run = cy_fake
++    try:
++        return bt.a_commit_board_is_running()
++    finally:
++        bt.subprocess.run = real
++        cy.subprocess.run = cy_real
++
++
++def main() -> int:
++    bt = _load("bt_shell_probe", REPO / "scripts" / "blocker_triage.py")
++
++    proc = subprocess.Popen(["/bin/zsh", "-c", "sleep 20"])
++    time.sleep(0.3)
++    pid = str(proc.pid)
++    try:
++        print(f"  planted a real /bin/zsh at pid {pid}; pgrep is stubbed to return")
++        print("  ONLY that pid, so a correct predicate MUST return '' (a shell is")
++        print("  not a board). No pytest is involved in either arm.")
++        print()
++        a = _arm(bt, pid, deny_ps=False)
++        b = _arm(bt, pid, deny_ps=True)
++        print(f"    arm A, ps as the machine provides it : {a!r}")
++        print(f"    arm B, ps denied by policy           : {b!r}")
++        print()
++        if b:
++            print("  FALSIFIED: a shell was reported as a running commit board.")
++            print("  scripts/blocker_triage.py then refuses every triage write, and")
++            print("  hooks/work_not_narrate.py returns 0 -- the Stop gate is OFF.")
++            if a:
++                print("  (arm A agrees because `ps` is ALREADY denied on this machine,")
++                print("   which is the condition under test, not a confound.)")
++            return 1
++        print("  not demonstrated: the shell exclusion held in both arms")
++        return 0
++    finally:
++        proc.kill()
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-22 01:33:43
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ze6edbxw/repo/.cdsfl_deny_canonical_writes.sb	2026-11-22 01:14:53
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_a_commit_is_asked_of_git_2026-11-22.py
+--- /dev/null	2026-11-22 01:33:45
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ze6edbxw/repo/bench/tests/test_a_commit_is_asked_of_git_2026-11-22.py	2026-11-22 01:23:17
+@@ -0,0 +1,138 @@
++#!/usr/bin/env python3
++"""A COMMIT IS ASKED OF GIT, NOT MATCHED IN PROSE -- and that claim is now EXECUTED.
++
++★ WHY THIS EXISTS. Entry B205(a), repaired 2026-11-21: `turn_signals` used to set
++its commit flag on the literal string `git commit` anywhere in the turn's
++transcript, so merely READING `hooks/pre-commit` -- which carries
++`git commit --no-verify` as bypass advice -- made the gate report a commit that
++never happened, 6 times while HEAD never moved. The repair,
++`_a_commit_landed_since`, asks git for HEAD's committer date and compares it to
++the turn's start.
++
++THE REPAIR'S OWN COMMENT SAYS "DRIVEN OVER 5 CASES BEFORE BEING WRITTEN, correct
++in 5 of 5" -- but that drive was committed nowhere, so the declared figure was
++not re-executable and the addition was executed by no test, which is half of
++`additive-standard`. This file is that drive, committed, plus the original
++defect reproduced end-to-end: a transcript whose only mention of committing is
++the literal bypass advice must leave the flag False.
++
++A SCRATCH REPOSITORY, NOT THE LIVE ONE. The predicate reads `REPO`, which is
++monkeypatched to a `git init` directory with one commit at a known committer
++date, so the test is hermetic: it neither needs the project's history nor can a
++concurrent commit move its ground truth. Panel sandboxes carry no `.git` at all,
++which is exactly why the comparison cannot lean on the live repository.
++"""
++from __future__ import annotations
++
++import datetime as dt
++import importlib.util
++import json
++import pathlib
++import subprocess
++import sys
++
++import pytest
++
++ROOT = pathlib.Path(__file__).resolve().parents[2]
++HOOK = ROOT / "hooks" / "work_not_narrate.py"
++
++HEAD_AT = dt.datetime(2026, 11, 21, 12, 0, 0, tzinfo=dt.timezone.utc)
++
++
++def _iso(t: dt.datetime) -> str:
++    return t.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
++
++
++@pytest.fixture(scope="module")
++def hook():
++    spec = importlib.util.spec_from_file_location("wnn_commit_guard", HOOK)
++    m = importlib.util.module_from_spec(spec)
++    sys.modules["wnn_commit_guard"] = m
++    spec.loader.exec_module(m)
++    return m
++
++
++@pytest.fixture()
++def scratch_repo(hook, tmp_path, monkeypatch):
++    """A git repository whose single commit landed at HEAD_AT exactly."""
++    env = {
++        "GIT_AUTHOR_DATE": "2026-11-21T12:00:00Z",
++        "GIT_COMMITTER_DATE": "2026-11-21T12:00:00Z",
++        "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
++        "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t",
++        "HOME": str(tmp_path), "PATH": __import__("os").environ.get("PATH", ""),
++    }
++
++    def g(*a):
++        r = subprocess.run(["git", "-C", str(tmp_path)] + list(a),
++                           capture_output=True, text=True, env=env, timeout=30)
++        if r.returncode != 0:
++            pytest.skip(f"git unavailable here: {r.stderr.strip()[:120]}")
++    g("init")
++    (tmp_path / "f").write_text("x", encoding="utf-8")
++    g("add", "f")
++    g("commit", "-m", "c1", "--no-verify")
++    monkeypatch.setattr(hook, "REPO", tmp_path)
++    return tmp_path
++
++
++class TestTheFiveCaseDrive:
++    """The drive the repair's comment declares, now re-executable."""
++
++    @pytest.mark.parametrize("why,turn,want", [
++        ("a turn that began after HEAD sees no commit",
++         _iso(HEAD_AT + dt.timedelta(hours=2)), False),
++        ("a turn predating HEAD sees the commit",
++         _iso(HEAD_AT - dt.timedelta(hours=2)), True),
++        ("HEAD's own timestamp counts as landed (>=, not >)",
++         _iso(HEAD_AT), True),
++        ("1 s after HEAD is after HEAD",
++         _iso(HEAD_AT + dt.timedelta(seconds=1)), False),
++        ("an unparseable timestamp NEVER claims a commit (fail-safe)",
++         "not-a-time", False),
++        ("an empty timestamp never claims a commit",
++         "", False),
++    ])
++    def test_the_drive(self, hook, scratch_repo, why, turn, want):
++        assert hook._a_commit_landed_since(turn) is want, why
++
++    def test_no_repository_never_claims_a_commit(self, hook, tmp_path,
++                                                 monkeypatch):
++        """The panel-sandbox case: REPO is not a git repository at all."""
++        monkeypatch.setattr(hook, "REPO", tmp_path / "nowhere")
++        assert hook._a_commit_landed_since(_iso(HEAD_AT)) is False
++
++
++class TestTheOriginalDefectStaysDead:
++    """Reading `hooks/pre-commit` must never again read as having committed."""
++
++    def _transcript(self, tmp_path, turn_iso):
++        t = tmp_path / "t.jsonl"
++        lines = [
++            json.dumps({"type": "user", "timestamp": turn_iso,
++                        "message": {"role": "user", "content":
++                                    [{"type": "text", "text": "work the list"}]}}),
++            json.dumps({"type": "assistant", "message": {"content": [
++                {"type": "tool_use", "name": "Read", "input": {}},
++                {"type": "text", "text":
++                 "hooks/pre-commit says: bypass deliberately with: "
++                 "git commit --no-verify"}]}}),
++        ]
++        t.write_text("\n".join(lines), encoding="utf-8")
++        return t
++
++    def test_the_literal_string_no_longer_sets_the_flag(self, hook,
++                                                        scratch_repo, tmp_path):
++        t = self._transcript(tmp_path, _iso(HEAD_AT + dt.timedelta(hours=2)))
++        _calls, _prose, commit, _d = hook.turn_signals(t)
++        assert commit is False, (
++            "a transcript carrying the literal 'git commit --no-verify' from "
++            "hooks/pre-commit set the commit flag; B205(a) has regressed")
++
++    def test_a_real_commit_is_still_seen(self, hook, scratch_repo, tmp_path):
++        """ANTI-VACUITY: the flag must still go True when HEAD genuinely moved
++        at or after the turn began -- otherwise the repair fixed the false
++        report by never reporting."""
++        t = self._transcript(tmp_path, _iso(HEAD_AT - dt.timedelta(hours=2)))
++        _calls, _prose, commit, _d = hook.turn_signals(t)
++        assert commit is True
+
+### fable:attempt-1:bench/tests/test_blocker_triage_2026-09-10.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_blocker_triage_2026-09-10.py	2026-11-02 19:56:41
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ze6edbxw/repo/bench/tests/test_blocker_triage_2026-09-10.py	2026-11-22 01:22:45
+@@ -214,6 +214,21 @@
+ 
+ 
+ class TestTheParkingFileIsRealAndAppendOnly:
++    #: ★ ISOLATED FROM THE MACHINE VIA THE SEAM, 2026-11-22. Entry B205 widened
++    #: `_BOARD_PATTERNS` to `pytest.*bench/tests`, so `park()` now refuses
++    #: whenever ANY sibling pytest-over-bench/tests is live -- including another
++    #: panel seat's 3-second guard run. These tests exercise PARKING, not the
++    #: board detector, and the `CDSFL_BT_BOARD` seam exists for exactly this:
++    #: "without it a guard cannot isolate this predicate from whatever happens
++    #: to be running on the machine, so the test would pass or fail by accident
++    #: of timing." Measured 2026-11-22: 5 of these tests failed with
++    #: `BoardIsRunning(58522)` while a sibling seat ran its own guards, and all
++    #: 5 pass with the seam forced to none. The detector itself keeps its own
++    #: guard, `test_the_triage_refuses_to_write_while_a_board_runs_2026-11-12.py`.
++    @pytest.fixture(autouse=True)
++    def _no_live_board(self, monkeypatch):
++        monkeypatch.setenv("CDSFL_BT_BOARD", "0")
++
+     def test_parking_appends_rather_than_rewrites(self, B, tmp_path, monkeypatch):
+         f = tmp_path / "PARKED.md"
+         monkeypatch.setattr(B, "PARKED", f)
+@@ -235,6 +250,11 @@
+     with copies of one decision, which is the opposite of what the file is for.
+     """
+ 
++    #: Same seam, same reason as the class above.
++    @pytest.fixture(autouse=True)
++    def _no_live_board(self, monkeypatch):
++        monkeypatch.setenv("CDSFL_BT_BOARD", "0")
++
+     def test_an_already_parked_item_is_not_appended_again(self, B, tmp_path,
+                                                           monkeypatch):
+         parked = tmp_path / "PARKED.md"
+
+### fable:attempt-1:hooks/cy_monitor_gate.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/cy_monitor_gate.py	2026-11-22 01:16:17
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ze6edbxw/repo/hooks/cy_monitor_gate.py	2026-11-22 00:48:04
+@@ -307,65 +307,15 @@
+             f"  LIVE: {len(pids)} runner process(es) {', '.join(pids[:4])} with NO "
+             f"pulse file — a run started before the pulse existed, so nothing "
+             f"machine-readable reports its state.")
+-    #: ★ THE ADVICE FOLLOWS THE RUN IT FOUND, 2026-11-22. Entry B180 widened
+-    #: detection to a full-suite run, and the first thing that widening did was
+-    #: refuse a stop over a `pytest` run and a panel dispatch -- NEITHER of
+-    #: which writes a `cy_watchdog.log`, because only
+-    #: `bench/tools/run_simulated_experiment.py` spawns the watchdog. So the
+-    #: refusal was right and its remedy was unfollowable, which is a guard
+-    #: telling the reader to do something impossible and is how a correct gate
+-    #: teaches people to ignore it.
+-    #:
+-    #: THE DISCRIMINATOR IS THE ARTEFACT, not the kind of run: if a watchdog log
+-    #: exists, name it, because it keeps the 60 s cadence the directive asks
+-    #: for. If none does, say so and point at what the run DOES produce. Both
+-    #: branches keep the `tail -f` warning, because that failure mode is about
+-    #: the DELIVERY channel and is identical either way.
+-    #: `logs_dir()` and not a constant: it is overridable so this hook can be
+-    #: TESTED against a scratch directory, and a hard-coded path here would
+-    #: silently read the real tree during a test.
+-    #: ★ A LIVE WATCHDOG, NOT ANY WATCHDOG, and the first version of this got it
+-    #: wrong. Globbing `*/cy_watchdog.log` matched 12 HISTORICAL logs from past
+-    #: runs, so the watchdog branch was taken every time and the advice stayed
+-    #: unfollowable for precisely the case it was written for -- `a mechanism
+-    #: can be inert at its default`, caught by asking which branch actually
+-    #: fires rather than by assuming the one intended did.
+-    #:
+-    #: FRESHNESS IS THE TEST because the watchdog writes on a ~60 s cadence by
+-    #: construction, so a log belonging to a live run cannot be minutes stale.
+-    #: The window is generous against a slow machine and still excludes every
+-    #: finished run.
+-    _ld = logs_dir()
+-    _fresh = 300.0                      # seconds; 5x the watchdog's own cadence
+-    _wd = []
+-    if _ld.is_dir():
+-        try:
+-            _now = time.time()
+-            _wd = sorted(p for p in _ld.glob("*/cy_watchdog.log")
+-                         if _now - p.stat().st_mtime <= _fresh)
+-        except Exception:                                    # noqa: BLE001
+-            _wd = []                    # cannot tell -> give the artefact advice
+-    if _wd:
+-        _how = ("    Monitor on the run's cy_watchdog.log, matching "
+-                "'OUTCOME|CLOSED|TROUBLE|PROCESS GONE|HEARTBEAT'\n"
+-                "The watchdog keeps the ~60 s cadence; the Monitor delivers it.")
+-    else:
+-        _how = ("    Monitor on the artefact THIS run writes — no "
+-                "cy_watchdog.log exists, so there is no watchdog to tail.\n"
+-                "    A suite or board run: its output file, or `pgrep` on the "
+-                "invocation, emitting a line when it exits.\n"
+-                "    A panel round: its log directory, emitting a line as each "
+-                "seat's json appears.\n"
+-                "Emit on EVERY terminal state, not only success: a filter that "
+-                "matches the happy path alone is silent through a crash, and "
+-                "silence is indistinguishable from still running.")
+-    out.append(
+-        "\nDO NOT go idle. Arm a BOUNDED wait that wakes on the run's own "
++    out.append(
++        "\nDO NOT go idle. Arm a BOUNDED wait that wakes on the watchdog's own "
+         "events, in ONE call, rather than polling by hand:\n"
+-        + _how + "\nA `tail -f | grep` under a background shell delivers "
+-        "NOTHING, because Bash background notifies on exit and `tail -f` never "
+-        "exits — that is the exact failure of 2026-11-02, 0 notifications in "
+-        "6 h 01 min.")
++        "    Monitor on the run's cy_watchdog.log, matching "
++        "'OUTCOME|CLOSED|TROUBLE|PROCESS GONE|HEARTBEAT'\n"
++        "The watchdog keeps the ~60 s cadence; the Monitor delivers it. A "
++        "`tail -f | grep` under a background shell delivers NOTHING, because "
++        "Bash background notifies on exit and `tail -f` never exits — that is "
++        "the exact failure of 2026-11-02, 0 notifications in 6 h 01 min.")
+     return "\n".join(out)
+ 
+ 
+
+### fable:attempt-1:hooks/pre-commit
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/pre-commit	2026-11-22 01:31:25
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ze6edbxw/repo/hooks/pre-commit	2026-11-22 01:23:29
+@@ -645,8 +645,7 @@
+ bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py
+ bench/tests/test_his_copy_carries_the_entrys_status_2026-11-21.py
+ bench/tests/test_todays_producers_run_2026-11-21.py
+-bench/tests/test_the_standing_goal_survives_compaction_2026-11-22.py
+-bench/tests/test_was_this_batch_reviewed_2026-11-22.py"
++bench/tests/test_a_commit_is_asked_of_git_2026-11-22.py"
+ # THE 8th, 9th AND 10th GUARDS, added 2026-09-29, and the reason is a MEASURED
+ # recurrence rather than a hunch. Across 2026-09-28 and 2026-09-29 the full suite
+ # was run 5 times to discover 2 classes of defect that a commit-time check catches
+@@ -881,24 +880,6 @@
+     fi
+ fi
+ 
+-# ★ HIS STANDING INSTRUCTION OF 2026-11-21, MADE MECHANICAL. He asked, in the
+-# same message as the autonomy handover and calling it equally important, that
+-# every meaningful batch of work be put to a free panel before it is adopted.
+-# A commit is the unit of a batch under his 2026-11-10 ruling, so this is the
+-# one moment the question has a definite answer.
+-#
+-# IT REPORTS AND NEVER REFUSES, for the same reason the B103 gap report above
+-# does: a false refusal here costs about 27 minutes of his 8-core machine, and
+-# this project has already recorded a case where a false positive is why a rule
+-# went unenforced. If the line turns out to be ignored, THAT is the evidence for
+-# escalating it to a refusal. Every failure path falls open with `|| true`.
+-if [ -f scripts/was_this_batch_reviewed_2026-11-22.py ]; then
+-    _CDSFL_PANEL=$(python3 scripts/was_this_batch_reviewed_2026-11-22.py --quiet 2>/dev/null | head -1 || true)
+-    if [ -n "$_CDSFL_PANEL" ]; then
+-        echo "pre-commit: $_CDSFL_PANEL" >&2
+-    fi
+-fi
+-
+ # ★ N4, 2026-11-09. HOISTED ABOVE THE BOARD. This block used to run AFTER
+ # the 235-guard board, so a commit refused by a 1-second lint first paid for a
+ # board whose mean cost is 1615.30 s over 10 recorded runs. All the cheap
+
+### fable:attempt-1:hooks/task_list_pulse.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/hooks/task_list_pulse.py	2026-11-22 01:28:02
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ze6edbxw/repo/hooks/task_list_pulse.py	2026-11-14 03:34:54
+@@ -47,33 +47,6 @@
+     return None
+ 
+ 
+-def standing_goal(repo):
+-    """His autonomy handover of 2026-11-21, read from the versioned file.
+-
+-    WHY A FILE AND NOT A STRING HERE. He asked for the instruction to survive
+-    every compaction, and a hook already does that -- but a hardcoded string is
+-    not a document he can read or amend, and this project's own record is that
+-    a rule nobody can see is a rule nobody applies. The text lives in
+-    experimental_notes/THE_STANDING_GOAL.md between explicit markers, so the
+-    delivery mechanism and the instruction can be changed independently.
+-
+-    THE MARKERS ARE LITERAL, NOT A SHAPE. An earlier defect in this project came
+-    from a detector inferring structure from formatting; a fixed delimiter
+-    cannot drift. If either marker is absent the function returns "" and the
+-    turn simply carries no goal line, which is the fail-safe this hook requires.
+-    """
+-    f = repo / "experimental_notes" / "THE_STANDING_GOAL.md"
+-    try:
+-        text = f.read_text()
+-    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+-        return ""
+-    begin = text.find("<!-- INJECT-BEGIN -->")
+-    end = text.find("<!-- INJECT-END -->")
+-    if begin < 0 or end < 0 or end <= begin:
+-        return ""
+-    return text[begin + len("<!-- INJECT-BEGIN -->"):end].strip()
+-
+-
+ def main():
+     try:
+         payload = json.load(sys.stdin)
+@@ -120,23 +93,6 @@
+         ctx += ("\n[entries] print a code only WITH its descriptor — "
+                 + roster)
+ 
+-    # ★ HIS AUTONOMY HANDOVER, 2026-11-21 -- THE MOST IMPORTANT INSTRUCTION IN
+-    # THE PROJECT BY HIS OWN ASSESSMENT, AND IT WAS GIVEN IN CHAT, WHICH DOES
+-    # NOT SURVIVE A COMPACTION. His words: "implement it in a way that will
+-    # survive every compaction event from now on." The same reasoning that put
+-    # the task list in this hook applies with more force to the instruction
+-    # that says what the task list is FOR.
+-    try:
+-        goal = standing_goal(repo)
+-    except Exception:                      # noqa: BLE001 -- see MUST ALWAYS EXIT 0
+-        goal = ""
+-    if goal:
+-        # EVERY line carries the label, not just the first. The other 2 blocks
+-        # this hook injects are single lines that identify themselves; a goal
+-        # whose 2nd line onward arrives unmarked is indistinguishable from
+-        # unrelated context, which is precisely the failure the labels prevent.
+-        ctx += "".join("\n[goal] " + ln for ln in goal.splitlines() if ln.strip())
+-
+     print(json.dumps({
+         "suppressOutput": True,
+         "hookSpecificOutput": {

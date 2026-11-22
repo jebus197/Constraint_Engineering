@@ -97,13 +97,80 @@ def _headroom_mib():
 #: Negation suppresses BOTH, which is the whole point of the change.
 _COMMAND_MENTION = re.compile(
     r"\bpytest\b|python3?\s+-m\s+pytest", re.IGNORECASE)
+#: ★ WIDENED 2026-11-21, ENTRY B182, ON HIS RULING: *"I accept your
+#: recommendation"* -- widen the noun-phrase side to the forms this project
+#: actually writes, and add a case for a bare path such as `bench/tests/`.
+#:
+#: WHAT IT MISSED AND BY HOW MUCH. The previous alternation named 4 forms, and
+#: `scripts/the_budget_gate_is_blind_to_its_own_subject_2026-11-13.py` drives a
+#: grid of 5 verbs by 10 nouns by 3 tails -- 150 cells, every one a genuine
+#: instruction this guard exists to refuse. Re-executed 2026-11-21 before the
+#: change: 126 of 150 passed straight through, 0.840000, Wilson
+#: [0.772960, 0.890060] and Clopper-Pearson [0.771351, 0.894713], both routes
+#: agreeing exactly. A gate that blind supplies assurance it cannot deliver.
+#:
+#: THE FORMS ARE TAKEN FROM THE PRODUCER, NOT INVENTED. The 10 nouns it measures
+#: are the project's own vocabulary, so widening to anything else would be
+#: fitting a pattern to my imagination and then measuring it against the same
+#: imagination. The misses were the `test suite` variants -- `whole suite` does
+#: not match `whole test suite` -- the named boards, and the bare path.
+#:
+#: LOOSENESS IS SAFE HERE AND THAT IS STRUCTURAL, not optimism: a noun phrase
+#: still needs an imperative verb within the window before it counts, and a
+#: negation anywhere in the window suppresses it. That is what makes `suite`
+#: admissible as a bare stem where it would be reckless in a pattern that
+#: decided alone. The 2 false positives of 2026-10-17 came from refusing on
+#: AMBIGUITY, and that behaviour is untouched.
+#: ★ WIDENED 2026-11-22 ON A PANEL FINDING, VERIFIED BEFORE ADOPTION. The grid
+#: the B182 repair closed was built from 10 nouns chosen by the hand that wrote
+#: the pattern, so closing it could only ever show that the LISTED phrasings are
+#: caught. Counted against the project's own .md/.py/.txt, the forms it actually
+#: writes and this pattern did not hold were: bare `the board` with no
+#: qualifier, `bench/tests` with no trailing slash, and `the guards`.
+#:
+#: TWO OF THEM ARE SENTENCES THE PROJECT WRITES AT ITSELF, which is what lifts
+#: this above a vocabulary quibble. This hook's own refusal message says "run
+#: the board ONCE yourself, save the result", and the panel brief dispatched on
+#: 2026-11-22 said "Run the guards." Both passed straight through the gate that
+#: exists to refuse exactly those instructions.
 _NOUN_MENTION = re.compile(
-    r"\bfull board\b|\bthe suite\b|\bwhole suite\b|\bentire suite\b",
+    r"\bbench/tests\b"
+    r"|\b(?:the\s+|a\s+)?(?:full\s+|whole\s+|entire\s+)?(?:test\s+)?suite\b"
+    r"|\b(?:the\s+|a\s+)?(?:full\s+|commit\s+|verification\s+|guard\s+|test\s+)?board\b"
+    r"|\b(?:the\s+|all\s+(?:the\s+)?)?guards\b",
     re.IGNORECASE)
+#: ★ `kick off` ADDED 2026-11-21, AND IT WAS FOUND BY THE NOUN FIX RATHER THAN
+#: BY READING. Entry B182's ruling covered the noun side; widening that took the
+#: blind rate from 126 of 150 to 30 of 150, and the residual 30 was EXACTLY
+#: 10 nouns x 3 tails x 1 verb -- every remaining miss was the phrase `kick
+#: off`, which this alternation never held. `start` was here and its commonest
+#: idiom was not.
+#:
+#: SO THE NOUN SIDE WAS NOT THE WHOLE DEFECT, and the arithmetic says so without
+#: appeal to judgement: 30 = 10 x 3 x 1 leaves no room for a noun still missing.
+#: Adding the verb is mine under his handover of 2026-11-21 -- it is a missing
+#: synonym in a detector, not safety, legality, or a change in how the system
+#: works -- and leaving it would have left 1 in 5 real instructions passing
+#: through the guard that exists to refuse them.
+#:
+#: THE HYPHENATED AND INFLECTED FORMS GO IN TOO, because a detector that holds
+#: `kick off` and not `kicks off` is the same defect one tense along.
 _IMPERATIVE = re.compile(
     r"\b(run|runs|running|invoke|invokes|invoking|execute|executes|executing|"
     r"call|calls|calling|launch|launches|launching|start|starts|starting|"
-    r"fire|fires|spawn|spawns)\b", re.IGNORECASE)
+    r"fire|fires|spawn|spawns|"
+    r"kick[\s-]?off|kicks[\s-]?off|kicking[\s-]?off|"
+    #: ★ UNHYPHENATED `rerun` ADDED 2026-11-22. `\brun\b` already catches
+    #: `re-run`, because the hyphen is a word boundary, and catches nothing in
+    #: `rerun`, where it is not. The 2 seats disagreed on whether the
+    #: unhyphenated form is written here at all -- one counted 398, the other
+    #: 0 -- so it was counted directly: 444 unhyphenated against 7,162
+    #: hyphenated across the project's .md/.py/.txt, an unhyphenated share of
+    #: 0.058375, Wilson [0.053326, 0.063870] and Clopper-Pearson
+    #: [0.053210, 0.063881] on 2 agreeing routes. The dominant form is
+    #: hyphenated and was never at risk; the minority form is 444 occurrences,
+    #: which is not 0.
+    r"rerun|reruns|rerunning|reran)\b", re.IGNORECASE)
 _NEGATION = re.compile(
     r"\b(do not|don't|dont|never|must not|mustn't|cannot|can't|without|avoid|"
     r"refrain|no need to|skip|forbid|forbidden|prohibit|prohibited|"
