@@ -71,10 +71,44 @@ def staged(repo: pathlib.Path) -> list[str]:
 
 
 def behaviour_changing(paths: list[str]) -> list[str]:
-    """Code and hooks. Data and notes are named by ~100 guards each.
+    """Every staged file a guard might assert on -- CODE **AND** DOCUMENTS.
 
-    Including them is what turns 42 files into 215 guards, which is not a
-    cheap check -- it is the board with extra steps.
+    ★ DOCUMENTS WERE EXCLUDED UNTIL 2026-11-22 AND THE EXCLUSION COST A BOARD.
+    This function read `startswith(("scripts/", "hooks/", "bench/")) and
+    endswith(".py")`, so `experimental_notes/RUNWAY_to_BR2_2026-08-18.md` failed
+    BOTH conditions and no guard naming it could ever be selected. The batch-3
+    board then refused after **48 min 50 s** on
+    `test_r1_has_a_position_on_the_runway_2026-11-01.py::test_the_citation_prefix_is_byte_stable`,
+    a guard that IS on the gate and names that document in a `git show`
+    argument. The pre-board check passed 1619 tests and could not see it.
+
+    ★ THE OLD DOCSTRING'S REASONING WAS SOUND WHEN WRITTEN AND IS NOW STALE.
+    It said data and notes are "named by ~100 guards each" and that including
+    them "turns 42 files into 215 guards, which is not a cheap check -- it is
+    the board with extra steps". That counted the UNION OF ALL GUARDS NAMING
+    THEM, before this script grew the DECIDING/ADVISORY split its own header
+    now describes. **The gate intersection already bounds the cost**, so the
+    premise no longer holds.
+
+    ★ MEASURED ON THE BATCH-3 DIFF BEFORE THIS CHANGE WAS MADE. 6 non-.py
+    staged files: 62 guards name at least one of them, and **34 of those 62 are
+    on the gate** -- so including documents adds 34 deciding guards to the 34
+    already found. The pre-board set roughly doubles, from 348 s to about 700 s
+    against a board of 2930 s. **0.24 of a board to avoid a whole one**, and a
+    landed batch costs 1.916667 boards in expectation, so the trade is not
+    close.
+
+    ★ A DISCRIMINATOR I PROPOSED AND MEASURED AS USELESS, recorded so it is not
+    proposed again. The idea was to count a document's guards only where the
+    path appears in a CODE string rather than in a comment or docstring, on the
+    reasoning that prose mentions are incidental. Measured with an `ast` walk
+    that strips docstrings: **62 guards either way.** Per-file it moves a
+    little (the task list 40 -> 38, the runway 6 -> 5), but the UNION is
+    identical, so the extra machinery buys nothing. Dropped.
+
+    `bench/tickets/` stays excluded: it is an append-only store written by the
+    harvester on nearly every commit, so it would select guards on every run
+    while telling nothing about the batch.
     """
     out = []
     for p in paths:
@@ -82,6 +116,11 @@ def behaviour_changing(paths: list[str]) -> list[str]:
             continue
         if p == "hooks/pre-commit" or (
                 p.startswith(("scripts/", "hooks/", "bench/")) and p.endswith(".py")):
+            out.append(p)
+            continue
+        # DOCUMENTS AND DATA. The gate intersection downstream is what keeps
+        # this cheap; see the measurement above.
+        if p.endswith((".md", ".json", ".txt", ".toml", ".jsonl", ".sh", ".cfg")):
             out.append(p)
     return out
 

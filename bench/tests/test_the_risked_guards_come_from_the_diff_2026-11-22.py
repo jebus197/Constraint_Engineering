@@ -79,23 +79,56 @@ def fake(tmp_path):
 
 
 class TestTheFilter:
-    def test_only_behaviour_changing_files_count(self, mod):
+    def test_documents_count_too_because_excluding_them_cost_a_board(self, mod):
+        """★ UPDATED 2026-11-22. These 2 tests PINNED THE DEFECT.
+
+        They asserted that documents are excluded. That exclusion meant no
+        guard naming `experimental_notes/RUNWAY_to_BR2_2026-08-18.md` could
+        ever be selected, and the batch-3 board refused after 48 min 50 s on
+        `test_r1_has_a_position_on_the_runway_2026-11-01.py::test_the_citation_prefix_is_byte_stable`
+        -- a guard that IS on the gate and names that document in a `git show`
+        argument. The pre-board check passed 1619 tests and was blind to it.
+
+        The old rationale was that notes are named by about 100 guards each.
+        Measured on the batch-3 diff: 6 non-.py staged files are named by 62
+        guards, of which **34 are on the gate**, and the gate intersection is
+        applied downstream -- so the cost is bounded at roughly double the
+        pre-board set, 0.24 of a board to avoid a whole one.
+        """
         got = mod.behaviour_changing([
             "scripts/a.py", "hooks/pre-commit", "hooks/b.py", "bench/c.py",
-            "experimental_notes/note.md",       # a note is not behaviour
-            "bench/tickets/tickets.jsonl",      # data, named by many guards
+            "experimental_notes/note.md",       # a guard may assert on it
+            "bench/tickets/tickets.jsonl",      # append-only store, excluded
             "resources/RECOVERY.md",
             "docs/x.md",
         ])
-        assert got == ["scripts/a.py", "hooks/pre-commit", "hooks/b.py", "bench/c.py"]
+        assert got == ["scripts/a.py", "hooks/pre-commit", "hooks/b.py",
+                       "bench/c.py", "experimental_notes/note.md",
+                       "resources/RECOVERY.md", "docs/x.md"], got
 
-    def test_data_is_what_made_the_first_version_too_wide(self, mod):
-        """ANTI-VACUITY: the excluded kinds must actually be present to exclude."""
-        noisy = ["experimental_notes/CDSFL_MASTER_TASK_LIST.md",
-                 "bench/tickets/tickets.jsonl"]
-        assert mod.behaviour_changing(noisy) == [], (
-            "the task list and the ticket store are named by about 100 guards "
-            "each; including them is what turned 43 files into 215 guards")
+    def test_the_ticket_store_is_still_excluded(self, mod):
+        """ANTI-VACUITY: the filter must still exclude something it is given.
+
+        Re-pointed from the task list to the ticket store when documents were
+        admitted. `bench/tickets/` is written by the harvester on nearly every
+        commit, so including it would select guards on EVERY run while saying
+        nothing about the batch -- a predictor that always fires predicts
+        nothing. Without this case the filter could admit everything and both
+        tests above would still pass.
+        """
+        assert mod.behaviour_changing(["bench/tickets/tickets.jsonl"]) == [], (
+            "the ticket store is append-only and changes on nearly every "
+            "commit; admitting it makes the prediction unconditional")
+        assert mod.behaviour_changing(
+            ["bench/tickets/tickets_searches.jsonl"]) == []
+
+    def test_the_task_list_is_now_admitted(self, mod):
+        """The exact case the old anti-vacuity test forbade, now required."""
+        assert mod.behaviour_changing(
+            ["experimental_notes/CDSFL_MASTER_TASK_LIST.md"]) == [
+            "experimental_notes/CDSFL_MASTER_TASK_LIST.md"], (
+            "the task list carries marker guards that sit ON the gate, so a "
+            "staged edit to it genuinely risks a refusal")
 
 
 class TestItReadsTheGatesOwnList:

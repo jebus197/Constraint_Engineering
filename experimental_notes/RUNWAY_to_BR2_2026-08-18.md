@@ -927,3 +927,60 @@ STAGE 8 was added 2026-11-10 under CDSFL note standard v1.9 (1 November 2026). T
 **3. THE INTERFACE WORK, INCLUDING B142, the settings surface.** Marked here on his instruction, for discussion when the arc reaches it. Its credential-store half is **BUILT as of 2026-11-10** — `bench/credential_store.py`, AES-256-GCM behind an Argon2id-derived key, guarded by 39 tests with 9 of 9 mutations red — so what remains on B142 is the role-mapping decision, which is his because it changes how a run selects models.
 
 **AND THE GAP THIS BLOCK CLOSES.** The phrase *B-cell* appeared **0 times** in this runway before 2026-11-10, while his own words in B22 place those build-outs *"on our runway"*. The work existed and the runway never named it, so a reader of this file would not have found it — the same shape as a decision recorded inside a closed entry: true somewhere, reachable nowhere.
+
+---
+
+## ★ CORRECTIONS TO THE PREFIX, APPENDED 2026-11-22 BECAUSE THE PREFIX IS BYTE-FROZEN
+
+**WHY THIS IS AT THE FOOT AND NOT WHERE IT APPLIES, WHICH IS THE WHOLE POINT.**
+These 2 corrections belong at line 11 and at line 313. They are here instead
+because `bench/tests/test_r1_has_a_position_on_the_runway_2026-11-01.py::test_the_citation_prefix_is_byte_stable`
+requires lines 1 to 849 of this file to stay BYTE-IDENTICAL: 5 live line
+citations point into that region from `experimental_notes/Research_FULL_RECORD_2026-09-09.md`,
+which is a verbatim panel transcript and may not be edited to follow a shift,
+and `bench/tests/test_line_citations_resolve_2026-09-01.py` checks only that a
+cited line is IN RANGE, never that it still says what the citation claims.
+
+**THIS WAS LEARNED THE SAME WAY TWICE.** The STAGE 4C block at the foot of this
+file already records that it *"was first written at the head of the file and
+`test_the_citation_prefix_is_byte_stable` refused the commit"*. On 2026-11-22
+the identical mistake was made again: a supersession notice was inserted at
+line 11 and 6 table cells were struck through at line 313, and the commit board
+refused after 48 minutes and 50 seconds, naming line 11. The remedy was written
+IN THIS DOCUMENT and was not read. Physical order in this file has never been
+run order.
+
+### CORRECTION 1 -- the block at lines 9 to 20 is STALE
+
+That block says the held-out status of the answer keys blocks STAGE 3. **The
+ruling arrived on 2026-10-16** as commit `102444cc`, 14:46:18, *"STAGE 3 IS
+UNBLOCKED after 69 days"*. His words, verbatim: *"The fact that the answer keys
+were public for a very brief time has already been answered also and has been
+ruled as not significant ... Verdict: strike from the list of reoccurring issues
+also."* He took the 1st of the 3 options in `Handover_Decisions_2026-08-24.md`
+item FOUR -- accept the exposure and REPORT it -- and the reporting half travels
+with the ruling.
+
+**WHAT ACTUALLY GATES STAGE 3 NOW IS PAID DISPATCH, WHICH IS HIS.** Running
+exp50 and exp51 dispatches 5 models, 3 of them paid seats, and no authorisation
+entry exists for them.
+
+### CORRECTION 2 -- rows 3.1 to 3.6 of the STAGE 3 table
+
+Every one reads *"Blocked on the held-out-status ruling"* or *"Blocked on the
+same ruling as 3.1"*. **All 6 are superseded by the 2026-10-16 ruling above.**
+The correct status for 3.1 through 3.6 is: **BUILT, NOT RUN -- the ruling
+arrived 2026-10-16 (`102444cc`); the live gate is PAID DISPATCH, which is his.**
+Row 3.7, exp54 capstone, is unaffected and remains NOT BUILT with no config.
+
+### THE LIMITATION THIS LEAVES OPEN, STATED RATHER THAN HIDDEN
+
+**A reader who starts at the top still meets the stale claim first, and nothing
+at line 11 points here.** That is the cost of a byte-frozen prefix and it is not
+repaired by this block. The guard is also STRICTER than the citation constraint
+strictly needs: the citations require that no line SHIFTS and that cited lines'
+content is unchanged, whereas the guard forbids ANY byte change in lines 1 to
+849, so even a replacement preserving the line count is refused. Whether to
+relax it to permit in-place correction of stale claims is a change to a
+protective guard and is NOT made here under `simplicity-default`; it is raised
+for the free panel.

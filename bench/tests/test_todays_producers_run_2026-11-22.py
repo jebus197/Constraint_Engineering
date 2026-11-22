@@ -175,3 +175,45 @@ def test_the_composability_producer_reports_orthogonal_not_composed():
     assert "ORTHOGONAL SINGLE FIXES" in r.stdout, r.stdout
     assert "P2 is discharged by cc2's repair alone" in r.stdout, r.stdout
     assert "P1 is discharged by fable's repair alone" in r.stdout, r.stdout
+
+
+# ===========================================================================
+# THE 2 PRODUCERS PROMOTED IN BATCH 3. Appended 2026-11-22.
+#
+# `test_an_unreached_producer_set_cannot_grow_2026-11-08.py` caught both within
+# 6 minutes of their promotion, in the pre-board check rather than on a
+# 50-minute board -- which is the action-triggered set earning its place the
+# first time it ran.
+# ===========================================================================
+
+
+def test_the_refusal_budget_producer_reports_the_defect_in_both_arms():
+    """B209. EXIT 1 IS CORRECT HERE: a live defect, not a broken producer.
+
+    The watched arm must climb and the unwatched arm must stay pinned, because a
+    producer that reported only one of them could not distinguish "the budget is
+    broken" from "the budget does not exist".
+    """
+    r = _run("the_cy_refusal_budget_never_binds_2026-11-22.py")
+    assert r.returncode == 1, (
+        f"expected exit 1 for the LIVE defect, got {r.returncode}. If this is "
+        f"now 0 the key was repaired, and `test_the_cy_refusal_budget_binds` "
+        f"will have gone red on its strict xfails -- fix both together.")
+    assert "watched arm binds        : True" in r.stdout, r.stdout
+    assert "unwatched arm is inert   : True" in r.stdout, r.stdout
+
+
+def test_the_board_census_validates_against_a_known_answer():
+    """It must reproduce a COMPLETED board's own summary before being trusted.
+
+    Validated on BOTH arms deliberately: a census checked only against a clean
+    board passes trivially, because an instrument that cannot see failures also
+    reads 0. The 2026-11-22 logs give one board with 6 failures and one with 0.
+    """
+    import pathlib
+    logs = sorted(pathlib.Path("bench/logs").glob("*/board*.log"))
+    r = _run("the_board_progress_census_2026-11-22.py", "--help")
+    assert r.returncode == 0, r.stdout[-600:]
+    assert "--validate" in r.stdout, (
+        "the census no longer offers --validate, which is the only thing that "
+        "makes its in-flight figures trustworthy")

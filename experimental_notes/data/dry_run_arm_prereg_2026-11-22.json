@@ -1,61 +1,63 @@
 {
-  "_what_this_is": "PRE-REGISTERED predictions for a RECORDING-ONLY pass of the bound orchestrator's SUPERVISOR (--hil-review on, --act WITHHELD) over a FREE SIMULATED run. Written BEFORE it launches so they can fail.",
-  "_written": "2026-11-22T06:58:30+00:00",
-  "_arm": {
-    "hil_review": true,
-    "act": false,
-    "why": "The supervisor classifies what happened when the run stopped and writes the verdict down, and re-invokes nothing. 0 of 352 archived run directories have ever set this.",
-    "launcher": "bench/tools/run_simulated_experiment.py (simulated seats, 0 paid dispatch)",
-    "NOT_the_launcher": "bench/experiment_11_orchestrator.py -- that one costs money and is HIS"
+ "_what_this_is": "PRE-REGISTERED predictions for a RECORDING-ONLY pass of the bound orchestrator's SUPERVISOR (--hil-review on, --act WITHHELD) over a FREE SIMULATED run. Written BEFORE it launches so they can fail.",
+ "_written": "2026-11-22T06:58:30+00:00",
+ "_arm": {
+  "hil_review": true,
+  "act": false,
+  "why": "The supervisor classifies what happened when the run stopped and writes the verdict down, and re-invokes nothing. 0 of 352 archived run directories have ever set this.",
+  "launcher": "bench/tools/run_simulated_experiment.py (simulated seats, 0 paid dispatch)",
+  "NOT_the_launcher": "bench/experiment_11_orchestrator.py -- that one costs money and is HIS"
+ },
+ "_authority": "Run on CC1's own judgement under the founder's 2026-11-21 autonomy handover: 0 of his 4 reserved categories apply to this arm (not computationally irreducible, spends no money, takes no actions, changes nothing about how CDSFL works). The ACTING arm (--act) remains his and is NOT run.",
+ "_contract_under_test": "bench/tools/cy_actuator_2026-11-03.py --contract, guarantees G1 to G5. This arm exercises the RECORDING half of G1 with the acting half withheld.",
+ "predictions": [
+  {
+   "id": "P1",
+   "claim": "At least 1 decision is recorded, and every recorded decision carries all 9 evidence fields.",
+   "fields": [
+    "exit_code",
+    "pid",
+    "pid_alive",
+    "pid_known",
+    "pulse_present",
+    "pulse_age_s",
+    "pulse_ended",
+    "rounds",
+    "events"
+   ],
+   "falsified_if": "0 decisions recorded, OR any recorded decision is missing any of the 9 fields",
+   "why_it_matters": "G1 promises no resume without a recorded decision carrying its evidence. If the record is incomplete with 0 actions taken, it would be incomplete with actions taken too."
   },
-  "_authority": "Run on CC1's own judgement under the founder's 2026-11-21 autonomy handover: 0 of his 4 reserved categories apply to this arm (not computationally irreducible, spends no money, takes no actions, changes nothing about how CDSFL works). The ACTING arm (--act) remains his and is NOT run.",
-  "_contract_under_test": "bench/tools/cy_actuator_2026-11-03.py --contract, guarantees G1 to G5. This arm exercises the RECORDING half of G1 with the acting half withheld.",
-  "predictions": [
-    {
-      "id": "P1",
-      "claim": "At least 1 decision is recorded, and every recorded decision carries all 9 evidence fields.",
-      "fields": [
-        "exit_code",
-        "pid",
-        "pid_alive",
-        "pid_known",
-        "pulse_present",
-        "pulse_age_s",
-        "pulse_ended",
-        "rounds",
-        "events"
-      ],
-      "falsified_if": "0 decisions recorded, OR any recorded decision is missing any of the 9 fields",
-      "why_it_matters": "G1 promises no resume without a recorded decision carrying its evidence. If the record is incomplete with 0 actions taken, it would be incomplete with actions taken too."
-    },
-    {
-      "id": "P2",
-      "claim": "0 resumes are driven. Every recorded action flag is false and the launch command is invoked exactly once.",
-      "falsified_if": "any invocation beyond the first, OR any recorded action flag true, OR --resume appearing in any invocation",
-      "why_it_matters": "This is the arm's DEFINING property. If withholding --act still drives a resume then it is not a switch, the 3-valued framing of B20 is wrong, and the autonomy reasoning that made this arm mine collapses with it."
-    },
-    {
-      "id": "P3",
-      "claim": "In the state the arm exists to observe -- exit 42, the run's own process dead, a pulse present -- the recorded decision is RESUME.",
-      "falsified_if": "the decision in that state is HOLD or UNKNOWN",
-      "why_it_matters": "A dry run that never reaches RESUME produces NO evidence about the acting arm, and the whole exercise would be uninformative rather than reassuring.",
-      "known_trap": "An empty temp directory inverted this answer once: with no pulse on disk the classifier correctly returns UNKNOWN, which reads as a 3rd gate. The probe must point at the REAL run directory."
-    },
-    {
-      "id": "P4",
-      "claim": "No paid dispatch occurs.",
-      "falsified_if": "the paid-dispatch tripwire raises, OR any archived request names a host in PAID_HOSTS",
-      "why_it_matters": "The run must be free. He has refused paid dispatch for this work, so this is the safety predicate and not a performance one."
-    },
-    {
-      "id": "P5",
-      "claim": "The decision log is append-only JSONL beside the run.",
-      "falsified_if": "decisions are written outside the run's log directory, OR any pre-existing line changes",
-      "why_it_matters": "G5. An append-only store has rows, not state; a log that rewrites its own rows cannot be audited after the fact."
-    }
-  ],
-  "_what_is_NOT_predicted": "WHETHER THE RESUME VERDICTS ARE RIGHT. Whether a human would have agreed with each RESUME is the question this evidence EXISTS to inform, and it cannot be pre-registered because it needs the verdicts first. That judgement is the founder's: it is precisely the 'fundamental change in the way the system works' category, since it decides whether the harness may act unattended on its own classification.",
-  "_decision_rule": "CC1 produces the recorded verdicts and reports them with their evidence. CC1 does NOT recommend enabling or withholding --act on the basis of this run, because that recommendation is the ruling itself wearing a different hat.",
-  "_falsification_of_the_autonomy_call": "If P2 fails, the arm took an action CC1 judged it could not take. That would be a real overstep, and it is recorded here as the thing to look for rather than left implicit.",
-  "_this_is_NOT_the_orchestrator_experiment": "CRITICAL DISTINCTION, sharpened 2026-11-22 after reading scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py, which states: 'ENABLING it changes run behaviour and RUNNING it costs money, so both are his.' That sentence governs (a) passing --act, and (b) running bench/experiment_11_orchestrator.py, which dispatches to PAID vendors. THIS ARM IS NEITHER. It passes no --act and runs no paid experiment: it is the supervisor watching a simulated run and writing down what it would have decided. If that reading is wrong, the thing to check is prediction P2, which fails the moment any action is taken."
+  {
+   "id": "P2",
+   "claim": "0 resumes are driven. Every recorded action flag is false and the launch command is invoked exactly once.",
+   "falsified_if": "any invocation beyond the first, OR any recorded action flag true, OR --resume appearing in any invocation",
+   "why_it_matters": "This is the arm's DEFINING property. If withholding --act still drives a resume then it is not a switch, the 3-valued framing of B20 is wrong, and the autonomy reasoning that made this arm mine collapses with it."
+  },
+  {
+   "id": "P3",
+   "claim": "In the state the arm exists to observe -- exit 42, the run's own process dead, a pulse present -- the recorded decision is RESUME.",
+   "falsified_if": "the decision in that state is HOLD or UNKNOWN",
+   "why_it_matters": "A dry run that never reaches RESUME produces NO evidence about the acting arm, and the whole exercise would be uninformative rather than reassuring.",
+   "known_trap": "An empty temp directory inverted this answer once: with no pulse on disk the classifier correctly returns UNKNOWN, which reads as a 3rd gate. The probe must point at the REAL run directory."
+  },
+  {
+   "id": "P4",
+   "claim": "No paid dispatch occurs.",
+   "falsified_if": "the paid-dispatch tripwire raises, OR any archived request names a host in PAID_HOSTS",
+   "why_it_matters": "The run must be free. He has refused paid dispatch for this work, so this is the safety predicate and not a performance one."
+  },
+  {
+   "id": "P5",
+   "claim": "The decision log is append-only JSONL beside the run.",
+   "falsified_if": "decisions are written outside the run's log directory, OR any pre-existing line changes",
+   "why_it_matters": "G5. An append-only store has rows, not state; a log that rewrites its own rows cannot be audited after the fact."
+  }
+ ],
+ "_what_is_NOT_predicted": "WHETHER THE RESUME VERDICTS ARE RIGHT. Whether a human would have agreed with each RESUME is the question this evidence EXISTS to inform, and it cannot be pre-registered because it needs the verdicts first. That judgement is the founder's: it is precisely the 'fundamental change in the way the system works' category, since it decides whether the harness may act unattended on its own classification.",
+ "_decision_rule": "CC1 produces the recorded verdicts and reports them with their evidence. CC1 does NOT recommend enabling or withholding --act on the basis of this run, because that recommendation is the ruling itself wearing a different hat.",
+ "_falsification_of_the_autonomy_call": "If P2 fails, the arm took an action CC1 judged it could not take. That would be a real overstep, and it is recorded here as the thing to look for rather than left implicit.",
+ "_this_is_NOT_the_orchestrator_experiment": "CRITICAL DISTINCTION, sharpened 2026-11-22 after reading scripts/has_the_bound_orchestrator_been_built_or_run_2026-11-02.py, which states: 'ENABLING it changes run behaviour and RUNNING it costs money, so both are his.' That sentence governs (a) passing --act, and (b) running bench/experiment_11_orchestrator.py, which dispatches to PAID vendors. THIS ARM IS NEITHER. It passes no --act and runs no paid experiment: it is the supervisor watching a simulated run and writing down what it would have decided. If that reading is wrong, the thing to check is prediction P2, which fails the moment any action is taken.",
+ "_p3_preconfirmed": "P3 WAS EXERCISED BEFORE THE ARM, 2026-11-22, through `cy_actuator_2026-11-03.py --classify-only --exit-code`, which takes NO action by construction, against a constructed state in a temporary directory: a pulse present, naming a pid that had already exited. exit 42 -> RESUME; exit 0 -> HOLD ('the run exited cleanly but its watch never recorded an end'); exit 1 -> HOLD ('a failure is the human's to read, not the actuator's to drive past'). Each decision was RECORDED to actuator_decisions.jsonl and nothing was driven; --act was never passed. A prediction whose mechanism was exercised beforehand is stronger than one first tried on the day.",
+ "_p4_requires_a_real_launch": "P4, the SAFETY predicate (no paid dispatch), is NOT scorable without a real launch and that is stated rather than glossed. Rehearsed 2026-11-22 on a constructed run, the scorer returned P4 NOT TESTABLE -- 'no evidence the paid-dispatch tripwire was installed, so its silence proves nothing' -- because --classify-only never launches a run and so never installs the tripwire. **An alarm that was never armed cannot be cited as having not fired.** A weaker scorer would have returned P4 HELD here and been green on safety by construction. So the arm's own run through bench/tools/run_simulated_experiment.py is the FIRST and ONLY test of the safety predicate. 4 of the 5 predicates were rehearsed; this 1 could not be."
 }
