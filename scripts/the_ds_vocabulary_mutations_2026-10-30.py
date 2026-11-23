@@ -139,5 +139,9 @@ if __name__ == "__main__":
     # `test_every_script_that_writes_answers_help`, which names the
     # writing scripts specifically for this reason.
     from _cli_help import answer_help   # scripts/ is sys.path[0] when run directly
-    answer_help(__doc__, __file__)
+    # `takes_no_arguments=False` because this script HAS a `--kind` flag.
+    # Without it `answer_help` refuses the flag with exit 2 before argparse is
+    # reached, so `--kind` was unreachable: an addition nothing reaches is not
+    # additive. Measured 2026-11-23 across every script calling this helper.
+    answer_help(__doc__, __file__, takes_no_arguments=False)
     raise SystemExit(main())

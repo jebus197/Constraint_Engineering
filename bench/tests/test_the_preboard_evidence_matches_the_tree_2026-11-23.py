@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -204,6 +205,33 @@ class TestItWritesNothingItShouldNot:
         assert _git(sandbox, "count-objects", "-v").stdout == before
 
 
+def _real_snapshot(sandbox):
+    """Write the stage-0 snapshot through the REAL producer, not by hand.
+
+    ★ WHY THIS HELPER EXISTS. Both snapshot tests used to hand-write
+    `{"digest": d}`. On 2026-11-23 the snapshot gained a `pid`, because a
+    snapshot is BOARD-SCOPED and one left behind by a finished board masked 4
+    staged files in live use. The hand-written form then had 2 effects, and the
+    second is the dangerous one: the gate-caused-move test went RED, and
+    `test_it_does_not_mask_an_operator_edit` went VACUOUS -- still passing, but
+    through the live-index fallback rather than through the property it names.
+
+    A test that constructs its subject's input by hand drifts from the real
+    format silently. This runs the producer, so the format is whatever the gate
+    actually writes.
+    """
+    r = subprocess.run([sys.executable, str(SUBJECT), "--repo", str(sandbox),
+                        "--snapshot", "--quiet"],
+                       capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, f"--snapshot exited {r.returncode}: {r.stderr}"
+    snap = sandbox / ".cdsfl_tmp" / "preboard_snapshot.json"
+    assert snap.is_file(), "the real producer wrote no snapshot"
+    rec = json.loads(snap.read_text())
+    assert isinstance(rec.get("pid"), int) and rec["pid"] > 0, (
+        "the real snapshot carries no usable pid, so board-scoping cannot work")
+    return snap
+
+
 class TestTheStageZeroSnapshotFixesTheFalsePositive:
     """★ ADDED 2026-11-23 AFTER THE FIRST LIVE USE FAILED ON 4 OF 4 COMMITS.
 
@@ -230,11 +258,9 @@ class TestTheStageZeroSnapshotFixesTheFalsePositive:
         (sandbox / "a.txt").write_text("one\n")
         _git(sandbox, "add", "a.txt")
         mod.record(sandbox, 9, "probe run")
-        # the operator's index, snapshotted at stage 0
-        d = mod.staged_digest(sandbox)
-        p = sandbox / mod.SNAPSHOT
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({"digest": d}))
+        # the operator's index, snapshotted at stage 0 BY THE REAL PRODUCER, so
+        # the record carries the live pid the gate would write.
+        _real_snapshot(sandbox)
         # now the GATE repairs and re-stages on its own account
         (sandbox / "ledger.txt").write_text("refreshed by the gate\n")
         _git(sandbox, "add", "ledger.txt")
@@ -251,13 +277,12 @@ class TestTheStageZeroSnapshotFixesTheFalsePositive:
         (sandbox / "a.txt").write_text("one\n")
         _git(sandbox, "add", "a.txt")
         mod.record(sandbox, 9, "probe run")
-        # the OPERATOR edits after the run, and THEN the gate snapshots
+        # the OPERATOR edits after the run, and THEN the gate snapshots --
+        # through the real producer, so a live pid makes the snapshot
+        # AUTHORITATIVE and this test cannot pass via the fallback.
         (sandbox / "b.txt").write_text("edited after the run\n")
         _git(sandbox, "add", "b.txt")
-        d = mod.staged_digest(sandbox)
-        p = sandbox / mod.SNAPSHOT
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps({"digest": d}))
+        _real_snapshot(sandbox)
         assert mod.verdict(sandbox)[0] == "STALE", (
             "the snapshot masked a genuine operator edit, which would make the "
             "whole check vacuous -- the stage-0 snapshot must capture the "
@@ -286,3 +311,121 @@ class TestTheStageZeroSnapshotFixesTheFalsePositive:
             "a stale snapshot survived a new --record, so fresh evidence would "
             "be compared against an old index -- the stale-verdict defect in "
             "mirror image")
+
+
+class TestASnapshotIsBoardScoped:
+    """★ ADDED 2026-11-23. THE MIRROR-IMAGE DEFECT, FOUND IN LIVE USE ON THE
+    SAME DAY AS THE DEFECT IT FIXED.
+
+    `.cdsfl_tmp/preboard_evidence.json` and `.cdsfl_tmp/preboard_snapshot.json`
+    were written in the same minute with IDENTICAL digests, so the comparison
+    became a self-comparison that could never disagree. 4 files staged
+    afterwards read FRESH. A snapshot outlived the board it was taken for.
+
+    `test_it_does_not_mask_an_operator_edit` passed throughout: it fixes the
+    order record -> operator edits -> gate snapshots, where the snapshot
+    captures the edit. Live hit the other order. Both orders occur.
+    """
+
+    def test_a_snapshot_from_a_dead_board_does_not_mask_a_later_edit(
+            self, mod, sandbox):
+        """THE LIVE CASE, reproduced: snapshot first, stage afterwards."""
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        mod.record(sandbox, 9, "probe run")
+        snap = _real_snapshot(sandbox)
+        #: the board ENDS -- emulated by a pid that cannot be running. pid 1 is
+        #: always alive, so a large unused pid is used and asserted dead.
+        rec = json.loads(snap.read_text())
+        dead = 2 ** 22 - 1
+        try:
+            os.kill(dead, 0)
+            pytest.skip(f"pid {dead} is unexpectedly alive on this machine")
+        except (ProcessLookupError, OSError):
+            pass
+        rec["pid"] = dead
+        snap.write_text(json.dumps(rec))
+        #: NOW the operator stages more work, as happened live.
+        (sandbox / "later.txt").write_text("staged after the board ended\n")
+        _git(sandbox, "add", "later.txt")
+        state, why = mod.verdict(sandbox)
+        assert state == "STALE", (
+            f"a snapshot from a FINISHED board masked a later operator edit, "
+            f"which is the live defect of 2026-11-23: got {state!r} {why!r}")
+        assert "live index" in why, (
+            "the verdict should say it fell back to the live index")
+
+    def test_a_live_board_snapshot_is_still_authoritative(self, mod, sandbox):
+        """The original protection must survive the fix -- both directions."""
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        mod.record(sandbox, 9, "probe run")
+        _real_snapshot(sandbox)
+        (sandbox / "ledger.txt").write_text("the gate refreshed this\n")
+        _git(sandbox, "add", "ledger.txt")
+        state, why = mod.verdict(sandbox)
+        assert state == "FRESH", (
+            f"a LIVE board's snapshot stopped absorbing the gate's own "
+            f"re-staging, reinstating the false positive: {state!r} {why!r}")
+        assert "snapshot" in why
+
+    def test_a_snapshot_with_no_pid_is_treated_as_a_leftover(
+            self, mod, sandbox):
+        """POLARITY. This checker reports and never refuses, so it fails toward
+        the live index: a false STALE costs 1 line, a false FRESH costs a board
+        of about 31 minutes run on evidence that describes other bytes."""
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        mod.record(sandbox, 9, "probe run")
+        p = sandbox / mod.SNAPSHOT
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"digest": mod.staged_digest(sandbox)}))
+        (sandbox / "later.txt").write_text("after\n")
+        _git(sandbox, "add", "later.txt")
+        assert mod.verdict(sandbox)[0] == "STALE", (
+            "a pid-less snapshot was honoured; the old format must read as a "
+            "leftover or the live defect returns for every pre-fix snapshot")
+
+    def test_the_liveness_predicate_answers_both_ways(self, mod):
+        """Executed directly, because the branch polarity is the whole fix."""
+        assert mod._board_is_alive({"pid": os.getpid()}) is True
+        assert mod._board_is_alive({}) is False
+        assert mod._board_is_alive({"pid": 0}) is False
+        assert mod._board_is_alive({"pid": -5}) is False
+        assert mod._board_is_alive({"pid": "notanint"}) is False
+
+    def test_clear_snapshot_is_executed_and_actually_removes_it(self, sandbox):
+        """★ `--clear-snapshot` WAS REACHED BY NO CALLER AND NO TEST.
+
+        `additive-standard`'s symmetric form: an addition nothing reaches is
+        not additive. The flag was written for board-end hygiene and then
+        wired nowhere, which is 1 of the 11 confirmed defects of that exact
+        shape in this project's record.
+
+        IT IS DELIBERATELY NOT WIRED INTO THE GATE'S EXIT PATH. The pid check
+        is what makes the verdict CORRECT -- a board killed with SIGKILL runs
+        no exit handler -- so wiring it would buy no correctness, and editing
+        the gate's exit path already produced one near-miss this session where
+        an `unset` placed above `CODE=$?` would have made every board report
+        success. It is an OPERATOR escape hatch, and this test is its caller.
+        """
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        r = subprocess.run([sys.executable, str(SUBJECT), "--repo",
+                            str(sandbox), "--snapshot", "--quiet"],
+                           capture_output=True, text=True, timeout=300)
+        assert r.returncode == 0, r.stderr
+        snap = sandbox / ".cdsfl_tmp" / "preboard_snapshot.json"
+        assert snap.is_file(), "nothing to clear: --snapshot wrote no file"
+        r = subprocess.run([sys.executable, str(SUBJECT), "--repo",
+                            str(sandbox), "--clear-snapshot", "--quiet"],
+                           capture_output=True, text=True, timeout=300)
+        assert r.returncode == 0, f"--clear-snapshot exited {r.returncode}: {r.stderr}"
+        assert not snap.exists(), (
+            "--clear-snapshot ran and the snapshot survived, so the flag is "
+            "not merely unwired, it does not work")
+        #: AND IT MUST BE IDEMPOTENT -- an escape hatch run twice must not fail.
+        r = subprocess.run([sys.executable, str(SUBJECT), "--repo",
+                            str(sandbox), "--clear-snapshot", "--quiet"],
+                           capture_output=True, text=True, timeout=300)
+        assert r.returncode == 0, "a second --clear-snapshot failed"

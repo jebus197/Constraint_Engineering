@@ -226,3 +226,267 @@ def test_the_board_census_validates_against_a_known_answer():
     assert "--validate" in r.stdout, (
         "the census no longer offers --validate, which is the only thing that "
         "makes its in-flight figures trustworthy")
+
+
+# ===========================================================================
+# THE 2 PRODUCERS WRITTEN FOR THE BATCH 4-10 PANEL BRIEF. Appended 2026-11-23.
+#
+# Both were caught by `test_an_unreached_producer_set_cannot_grow_2026-11-08.py`
+# BEFORE the board ran -- the FOLLOW step the ffafp gate said was owed, which
+# would otherwise have refused the batch after about 31 minutes.
+#
+# COST MEASURED BEFORE WIRING, because the board runs on his machine: 1.90 s
+# and 1.11 s, so 3.01 s in total.
+#
+# ★ THE PANEL-LINE PRODUCER'S FIGURE IS DELIBERATELY NOT PINNED, AND THAT IS
+# THE WHOLE POINT OF THIS COMMENT. Its default range is `HEAD~10..HEAD`, so the
+# proportion MOVES with every commit that lands. Pinning the measured 7 of 10
+# would mean that PANELLING EVERY FUTURE BATCH -- the fix -- turns this test
+# red, which is `feedback_a_guard_can_pin_the_defect_as_current_behaviour`
+# exactly. So the STRUCTURE and the 2-route agreement are asserted and the
+# value is not.
+# ===========================================================================
+
+
+def test_the_panel_line_producer_reports_a_proportion_on_two_agreeing_routes():
+    """It must report coverage and have both interval routes agree.
+
+    The VALUE is not asserted, on purpose -- see the block comment above. What
+    is asserted is that the producer still computes a proportion, still reports
+    both routes, and still carries its own stated boundary, because a producer
+    that quietly stopped reporting one route would look identical in prose.
+    """
+    r = _run("was_the_panel_line_ignored_2026-11-23.py")
+    assert r.returncode == 0, r.stdout[-900:] + r.stderr[-400:]
+    assert "UNCOVERED:" in r.stdout, r.stdout[-600:]
+    assert "landed with no useful panel round" in r.stdout, r.stdout[-600:]
+    assert "Wilson 95%" in r.stdout and "Clopper-Pearson 95%" in r.stdout, (
+        "a proportion reported on 1 route only")
+    #: The agreement figures are printed; a disagreement would have tripped the
+    #: producer's own assertions and exited non-zero, so reaching here means
+    #: both pairs agreed. Assert the AGREEMENT IS REPORTED, so a future edit
+    #: cannot drop the cross-check and still look the same.
+    assert "closed form agrees to" in r.stdout, r.stdout[-600:]
+    assert "exact-tail bisection agrees to" in r.stdout, r.stdout[-600:]
+    #: ITS STATED LIMIT MUST SURVIVE. The producer measures the GATE'S
+    #: predicate, not "was the work reviewed by any means", and a reader who
+    #: loses that distinction over-reads the figure.
+    assert "does NOT establish" in r.stdout, (
+        "the producer stopped stating what its figure does not support")
+
+
+def test_the_panel_line_producer_imports_the_gates_own_predicate():
+    """Re-implementing the gate's decision is the 2-forms-disagree defect.
+
+    Asserted by EXECUTION, not by reading the import line: the module is loaded
+    and its loader function is called, so a stub that merely named the gate
+    file would not pass.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_plip", S / "was_the_panel_line_ignored_2026-11-23.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    gate = m.load_gate_predicate()
+    assert hasattr(gate, "rounds_since"), (
+        "the loaded module is not the gate predicate")
+    assert callable(gate.rounds_since)
+    #: And it must be the SAME object the gate itself uses -- same file.
+    assert m.GATE_PREDICATE.name == "was_this_batch_reviewed_2026-11-22.py"
+    assert m.GATE_PREDICATE.is_file()
+
+
+def test_the_suite_rate_producer_separates_one_sided_from_two_sided():
+    """★ THE FINDING THIS PRODUCER EXISTS TO PIN, and it is pinnable because
+    the producer computes from 2 PINNED observation pairs rather than from a
+    corpus that grows.
+
+    A draft of the batch 4-10 brief was about to offer the one-sided tail of a
+    Fisher test to a panel as a '3rd route' sitting below 0.05, which would
+    have switched the question from 'are the rates different' to 'is the new
+    rate lower' after the first answer was known. These assertions keep the
+    two-sided and one-sided figures LABELLED APART.
+    """
+    r = _run("are_the_two_suite_rates_distinguishable_2026-11-23.py")
+    assert r.returncode == 0, r.stdout[-900:] + r.stderr[-400:]
+    assert "TWO-SIDED TESTS" in r.stdout and "ONE-SIDED TEST" in r.stdout, (
+        "the 2 kinds of test are no longer labelled apart, which is the entire "
+        "point of this producer")
+    assert "p = 4.649438e-02" in r.stdout, r.stdout[-700:]
+    assert "p = 5.005710e-02" in r.stdout, r.stdout[-700:]
+    assert "p = 2.461612e-02" in r.stdout, r.stdout[-700:]
+    #: ★ THE STRADDLE IS STILL PRINTED BUT IS NO LONGER THE REASON, and this
+    #: assertion was changed on 2026-11-23 because it pinned a superseded
+    #: conclusion as current behaviour. The joint panel's cc2 seat showed that
+    #: "the 2 routes straddle 0.05" is a fact about CHOOSING Fisher and Yates:
+    #: driven, 5 of 6 two-sided routes REJECT, Yates alone does not, and
+    #: Barnard and Boschloo are unconditional exact tests independent of
+    #: Fisher's construction. Pinning the straddle as the justification would
+    #: make correcting the reasoning turn this test red.
+    assert "two-sided routes reject at 0.05" in r.stdout, (
+        "the producer no longer reports the whole route family, so a reader "
+        "sees 2 selected routes as though they bounded it")
+    assert "interval methods on the DIFFERENCE exclude 0" in r.stdout, (
+        "the interval on the difference is the right object for comparing 2 "
+        "proportions; its absence leaves the invalid Wilson-overlap argument "
+        "as the only interval evidence")
+    assert "ADDED tests ->" in r.stdout, (
+        "the composition sensitivity is what actually refuses the rate claim; "
+        "without it the refusal rests on a threshold again")
+    assert "not a 3rd route" in r.stdout, (
+        "the producer stopped saying the one-sided figure is not independent")
+
+
+def test_the_suite_rate_producer_names_the_population_change():
+    """The objection that outranks every p-value here: the suites differ.
+
+    611 tests were added between the 2 runs, so a rate comparison assumes the
+    added tests fail at the same rate as the existing ones. That assumption is
+    untested, and it is a stronger reason to prefer the count statement than
+    any threshold argument.
+    """
+    r = _run("are_the_two_suite_rates_distinguishable_2026-11-23.py")
+    assert "611 tests" in r.stdout, r.stdout[-700:]
+    #: The Wilson overlap is REPORTED and explicitly labelled invalid as an
+    #: argument; it is not asserted as evidence. See the note above.
+    assert "overlap of 2 single-proportion intervals is not a test" in r.stdout, (
+        "the producer stopped warning that its own Wilson-overlap line is not "
+        "a test of the difference, which is how that fallacy got into the "
+        "record in the first place")
+
+
+# ===========================================================================
+# THE MUTATION HARNESS FOR THE BOARD-SCOPED SNAPSHOT. Appended 2026-11-23.
+#
+# ★ IT IS NAMED AND PARTIALLY EXERCISED HERE, NOT RUN TO COMPLETION, AND THE
+# REASON IS A HARD CONSTRAINT RATHER THAN A CONVENIENCE: it drives `pytest`,
+# and a test under `bench/tests/` runs INSIDE pytest, so executing it here
+# would nest the runner inside itself. The same exemption already covers
+# `prove_the_hidden_ruling_check_still_bites_2026-11-22.py` a few blocks above.
+#
+# WHAT IS CHECKED WITHOUT RUNNING IT: that it exists, that `--help` answers
+# without performing the measurement (B212's class -- a flag that runs the work
+# can edit the tree), and that it still declares a mutation for EACH branch of
+# the predicate it guards. The last is the part that rots: a branch added to
+# the subject with no mutation beside it is an untested branch, and the harness
+# cannot notice its own omission.
+#
+# ITS RESULT WHEN RUN BY HAND, 2026-11-23: 4 of 4 reversions RED, baseline
+# GREEN, restore sha256 f4628b6b7de711db MATCHES what was found.
+# ===========================================================================
+
+
+def test_the_snapshot_mutation_harness_answers_help_without_working():
+    """`--help` must not run the measurement. B212's whole subject."""
+    r = _run("the_board_scoped_snapshot_mutations_2026-11-23.py", "--help")
+    assert r.returncode == 0, r.stdout[-600:] + r.stderr[-400:]
+    #: THE REAL CONTRACT, and the first version of this assertion got it
+    #: wrong. `answer_help` INTERCEPTS `--help` before the caller's parser, so
+    #: the flags are deliberately NOT listed -- the fall-through that would
+    #: list them could make `--help` do work in any script that acts before
+    #: `parse_args`. What the help must do is describe the script and say that
+    #: options exist, so a reader is not told there are none.
+    assert "mutation" in r.stdout.lower() or "reversion" in r.stdout.lower(), (
+        "the help text does not describe what the script does")
+    assert "has its own options" in r.stdout, (
+        "the help claims or implies the script takes no arguments, while it "
+        "declares --quiet; that sentence is what made this test wrong first "
+        "time round")
+    #: DISCRIMINATE ON STRINGS ONLY `main()` PRINTS. The first version
+    #: asserted the absence of the word "reversion", which appears in the
+    #: DOCSTRING that `--help` is supposed to show -- so it accused correct
+    #: behaviour. The measurement's own progress markers are the right test.
+    for marker in ("baseline (unmutated)", "restored sha256",
+                   "turned the guard RED"):
+        assert marker not in r.stdout, (
+            f"--help printed {marker!r}, so it ran the measurement instead of "
+            f"describing it; a flag that works can edit the tree (B212)")
+
+
+def test_the_snapshot_mutation_harness_covers_every_branch_it_guards():
+    """A branch with no mutation beside it is an untested branch.
+
+    Derived from the SUBJECT, not from a typed list: each anchor the harness
+    declares must still be present in the file it mutates, and the count of
+    anchors must not fall below the number of decision points the predicate
+    has. An anchor that silently stops matching makes the harness SKIP, and a
+    skip reads like a pass.
+    """
+    import importlib.util
+    h = S / "the_board_scoped_snapshot_mutations_2026-11-23.py"
+    assert h.is_file(), "the mutation harness is missing"
+    spec = importlib.util.spec_from_file_location("_snapmut", h)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    subject = m.SUBJECT.read_text()
+    assert m.SUBJECT.is_file(), f"the harness points at a missing subject: {m.SUBJECT}"
+    missing = [label for label, find, _repl in m.MUTATIONS if find not in subject]
+    assert not missing, (
+        f"{len(missing)} mutation anchor(s) no longer match the subject, so the "
+        f"harness would SKIP them and a skip reads like a pass: {missing}")
+    assert len(m.MUTATIONS) >= 4, (
+        f"the harness declares {len(m.MUTATIONS)} mutation(s); the liveness "
+        f"predicate has 4 decision points (no pid, bad pid, dead pid, and "
+        f"whether the snapshot is consulted at all)")
+
+
+# ===========================================================================
+# THE "SIGNIFICANT BATCH" PRODUCER. Appended 2026-11-23.
+#
+# The founder was asked how a significant batch should be defined and answered
+# with a measurable proxy rather than a rule: that his verdict asks usually run
+# at 10 to 12 items each, and that an average over the last month should be
+# taken as the guide. This producer checks that recollection against the files.
+#
+# ★ NO VALUE IS PINNED. The corpus GROWS with every decisions file written, so
+# pinning the measured median would turn a correct future measurement red --
+# `feedback_a_guard_can_pin_the_defect_as_current_behaviour`. The STRUCTURE,
+# the 2-route agreement and the stated limit are asserted instead.
+#
+# ONE CORPUS IS OUTSIDE THE REPOSITORY (his Desktop), so these assertions must
+# hold on a machine that has only the versioned twins.
+# ===========================================================================
+
+
+def test_the_batch_definition_producer_reports_both_corpora_and_its_limit():
+    r = _run("what_is_a_significant_batch_2026-11-23.py")
+    assert r.returncode == 0, r.stdout[-900:] + r.stderr[-400:]
+    assert "his recall : between 10 and 12 verdicts per ask" in r.stdout, (
+        "the producer no longer states the claim it is checking, so a reader "
+        "cannot tell what the figures are being compared against")
+    assert "PER FILE" in r.stdout and "versioned twins" in r.stdout, (
+        "a single-corpus answer: the whole point is that the count moves with "
+        "the corpus chosen")
+    #: THE LIMIT IS THE LOAD-BEARING PART. He offered a proxy; recording it as
+    #: the definition of a work batch without that caveat is how a proxy
+    #: becomes a fact.
+    assert "DOES NOT SUPPORT" in r.stdout, (
+        "the producer stopped stating what its figure does not support")
+    assert "UNVERSIONED" in r.stdout, (
+        "the spoken corpus is on the Desktop; a figure drawn from it is not "
+        "reproducible from the repository and must say so")
+
+
+def test_the_batch_definition_predicate_admits_a_markdown_heading():
+    """★ THE DEFECT THIS PRODUCER HAD ON ITS FIRST RUN, pinned as a property.
+
+    The first version anchored `DECISION` at line start with no prefix. The
+    versioned twins write `## DECISION 1`, so it found 3 files where 20 exist
+    and the SPOKEN corpus looked richer than the versioned one -- which nearly
+    became a finding that his verdict record was unversioned. It was the
+    instrument, not the record.
+
+    Asserted by EXECUTING the compiled pattern, not by reading its source.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_sigbatch", S / "what_is_a_significant_batch_2026-11-23.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    assert m.DECISION.findall("## DECISION 1\n"), (
+        "a markdown heading is not matched, so every versioned twin is invisible")
+    assert m.DECISION.findall("DECISION 7\n"), "the plain spoken form broke"
+    assert m.DECISION.findall("#### Decision 12\n"), "mixed case broke"
+    #: AND IT MUST NOT OVER-MATCH: prose mentioning a decision is not a heading.
+    assert not m.DECISION.findall("the DECISION 1 was recorded in prose\n"), (
+        "the pattern matches mid-sentence prose, which would inflate every count")

@@ -108,7 +108,26 @@ def answer_help(doc: str | None, path: str | None = None,
         body = textwrap.dedent(doc or "").strip()
         print(body if body else "(this script carries no description)")
         print()
-        print("This script takes no arguments; run it with none to do its work.")
+        #: ★ DO NOT CLAIM "no arguments" WHEN THE CALLER SAID OTHERWISE.
+        #: Until 2026-11-23 this line was unconditional, so a script passing
+        #: `takes_no_arguments=False` -- i.e. one that HAS flags -- printed
+        #: "This script takes no arguments" over the top of its own options.
+        #: Found by a test written for a sibling script, which believed the
+        #: sentence and reported that a script with `--quiet` had no flags.
+        #:
+        #: THE CONTROL FLOW IS DELIBERATELY UNCHANGED. Letting `--help` fall
+        #: through to the caller's parser would list the real flags, which is
+        #: better help -- but this helper is reached by hundreds of scripts and
+        #: in any one of them that does work before `parse_args`, falling
+        #: through would make `--help` DO THAT WORK. That is precisely the
+        #: defect this helper exists to prevent (B212), so the honest sentence
+        #: is shipped and the fall-through is left as a measured question.
+        if takes_no_arguments:
+            print("This script takes no arguments; run it with none to do "
+                  "its work.")
+        else:
+            print("This script has its own options, which its own parser "
+                  "handles; they are described above rather than listed here.")
         raise SystemExit(0)
     if takes_no_arguments and args:
         print(f"usage: {name} [-h]", file=sys.stderr)

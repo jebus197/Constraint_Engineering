@@ -1,0 +1,282 @@
+{
+  "model": "opus",
+  "elapsed_s": 1499.3,
+  "tool_calls": 53,
+  "calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && git log --oneline -12 && ls\", \"description\": \"Orient in repo\"}",
+      "t_offset_s": 4.335
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ssd/experimental 2>/dev/null || true; sha256sum scripts/was_the_panel_line_ignored_2026-11-23.py bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py scripts/the_cy_refusal_budget_never_binds_2026-11-22.py scripts/is_the_hash_chain_majority_real_2026-11-22.py scripts/help_writers_rate_2026-09-17.py scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py scripts/are_the_tw",
+      "t_offset_s": 7.399
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls && echo \\\"--- git?\\\" && ls -a | head -20 && echo \\\"--- hooks\\\" && ls hooks/ 2>/dev/null | head\", \"description\": \"List sandbox contents\"}",
+      "t_offset_s": 12.316
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"import scipy, statsmodels, mpmath, sympy, z3; print('ok')\\\" 2>&1; which wolframscript 2>&1 | head -2\", \"description\": \"Check tool availability\"}",
+      "t_offset_s": 13.457
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat hooks/cy_monitor_gate.py\", \"description\": \"Read cy monitor gate\"}",
+      "t_offset_s": 18.027
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/was_the_panel_line_ignored_2026-11-23.py\", \"description\": \"Read panel coverage producer\"}",
+      "t_offset_s": 18.625
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd \\\"$(pwd)\\\" && python3 scripts/are_the_two_suite_rates_distinguishable_2026-11-23.py 2>&1 | tail -40\", \"description\": \"Run suite rate producer\"}",
+      "t_offset_s": 29.617
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py 2>&1 | tail -40; echo \\\"EXIT=$?\\\"\", \"description\": \"Run cy refusal producer\"}",
+      "t_offset_s": 30.727
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q 2>&1 | tail -30\", \"description\": \"Run cy budget tests\"}",
+      "t_offset_s": 31.805
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py 2>&1 | tail -50\", \"description\": \"Run help flag fixer\"}",
+      "t_offset_s": 32.548
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,400p bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\", \"description\": \"Read cy budget test\"}",
+      "t_offset_s": 43.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,140p scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py\", \"description\": \"Read help flag fixer\"}",
+      "t_offset_s": 43.693
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,200p scripts/help_writers_rate_2026-09-17.py; echo ===CLIHELP===; sed -n 1,80p scripts/_cli_help.py\", \"description\": \"Read help rate + _cli_help\"}",
+      "t_offset_s": 64.814
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests | grep -i -E \\\"cy_|panel_line|help_flag\\\" | head -20; echo ---; grep -n \\\"was_this_batch_reviewed\\\" hooks/pre-commit | head; echo ---; sed -n 1,80p scripts/was_this_batch_reviewed_2026-11-22.py\", \"description\": \"Find related tests and gate predicate\"}",
+      "t_offset_s": 66.657
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -li hooks/cy_monitor_gate.py; echo \\\"--- pytest invocations in pre-commit:\\\"; grep -c \\\"pytest\\\" hooks/pre-commit; grep -n \\\"pytest\\\" hooks/pre-commit | head -20\", \"description\": \"Check hardlink and board pytest shape\"}",
+      "t_offset_s": 135.831
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 80,200p scripts/was_this_batch_reviewed_2026-11-22.py\", \"description\": \"Read rest of batch reviewed predicate\"}",
+      "t_offset_s": 136.681
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_26mp_q8c/repo/hooks/cy_monitor_gate.py\", \"offset\": 300, \"limit\": 40}",
+      "t_offset_s": 160.085
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_26mp_q8c/repo/hooks/cy_monitor_gate.py\", \"offset\": 258, \"limit\": 22}",
+      "t_offset_s": 162.988
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_26mp_q8c/repo/hooks/cy_monitor_gate.py\", \"old_string\": \"def spend(key: str) -> int:\\n    if not key:\\n        return MAX_REFUSALS + 1\\n    try:\\n        sp = state_path()\\n        st = json.loads(sp.read_text(encoding=\\\"utf-8\\\")) if sp.is_file() else {}\\n    except Exception:                  ",
+      "t_offset_s": 198.269
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for d in hooks scripts bench/tests .; do if touch \\\"$d/.wtest\\\" 2>/dev/null; then echo \\\"WRITABLE $d\\\"; rm -f \\\"$d/.wtest\\\"; else echo \\\"RO       $d\\\"; fi; done; ls -ld hooks scripts bench/tests; cat .cdsfl_deny_canonical_writes.sb 2>/dev/null | head -30\", \"description\": \"Probe writability\"}",
+      "t_offset_s": 203.006
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_q1.py <<'PYEOF'\\nimport pathlib, re\\np = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\")\\nsrc = p.read_text()\\nOLD = '''def spend(key: str) -> int:\\n    if not key:\\n        return MAX_REFUSALS + 1\\n    try:\\n        sp = state_path()\\n        st = json.loads(sp.read_text(encoding=\\\"utf-8\\\")) if sp.is_file() else {}\\n    except Exception:                                   ",
+      "t_offset_s": 241.715
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_q1b.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\")\\nsrc = p.read_text()\\nOLD = '''    key = refusal_key(payload, live, unwatched, pids)\\n    used = spend(key)\\n    total = session_spent()\\n    if used > MAX_REFUSALS or total > MAX_REFUSALS_PER_SESSION:'''\\nassert src.count(OLD) == 1\\nNEW = '''    refuse, used, total = decide(payload, live",
+      "t_offset_s": 287.141
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/which_cy_refusal_key_survives_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Does the cy refusal budget need 2 mechanisms, or does 1 key suffice? (B209)\\n\\nDESTINATION `scripts/`. Written 2026-11-23 for the joint panel round.\\n\\nWHAT IT DECIDES, AND WHY IT IS A COMPOSABILITY MEASUREMENT RATHER THAN A\\nPREFERENCE. The 2026-11-22 blind round produced 2 incompatible",
+      "t_offset_s": 345.098
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q 2>&1 | tail -15\", \"description\": \"Run guard against repaired gate\"}",
+      "t_offset_s": 359.197
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_tests.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\nsrc = p.read_text()\\n\\nOLD = '''class TestTheUnwatchedBudgetBinds:\\n    \\\"\\\"\\\"\\u2605 KNOWN-FAILING TODAY, strictly. The regression guard for B209's repair.\\\"\\\"\\\"\\n\\n    @pytest.mark.xfail(strict=True, reason=\\\"B209: the refusal budget's key falls \\\"\\n ",
+      "t_offset_s": 407.648
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\nsrc = p.read_text()\\nbad = src.rfind(\\\"\\\\\\\\n\\\")\\nprint(repr(src[bad-40:bad+10]))\\nsrc = src[:bad] + \\\"\\\\n\\\" + src[bad+2:]\\np.write_text(src)\\nPYEOF\\npython3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q 2>&1 | tail -20\", \"description\": \"Fix l",
+      "t_offset_s": 413.698
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\nG=hooks/cy_monitor_gate.py\\n# Mutant A: refusal_key reverts to the old churning pid key\\npython3 - <<'PY'\\nimport pathlib\\ns = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\").read_text()\\na = s.replace('    return f\\\"{sess}|e{epoch}\\\"',\\n              '    return sess + \\\"|\\\" + str([r[\\\"dir\\\"] for r in list(live)+list(unwatched)] or pids)  # MUTANT A')\\nassert a != s\\npathlib.Path(",
+      "t_offset_s": 432.701
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\ns = p.read_text()\\nHDR = '''#: \\u2605 AN ABSOLUTE LOOP CAP, AND IT IS A CORRECTION FOUND BY EXECUTION ON\\n#: 2026-11-23. The 2 ceiling tests below first bounded their loops by\\n#: `gate.MAX_REFUSALS_PER_SESSION * 2` -- i.e. BY THE VERY VALUE UNDER TEST.\\n#: Driven agains",
+      "t_offset_s": 569.866
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for m in B_no_ceiling C_dict_replaced D_idle_only; do\\n  echo \\\"=== MUTANT $m ===\\\"\\n  CDSFL_CY_GATE_PATH=/tmp/mut$m.py timeout 60 python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q 2>&1 | tail -7\\ndone\", \"description\": \"Re-run remaining mutants\"}",
+      "t_offset_s": 574.983
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for m in B_no_ceiling C_dict_replaced D_idle_only; do\\n  echo \\\"=== MUTANT $m ===\\\"\\n  CDSFL_CY_GATE_PATH=/tmp/mut$m.py python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q --timeout=40 2>&1 | tail -7\\ndone\", \"description\": \"Re-run remaining mutants with pytest timeout\"}",
+      "t_offset_s": 578.605
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\ns = p.read_text()\\nT = '''\\n    def test_a_back_to_back_activity_with_no_observed_idle_is_protected(self, gate):\\n        \\\"\\\"\\\"\\u2605 THE CENTRAL DISAGREEMENT OF THE 2026-11-22 ROUND, AS A GUARD.\\n\\n        Activity A exhausts its budget; activity B then starts with a D",
+      "t_offset_s": 600.717
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\nR=/tmp/q3repo\\nrm -rf $R && mkdir -p $R\\ncp -R scripts $R/scripts\\nmkdir -p $R/bench && cp -R bench/tests $R/bench/tests\\ncd $R && git init -q . && git add -A 2>/dev/null && git -c user.email=a@b -c user.name=a commit -qm base\\necho \\\"tracked scripts: $(git ls-files -- scripts | grep -c '\\\\.py$')\\\"\\npython3 scripts/help_writers_rate_2026-09-17.py :worktree 2>&1 | grep -E \\\"rev",
+      "t_offset_s": 613.496
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && python3 scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py 2>&1 | tail -25\", \"description\": \"Run help fixer dispositions\"}",
+      "t_offset_s": 625.624
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && for f in the_co_author_dedupe_mutations_2026-11-14 the_decision_delivery_mutations_2026-11-14 the_interface_role_mutations_2026-11-14 the_parked_boundary_mutations_2026-11-14 the_reader_vocabulary_mutations_2026-11-14 the_reference_list_mutations_2026-11-14; do\\necho \\\"--- $f\\\"; grep -nE \\\"^(import|from) \\\" scripts/$f.py | head -8; echo \\\"   entry:\\\"; grep -nA3 'if _",
+      "t_offset_s": 638.374
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && git status --porcelain | wc -l && echo \\\"--- running an UNFIXED offender with --help:\\\" && python3 scripts/the_co_author_dedupe_mutations_2026-11-14.py --help > /tmp/q3_help.out 2>&1; echo \\\"exit=$?\\\"; head -5 /tmp/q3_help.out; echo \\\"--- tree changed?\\\"; git status --porcelain | head -10; echo \\\"changed_files=$(git status --porcelain | wc -l)\\\"\", \"description\": \"Pre",
+      "t_offset_s": 660.167
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && sed -n '1,30p;60,115p' scripts/the_co_author_dedupe_mutations_2026-11-14.py\", \"description\": \"Read a declined harness\"}",
+      "t_offset_s": 675.445
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && grep -nA8 \\\"_run_guard\\\" scripts/the_co_author_dedupe_mutations_2026-11-14.py | head -14; echo \\\"--- MUTATIONS anchors:\\\"; python3 -c \\\"\\nimport re,pathlib\\ns=pathlib.Path('scripts/the_co_author_dedupe_mutations_2026-11-14.py').read_text()\\nm=re.search(r'MUTATIONS = \\\\[(.*?)\\\\n\\\\]', s, re.S); print(m.group(1)[:900])\\\"\", \"description\": \"Read guard runner and mutation ",
+      "t_offset_s": 691.254
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\nP=/tmp/q3premise; rm -rf $P; mkdir -p $P/scripts $P/bench/tests\\ncp /tmp/q3repo/scripts/the_co_author_dedupe_mutations_2026-11-14.py $P/scripts/\\n# a SUBJECT carrying every mutation anchor, so no probe is stale\\npython3 - <<'PY'\\nimport pathlib, re\\nh = pathlib.Path('/tmp/q3premise/scripts/the_co_author_dedupe_mutations_2026-11-14.py').read_text()\\nimport ast\\nmod = ast.parse(",
+      "t_offset_s": 705.158
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && echo \\\"=== the 2 dash-m-only offenders, driven BOTH ways ===\\\" && for f in the_majority_separation_mutations_2026-11-22 the_restore_mutations_2026-11-22; do\\necho \\\"--- $f : the guard as written\\\"; grep -nB2 -A4 \\\"answer_help\\\" scripts/$f.py | head -14\\necho \\\"  direct : \\\"; python3 scripts/$f.py --help 2>&1 | head -2; echo \\\"    exit=$?\\\"\\necho \\\"  dash-m : \\\"; pyth",
+      "t_offset_s": 725.55
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && cp scripts/the_restore_mutations_2026-11-22.py /tmp/ctl.py.bak\\npython3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_restore_mutations_2026-11-22.py\\\")\\ns = p.read_text()\\ns2 = s.replace('    sys.path.insert(0, str(REPO / \\\"scripts\\\"))\\\\n', '    # NEGATIVE CONTROL: insert removed\\\\n')\\nassert s2 != s\\np.write_text(s2)\\nPY\\necho \\\"=== NEGATIVE CONTROL: sam",
+      "t_offset_s": 743.672
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py\\\")\\ns = p.read_text()\\nOLD_GUARD = '''GUARD = (\\n    '    # A `--help` MUST NOT run: this script WRITES, mutating a tracked file\\\\\\\\n'\\n    '    # in place and restoring it from the bytes it read first.\\\\\\\\n'\\n    '    sys.path.insert(0, str(pathlib.Path(__file__).resolve().",
+      "t_offset_s": 780.367
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3repo && python3 scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py --apply 2>&1 | tail -6\\necho \\\"=== does a repaired one of the 6 now ANSWER --help without writing? ===\\\"\\ncd /tmp/q3premise && cp /tmp/q3repo/scripts/the_co_author_dedupe_mutations_2026-11-14.py scripts/\\npython3 - <<'PY'\\nimport pathlib, runpy, sys\\nwrites = []\\n_wt, _wb = pathlib.Path.write_text, pa",
+      "t_offset_s": 794.412
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp /tmp/q3repo/scripts/_cli_help.py /tmp/q3premise/scripts/ && cd /tmp/q3premise && python3 - <<'PY'\\nimport pathlib, runpy, sys\\nwrites = []\\n_wt, _wb = pathlib.Path.write_text, pathlib.Path.write_bytes\\npathlib.Path.write_text = lambda self,*a,**k: (writes.append(str(self)), _wt(self,*a,**k))[1]\\npathlib.Path.write_bytes = lambda self,*a,**k: (writes.append(str(self)), _wb(self,*a,*",
+      "t_offset_s": 812.344
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"A falsifier that gives the SAME verdict with and without the defect is VOID.\\n\\nDESTINATION `scripts/`. Written 2026-11-23 for the joint panel round, Q5.\\n\\n\\u2605 THE FAILURE SHAPE, AND IT HAS NOW HAPPENED 3 TIMES IN ONE SESSION.\\nA falsifier is written, RUN, and its result is r",
+      "t_offset_s": 879.849
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py\\\")\\ns = p.read_text()\\nOLD = '''if __name__ == \\\"__main__\\\":\\n    import pathlib as _hp_pathlib\\n    import sys as _hp_sys\\n    _hp_sys.path.insert(0, str(_hp_pathlib.Path(__file__).resolve().parent))\\n    try:\\n        from _cli_help import answer_help\\n        answer_help",
+      "t_offset_s": 897.018
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport numpy as np\\nfrom scipy import stats\\nimport statsmodels.stats.proportion as smp\\nfrom statsmodels.stats.proportion import proportions_ztest, confint_proportions_2indep\\n\\nk1,n1 = 18,18403      # now\\nk0,n0 = 32,17792      # was\\nT = [[k1, n1-k1],[k0, n0-k0]]\\nprint(\\\"=== TWO-SIDED ROUTES THAT ARE NOT TAILS OF EACH OTHER ===\\\")\\nf = stats.fisher_exact(T, alter",
+      "t_offset_s": 927.113
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scholar.tmp <<'X'\\nX\\nrm -f scholar.tmp\\ncat > scripts/is_the_suite_rate_drop_real_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Did the suite failure RATE fall, and is the straddle a fact or a choice?\\n\\nDESTINATION `scripts/`. Written 2026-11-23, joint panel round, Q4.\\n\\n\\u2605 WHY THIS EXISTS RATHER THAN THE SIBLING PRODUCER. `are_the_two_suite_rates_\\ndistinguishab",
+      "t_offset_s": 1088.6
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 960,1000p hooks/pre-commit\", \"description\": \"Read the pre-commit panel line\"}",
+      "t_offset_s": 1198.373
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/georgejackson/Developer_Projects/Constraint_Engineering 2>/dev/null; wolframscript -code 'N[FisherRatioTest[{{18, 18385}, {32, 17760}}], 10]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram second falsifier attempt\"}",
+      "t_offset_s": 1200.153
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'd = HypergeometricDistribution[18403, 50, 36195]; p0 = PDF[d, 18]; N[Total[Select[Table[PDF[d, x], {x, 0, 50}], # <= p0*(1 + 10^-9) &]], 12]' 2>&1 | head -5; echo \\\"EXIT=$?\\\"\", \"description\": \"Wolfram exact two-sided Fisher via hypergeometric\"}",
+      "t_offset_s": 1217.668
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/may_this_commit_skip_the_panel_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"A hook-evaluable exemption predicate for the pre-commit panel line.\\n\\nDESTINATION `scripts/`. Written 2026-11-23, joint panel round, Q2.\\n\\n\\u2605 THE EVIDENCE FOR ESCALATING IS IN AND IT IS AGAINST THE ADVISORY FORM.\\n`scripts/was_the_panel_line_ignored_2026-11-23.py` measures 7 of 10",
+      "t_offset_s": 1284.07
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/may_this_commit_skip_the_panel_2026-11-23.py\\\")\\ns = p.read_text()\\nOLD = '''    for p in paths:\\n        if p.startswith(_NON_EXECUTING_DIRS):\\n            continue\\n        if \\\"/\\\" not in p and p.endswith(_NON_EXECUTING_SUFFIX):\\n            continue                 # a root-level prose file\\n        return False\\n    ret",
+      "t_offset_s": 1302.581
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\necho \\\"=== Q1 guard + harness ===\\\"\\npython3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py bench/tests/test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py -q 2>&1 | tail -4\\npython3 scripts/which_cy_refusal_key_survives_2026-11-23.py 2>&1 | sed -n '/candidate /,/SHIPPED/p'\\necho \\\"=== the gate still runs end to end as a hook ===\\\"\\necho '{\\\"sessio",
+      "t_offset_s": 1313.804
+    }
+  ],
+  "attempts": 1,
+  "per_attempt": [
+    {
+      "attempt": 1,
+      "elapsed_s": 1499.3,
+      "tool_calls": 53,
+      "cwd": "/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_26mp_q8c/repo",
+      "write_confinement": "sandbox-exec: writes to the canonical tree denied"
+    }
+  ]
+}

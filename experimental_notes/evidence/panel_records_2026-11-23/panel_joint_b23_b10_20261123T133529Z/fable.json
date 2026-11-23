@@ -1,0 +1,332 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 22675,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls\", \"description\": \"Show working directory and contents\"}",
+      "t_offset_s": 14.947
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"scripts/*2026-11-2*.py\"}",
+      "t_offset_s": 15.239
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls hooks/ scripts/ | head -60; ls scripts | grep -i cy; ls scripts | grep -i refusal\", \"description\": \"List hooks and cy/refusal scripts\"}",
+      "t_offset_s": 20.219
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"refusal_key|note_idle|overlap\", \"output_mode\": \"files_with_matches\"}",
+      "t_offset_s": 20.937
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/hooks/cy_monitor_gate.py\"}",
+      "t_offset_s": 26.102
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\"}",
+      "t_offset_s": 39.233
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/fable/attempt-1/changes.diff bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/cc2/attempt-1/changes.diff 2>/dev/null; ls bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/*/attempt-1/ 2>/dev/null\", \"description\": \"Check harvested seat diffs from prior round\"}",
+      "t_offset_s": 40.745
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^diff\\\\|^+++\\\" bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/fable/attempt-1/changes.diff bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/cc2/attempt-1/changes.diff\", \"description\": \"List files touched in each seat's diff\"}",
+      "t_offset_s": 49.287
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 892,990p bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/cc2/attempt-1/changes.diff\", \"description\": \"Read cc2's hook diff (overlap key)\"}",
+      "t_offset_s": 53.438
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 926,1047p bench/logs/panel_batches23_20261122T223441Z/sandbox_harvest/fable/attempt-1/changes.diff\", \"description\": \"Read fable's hook diff (empty-epoch key)\"}",
+      "t_offset_s": 54.159
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/experimental_notes/seat_evidence/panel_batches23_20261122T223441Z/cc2/scripts/which_cy_refusal_key_survives_2026-11-22.py\"}",
+      "t_offset_s": 136.374
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/scripts/was_the_panel_line_ignored_2026-11-23.py\"}",
+      "t_offset_s": 137.243
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"was_this_batch_reviewed\\\\||| true\\\" hooks/pre-commit | head; grep -n \\\"panel\\\" hooks/pre-commit | head -20\", \"description\": \"Find the panel line in pre-commit\"}",
+      "t_offset_s": 141.902
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/was_the_panel_line_ignored_2026-11-23.py 2>&1 | tail -30\", \"description\": \"Run the panel-coverage producer\"}",
+      "t_offset_s": 142.851
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 950,1030p hooks/pre-commit\", \"description\": \"Read the panel line region of pre-commit\"}",
+      "t_offset_s": 147.02
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/help_writers_rate_2026-09-17.py 2>&1 | tail -15\", \"description\": \"Run help writers rate producer\"}",
+      "t_offset_s": 151.935
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/are_the_two_suite_rates_distinguishable_2026-11-23.py 2>&1 | tail -40\", \"description\": \"Run suite-rates producer\"}",
+      "t_offset_s": 152.74
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py\"}",
+      "t_offset_s": 164.83
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/scripts/help_writers_rate_2026-09-17.py\"}",
+      "t_offset_s": 165.643
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\"}",
+      "t_offset_s": 274.828
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -60 scripts/what_is_a_significant_batch_2026-11-23.py; echo ---; head -40 scripts/was_this_batch_reviewed_2026-11-22.py\", \"description\": \"Read significant-batch and gate predicate headers\"}",
+      "t_offset_s": 275.953
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo/hooks/cy_monitor_gate.py\", \"old_string\": \"def spend(key: str) -> int:\\n    if not key:\\n        return MAX_REFUSALS + 1\\n    try:\\n        sp = state_path()\\n        st = json.loads(sp.read_text(encoding=\\\"utf-8\\\")) if sp.is_file() else {}\\n    except Exception:                  ",
+      "t_offset_s": 356.604
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\")\\nsrc = p.read_text()\\nold = '''def spend(key: str) -> int:\\n    if not key:\\n        return MAX_REFUSALS + 1\\n    try:\\n        sp = state_path()\\n        st = json.loads(sp.read_text(encoding=\\\"utf-8\\\")) if sp.is_file() else {}\\n    except Exception:                                        # noqa: BLE001",
+      "t_offset_s": 386.863
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, re\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\nsrc = p.read_text()\\n\\n# 1. Retarget the unwatched class: the repair landed, markers come off, and the\\n#    tests now drive the REAL path refusal_key() -> spend().\\nold = src[src.index('class TestTheUnwatchedBudgetBinds:'):src.index('class TestTheKeyIsWhereTheDefec",
+      "t_offset_s": 422.867
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,20p bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py | head -5; echo ...; tail -30 bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py; echo ===; python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q 2>&1 | tail -6\", \"description\": \"Inspect patched test file and run it against repaired hook\"}",
+      "t_offset_s": 432.944
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\ns = p.read_text()\\ns = s.replace(\\n'''DRAFTED 2026-11-22; destination `bench/tests/`. **SAFE for the `GUARDS` list\\nBECAUSE the 2 known-failing cases are `xfail(strict=True)`, not bare failures --\\nthe first draft said \\\"onto the GUARDS list\\\" while 2 tests were RED, wh",
+      "t_offset_s": 450.106
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib, re\\nsrc = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\").read_text()\\n# Reverse the repair to reconstruct the pre-repair hook for the two-arm run.\\ni = src.index(\\\"def spend(key: str) -> int:\\\")\\nj = src.index(\\\"def message(\\\")\\nold_spend = '''def spend(key: str) -> int:\\n    if not key:\\n        return MAX_REFUSALS + 1\\n    try:\\n        sp = state_path",
+      "t_offset_s": 463.542
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\nsrc = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\").read_text()\\n# Mutant: overlap refusal_key PRESENT, but spend() reverts to the destructive reset.\\nmut = src.replace('''        st[\\\"key\\\"] = key\\n        st[\\\"n\\\"] = 0''', '''        st = {\\\"key\\\": key, \\\"n\\\": 0}''')\\nassert mut != src\\npathlib.Path(\\\"/tmp/oscillating_cy_monitor_gate.py\\\").write_text(",
+      "t_offset_s": 472.269
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\\\")\\ns = p.read_text()\\nold = '''def arm_churning(m) -> \\\"list[int]\\\":\\n    \\\"\\\"\\\"An UNWATCHED run: the key falls back to a pid list that churns.\\\"\\\"\\\"\\n    return [m.spend(\\\"sess|\\\" + str(p)) for p in CHURNING_PIDS]'''\\nassert old in s\\ns = s.replace(old, '''def arm_churning(m",
+      "t_offset_s": 486.122
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py >/tmp/a.out 2>&1; echo \\\"repaired exit=$?\\\"; CDSFL_CY_GATE_PATH=/tmp/unrepaired_cy_monitor_gate.py python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py >/tmp/b.out 2>&1; echo \\\"unrepaired exit=$?\\\"; grep -E \\\"DEFECT IS REPAIRED|INERT FOR PRECISELY\\\" /tmp/a.out /tmp/b.out\", \"description\": \"Re-check producer exit",
+      "t_offset_s": 493.712
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py <<'EOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"B209 joint round: does a 2-SIDED reset beat the overlap key? Measured.\\n\\nDESTINATION `scripts/`. Written 2026-11-23 at the joint round on batches 2/3.\\n\\nTHE QUESTION THE BRIEF ASKS. The commit board's convergence gate is 2-sided --\\nit requires BOTH a flattened curve AND K consecut",
+      "t_offset_s": 539.557
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py\\\")\\ns = p.read_text()\\nold = '''class Conjunction:\\n    name = \\\"(f&c) 2-sided\\\"\\n    def saw_empty(self, st): st[\\\"idle_seen\\\"] = True\\n    def key(self, pids, st, now):\\n        prev = set(st.get(\\\"act\\\") or [])\\n        if st.get(\\\"idle_seen\\\") and prev and not (prev & se",
+      "t_offset_s": 555.661
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git init -q 2>/dev/null; git add -A -f . >/dev/null 2>&1 || git add -A . >/dev/null 2>&1; git -c user.email=panel@sandbox -c user.name=panel commit -qm \\\"sandbox snapshot for producers\\\" --no-verify >/dev/null 2>&1; python3 scripts/help_writers_rate_2026-09-17.py :worktree 2>&1 | head -20\", \"description\": \"Init sandbox git and run help-writers measurement\"}",
+      "t_offset_s": 563.652
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py 2>&1\", \"description\": \"Run the help-guard fixer in report mode\"}",
+      "t_offset_s": 621.352
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,30p scripts/the_restore_mutations_2026-11-22.py | head -30; grep -n \\\"answer_help\\\\|sys.path.insert\\\\|TARGET\\\\|MUTANTS\\\\|def main\\\\|__main__\\\" scripts/the_restore_mutations_2026-11-22.py | head -20\", \"description\": \"Inspect an -m-only offender's guard and target\"}",
+      "t_offset_s": 639.311
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 130,150p scripts/the_restore_mutations_2026-11-22.py; sed -n 1,40p scripts/_cli_help.py\", \"description\": \"Read the offender's __main__ block and the help helper\"}",
+      "t_offset_s": 643.384
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^REPO\\\\|^import\\\\|^from\\\\|^import sys\\\" scripts/the_restore_mutations_2026-11-22.py scripts/the_majority_separation_mutations_2026-11-22.py | head; grep -n \\\"def answers_help\\\" -A 40 bench/tests/test_help_never_acts_2026-09-11.py | head -60\", \"description\": \"Check REPO derivation in -m-only offenders and the matcher\"}",
+      "t_offset_s": 651.571
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"du -sh . 2>/dev/null; du -sh bench/logs 2>/dev/null; python3 -c \\\"print('ok')\\\"\", \"description\": \"Check repo size before cloning\"}",
+      "t_offset_s": 681.043
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"mkdir -p /tmp/q3_clone && rsync -a --exclude bench/logs --exclude .git --exclude experimental_notes/evidence . /tmp/q3_clone/ && cd /tmp/q3_clone && git init -q && git add -A >/dev/null 2>&1 && git -c user.email=p@s -c user.name=p commit -qm snap --no-verify && du -sh /tmp/q3_clone\", \"description\": \"Make throwaway clone for --help falsifier runs\"}",
+      "t_offset_s": 687.241
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3_clone && echo \\\"== direct, --help:\\\" && timeout 30 python3 scripts/the_restore_mutations_2026-11-22.py --help; echo \\\"exit=$?\\\" && git status --porcelain | head -3 && echo \\\"== tree clean after direct: $(git status --porcelain | wc -l | tr -d ' ') changed files\\\"\", \"description\": \"Drive -m-only offender directly with --help in clone\"}",
+      "t_offset_s": 702.961
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3_clone && python3 - <<'EOF'\\nimport subprocess, sys\\ndef run(cmd, t=60):\\n    try:\\n        r = subprocess.run(cmd, capture_output=True, text=True, timeout=t, cwd=\\\"/tmp/q3_clone\\\")\\n        return r.returncode, r.stdout[:400], r.stderr[:200], False\\n    except subprocess.TimeoutExpired as e:\\n        return None, (e.stdout or b\\\"\\\")[:400].decode(errors=\\\"replace\\\") if isins",
+      "t_offset_s": 710.354
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3_clone && python3 - <<'EOF'\\nimport subprocess, sys, threading, hashlib, pathlib, time\\ntarget = pathlib.Path(\\\"/tmp/q3_clone/bench/tests/_restore.py\\\")\\nbefore = hashlib.sha256(target.read_bytes()).hexdigest()\\nchanged = []\\nstop = threading.Event()\\ndef watch():\\n    while not stop.is_set():\\n        h = hashlib.sha256(target.read_bytes()).hexdigest()\\n        if h != befo",
+      "t_offset_s": 720.105
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"SUBJECT\\\\|^TARGET\\\\|^SUBJ\\\\|pathlib.Path(__file__)\\\" scripts/the_user_preferences_section_mutations_2026-11-13.py | head -5; grep -n \\\"write_text\\\\|write_bytes\\\\|open(\\\" scripts/the_user_preferences_section_mutations_2026-11-13.py | head -5; grep -n \\\"answer_help\\\\|ArgumentParser\\\" scripts/the_user_preferences_section_mutations_2026-11-13.py | head\", \"description\": \"Find a d",
+      "t_offset_s": 732.88
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,30p scripts/the_user_preferences_section_mutations_2026-11-13.py; grep -n \\\"SUBJECT\\\\s*=\\\\|subject =\\\" scripts/the_user_preferences_section_mutations_2026-11-13.py | head\", \"description\": \"Identify the mutation subject file\"}",
+      "t_offset_s": 737.351
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3_clone && python3 - <<'EOF'\\nimport subprocess, sys, threading, hashlib, pathlib, time\\ntargets = [pathlib.Path(\\\"/tmp/q3_clone/bench/directives/universal/expert_encoding_template.md\\\"),\\n           pathlib.Path(\\\"/tmp/q3_clone/bench/cdsfl_registry/engine.py\\\")]\\nbefore = {t: hashlib.sha256(t.read_bytes()).hexdigest() for t in targets}\\nmutated = set()\\nstop = threading.Even",
+      "t_offset_s": 746.78
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_help_calls_unreachable_under_dash_m\\\" -B2 -A45 bench/tests/test_help_never_acts_2026-09-11.py | head -75\", \"description\": \"Read the dash-m unreachability matcher\"}",
+      "t_offset_s": 774.695
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 169,230p bench/tests/test_help_never_acts_2026-09-11.py; grep -n \\\"REPO =\\\" scripts/the_majority_separation_mutations_2026-11-22.py\", \"description\": \"Read ratchet test expectations and second offender's REPO form\"}",
+      "t_offset_s": 800.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_help_never_acts_2026-09-11.py\\\")\\ns = p.read_text()\\nold = '''        before = [n for s in node.body[:at] for n in ast.walk(s)]\\n        inserts = any(isinstance(n, ast.Call) and getattr(n.func, \\\"attr\\\", None) == \\\"insert\\\"\\n                      and getattr(getattr(n.func, \\\"value\\\", None), \\\"attr\\\", None) == \\\"p",
+      "t_offset_s": 840.712
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q -k \\\"matcher or swallows or caused or population\\\" 2>&1 | tail -3\", \"description\": \"Run matcher's own positive/anti-vacuity controls\"}",
+      "t_offset_s": 849.399
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py\\\")\\ns = p.read_text()\\nold_guard = '''GUARD = (\\n    '    # A `--help` MUST NOT run: this script WRITES, mutating a tracked file\\\\\\\\n'\\n    '    # in place and restoring it from the bytes it read first.\\\\\\\\n'\\n    '    sys.path.insert(0, str(pathlib.Path(__file__).resolve()",
+      "t_offset_s": 861.215
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py bench/tests/test_help_never_acts_2026-09-11.py /tmp/q3_clone_stage/ 2>/dev/null; mkdir -p /tmp/q3_clone_stage; cp scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py /tmp/q3_clone/scripts/ && cp bench/tests/test_help_never_acts_2026-09-11.py /tmp/q3_clone/bench/tests/ && cd /tmp/q3_clone && python3 scripts/a_help_fla",
+      "t_offset_s": 867.009
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp/q3_clone && python3 - <<'EOF'\\nimport subprocess, sys\\nfixed6 = [\\\"scripts/the_co_author_dedupe_mutations_2026-11-14.py\\\",\\n          \\\"scripts/the_decision_delivery_mutations_2026-11-14.py\\\",\\n          \\\"scripts/the_interface_role_mutations_2026-11-14.py\\\",\\n          \\\"scripts/the_parked_boundary_mutations_2026-11-14.py\\\",\\n          \\\"scripts/the_reader_vocabulary_mutation",
+      "t_offset_s": 881.958
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git -C /tmp/q3_clone status --porcelain -- bench hooks configs; git -C /tmp/q3_clone status --porcelain | head\", \"description\": \"Check which file changed in the clone\"}",
+      "t_offset_s": 888.051
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py --apply 2>&1 | tail -5; python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q 2>&1 | tail -2\", \"description\": \"Apply B212 repair in sandbox and run full ratchet test\"}",
+      "t_offset_s": 897.909
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom scipy import stats\\nimport mpmath as mp\\nfrom statsmodels.stats.proportion import proportions_ztest, proportion_confint\\n# counts: now 18/18403, was 32/17792\\ntbl = [[18, 18403-18], [32, 17792-32]]\\nprint(\\\"Fisher 2-sided :\\\", stats.fisher_exact(tbl)[1])\\nprint(\\\"Fisher 1-sided :\\\", stats.fisher_exact(tbl, alternative=\\\"less\\\")[1])\\nchi2 = stats.chi2_contingenc",
+      "t_offset_s": 920.549
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript && wolframscript -code 'N[2*Min[CDF[HypergeometricDistribution[18+32-0, 18403, 18403+17792], 18], 1], 10]' 2>&1 | head -3 || echo \\\"wolframscript not installed\\\"\", \"description\": \"Check for wolframscript availability\"}",
+      "t_offset_s": 922.135
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'N[CDF[HypergeometricDistribution[50, 18403, 36195], 18], 12]' 2>&1 | tail -2\", \"description\": \"Wolfram: one-sided hypergeometric tail P(X<=18)\"}",
+      "t_offset_s": 947.831
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py bench/tests/test_help_never_acts_2026-09-11.py -q 2>&1 | tail -2; python3 scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py >/dev/null 2>&1; echo \\\"scorer exit=$?\\\"; python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py >/dev/null 2>&1; echo \\\"producer exit=$?\\\"; rm -rf .git && echo \\\".git r",
+      "t_offset_s": 1019.535
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py bench/tests/test_help_never_acts_2026-09-11.py -q 2>&1 | tail -2\", \"description\": \"Run both guard files together\"}",
+      "t_offset_s": 1023.627
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"rm -rf .git; ls -d .git 2>/dev/null || echo \\\".git removed\\\"; shasum -a 256 hooks/cy_monitor_gate.py bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py scripts/the_cy_refusal_budget_never_binds_2026-11-22.py scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py bench/tests/test_help_never_acts_2026-09-11.py scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py | awk '",
+      "t_offset_s": 1034.594
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"rm -rf .git\", \"description\": \"Remove synthetic sandbox git directory\"}",
+      "t_offset_s": 1037.679
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"shasum -a 256 hooks/cy_monitor_gate.py bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py scripts/the_cy_refusal_budget_never_binds_2026-11-22.py scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py bench/tests/test_help_never_acts_2026-09-11.py scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py\", \"description\": \"Stamp delivered files\"}",
+      "t_offset_s": 1041.979
+    }
+  ],
+  "n_tool_calls": 62,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1167.1,
+  "response": "# SEAT fable \u2014 JOINT ROUND, batches 2/3 + unpanelled 4\u201310\n\nHousekeeping first: the sandbox was staged without `.git`, so the git-dependent producers refused. I created a synthetic one-commit `.git` purely to give `git ls-files` an index (needed by Q3's producers); removal at teardown was blocked by the permission layer, so **the sandbox's `.git/` is my scaffolding, not content**. All stamped artefacts matched the dispatch table where checked.\n\n---\n\n## Q1 \u2014 B209: adopt the overlap key?\n\n1. **question** \u2014 Q1.\n2. **verdict** \u2014 **Yes: adopt the overlap key with the state-preserving `spend()`, and I have done so in this sandbox** \u2014 the confirmed exhaustion at 61/62 changes my position, I concede S5, and the two-sided shape the brief floats was scored and **does not dominate**: it ties (f) at 6/8 while failing the one scenario that is demonstrated real.\n3. **reasoning** \u2014 My prior round's load-bearing claim was that \"contiguous busy period is the finest partition computable without reading the run.\" **That claim is refuted by (f)'s existence**: the overlap epoch computes a *finer* partition (per-activity) from information the gate already holds \u2014 the pid set \u2014 still without reading the run. My `note_idle` reset waits for an observed-empty Stop that a back-to-back A\u2192B transition never produces, and the dispatcher executed exactly that against my implemented hook: exhausts at 61, opens at 62, run B unprotected. A confirmed execution outranks my design argument; position changed.\n   On the question put to cc2, which I answer from my seat too: naming the 2 residual modes does **not** argue against an overlap predicate in a live Stop gate \u2014 it argues for pinning them. The two reset signals err in **opposite directions** (empty-observation resets too rarely; disjointness can reset too eagerly or too rarely under pid reuse), which is why the convergence gate's 2-sided analogy fails to transfer: there, both conditions guard the *same* failure (premature convergence), so conjunction tightens; here, conjunction imports the too-rare side and disjunction imports the too-eager side. I did not leave that as prose \u2014 `scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py` scores (c), (f), (f|c), (f&c) on cc2's S1\u2013S6 plus the 2 residuals promoted to scenarios R1/R2:\n\n   ```\n   (c) empty-epoch  5/8  fails S4, S5, R2   <- includes DEMONSTRATED S5\n   (f) overlap      6/8  fails R1, R2       (all constructed, none observed)\n   (f|c) either     5/8  fails S4, R1, R2\n   (f&c) 2-sided    6/8  fails S5, R2       <- includes DEMONSTRATED S5\n   ```\n\n   Per the founder's 2026-10-02 ruling, no composition shows a demonstrated advantage over (f) alone; (f&c) ties on count and loses on realised consequence (severity is ordinal \u2014 I selected, not summed: (f) is the only candidate whose failure set contains no observed scenario). One correction against my own interest is recorded in the scorer: my first `Conjunction` never stored `act`, so its disjointness arm was vacuous and it failed S3 spuriously \u2014 a Q5-family instance caught by execution.\n   **The concrete failures my answer permits, named:** (R1) an unwatched activity whose matched process set fully replaces between two polls gets its counter reset mid-activity, so B209 returns in a slower form for that shape \u2014 harm is over-refusal, bounded by the founder interrupting; (R2) kernel pid reuse matching `_RUNNER_PATTERNS` between consecutive polls carries an exhausted budget into a genuinely new run, allowing one stop while it is live \u2014 same direction as S5 but requiring a coincidence S5 does not. Both are pinned as `xfail(strict=True)` so a better key forces the markers off.\n   I also found and fixed **a third wrong-layer instance** the brief did not name: the producer's churning arm hand-built `\"sess|\"+str(pids)` keys, so it would have reported B209 live **forever** against any key-construction repair \u2014 the same defect class as the test file's recorded condition-2 correction. Retargeted at `refusal_key()` with a fallback that keeps the unrepaired-arm demonstration alive.\n4. **commands_run** \u2014 (outputs verbatim above, abridged here)\n   - `python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q` \u2192 `11 passed, 2 xfailed in 0.34s`\n   - same file, `CDSFL_CY_GATE_PATH=/tmp/unrepaired_cy_monitor_gate.py` \u2192 `6 failed, 5 passed, 2 xfailed`\n   - same file against the oscillation mutant (destructive `spend()` reset + overlap key) \u2192 `1 failed` \u2014 exactly `TestSpendPreservesTheKeyConstructionState::test_the_epoch_is_monotonic_across_key_changes`\n   - `python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py` \u2192 `THE DEFECT IS REPAIRED: the unwatched arm now climbs too.` exit 0; unrepaired arm exit 1\n   - `python3 scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py` \u2192 table above, exit 0\n5. **fix** \u2014 `hooks/cy_monitor_gate.py` (overlap `refusal_key()` adopted; `spend()` reset preserves the dict), `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py` (retargeted at the real path, Condition3 unskipped, residuals + oscillation pinned), `scripts/the_cy_refusal_budget_never_binds_2026-11-22.py` (retargeted), `scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py` (new, wired: cited by the hook's docstring and executable standalone).\n6. **falsifier** \u2014 the three-arm run above: repaired gate passes 11/2xf; reconstructed unrepaired gate fails 6; oscillation mutant fails exactly the one test written for it. Executed, outputs pasted.\n7. **what_would_refute_me** \u2014 an observed board or runner whose matched process set fully replaces between two consecutive Stop polls (R1 realised), or a recorded pid-reuse carry-across (R2 realised): either promotes a constructed scenario to demonstrated and re-opens the composition question with different weights.\n8. **disagreement** \u2014 the brief says the two residual-mode tests should be \"tests for those 2 residual modes\"; a plain regression test would freeze the *defective* behaviour in green. They must be strict xfails asserting the **desired** property, which is what I delivered \u2014 a test that passes on the residual would make the residual look like a contract. Also: my own prior answer, quoted at length in this brief, was wrong on its central mechanism claim, and the brief is too gentle about that \u2014 the refutation is structural (a finer partition existed), not merely empirical.\n\n## Q2 \u2014 Should the panel line refuse?\n\n1. **question** \u2014 Q2.\n2. **verdict** \u2014 **Escalate to a refusal, but only packaged with a two-part mechanical exemption** (path-class + recorded waiver); a bare refusal invites the switched-off-rule failure, and a bare report is now measured not to bind.\n3. **reasoning** \u2014 The gate's own escalation criterion (\"If the line turns out to be ignored, THAT is the evidence\") is met by its own imported predicate: 7/10 uncovered, 6 consecutive. Two things temper it. First, Wilson [0.397, 0.892] contains 0.5, so \"ignored a majority of the time\" is *not interval-established* \u2014 but the criterion as written needs \"ignored\", not \"ignored majoritarily\", and a consecutive run of 6 after the sole useful round is behavioural evidence a one-line report does not bind the committer (me). Second, unlike B211's semantic checker, this predicate is artefact-based (`completion_barrier.json` + \u22651 seat ok in a time window) \u2014 its false-positive surface is narrow and its one named boundary (round completing after the commit) refuses in exactly the situation where waiting is the correct act. The exemption class, hook-evaluable with no judgement: (a) **path-class**: `git diff --cached --name-only` all matching documentation paths (`*.md`, `docs/`, `experimental_notes/`, `resources/`) \u2192 report only \u2014 this discharges the urgent-doc-fix case the brief names; (b) **recorded waiver**: `CDSFL_PANEL_WAIVE=<reason>` allows the commit and appends `(sha, reason, timestamp)` to a ledger \u2014 this converts \"ignored\" from an inference into a record, and the same producer then measures waiver abuse. This is not composition-for-its-own-sake: refusal alone fails the urgent-doc case the brief itself stipulates; exemption alone is the current advisory state; the composed form is the *minimal* shape satisfying both named constraints, and whether it dominates is decidable by the measurement below.\n4. **commands_run** \u2014 `python3 scripts/was_the_panel_line_ignored_2026-11-23.py` \u2192 `RuntimeError: ... not a git repository` (the sandbox has no real history; the brief's 7/10 figure is **not reproducible from this seat** and is taken on the brief's stamp). Verified instead that the script imports the gate's predicate rather than re-implementing it (read, lines 44\u201351) and that the pre-commit line is `|| true`-advisory (read, pre-commit lines 966\u2013972).\n5. **fix** \u2014 NONE. Deliberately: the deciding measurement cannot run in this sandbox, and a refusal shipped without its false-positive rate measured is how B211 produced 4-of-4 false positives on day one. The adoption predicate is stated below instead.\n6. **falsifier** \u2014 the measurement that decides adoption, runnable only on the real repo: apply exemption (a) retroactively over the 10 measured commits (`git diff-tree --name-only` per commit against the path class). Adopt refuse-with-exemption iff the 7 uncovered commits are not majority-exempt under (a) \u2014 if \u22654 of the 7 would have been path-exempt, the refusal would not have bound and the escalation is theatre; report that instead.\n7. **what_would_refute_me** \u2014 that retro-measurement showing most uncovered commits were doc-class (refusal would not bind), or a measured waiver rate after adoption approaching the old uncovered rate (the waiver is the new `|| true`).\n8. **disagreement** \u2014 the brief presents 7/10 = 0.700 as if it settles direction, but its own Wilson lower bound (0.3968) is below one-half; the honest statement is the gate's weaker criterion (\"was ignored at least sometimes, consecutively\"), which is met \u2014 the stronger \"is usually ignored\" is not established at n=10. The framing also omits that the producer cannot run in the very sandbox where its figure is being reviewed; a seat cannot re-execute the headline number of the question it is asked.\n\n## Q3 \u2014 B212's split\n\n1. **question** \u2014 Q3.\n2. **verdict** \u2014 The 3-class **diagnosis** reproduces, but the brief's defect split is **wrong about the 2 \"-m-only offenders\"** \u2014 executed under `python3 -m` they answer `--help` and write nothing; the static dash-m matcher is the defect \u2014 and the 6 DECLINED files should get neither an import edit nor a different fix but a **self-contained guard**, which I implemented: the split collapses to one uniform repair, applied, 15 \u2192 0 on both columns.\n3. **reasoning** \u2014 Ran the measurement (15 direct / 17 dash-m of 837 \u2014 the brief's 833 plus my 4 sandbox additions; offender lists identical) and the fixer (9 WOULD FIX / 6 no-`import pathlib` / 2 \"already answers\"). Then executed what the brief only read: `python3 -m scripts.the_restore_mutations_2026-11-22 --help` in a throwaway clone **printed usage, exited 0, and a 20 ms byte-watcher on its mutation subject saw zero changes** \u2014 because its `sys.path.insert(0, str(REPO / \"scripts\"))` precedes the try-import and `REPO` derives from `__file__`, so the import *resolves* under `-m`. The matcher (`_help_calls_unreachable_under_dash_m`) only scanned inside the try body and only for a literal `__file__` \u2014 a static proxy its own docstring half-confesses (\"It is a static proxy\"). The brief's premise falsifier ran the other way too: a real offender (`the_user_preferences_section_mutations_2026-11-13.py`) given `--help` **mutated `engine.py` and `expert_encoding_template.md` mid-run** (observed as changed bytes while the flag was on the command line) and restored them \u2014 premise confirmed for the 15, collapsed for the 2. Repairs: (i) matcher now counts preceding-sibling inserts and module-level names assigned from `__file__`, excluding def/class bodies (a definition is not an execution); (ii) the fixer's GUARD now carries its own `import pathlib` / `import sys` inside the `__main__` block \u2014 a re-import is a no-op, so one form serves all 15 and the 3-way split disappears with its cause. Simplest-sufficient: editing 6 files' import sections was the more elaborate fix for a precondition the guard did not need to have.\n4. **commands_run** \u2014\n   - measurement before: `direct: 15 of 837`, `dash-m: 17 of 837`; after matcher fix: `dash-m: 15 of 837`; after `--apply`: `direct: 0 of 837`, `dash-m: 0 of 837`\n   - clone, `-m`-only offender: `DASH-M --help: exit=0 timeout=False / target mutated DURING run: False (0 distinct mutated states seen)`\n   - clone, direct offender with `--help`: `tracked files MUTATED while answering --help: ['engine.py', 'expert_encoding_template.md'] / differ after run: none (restored)`\n   - all 6 formerly-declined files, both invocations post-repair: exit 0 and `usage` printed, 12/12; clone tree clean of residue\n   - `python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q` \u2192 `10 passed in 4.82s`\n5. **fix** \u2014 `bench/tests/test_help_never_acts_2026-09-11.py` (matcher), `scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py` (self-contained GUARD, precondition removed with its reason recorded), plus the guard applied to all 15 offenders in the sandbox tree.\n6. **falsifier** \u2014 executed both directions in the clone: offender-with-`--help` writes (premise holds for the 15); repaired files and the 2 false-positive files do not (0 changed bytes, clean `git status`). The ratchet test file is the standing re-check and is green.\n7. **what_would_refute_me** \u2014 a script where the in-main re-import *does* change behaviour (e.g. a module shadowing `pathlib` locally), or an execution showing either \"-m-only offender\" writing under some invocation my clone runs did not cover.\n8. **disagreement** \u2014 the brief states \"THE DEFECT SPLIT HOLDS \u2026 2 HAVE it and fail only under `python3 -m`.\" **Executed, that is false**: both answer `--help` under `-m`. The brief diagnosed the instrument's output as the scripts' behaviour \u2014 the same claim-died-on-first-execution family as its own Q5, inside the question that was about Q5's family.\n\n## Q4 \u2014 refusing to claim the suite improved\n\n1. **question** \u2014 Q4.\n2. **verdict** \u2014 The refusal is **right**, but it should rest on the composition objection, not the straddle \u2014 the straddle is route-fragile in the direction the brief does not report \u2014 and yes: quote **counts with denominators**, plus the per-test intersection when a claim of improvement is actually needed.\n3. **reasoning** \u2014 Producer reproduced exactly; every figure re-derived on my own scipy/statsmodels routes, and the one-sided tail confirmed on a genuinely independent engine: Wolfram Language (local Wolfram Engine) `CDF[HypergeometricDistribution[50, 18403, 36195], 18]` = `0.0246161203653033`, agreeing with scipy/mpmath to all printed digits (Wolfram's `2\u00b7min(tail)` convention gives 0.04923, which is the *doubling* convention, not a disagreement). The one-sided figure is correctly disqualified: same test, different question, reached after the two-sided answer was known. But the brief's \"the 2 two-sided routes STRADDLE 0.05\" undersells the fragility **against** its own refusal: of the three two-sided routes the producer itself prints, two are below 0.05 (Fisher 0.0465, uncorrected \u03c7\u00b2 0.0356) and one above (Yates 0.0501) \u2014 and my Wald 95% CI on the rate *difference* is [\u22120.001590, \u22120.000051], excluding 0. So a reader armed with a different-but-defensible route menu would claim significance; the refusal survives only because the project's two-route rule demands agreement, and Yates withholds it. That is a thin reed. The load-bearing objection is the one no p-value touches: the suite grew by 611 tests, so the two runs sample different populations, and the rate comparison assumes the additions fail at the incumbent rate \u2014 untested. The defensible comparison that *does* exist: restrict to the intersection of test ids present in both runs and compare paired outcomes (McNemar on the discordant cells) \u2014 composition drops out by construction. Short of that, counts-with-denominators is the honest default.\n4. **commands_run** \u2014 `python3 scripts/are_the_two_suite_rates_distinguishable_2026-11-23.py` (all brief figures reproduced verbatim); my independent block: `Fisher 2-sided: 0.04649437975754573 / Fisher 1-sided: 0.0246161203653033 / Yates: 0.050057102770525386 / 2-prop z: 0.03563964887958106 / ratio: 1.8887777223855342 / diff CI95: [-0.001590, -0.000051] contains 0: False`; `wolframscript -code 'N[CDF[HypergeometricDistribution[50, 18403, 36195], 18], 12]'` \u2192 `0.02461612036530329\u2026` (attribution: Wolfram Language, local kernel).\n5. **fix** \u2014 NONE (the question solicits a direction; the producer is already correct and now second-falsified).\n6. **falsifier** \u2014 the producer plus the Wolfram re-computation, both executed and pasted. For the recommended comparison: it is runnable today from the two runs' junit/`lastfailed` records \u2014 intersect ids, build the 2\u00d72 discordant table, `statsmodels.stats.contingency_tables.mcnemar`.\n7. **what_would_refute_me** \u2014 a paired intersection analysis showing the 611 added tests are irrelevant (all 18 current failures inside the intersection and McNemar significant) \u2014 then the rate claim would be both honest and established, and my \"counts only\" default too conservative.\n8. **disagreement** \u2014 the brief's framing \"the 2 two-sided routes straddle 0.05\" selects the two routes that straddle and omits that its own producer prints a third (uncorrected \u03c7\u00b2, 0.0356) sitting below \u2014 the refusal is being defended with a weaker evidential picture than the honest one, which is that the two-sided routes split 2-below/1-above and the refusal stands on composition, not on p.\n\n## Q5 \u2014 the vacuous-falsifier family\n\n1. **question** \u2014 Q5.\n2. **verdict** \u2014 Yes, there is a mechanical check, and this repo already owns its name: the **two-arm run with a positive control** \u2014 a falsifier's verdict is admissible only if it was executed against a state where the claim is known false *and* one where it is known true, and the two runs disagreed (the discipline the test file labels ANTI-VACUITY and the mutation harnesses implement as BASELINE GREEN \u2192 mutants RED; the standard term is a positive control, enforced by differential execution).\n3. **reasoning** \u2014 Generalising over the brief's three instances and two more from this very round: B211's falsifier ran one arm on an already-repaired tree (nothing *could* move \u2192 vacuous); Q3's \"already answers\" premise survived reading and died on first execution; Q4's \"3rd route\" was a second engine pointed at the wrong question \u2014 mpmath agreeing to 6.94e-18 proves the arithmetic, not the inference, which is the *corroboration-model* form of vacuity: a second route is corroborative only if it could have disagreed about the **claim**, not the computation. In this round I committed the same shape twice and the discipline caught both: a pipe-masked exit code (`tail`'s 0 read as the producer's, exposed when the two arms \"agreed\" implausibly) and my `Conjunction` scorer candidate whose disjointness arm never stored state and failed S3 spuriously. The mechanical rule beyond \"assert the precondition\": **a verdict is reportable only when the run set contains both arms and their outputs differ** \u2014 one arm is a measurement of nothing. My Q1 deliverables comply by construction: the producer carries a fallback so `CDSFL_CY_GATE_PATH` can point it at an unrepaired gate (exit 1) versus the repaired one (exit 0), and the test file ran three-armed (repaired / unrepaired / oscillation mutant), with the mutant killed by exactly one test \u2014 which is also the proof the new test is not itself vacuous.\n4. **commands_run** \u2014 the three-arm Q1 runs and the two-way Q3 clone runs quoted above are the executions this answer generalises from.\n5. **fix** \u2014 NONE beyond what Q1 delivers (the retargeted producer's fallback arm *is* the convention, wired and executed). A new standalone vacuity-checker would be an addition nothing reaches until a caller exists \u2014 the additive standard's own 11-case record argues against shipping it from this seat.\n6. **falsifier** \u2014 of the rule itself: present a falsifier that passed a genuine two-arm run (arms disagreed) yet was still vacuous about its claim. The nearest known shape is arms that disagree for an unrelated reason (e.g. an import error in one arm) \u2014 which is why the arms' *outputs*, not just exit codes, must carry the discriminating observation; the Q1 producer prints the climb/reset sequences, not only its exit.\n7. **what_would_refute_me** \u2014 an instance of that falsifier-shape in this repo's record: two-arm-disagreeing yet claim-vacuous, undetected by output inspection. Then the rule needs a third element (the arms must differ *on the asserted property*), mechanically checked.\n8. **disagreement** \u2014 the brief calls this \"a rule I have now broken twice is not a rule.\" Understated: counting Q3 and Q4 as the brief itself does, plus my two in-round instances, it is **five** occurrences across two sessions and three authors \u2014 which says it is not a *discipline* failure but a missing *mechanism*, and the mechanism already exists in the repo's mutation harnesses; what is missing is only the convention that falsifiers for repairs get the same two-arm treatment harnesses already give guards. The brief also frames Q5 as mine to generalise; the strongest generalisation is that **reading never catches this family** \u2014 all five were caught by execution, zero by review, which is this project's `execute-do-not-grep` finding reproduced at the falsifier layer.\n\n---\n\n**Termination.** 2 full passes. Pass 1 produced the findings and fixes above; pass 2 re-examined every corrected instrument (scorer after the Conjunction fix, producer exit codes without pipe masking, ratchet after `--apply`) and produced no new above-threshold findings. Residual falsification debt, stated: the Q2 headline figure and the Q3/Q4 brief figures that need the real repo's git history were not re-derivable from this sandbox and are taken on the brief's stamps.\n\n**Delivered files (sha256, first 16):** `hooks/cy_monitor_gate.py` `577f3f8f0b898bec` \u00b7 `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py` `3ed3a5d4d1270d73` \u00b7 `scripts/the_cy_refusal_budget_never_binds_2026-11-22.py` `d40f6a0e7dced004` \u00b7 `scripts/does_a_two_sided_reset_beat_overlap_2026-11-23.py` `233487873a627df7` \u00b7 `bench/tests/test_help_never_acts_2026-09-11.py` `cb1e314e41903a00` \u00b7 `scripts/a_help_flag_must_not_mutate_the_tree_2026-11-12.py` `b32c7c1ad7241c06` \u00b7 plus the 15 mutation harnesses with the guard applied.",
+  "t_start_epoch": 1795441093.059466,
+  "t_end_epoch": 1795442260.178348,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_4ozin9ix/repo",
+      "built": false
+    }
+  ]
+}

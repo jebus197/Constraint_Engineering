@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -125,6 +126,30 @@ def record(repo: pathlib.Path, guards: int, result: str) -> "dict | None":
     return rec
 
 
+def _board_is_alive(snap: dict) -> bool:
+    """Is the gate process that wrote this snapshot still running?
+
+    A snapshot is BOARD-SCOPED: it records the index as the operator left it at
+    stage 0 so the gate's own later re-staging cannot be read as an operator
+    edit. Once that board is over the snapshot describes nothing, and honouring
+    it masks every subsequent edit.
+
+    Fails toward NOT alive -- see the polarity note in `verdict`.
+    """
+    pid = snap.get("pid")
+    if not isinstance(pid, int) or pid <= 0:
+        return False                 # old or hand-written snapshot: leftover
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False                 # the board is over
+    except PermissionError:
+        return True                  # alive, owned by someone else
+    except OSError:
+        return False
+    return True
+
+
 def verdict(repo: pathlib.Path) -> "tuple[str, str]":
     """(state, one-line reason). state is FRESH, STALE or UNKNOWN.
 
@@ -147,13 +172,40 @@ def verdict(repo: pathlib.Path) -> "tuple[str, str]":
     #: inside the gate the live index has already been moved by the gate's own
     #: repair-and-re-stage, so comparing against it accuses the operator of an
     #: edit the GATE made. The snapshot is the index as the operator left it.
+    #: ★ AND ONLY WHILE THE BOARD THAT WROTE IT IS STILL ALIVE. Added
+    #: 2026-11-23 after the repair above was found to MASK a genuine operator
+    #: edit in live use -- the mirror image of the defect it fixed, on the same
+    #: day. The snapshot and the evidence were written in the same minute with
+    #: IDENTICAL digests, so the comparison became a self-comparison that can
+    #: never disagree, and 4 files staged afterwards were invisible.
+    #:
+    #: `test_it_does_not_mask_an_operator_edit` passed throughout, because it
+    #: fixes the order record -> operator edits -> gate snapshots, where the
+    #: snapshot captures the edit. Live hit the OTHER order: record -> gate
+    #: snapshots -> operator edits. The test covered 1 order; both occur.
+    #:
+    #: A SNAPSHOT IS BOARD-SCOPED STATE, so it is honoured only while that
+    #: board's process lives. `--clear-snapshot` existed for this and was
+    #: WIRED TO NO CALLER, which is `additive-standard`'s symmetric form: an
+    #: addition nothing reaches is not additive. It is wired now as hygiene;
+    #: the pid check is what makes this CORRECT, because a board killed with
+    #: SIGKILL runs no exit handler.
+    #:
+    #: POLARITY, STATED: this checker REPORTS and never refuses, so a false
+    #: STALE costs 1 confusing line while a false FRESH costs a board of about
+    #: 31 minutes run on evidence that does not describe the tree. It therefore
+    #: fails TOWARD the live index: a snapshot with no pid, or an unreadable
+    #: one, is treated as a leftover.
+    #:
+    #: RESIDUAL RISK, NAMED: pid reuse could make a finished board look alive,
+    #: masking for at most 1 board -- no worse than the behaviour being fixed.
     now, source = None, "the live index"
     sp = repo / SNAPSHOT
     if sp.is_file():
         try:
             snap = json.loads(sp.read_text(encoding="utf-8"))
             cand = snap.get("digest")
-            if isinstance(cand, str) and cand:
+            if isinstance(cand, str) and cand and _board_is_alive(snap):
                 now, source = cand, "the stage-0 snapshot"
         except Exception:                                    # noqa: BLE001
             now = None                       # falls through to the live index
@@ -165,8 +217,13 @@ def verdict(repo: pathlib.Path) -> "tuple[str, str]":
     if now == was:
         return "FRESH", (f"{source} is unchanged since {rec.get('guards', '?')} "
                          f"guard(s) ran: {rec.get('result', 'no result recorded')}")
+    #: NAME THE COMPARISON SOURCE. A STALE line that does not say what it
+    #: compared against cannot tell the operator whether the GATE moved the
+    #: index or they did -- and the 2 call for opposite responses. Added
+    #: 2026-11-23 when a test asserting the fallback had nothing to assert on.
     return "STALE", (
-        f"THE INDEX HAS MOVED since the pre-board run of "
+        f"THE INDEX HAS MOVED, measured against {source}, since the "
+        f"pre-board run of "
         f"{rec.get('guards', '?')} guard(s). That run describes bytes that are "
         f"no longer staged, so it is not evidence about what is being "
         f"committed. Entry B211: this exact gap cost a 47 min 19 s refusal on "
@@ -196,8 +253,15 @@ def main() -> int:
     if a.clear_snapshot:
         try:
             (repo / SNAPSHOT).unlink(missing_ok=True)
-        except Exception:                                    # noqa: BLE001
-            pass
+        except Exception as exc:                             # noqa: BLE001
+            #: ★ A FAILED DELETION MUST LEAVE A TRACE. Swallowed, it leaves a
+            #: STALE SNAPSHOT behind -- the mirror-image defect this file has
+            #: a test against -- and the next verdict would compare fresh
+            #: evidence to an old index. Caught 2026-11-23 by the FULL suite,
+            #: which the commit board's 6th of it never runs.
+            print(f"preboard-snapshot: could NOT remove {SNAPSHOT}: {exc}. "
+                  f"A stale snapshot may now outlive its evidence; delete it "
+                  f"by hand before trusting the next verdict.", file=sys.stderr)
         return 0
 
     if a.snapshot:
@@ -206,7 +270,8 @@ def main() -> int:
             return 0                      # falls open: no snapshot, no claim
         try:
             (repo / SNAPSHOT).parent.mkdir(parents=True, exist_ok=True)
-            (repo / SNAPSHOT).write_text(json.dumps({"digest": d}),
+            (repo / SNAPSHOT).write_text(
+                json.dumps({"digest": d, "pid": os.getppid()}),
                                          encoding="utf-8")
         except Exception:                                    # noqa: BLE001
             return 0
@@ -220,8 +285,13 @@ def main() -> int:
         #: evidence, which is the stale-verdict defect in mirror image.
         try:
             (repo / SNAPSHOT).unlink(missing_ok=True)
-        except Exception:                                    # noqa: BLE001
-            pass
+        except Exception as exc:                             # noqa: BLE001
+            #: SAME REASON AS `--clear-snapshot` ABOVE: silence here is what
+            #: lets a previous attempt's snapshot be compared against new
+            #: evidence. Reported, not swallowed.
+            print(f"preboard-evidence: could NOT clear the old snapshot "
+                  f"{SNAPSHOT}: {exc}. The verdict after this may compare new "
+                  f"evidence against a STALE index.", file=sys.stderr)
         rec = record(repo, a.guards, a.result)
         if rec is None:
             print("preboard-evidence: NOT recorded (no digest); nothing is "
