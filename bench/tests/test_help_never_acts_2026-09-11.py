@@ -132,37 +132,129 @@ def answers_help(src: str, under_dash_m: bool = True) -> bool:
 def _help_calls_unreachable_under_dash_m(tree: ast.AST) -> set[int]:
     """ids of `answer_help` calls inside a `try` that imports `_cli_help`, swallows
     ImportError with `pass`, and puts nothing built from `__file__` on sys.path
-    before the import."""
+    before the import.
+
+    ★ WIDENED 2026-11-23, AFTER THE NARROW FORM ACCUSED 2 CORRECT SCRIPTS. It
+    looked for the `sys.path` insert ONLY among statements INSIDE the same `try`
+    and before the import, and it required the literal name `__file__` to appear
+    among them. `scripts/the_restore_mutations_2026-11-22.py` and
+    `scripts/the_majority_separation_mutations_2026-11-22.py` instead write
+
+        sys.path.insert(0, str(REPO / "scripts"))
+        try:
+            from _cli_help import answer_help
+            answer_help(__doc__, __file__)
+        except ImportError:
+            pass
+
+    where the insert precedes the `try` ENTIRELY -- which is better placement,
+    not worse -- and reaches `__file__` through the module-level `REPO`. Both
+    were reported as writers that ignore `--help`.
+
+    DRIVEN, IN A THROWAWAY CLONE, WITH A TREE-HASH INSTRUMENT VALIDATED ON AN
+    UNTOUCHED TREE FIRST: both answer `--help` at exit 0 and change 0 bytes,
+    under direct invocation, under `-m` from `scripts/`, and under `-m` from the
+    repository root. The static proxy was wrong and the subjects were right,
+    which is the converse case this project measured on 2026-10-28 -- 9 of 36
+    failures were guards accusing correct code.
+
+    SO 2 THINGS ARE NOW CREDITED: an insert among the `try`'s PRECEDING SIBLINGS
+    in the same block, and a module-level name whose own assignment is built
+    from `__file__`. It remains a static proxy and still does not prove the
+    inserted path is the script's own directory."""
     def catches_import_error(h: ast.ExceptHandler) -> bool:
         types = h.type.elts if isinstance(h.type, ast.Tuple) else [h.type]
         return any(getattr(t, "id", None) in ("ImportError", "ModuleNotFoundError")
                    for t in types)
 
+    def statement_bodies(root):
+        """Every statement LIST in the tree, so a `try`'s SIBLINGS are visible.
+
+        `ast.walk` yields the `Try` without its position among its peers, which
+        is why the narrow form could not see an insert placed above it.
+        """
+        for n in ast.walk(root):
+            for field in ("body", "orelse", "finalbody"):
+                seq = getattr(n, field, None)
+                if isinstance(seq, list) and seq and all(
+                        isinstance(s, ast.stmt) for s in seq):
+                    yield seq
+
+    def file_derived_names(root) -> set[str]:
+        """Names whose own assignment anywhere is built from `__file__`.
+
+        `REPO = pathlib.Path(__file__).resolve().parents[1]` makes `REPO` a
+        stand-in for `__file__`, so an insert using it is file-derived.
+        """
+        out: set[str] = set()
+        for n in ast.walk(root):
+            if not isinstance(n, (ast.Assign, ast.AnnAssign)):
+                continue
+            value = n.value
+            if value is None:
+                continue
+            if not any(isinstance(x, ast.Name) and x.id == "__file__"
+                       for x in ast.walk(value)):
+                continue
+            targets = n.targets if isinstance(n, ast.Assign) else [n.target]
+            for tgt in targets:
+                for x in ast.walk(tgt):
+                    if isinstance(x, ast.Name):
+                        out.add(x.id)
+        return out
+
     leaky: set[int] = set()
     helpers = _answer_help_names(tree)
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Try):
-            continue
-        at = next((i for i, s in enumerate(node.body)
-                   if isinstance(s, ast.ImportFrom) and s.module == "_cli_help"), None)
-        if at is None:
-            continue
-        if not any(catches_import_error(h) and all(isinstance(s, ast.Pass) for s in h.body)
-                   for h in node.handlers):
-            continue
-        before = [n for s in node.body[:at] for n in ast.walk(s)]
-        inserts = any(isinstance(n, ast.Call) and getattr(n.func, "attr", None) == "insert"
-                      and getattr(getattr(n.func, "value", None), "attr", None) == "path"
-                      for n in before)
-        uses_file = any(isinstance(n, ast.Name) and n.id == "__file__" for n in before)
-        if inserts and uses_file:
-            continue
-        for part in (node.body, node.orelse):
-            for s in part:
-                for n in ast.walk(s):
-                    if isinstance(n, ast.Call) and (getattr(n.func, "id", None)
-                                                    or getattr(n.func, "attr", None)) in helpers:
-                        leaky.add(id(n))
+    derived = file_derived_names(tree)
+    for seq in statement_bodies(tree):
+        for idx, node in enumerate(seq):
+            if not isinstance(node, ast.Try):
+                continue
+            at = next((i for i, s in enumerate(node.body)
+                       if isinstance(s, ast.ImportFrom)
+                       and s.module == "_cli_help"), None)
+            if at is None:
+                continue
+            if not any(catches_import_error(h)
+                       and all(isinstance(s, ast.Pass) for s in h.body)
+                       for h in node.handlers):
+                continue
+            #: PRECEDING SIBLINGS COUNT, not only the try's own prefix.
+            before = ([n for s in seq[:idx] for n in ast.walk(s)]
+                      + [n for s in node.body[:at] for n in ast.walk(s)])
+            #: JOINED 2026-11-23 (panel batch 12, seat fable). The 2 conditions
+            #: were previously asked SEPARATELY of the same bag of nodes -- "is
+            #: there a sys.path insert anywhere before the import" AND "is there
+            #: a file-derived name anywhere before the import" -- and nothing
+            #: required them to be the SAME expression. That credits a script
+            #: whose insert takes a CONSTANT path while a file-derived name sits
+            #: beside it for an unrelated reason. DEMONSTRATED BY EXECUTION, not
+            #: argued: such a script run as `python3 -m scripts.x --help`
+            #: swallows the ImportError and WRITES a file. The file-derived value
+            #: must be an ARGUMENT OF THE INSERT, which is the only reading under
+            #: which the insert says anything about the script's own location.
+            #: STILL A STATIC PROXY: `sys.path.insert(0, str(REPO / "vendor"))`
+            #: is file-derived and is credited though it is not the script's own
+            #: directory. That residual is unchanged by this edit.
+            inserts = [n for n in before
+                       if isinstance(n, ast.Call)
+                       and getattr(n.func, "attr", None) == "insert"
+                       and getattr(getattr(n.func, "value", None),
+                                   "attr", None) == "path"]
+            inserts_file_derived = any(
+                any(isinstance(x, ast.Name)
+                    and (x.id == "__file__" or x.id in derived)
+                    for arg in call.args for x in ast.walk(arg))
+                for call in inserts)
+            if inserts_file_derived:
+                continue
+            for part in (node.body, node.orelse):
+                for s in part:
+                    for n in ast.walk(s):
+                        if isinstance(n, ast.Call) and (
+                                getattr(n.func, "id", None)
+                                or getattr(n.func, "attr", None)) in helpers:
+                            leaky.add(id(n))
     return leaky
 
 
@@ -333,3 +425,158 @@ class TestImportingAScriptChangesNothing:
             assert "def main(" in src, (
                 f"{name} no longer has a main(); its work may have drifted back "
                 f"to module scope")
+
+
+class TestTheDashMProxyDiscriminates:
+    """★ ADDED 2026-11-23 WITH THE WIDENING, BECAUSE WIDENING AN ACCEPTING
+    PREDICATE IS A LOOSENING AND MUST BE PAID FOR IN BOTH DIRECTIONS.
+
+    `_help_calls_unreachable_under_dash_m` was narrowed to statements INSIDE the
+    `try`, and it accused 2 correct scripts that place the `sys.path` insert
+    among the try's PRECEDING SIBLINGS and reach `__file__` through a
+    module-level name. Driven in a throwaway clone, both answer `--help` at exit
+    0 with 0 bytes changed under direct invocation, under `-m` from `scripts/`,
+    and under `-m` from the repository root -- so the proxy was wrong and the
+    subjects were right.
+
+    These cases hold the predicate in BOTH directions on constructed sources, so
+    a later widening cannot quietly make it credit everything. The project's own
+    measurement is the reason: adding to an ACCEPTING predicate is a tightening
+    of nothing and a loosening of everything else.
+    """
+
+    LEAKY = (
+        "import sys\n"
+        "def main():\n"
+        "    open('x','w').write('y')\n"
+        "    return 0\n"
+        "if __name__ == '__main__':\n"
+        "    try:\n"
+        "        from _cli_help import answer_help\n"
+        "        answer_help(__doc__, __file__)\n"
+        "    except ImportError:\n"
+        "        pass\n"
+        "    sys.exit(main())\n")
+
+    SIBLING_INSERT = (
+        "import sys, pathlib\n"
+        "REPO = pathlib.Path(__file__).resolve().parents[1]\n"
+        "def main():\n"
+        "    open('x','w').write('y')\n"
+        "    return 0\n"
+        "if __name__ == '__main__':\n"
+        "    sys.path.insert(0, str(REPO / 'scripts'))\n"
+        "    try:\n"
+        "        from _cli_help import answer_help\n"
+        "        answer_help(__doc__, __file__)\n"
+        "    except ImportError:\n"
+        "        pass\n"
+        "    sys.exit(main())\n")
+
+    INSIDE_INSERT = (
+        "import sys, pathlib\n"
+        "def main():\n"
+        "    open('x','w').write('y')\n"
+        "    return 0\n"
+        "if __name__ == '__main__':\n"
+        "    try:\n"
+        "        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))\n"
+        "        from _cli_help import answer_help\n"
+        "        answer_help(__doc__, __file__)\n"
+        "    except ImportError:\n"
+        "        pass\n"
+        "    sys.exit(main())\n")
+
+    NO_HANDLER = (
+        "import sys\n"
+        "def main():\n"
+        "    open('x','w').write('y')\n"
+        "    return 0\n"
+        "if __name__ == '__main__':\n"
+        "    sys.exit(main())\n")
+
+    def test_a_swallowing_try_with_no_insert_is_still_unreachable(self):
+        """THE CASE THE PROXY EXISTS FOR. If this ever reads True the whole
+        dash-m distinction has collapsed and the figure means nothing."""
+        assert answers_help(self.LEAKY, under_dash_m=True) is False
+        #: and it IS reachable under direct invocation, which is the contrast
+        #: that makes the 2 figures different measurements rather than 1.
+        assert answers_help(self.LEAKY, under_dash_m=False) is True
+
+    def test_a_preceding_sibling_insert_counts(self):
+        """The form that was wrongly accused, with `__file__` reached via a name."""
+        assert answers_help(self.SIBLING_INSERT, under_dash_m=True) is True
+
+    def test_an_insert_inside_the_try_still_counts(self):
+        """The original accepted form must not regress."""
+        assert answers_help(self.INSIDE_INSERT, under_dash_m=True) is True
+
+    def test_a_script_with_no_handler_is_not_credited(self):
+        """ANTI-VACUITY: the widening must not credit absence."""
+        assert answers_help(self.NO_HANDLER, under_dash_m=True) is False
+        assert answers_help(self.NO_HANDLER, under_dash_m=False) is False
+
+    def test_the_insert_must_CARRY_the_file_derived_value(self):
+        """★ THE HOLE THE 2026-11-23 WIDENING OPENED, found by the panel and
+        REPRODUCED BY EXECUTION before being accepted.
+
+        The widened form asked `inserts` and `uses_file` SEPARATELY of the same
+        bag of nodes, so nothing required them to be the same expression. A
+        script whose insert takes a CONSTANT path, with a file-derived name
+        sitting beside it for an unrelated reason, was credited -- and run as
+        `python3 -m evil --help` it swallowed the ImportError and WROTE A FILE.
+        Driven in a temporary directory: the predicate said True and the file
+        appeared.
+
+        The sibling test below did NOT catch this and its docstring claimed more
+        than it tested: it removes `__file__` from the module entirely, so
+        `derived` is empty and the old form refused it for the wrong reason.
+        This case keeps the file-derived name PRESENT, which is what made the
+        separation visible.
+        """
+        src = ("import sys, pathlib\n"
+               "UNRELATED = pathlib.Path(__file__).resolve().parent\n"
+               "def main():\n"
+               "    pathlib.Path('x.txt').write_text('y')\n"
+               "    return 0\n"
+               "if __name__ == '__main__':\n"
+               "    sys.path.insert(0, '/nonexistent/constant/path')\n"
+               "    _ = UNRELATED\n"
+               "    try:\n"
+               "        from _cli_help import answer_help\n"
+               "        answer_help(__doc__, __file__)\n"
+               "    except ImportError:\n"
+               "        pass\n"
+               "    sys.exit(main())\n")
+        assert answers_help(src, under_dash_m=True) is False, (
+            "a CONSTANT-path insert was credited because a file-derived name "
+            "happened to appear elsewhere before the import. The file-derived "
+            "value must be an ARGUMENT OF THE INSERT, which is the only reading "
+            "under which the insert says anything about the script's location")
+
+    def test_an_insert_carrying_the_file_value_is_still_credited(self):
+        """The converse, so the join cannot become a blanket refusal."""
+        src = ("import sys, pathlib\n"
+               "REPO = pathlib.Path(__file__).resolve().parents[1]\n"
+               "def main():\n"
+               "    pathlib.Path('x.txt').write_text('y')\n"
+               "    return 0\n"
+               "if __name__ == '__main__':\n"
+               "    sys.path.insert(0, str(REPO / 'scripts'))\n"
+               "    try:\n"
+               "        from _cli_help import answer_help\n"
+               "        answer_help(__doc__, __file__)\n"
+               "    except ImportError:\n"
+               "        pass\n"
+               "    sys.exit(main())\n")
+        assert answers_help(src, under_dash_m=True) is True
+
+    def test_a_file_derived_name_is_required_not_just_any_insert(self):
+        """An insert of a CONSTANT path proves nothing about the script's own
+        directory, so it must not be credited."""
+        src = self.SIBLING_INSERT.replace(
+            "REPO = pathlib.Path(__file__).resolve().parents[1]\n",
+            "REPO = pathlib.Path('/somewhere/else')\n")
+        assert answers_help(src, under_dash_m=True) is False, (
+            "an insert built from a constant was credited, so the predicate no "
+            "longer checks that the path is derived from the script's location")

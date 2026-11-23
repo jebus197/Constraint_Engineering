@@ -1,0 +1,202 @@
+# PANEL BRIEF — batch 12, 2026-11-23
+
+**WHY THIS ROUND EXISTS, AND IT IS THE RULE BEING FOLLOWED RATHER THAN QUOTED.**
+The preceding round measured that 7 of 10 commits had landed with no panel
+round, and the commit gate's panel line was walked past every time. This batch
+was 70 seconds into its board when that line reported 0 rounds since HEAD. The
+board was KILLED rather than the line ignored again.
+
+<!-- figure: help writers at HEAD | scripts/help_writers_rate_2026-09-17.py | 6 of 837 write and ignore --help = 0.7168% -->
+
+**A NOTE ON THAT DECLARED FIGURE, BECAUSE THE VALIDATOR REFUSED MY FIRST
+ATTEMPT AT IT AND WAS RIGHT TO.** I first declared **0 of 837**, which is the
+working tree's figure, against a validator that runs the producer BARE — and
+bare it measures HEAD. The declaration was a claim about bytes that are not
+committed. The honest statement is 2 figures with their revisions named:
+**6 of 837 at HEAD**, re-executable and declared above, and **0 of 839 on the
+working tree**, obtainable only as
+`python3 scripts/help_writers_rate_2026-09-17.py :worktree` and therefore NOT
+declared here. The difference of 2 in the population is the 2 producers this
+batch adds. And the producer imports its predicate from the WORKING TREE at all
+times, so even its HEAD figure is HEAD's scripts judged by this batch's new
+predicate — which is worth knowing before Q1 is answered.
+
+**THE EASY ANSWER IS AVAILABLE AND IS NOT TAKEN.** Much of this batch adopts
+proposals the previous round made, each tested first, so it could be argued no
+new round is owed. **It is owed, because the batch also contains work of mine
+that no panel has seen** — and 1 item of that work LOOSENS a predicate a board
+guard depends on, which is the shape most likely to be wrong in a way nothing
+notices.
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `scripts/help_writers_rate_2026-09-17.py` | `14a12b88f67113dc` | 5648 | 2026-09-17T17:33:09+00:00 |
+| `bench/tests/test_help_never_acts_2026-09-11.py` | `c129c66e1abadfea` | 24670 | 2026-11-23T16:46:09+00:00 |
+| `scripts/the_restore_mutations_2026-11-22.py` | `60d690634390362e` | 5592 | 2026-11-22T05:56:49+00:00 |
+| `scripts/the_majority_separation_mutations_2026-11-22.py` | `dfcf68298596492f` | 5811 | 2026-11-22T15:46:15+00:00 |
+| `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` | `2a7e4586a2e0ba06` | 6768 | 2026-11-23T16:32:28+00:00 |
+| `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py` | `d4c07b7eb005aa88` | 8770 | 2026-11-23T16:50:05+00:00 |
+
+## WHAT IS IN THE BATCH
+
+Entry B212, the help-flag repair that regressed, is CLOSED at 0 of 839 on the working tree under
+both invocations. Entry B215's seat disagreement was measured rather than
+adjudicated. 2 of the previous round's proposals were adopted after testing. A
+defect in the pre-board deriver was found while using it and fixed.
+
+## USE THE HARNESS — answer by RUNNING things
+
+Every seat must reach its answer by executing something and report the exact
+command and output. `gamma` and the two-sided gate bear on Q2 as the
+diminishing-returns measures: an upper bound that cannot exclude a rate of
+0.215311 is weak evidence, and the question is whether it is weak enough to
+withhold a conclusion. The severity model bears on Q1: say what severity a
+wrong widening carries, and say so explicitly if no concrete failure can be
+named, because an unnameable failure is not a finding.
+
+---
+
+## Q1. I WIDENED AN ACCEPTING PREDICATE THAT A BOARD GUARD DEPENDS ON. IS IT RIGHT?
+
+`bench/tests/test_help_never_acts_2026-09-11.py:answers_help` decides whether a
+script answers `--help` under `python3 -m`. It is a STATIC predicate, and
+`scripts/help_writers_rate_2026-09-17.py` imports it, so there is 1
+implementation and no second opinion anywhere.
+
+**IT ACCUSED 2 CORRECT SCRIPTS.** It searched for the `sys.path` insert ONLY
+among statements inside the same `try` and before the import, and required the
+literal `__file__` among them. `the_restore_mutations_2026-11-22.py` and
+`the_majority_separation_mutations_2026-11-22.py` place the insert among the
+try's PRECEDING SIBLINGS and reach `__file__` through a module-level `REPO`.
+Driven in a throwaway clone, with a tree-hash instrument validated on an
+untouched tree first because its initial form was order-dependent, both exit 0
+and change 0 Python bytes under direct invocation, under `-m` from `scripts/`,
+and under `-m` from the repository root.
+
+**MY WIDENING CREDITS 2 THINGS: a preceding-sibling insert, and a module-level
+name whose own assignment contains `__file__`.** The second is the one I distrust
+in my own work: it is a 1-step dataflow approximation, and a name assigned from
+`__file__` somewhere else in the module may have nothing to do with the path
+being inserted.
+
+**P-PASS DONE, BOTH DIRECTIONS:** 5 discrimination tests, 15 passed. A
+swallowing `try` with no insert is still unreachable under `-m` and still
+reachable directly; an insert inside the try still counts; a script with no
+handler is refused; **an insert built from a CONSTANT path is refused.**
+
+**THE QUESTION.** Is the file-derived-name rule too permissive, and if so give a
+constructed source it wrongly credits. Is a static predicate the right
+instrument here at all, when an executing one costs about 18 s over 837 scripts
+and would need no approximation? Name the concrete failure your answer permits.
+
+## Q2. IS 0 OF 14 WITH AN UPPER BOUND OF 0.215311 EVIDENCE, OR NOT?
+
+The previous round's 2 seats disagreed on entry B209's repair. Driven, both
+their scorers reproduce and the disagreement is narrower than it looked: cc2's
+S3 and fable's R1 are THE SAME scenario — the overlap key failing when the
+matched process set is fully replaced between 2 consecutive polls. They agree on
+the fact and differ on its WEIGHT.
+
+<!-- figure: full replacement rate | scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py | FULL REPLACEMENTS (both non-empty, no overlap): 0 -->
+
+`scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` polls the gate's
+own `_RUNNER_PATTERNS`, read out of the hook rather than typed, while a real
+pytest run is live. Across 25 polls of a 106 s run and 14 pairs of a second run:
+**0 full replacements, every pair identical, pid-set size 1 throughout.** Wilson
+[0.000000, 0.215311] on 2 routes agreeing to 2.78e-17.
+
+**THE INTERVAL FIGURES IN THIS SECTION ARE NOT DECLARED, FOR THE SAME REASON AS ABOVE.** The probe reports an interval only when something matches its patterns, so run bare — which is how the validator runs it — it correctly prints UNINFORMATIVE and no interval at all. The declared figure above is the part that re-executes; 0.215311, 0.000000 and the 2.78e-17 agreement come from runs taken while a real pytest was live, reproducible as `python3 scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py --seconds 30` with a suite running beside it. Treat them accordingly.
+
+**I HAVE REPORTED THIS AS CORROBORATING fable AND AS CUTTING AGAINST B209's OWN
+PREMISE**, which states the key churns because a board replaces its pytest child
+per guard file. A single stable pid is not what that predicts.
+
+**THE QUESTION.** Does an upper bound of 0.215311 support either conclusion? A
+reading I can see and cannot refute is that 14 pairs of a short run say nothing
+about a 34-minute board with other matched processes alive, so BOTH claims
+should be withheld. Say which, and say what sample would settle it.
+
+## Q3. WAS MY TESTING OF YOUR OWN PROPOSALS SUFFICIENT BEFORE I ADOPTED THEM?
+
+2 proposals were adopted. **The fixer change**: its diagnosis was confirmed
+first — all 6 declined files use `from pathlib import Path` — then in a clone
+report named 6, `--apply` fixed 6, the rate fell to 0 of 837, all 6 compile and
+answer `--help` writing 0 bytes, and a repaired harness RAN TO COMPLETION at 7
+of 7 mutations RED with SHA-256 verified restore. **The differential falsifier
+rule**: validated against known answers both ways, DISCRIMINATES on the real
+guard at 3 failed against 21 passed, VACUOUS on an unrelated guard at exit 1,
+target restored byte-for-byte in both arms.
+
+**THE QUESTION.** What did that testing NOT cover? For the fixer, I ran 1 of the
+6 repaired harnesses to completion and checked the other 5 only for compilation
+and `--help`. Is that sufficient, or is the 1-of-6 sample the weak point?
+
+## Q4. THE ONE PROPOSAL STILL UNTESTED, AND WHAT WOULD MEASURE IT
+
+cc2's answer to the panel-line question reframed it from refuse-against-report
+to AUDITABILITY: a reporting line that appended its own verdict to a ledger
+would have made all 7 lapses visible on the first commit at no cost, so
+unrecorded report was the defect rather than report itself. It flagged its own
+preference for refusal as a judgement rather than a measurement, and that flag
+is accepted.
+
+**THE QUESTION.** What measurement decides between a ledgered advisory line and
+a refusal? State a predicate a hook can evaluate and an outcome that would
+distinguish them, not a preference. Note that this batch is itself 1 data point:
+the line reported, and the board was killed rather than the line ignored.
+
+---
+
+## PRODUCE A FIX, AND TEST IT
+
+A finding without a fix is incomplete. **A fix without a runnable falsifier the
+seat has EXECUTED is a hypothesis, not a fix.** Report the exact command and the
+output verbatim.
+
+**Deliver your fix as a file,** written INTO the sandbox repository tree at its
+real path. A fix described in prose is not delivered, and a fix written to
+scratch space is destroyed at teardown.
+
+**THE DIFFERENTIAL RULE NOW APPLIES TO YOUR OWN FALSIFIERS, and the tool is in
+the tree:** `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py` runs a
+falsifier with a defect present and absent and refuses a verdict when the 2
+arms agree. Use it on any falsifier you write here, or say why it does not fit.
+
+**Where more than 1 repair is in play, composability is a CLAIM THAT REQUIRES A
+MEASUREMENT** — the founder's definition of 2026-10-02: compose only on a
+demonstrated advantage over each fix alone, and prefer the single fix where it
+performs as well. Reporting that 2 repairs merely do not interfere is the weak
+form his definition excludes.
+
+## WHAT WOULD REFUTE YOU
+
+State what evidence would overturn your own answer. A verdict with no stated
+refutation condition is an opinion and will be recorded as one. Where a question
+is not decidable on the available evidence, say so and say what would decide it.
+
+## OUTPUT SHAPE
+
+For each of Q1 to Q4: `question`, `verdict` in 1 sentence, `reasoning` naming
+the instrument you ran, `commands_run` verbatim, `fix` as a repository-relative
+path or NONE, `falsifier` with the result of EXECUTING it,
+`what_would_refute_me`, and `disagreement` — your strongest disagreement with
+this brief's framing, including with any figure in it. Mandatory and it may not
+be empty.
+
+**Do not converge.** Disagreement is preserved as information. Anything proposed
+here will be TESTED before adoption.
+
+## TERMINATION
+
+Stop when a further pass produces no new above-threshold findings, and state how
+many passes you ran. A finding is above threshold if missing it could cause a
+real-world failure, an unsafe condition, or a wrong decision by the founder.

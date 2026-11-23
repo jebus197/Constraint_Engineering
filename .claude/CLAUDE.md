@@ -22,6 +22,75 @@ On `sv` (save state): make qualitative updates to ONBOARDING.md and RECOVERY.md,
 On `qc` (quality control): run `python3 scripts/cdsfl_qc.py` and fix reported issues. **It is a DOCUMENTATION SWEEP and takes about 15 s.** It does NOT run the test suite unless you add `--with-suite`, which costs 3.13 h of this machine on the last recorded measurement. Before 2026-11-13 it ran the suite unasked, under a waiter 6.27x shorter than the suite itself, so it could only ever spend 30 minutes and then report that it could not measure anything.
 On `rs` (recover): run `python3 scripts/cdsfl_recover.py --record-restore` and rebuild context from output.
 
+## ★★★ THE AUTONOMOUS WORKFLOW TO THE ORCHESTRATOR RUN: WHAT A BATCH IS, HOW THE PANEL IS USED, AND HOW THE TICKET STORE TRACKS IT — his instruction, 2026-11-23T17:31:14+00:00
+
+**WHY THIS IS HERE RATHER THAN IN A NOTE.** He asked for it in this file precisely because this file is re-injected after every compaction, and a long autonomous session compacts repeatedly. His words: *"I presume adding this instruction to your local project Claude.md file will help protect against drift and will help keep you on track better, even if you do compact (which you will) several times through a long autonomous session?"*
+
+**THE OBJECTIVE, AND IT IS SHARED WITH THE FREE PANEL.** His words: *"your job and that of the other models in the free panel is to take us to the start of the orchestrator experiment"*. The panel is not an audience for finished work; it is a participant in reaching that milestone. Full standing goal: `experimental_notes/THE_STANDING_GOAL.md`.
+
+### WHAT A BATCH IS — 10 to 12 ITEMS, MEASURED FROM HIS OWN RECORD
+
+His guidance, and he gave it as a measurable proxy rather than a rule: *"on average each time you have requested my verdict in the tts reports, it usually pans out at between 10-12 verdicts per ask in the tts files? So you can possibly take a quick average over the last month and use that as your guide."*
+
+**MEASURED, 2026-11-23, producer `scripts/what_is_a_significant_batch_2026-11-23.py`.** Treating a morning report and a decisions file of the same date as 1 occasion: **median 11.0 verdicts per ask** over 9 occasions in the spoken corpus, mean 15.333333; and **median 10.5** over 20 versioned files, mean 13.400000. **Both medians land inside his 10-to-12 band, so the recollection is sound.** The mean is higher only because a few asks carried 29 and 30 items, and those were backlog overflows rather than intended batch sizes.
+
+**SO: A BATCH IS ABOUT 10 TO 12 ITEMS**, with 1 addition of mine — **anything that changes WHEN A LIVE GATE REFUSES goes to the panel regardless of size**, because a wrong gate change is not visible until it refuses something it should not.
+
+**THE CAVEAT IS RECORDED RATHER THAN BURIED:** verdicts-put-to-him is not the same quantity as work-batch-size. He offered the first as a proxy for the second. It is used as he directed; the distinction is stated so a proxy does not quietly become a fact.
+
+**AND COMMIT ONCE PER BATCH, NEVER PER FIX** — `commit-after-a-batch-not-after-a-fix`, stated in full at the head of this file. At a measured mean board of about 34 minutes and a refusal rate near 0.47, an avoidable commit is about an hour of his 8-core machine in expectation.
+
+### HOW THE PANEL IS USED
+
+**EVERY BATCH GOES TO A FREE PANEL BEFORE IT LANDS, THEN WHAT THE PANEL PROPOSES IS TESTED BEFORE ANY OF IT IS ADOPTED.** A panel's proposal is a hypothesis, not a fix.
+
+**THIS WAS MEASURED AND I FAILED IT.** `scripts/was_the_panel_line_ignored_2026-11-23.py` imports the commit gate's own predicate rather than re-implementing it: **7 of 10 commits landed with no useful panel round**, Wilson [0.396778, 0.892209], and the lapse was **CONSECUTIVE -- 6 in a row**. The gate printed a line saying so every time and I walked past it, because the line was built advisory. **On 2026-11-23 a board was KILLED 70 seconds in rather than ignore that line again. That is the standard.**
+
+**FREE SEATS ONLY: leave `PANEL_ONLY` UNSET.** Paid dispatch needs his express authorisation and a committed ledger entry. The free seats are `cc2` and `fable` on the Max subscription.
+
+**THE DISPATCHER'S REFUSALS ARE HONOURED, NOT OVERRIDDEN.** A blind round owes a joint round, and a joint brief must QUOTE 240 contiguous characters of each parent reply, because pointing a seat at a directory is not exposure and nothing checks that it read it. `PANEL_SKIP_TOPOLOGY=1` exists and is not used.
+
+**BRIEFS ARE VALIDATED BEFORE DISPATCH:** `python3 scripts/panel_brief_validate.py <brief>`. It re-executes every declared figure. A figure true only of the working tree may NOT be declared, because the validator runs producers bare and bare means HEAD -- state both figures with their revisions named instead.
+
+**WHAT THE PANEL IS WORTH, from the 2026-11-23 rounds:** it refuted 2 claims already written into the task list, found a hole in a predicate I had just widened that let a script WRITE on `--help`, and showed that a Wilson bound I had reported was a function of my own polling interval rather than of the world. Each was reproduced by execution before being accepted. **Seats also disagree, and disagreement is kept rather than smoothed.**
+
+### THE TICKET STORE IS THE TRACKER, AND MY USE OF IT WAS MEASURABLY POOR
+
+**HIS CONCERN, VERBATIM:** *"although you are clearly making good progress, I am not confident that you are always using the ticket store in the originally designed/intended way, which may result in things being overlooked, panel rounds being skipped, old/resolved issues being revisited, and or work already built being revisited and/or not implemented."*
+
+**HE IS RIGHT, AND THE FIGURES ARE WORSE THAN AN IMPRESSION.** Measured 2026-11-23 over 3,602 distinct tickets:
+- **`pf` holds 2,885 of 3,602 = 0.801 of the store.** The other kinds are nearly unused: `fr` 145, `qs` 141, `disc` 126, `wr` 63, `stm` 55, and **`frx` 1**.
+- **On 2026-11-23 I created 3 tickets and used 1 of the 9 available kinds.**
+- **3,046 of 3,602 tickets carry NO `task_ref` = 0.845641**, Wilson [0.833475, 0.857071]. A ticket with no issue ID cannot be reached from its entry, which is exactly how an item gets overlooked.
+- **0 tickets lack a hash id**, so that half of his ask was already satisfied by `tid_of`.
+
+**THE 9 KINDS ALREADY EXIST — HE IS NOT MISSING ONE.** `KINDS = ('fr', 'frx', 'pf', 'qs', 'wr', 'stm', 'disc')` plus the legacy aliases `dis` and `ds` which normalise to `disc`. The defect was never the vocabulary; it was that 8 of 9 went unused.
+
+**WHAT EACH IS FOR, in his framing of 2026-11-23:**
+- **`fr`** feature request -- new proposal, from him or from me or from a seat.
+- **`frx`** fix request -- **in this context specifically, where I have built a fix and the free panel has proposed a fix TO MY FIX.** This session produced at least 3 genuine cases and filed 0 of them.
+- **`pf`** proposed fix against an observed defect.
+- **`qs`** question -- anything without a definitive answer yet, asked by me, by him, or by a seat; also a fix not yet implemented or not yet tested.
+- **`wr`** work remaining -- BUILT but not yet applied, implemented or committed to the runners and the branch.
+- **`disc`** discussion request -- normally his, but until the orchestrator run it also covers anything I judge worth putting to the free panel.
+- **`stm`** statement -- fits no other category but still requires an action from me.
+- **CLOSED** -- settled, and rendered with strikethrough in the task list so a resolved item is visible as resolved at a glance.
+
+**MULTIPLE KINDS ARE ALLOWED; THE FIRST ONE FILED DECIDES WHERE IT LIVES.** His rule: an issue may be both an `frx` and a `qs`, and to avoid duplication it is listed primarily under the first status it was issued with.
+
+**★ A DISTINCTION HIS WORDING COLLAPSES AND THE STORE DOES NOT, so it is named here rather than implemented wrongly.** He calls all of these "status types". In the store, **KIND** (`fr`/`frx`/`pf`/`qs`/`wr`/`stm`/`disc`) and **STATUS** (`OPEN`/`CLOSED`/`MERGED`/`WITHDRAWN`/`DEPRECATED`/...) are SEPARATE FIELDS, and `tid_of` digests the KIND -- so re-kinding a ticket gives it a different identity, while re-statusing it does not. Treating CLOSED as a 9th kind would therefore mint duplicate identities for every item that closes. **CLOSED is a status; the other 7 are kinds.** Everything he asked for is expressible without changing the schema.
+
+**THE RULES THAT BIND, going forward:**
+1. **Every ticket carries BOTH identifiers**: a `task_ref` issue code and the `tid` hash. `TicketStore.propose` derives the hash; the `task_ref` is mine to supply and is the half I have been omitting.
+2. **READ THE STORE BEFORE STARTING WORK**, not only when closing. `scripts/register.py --kind <k>` searches it. The purpose is to stop re-fixing what is fixed and to stop rebuilding what is built but unapplied.
+3. **CLOSED IS TOOL-ONLY AND NEEDS A VERIFICATION.** `close()` refuses without one, and the verification must name TEST files -- a script is not evidence that anything was run. **I made that error 3 times on 2026-11-23 alone.**
+4. **Closing an entry means closing its ticket too.** 2 surfaces, and `scripts/raise_an_entry_2026-11-02.py --entry <code>` checks all 7 surfaces an entry must reach.
+5. **A proposal tested and found WRONG closes as REFUTED, not FIXED.** B212's defect split and a Wilson bound of mine were both refuted on 2026-11-23; recording either as fixed would be a false record.
+
+**★ THE ONE GENUINE GAP, AND IT IS A STATE RATHER THAN A KIND.** He asked whether he was missing something. He is not missing a kind, but nothing in the store records **whether a ticket has been through a panel round** -- which is precisely the lapse his own instruction is written to prevent, and precisely the one measured at 7 of 10. `wr` covers built-not-applied; there is no equivalent for applied-not-reviewed. That is the thing to add, and it is a FIELD on the existing schema rather than a new kind.
+
+**★ AND THE HONEST LIMIT OF WRITING ANY OF THIS DOWN, which is his own ruling turned on his own proposal.** `no-word-numbers` records that *"The failure was never the absence of a rule or a checker; it was never running the checker."* An instruction in this file protects against DRIFT -- forgetting across a compaction -- and it does NOT protect against NON-USE. What actually changed behaviour on 2026-11-23 was a GATE: the dispatcher refusing a blind round, the note lint refusing a commit, the unreached-producer ratchet refusing a batch. **So this section is necessary and is not sufficient, and the ticket discipline above is owed a mechanical check rather than a resolution to remember it.**
+
 ## Key Documentation
 
 - `experimental_notes/CDSFL_Agent_Operational_Plan.md` — **AGENT OPERATIONAL TRACKER** for the Exp 40–54 arc + Bench Run 2. Self-consumption note: terse, actionable, dynamically updated. **This repo copy is CANONICAL**; `~/Desktop/CDSFL_Agent_Operational_Plan.md` is the byte-identical mirror and still the convenient one to open. The repo copy wins because the tracker carries the recovery path, and an unversioned file on one machine's Desktop is a single point of failure. **FIRST READ on compaction** — it names the exact resume pointer, per-experiment target-article matrix, standing Exp-39→Exp-40 gap-closure list, and multi-tool cross-verification pairings.

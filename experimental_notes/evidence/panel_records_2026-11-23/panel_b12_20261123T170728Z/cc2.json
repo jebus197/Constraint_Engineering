@@ -1,0 +1,207 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 21699,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && git -C . log --oneline -3 && ls\", \"description\": \"Orient in repo\"}",
+      "t_offset_s": 4.616
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /Users/ash/Documents/GitHub/cdsfl 2>/dev/null || true; sha256sum scripts/help_writers_rate_2026-09-17.py bench/tests/test_help_never_acts_2026-09-11.py scripts/the_restore_mutations_2026-11-22.py scripts/the_majority_separation_mutations_2026-11-22.py scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py 2>&1 | hea",
+      "t_offset_s": 7.318
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"answers_help\\\" -A 200 bench/tests/test_help_never_acts_2026-09-11.py | head -260\", \"description\": \"Read answers_help predicate\"}",
+      "t_offset_s": 11.978
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat scripts/help_writers_rate_2026-09-17.py\", \"description\": \"Read rate producer\"}",
+      "t_offset_s": 12.956
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 286,460p bench/tests/test_help_never_acts_2026-09-11.py\", \"description\": \"Read discrimination tests\"}",
+      "t_offset_s": 55.981
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,80p scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py; echo ===; grep -n \\\"argparse\\\\|add_argument\\\\|def main\\\" scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py\", \"description\": \"Read differential falsifier tool\"}",
+      "t_offset_s": 57.183
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 460,560p bench/tests/test_help_never_acts_2026-09-11.py\", \"description\": \"Read remaining discrimination cases\"}",
+      "t_offset_s": 60.39
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 80,230p scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py\", \"description\": \"Read differential tool CLI\"}",
+      "t_offset_s": 61.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util, pathlib\\nM = pathlib.Path(\\\"bench/tests/test_help_never_acts_2026-09-11.py\\\")\\nspec = importlib.util.spec_from_file_location(\\\"m\\\", M); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\n\\n# B: CONSTANT-path insert, plus an UNRELATED file-derived name among the preceding siblings.\\nB = (\\\"import sys, pathlib\\\\n\\\"\\n     \\\"HE",
+      "t_offset_s": 91.617
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 1,60p scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py\", \"description\": \"Read full-replacement probe\"}",
+      "t_offset_s": 92.863
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\nT=$(mktemp -d); mkdir -p \\\"$T/scripts\\\"\\ncat > \\\"$T/scripts/_cli_help.py\\\" <<'EOF'\\nimport sys\\ndef answer_help(doc, f, argv=None):\\n    argv = sys.argv[1:] if argv is None else argv\\n    if \\\"--help\\\" in argv or \\\"-h\\\" in argv:\\n        print(\\\"usage: (help answered, nothing written)\\\"); raise SystemExit(0)\\nEOF\\ncat > \\\"$T/scripts/constant_insert_demo.py\\\" <<'EOF'\\n#!/usr/bi",
+      "t_offset_s": 107.411
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/bench/tests/test_help_never_acts_2026-09-11.py\", \"offset\": 206, \"limit\": 38}",
+      "t_offset_s": 116.985
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/bench/tests/test_help_never_acts_2026-09-11.py\", \"old_string\": \"            #: PRECEDING SIBLINGS COUNT, not only the try's own prefix.\\n            before = ([n for s in seq[:idx] for n in ast.walk(s)]\\n                      + [n for s in node.body[:at] for n in ast.walk(s)])\\n ",
+      "t_offset_s": 127.182
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -l bench/tests/test_help_never_acts_2026-09-11.py; touch bench/tests/.wtest 2>&1 && echo \\\"DIR WRITABLE\\\" && rm -f bench/tests/.wtest\", \"description\": \"Check writability\"}",
+      "t_offset_s": 131.354
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"set -e\\nT=/tmp/cdsfl_q1; mkdir -p $T\\ncp bench/tests/test_help_never_acts_2026-09-11.py $T/PREFIX_defect_copy.py\\npython3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_help_never_acts_2026-09-11.py\\\")\\ns = p.read_text()\\nold = '''            #: PRECEDING SIBLINGS COUNT, not only the try's own prefix.\\n            before = ([n for s in seq[:idx] for n in ast.walk(s)]\\n ",
+      "t_offset_s": 145.431
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_insert_must_carry_the_file_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Does the dash-m proxy require the sys.path insert to CARRY the file-derived path?\\n\\nDESTINATION `scripts/`. Written 2026-11-23, panel batch 12, Q1, seat fable.\\n\\nTHE DEFECT THIS FALSIFIES. `_help_calls_unreachable_under_dash_m` in\\n`bench/tests/test_help_never_acts_2026-09-11.py` was ",
+      "t_offset_s": 181.139
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== FALSIFIER against the FIXED tree ===\\\"; python3 scripts/the_insert_must_carry_the_file_2026-11-23.py; echo \\\"exit=$?\\\"\", \"description\": \"Run falsifier on fixed tree\"}",
+      "t_offset_s": 184.139
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py \\\\\\n  --target bench/tests/test_help_never_acts_2026-09-11.py \\\\\\n  --defect-file /tmp/cdsfl_q1/PREFIX_defect_copy.py \\\\\\n  --cwd . \\\\\\n  -- python3 scripts/the_insert_must_carry_the_file_2026-11-23.py; echo \\\"TOOL EXIT=$?\\\"\", \"description\": \"Differential vacuity check\"}",
+      "t_offset_s": 188.489
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum bench/tests/test_help_never_acts_2026-09-11.py; echo \\\"=== targeted suite ===\\\"; timeout 300 python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q 2>&1 | tail -15\", \"description\": \"Run the target test file\"}",
+      "t_offset_s": 193.552
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q 2>&1 | tail -15; echo \\\"=== rate producer, HEAD and worktree ===\\\"; python3 scripts/help_writers_rate_2026-09-17.py 2>&1 | head -20\", \"description\": \"Run tests and rate producer\"}",
+      "t_offset_s": 196.632
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== are the 3 failures pre-existing? run pytest on the PRE-FIX bytes ===\\\"\\ncp bench/tests/test_help_never_acts_2026-09-11.py /tmp/cdsfl_q1/FIXED.py\\ncp /tmp/cdsfl_q1/PREFIX_defect_copy.py bench/tests/test_help_never_acts_2026-09-11.py\\npython3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q 2>&1 | tail -5\\ncp /tmp/cdsfl_q1/FIXED.py bench/tests/test_help_never_acts_",
+      "t_offset_s": 211.343
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util, pathlib\\ndef load(path, name):\\n    spec = importlib.util.spec_from_file_location(name, path)\\n    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m\\nold = load(\\\"/tmp/cdsfl_q1/PREFIX_defect_copy.py\\\", \\\"old\\\")\\nnew = load(\\\"bench/tests/test_help_never_acts_2026-09-11.py\\\", \\\"new\\\")\\nfiles = sorted(pathlib.Path(\\\"",
+      "t_offset_s": 221.58
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"nested .py under scripts/: $(find scripts -name '*.py' | wc -l) total, top-level only: $(find scripts -maxdepth 1 -name '*.py' | wc -l)\\\"; find scripts -mindepth 2 -name '*.py' | head -5\", \"description\": \"Reconcile population count\"}",
+      "t_offset_s": 254.571
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 60,200p scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py; echo \\\"=== GATE PATTERNS ===\\\"; grep -n \\\"_RUNNER_PATTERNS\\\" -A 8 hooks/cy_monitor_gate.py | head -20\", \"description\": \"Read probe body and gate patterns\"}",
+      "t_offset_s": 255.978
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util, pathlib\\ndef load(p,n):\\n    s=importlib.util.spec_from_file_location(n,p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); return m\\nold=load(\\\"/tmp/cdsfl_q1/PREFIX_defect_copy.py\\\",\\\"old\\\"); new=load(\\\"bench/tests/test_help_never_acts_2026-09-11.py\\\",\\\"new\\\")\\nfiles=sorted(pathlib.Path(\\\"scripts\\\").rglob(\\\"*.py\\\"))\\nprint(f\\\"R",
+      "t_offset_s": 278.19
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport importlib.util\\ns=importlib.util.spec_from_file_location(\\\"pr\\\",\\\"scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py\\\")\\nm=importlib.util.module_from_spec(s); s.loader.exec_module(m)\\nprint(\\\"classify(full, identical, other, pairs)\\\")\\ncases = {\\n \\\"brief's observed shape: one stable pid, 15 polls\\\": [{1}]*15,\\n \\\"alternating matched/empty -- event",
+      "t_offset_s": 283.098
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp\\n# DERIVE the Wilson upper bound at k=0 in closed form.\\nn, z = sp.symbols('n z', positive=True)\\np = sp.Integer(0)\\nden = 1 + z**2/n\\nctr = (p + z**2/(2*n))/den\\nhw  = (z/den)*sp.sqrt(p*(1-p)/n + z**2/(4*n**2))\\nupper = sp.simplify(ctr + hw)\\nprint(\\\"Wilson upper at k=0, symbolic :\\\", upper)\\nprint(\\\"equals z^2/(n+z^2)?          :\\\", sp.simplify(",
+      "t_offset_s": 314.571
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'z=1.959963984540054; Print[N[z^2/(14+z^2),10]]; Print[N[z^2/(1060+z^2),10]]; Print[Simplify[((0+z^2/(2n))/(1+z^2/n))+(z/(1+z^2/n))*Sqrt[0+z^2/(4n^2)]-z^2/(n+z^2), n>0]]' 2>&1; echo \\\"wolfram exit=$?\\\"\", \"description\": \"Wolfram second falsifier\"}",
+      "t_offset_s": 316.557
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls bench/tests/*.py | wc -l\\n# start a real pytest that the gate's pattern \\\"pytest.*bench/tests\\\" will match\\npython3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py bench/tests/test_operational_scripts.py -q > /tmp/cdsfl_q1/pytest.log 2>&1 &\\nsleep 2\\npython3 scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py --seconds 20 --interval 1.0 2>&1 | sed -n '1,30p'\\nwai",
+      "t_offset_s": 330.899
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sleep 5; cat /private/tmp/claude-501/-private-var-folders-cc-scptwd-s4cgclnjn5937fyjw0000gn-T-cdsfl-panel-5dmmysk2-repo/5c499c5e-8604-496f-8bc5-c095c071265b/tasks/bc7fswqzt.output 2>/dev/null | head -30\", \"description\": \"Read live probe output\"}",
+      "t_offset_s": 454.498
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nZ2 = 1.959963984540054**2\\nup = lambda n: Z2/(n+Z2)\\nprint(\\\"Q2  THE BOUND TIGHTENS AS OBSERVATION SHORTENS -- measured, not simulated:\\\")\\nprint(f\\\"  brief : 106 s run, interval 2.0 -> 14 pairs -> upper {up(14):.6f}\\\")\\nprint(f\\\"  mine  :  20 s run, interval 1.0 -> 19 pairs -> upper {up(19):.6f}  <- LESS looking, TIGHTER bound\\\")\\nprint()\\nprint(\\\"Q3  WHAT '1 OF 6 ",
+      "t_offset_s": 502.88
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cp scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py /tmp/cdsfl_q1/PROBE_defect_copy.py\\npython3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py\\\")\\ns = p.read_text()\\n\\nold_classify = '''def classify(polls):\\n    \\\"\\\"\\\"(full_replacements, identical, other, pairs_considered).\\\"\\\"\\\"\\n    full = same = other = pairs ",
+      "t_offset_s": 534.805
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n 183,206p scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py\", \"description\": \"Read bears-on branch\"}",
+      "t_offset_s": 540.608
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PY'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py\\\")\\ns = p.read_text()\\nold = '''    else:\\n        print(\\\"    Nothing matched the gate's patterns while this ran, so the\\\")\\n        print(\\\"    probe is UNINFORMATIVE -- run it while a suite or board runs.\\\")\\n'''\\nnew = '''    elif pairs:\\n        #: \\u2605 SPLIT OUT 2",
+      "t_offset_s": 549.883
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"Is the full-replacement denominator a RISK SET, or just the polling rate?\\n\\nDESTINATION `scripts/`. Written 2026-11-23, panel batch 12, Q2, seat fable.\\n\\nTHE DEFECT THIS FALSIFIES, in `classify` of\\n`scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py`. Th",
+      "t_offset_s": 580.734
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py \\\\\\n  --target scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py \\\\\\n  --defect-file /tmp/cdsfl_q1/PROBE_defect_copy.py --cwd . \\\\\\n  -- python3 scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py 2>&1 | tail -22; echo \\\"TOOL EXIT=${PIPESTATUS[0]}\\\"\", \"description\": \"Differential check ",
+      "t_offset_s": 585.903
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"echo \\\"=== both new scripts must answer --help and write nothing (the repo's own ratchet) ===\\\"\\nfor s in scripts/the_insert_must_carry_the_file_2026-11-23.py scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py; do\\n  B=$(find . -newer /tmp/cdsfl_q1/pytest.log -name '*.py' 2>/dev/null | wc -l)\\n  python3 \\\"$s\\\" --help >/dev/null 2>&1; echo \\\"  $s --help exit=$?\\\"\\n",
+      "t_offset_s": 598.235
+    }
+  ],
+  "n_tool_calls": 37,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 737.3,
+  "response": "Five passes run. Both fixes are in the tree, both falsifiers DISCRIMINATE, and the targeted suite is unchanged at `3 failed, 12 passed` (the 3 failures are the absent `.git` in the staged sandbox, identical before and after my edits).\n\n---\n\n## Q1. The widened accepting predicate\n\n**question** Is the file-derived-name rule too permissive, and is a static predicate the right instrument?\n\n**verdict** The widening is wrong, but **not for the reason you distrust** \u2014 the defect is that `inserts` and `uses_file` are asked *separately* of the same bag of nodes and nothing requires them to be the same expression; I have a constructed source that is credited and, run as `python3 -m x --help`, **writes a file**.\n\n**reasoning** Instrument: the real `answers_help` imported from `bench/tests/test_help_never_acts_2026-09-11.py` (digest `c129c66e1abadfea`, as dispatched), plus direct execution of a constructed script under `-m`. Lines 225\u2013232 of the dispatched file compute `inserts` (is there *any* `sys.path.insert` before the import) and `uses_file` (is there *any* file-derived name before the import) over the same node list, then accept on `inserts and uses_file`. The insert's **arguments are never inspected**. So a constant-path insert with a file-derived name beside it for an unrelated reason is credited.\n\nYour own discrimination case `test_a_file_derived_name_is_required_not_just_any_insert` does not catch this, and its docstring claims more than it tests: it builds its constant-path variant by *replacing* the `__file__` assignment, so `__file__` vanishes from the whole module and `uses_file` is False for a reason the realistic shape does not share. Scrub-the-module is a weaker property than insert-must-carry-the-path.\n\nTwo constructed sources, both credited by the dispatched predicate:\n\n```\nB derived-name rule only     WRITES=True  dash-m credited=True\nC bare __file__ sibling      WRITES=True  dash-m credited=True\n```\n\n`C` uses **no derived name at all** \u2014 just a bare `__file__` among the preceding siblings. So the half of the widening you trust (preceding siblings) is independently sufficient to break the predicate, and the half you distrust (file-derived names) is not required. **Your self-distrust is aimed at the wrong half.**\n\nThe concrete failure, executed rather than argued:\n\n```\n--- DIRECT invocation with --help ---\nusage: (help answered, nothing written)\nexit=0  wrote=NO\n\n--- python3 -m scripts.constant_insert_demo --help ---\nexit=0\nwrote=ORDINARY_WORK_RAN.txt\nthis script just wrote a file\n```\n\n**Severity.** The help-ratchet domain declares no consequence scale of its own, so per the ordinal-severity rules it **inherits the application domain's** \u2014 the panel-record corpus, whose scale this guard's own comment names (\"54,480 bytes of a record the founder's own directive requires preserved verbatim\"). On that inherited ordering the defect is at the critical level under \u00a710 category 3, **verification-integrity corruption**: a defect in the measurement machinery. I will not supply a number, and I note precisely what is *not* claimed \u2014 **0 scripts in the real tree are currently affected** (measured below), so the realised loss today is zero. The defect is in the guard's future accepting behaviour, not yet in the tree.\n\n**Is static the right instrument?** Yes, keep it static. An executing predicate costs ~18 s and needs no approximation, but it must *run 837 untrusted scripts with `--help`* to decide whether they write \u2014 the exact action the guard exists to prevent, on the exact population most likely to do it. That trades an approximation for a 19-way-door execution surface, and your own record says the flag \"was never the only way in.\" The approximation is repairable; the execution risk is not. Repair the join.\n\n**fix** `bench/tests/test_help_never_acts_2026-09-11.py` (post-fix sha256 `d5c314c415abd8eb366a92`) \u2014 the file-derived value must be an **argument of the insert**. 13 lines, replacing two independent `any()` calls with one that walks `call.args`. No feature removed; the residual (`str(REPO / \"vendor\")` is file-derived but not the script's own directory) is unchanged and now stated in the code.\n\n**falsifier** `scripts/the_insert_must_carry_the_file_2026-11-23.py` \u2014 imports the real predicate, asserts 3 constant-path shapes REFUSED and 4 genuine shapes CREDITED including both scripts the widening was written for. Executed:\n\n```\n  must REFUSE  constant insert, derived name beside it    -> False\n  must REFUSE  constant insert, bare __file__ beside it   -> False\n  must REFUSE  constant insert inside the try             -> False\n  must CREDIT  preceding-sibling insert via a file-derived name -> True\n  must CREDIT  insert inside the try, built from __file__ -> True\n  must CREDIT  the_restore_mutations_2026-11-22.py        -> True\n  must CREDIT  the_majority_separation_mutations_2026-11-22.py -> True\n  must CREDIT  assemble_panel_record.py                   -> True\nexit=0\n```\n\nDriven through your differential rule against the pre-fix bytes:\n\n```\n  DEFECT PRESENT  exit=1  FALSIFIED-token=True  -> FAIL\n                  |   CREDITED a constant-path insert: constant insert, derived name beside it\n  DEFECT ABSENT   exit=0  FALSIFIED-token=False -> PASS\n  target restored byte-for-byte : True\n  DISCRIMINATES\n```\n\nRegression over the real population \u2014 **0 verdict flips on all 840 scripts** (recursive; `840 = your worktree 839 + my 1 new script`, which reconciles your figure exactly), and 0 dash-m offenders after the fix. The join is a pure tightening that touches no real script.\n\n**what_would_refute_me** A real tracked script that legitimately answers `--help` under `-m` while its insert's *arguments* contain no `__file__` and no file-derived name \u2014 e.g. one that mutates `sys.path` through a helper function call, `sys.path[0:0] = [...]`, or `site.addsitedir`. My fix would wrongly accuse it. I measured 0 such scripts in 840 today; one appearing tomorrow refutes the fix, and the repair is to credit those forms explicitly rather than to un-join the conjunction.\n\n**disagreement** Two with your framing. First, as above: you nominate the file-derived-name rule as the suspect and it is not the culprit \u2014 case `C` breaks the predicate with no derived name. Second, **your declared figure \"6 of 837 at HEAD\" is not re-executable by any seat in this dispatch.** The sandbox has no `.git`, so the producer refuses:\n\n```\nREFUSING: git cannot list scripts/ at HEAD: fatal: not a git repository\n```\n\nThat refusal is correct behaviour \u2014 `tracked_scripts()` deliberately refuses rather than reporting 0 offenders from an empty list, which is good design. But it means your note about declaring HEAD's figure rather than the working tree's solved a validator problem while leaving the figure unverifiable *here*. I substituted a recursive glob and said so.\n\n---\n\n## Q2. 0 of 14, upper bound 0.215311\n\n**question** Is that bound evidence for either conclusion?\n\n**verdict** **Neither** \u2014 and the bound is not \"weak evidence\", it is **not evidence at all**: it is a function of `--interval`, a free parameter, computed over a denominator that includes trials in which the event was impossible.\n\n**reasoning** Two instruments. SymPy, symbolically: at k=0 the Wilson upper bound simplifies to exactly `z\u00b2/(n+z\u00b2)`, verified `upper - z\u00b2/(n+z\u00b2) == 0`. Confirmed on an independent kernel \u2014 Wolfram Language (local Wolfram Engine, via `wolframscript`, exit 0, no `Name::tag`, no `$Failed`) returned `0.2153108027376358`, `0.0036109316748686583`, and `0.` for the simplification difference. That form is strictly decreasing in `n`, and `n` is the **poll count**:\n\n```\n  pairs=   14  Wilson 95% upper = 0.215311   <- your 14 pairs\n  pairs=   53  upper = 0.067582   <- the SAME 106 s run at 2.0 s\n  pairs= 1060  upper = 0.003611   <- the SAME 106 s run at 0.1 s\n```\n\nIdentical evidence \u2014 one unchanging pid \u2014 yields any bound you like. This is not hypothetical. I ran your probe against a live pytest for **20 seconds at 1.0 s spacing**:\n\n```\n  pid-set sizes seen                            : [2]\n  consecutive pairs considered                  : 19\n  FULL REPLACEMENTS (both non-empty, no overlap): 0\n  Wilson 95%            : [0.000000, 0.168179]   (mpmath closed form agrees to 2.78e-17)\n```\n\n**A fifth of the observation time produced a tighter bound than yours.** An interval that narrows as you look less is measuring the observer, not the world. (Your `2.78e-17` two-route agreement reproduced exactly; that part of the instrument is sound. Note also pid-set size was **2**, not 1 \u2014 so \"size 1 throughout\" is not an invariant of the setup.)\n\nSecond defect, falsified directly on `classify`:\n\n```\n  alternating matched/empty -- event IMPOSSIBLE in every pair -> (0, 0, 15, 15)\n  alternating case: 0 of 15 pairs, Wilson 95% upper = 0.203883\n```\n\nA full replacement requires both sides non-empty *by definition*, so those 15 pairs could not have contained the event \u2014 and they produce a bound **tighter than the one you declared**. The denominator is not a risk set.\n\nSo: withhold both claims, which is the reading you said you could see and could not refute. I confirm it and strengthen the ground. But one asymmetry survives \u2014 the probe does cut against B209's *premise*, because that premise predicts churn and 0 observed changes is inconsistent with churn *during a single pytest invocation*. That is weak and it is not the same as supporting either seat.\n\n**What would settle it.** The identified denominator is **observed set-change events**, not polls, and it must be collected where churn is possible: a real 34-minute board that spawns a pytest child per guard file, not one invocation. With 0 events observed you need `n \u2265 z\u00b2(1\u2212\u03b5)/\u03b5` change events: **35** for \u03b5=0.10, **73** for \u03b5=0.05, **381** for \u03b5=0.01. There are 971 files in `bench/tests/`, so if a board really replaces its child per guard file, one board supplies hundreds of change events and \u03b5=0.01 is reachable in a single board \u2014 which is exactly why observing one board is the measurement, and 14 polls of a pytest never will be.\n\n**fix** `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` (post-fix sha256 `31d53477cc6b7068cc5b6d`). `classify` now also returns `opportunities` \u2014 pairs where the set actually changed with both sides non-empty. With 0 opportunities the script prints **UNIDENTIFIED** and reports no bound, showing the poll-pair figure explicitly as a diagnostic of the polling rate. **Every previously printed count is still printed**; only the claim attached to them is corrected. I also split out a branch that would otherwise have printed \"Nothing matched the gate's patterns\" when processes *had* matched \u2014 found in my own fix on pass 5, and it now says the honest thing: corroborates neither seat.\n\n**falsifier** `scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py`. Executed:\n\n```\n  A/C unchanging set, 15 polls        -> classify = (0, 14, 0, 14, 0)\n  C   same set, 10x the polls         -> classify = (0, 149, 0, 149, 0)\n  B   alternating matched/empty       -> classify = (0, 0, 15, 15, 0)\n  D   a genuine full replacement      -> classify = (1, 0, 0, 1, 1)\n  E   z^2/(n+z^2) at n=14             -> 0.215311 (expected 0.215311)\nexit=0\n```\n\nPoll-pairs go **14 \u2192 149** under 10\u00d7 polling while opportunities stay **0**: the invariance is the whole point. Case D is the anti-vacuity arm \u2014 the fix cannot pass by reporting 0 for everything. Differential: `DEFECT PRESENT exit=1 FALSIFIED-token=True -> FAIL`, `DEFECT ABSENT exit=0 -> PASS`, `restored byte-for-byte: True`, **DISCRIMINATES**.\n\n**what_would_refute_me** One observed full replacement on a real board promotes the scenario from unrealised to demonstrated and makes cc2's weight the right one. Separately, if the board genuinely runs one long-lived pytest rather than a child per guard file, then B209's premise is simply false and the whole disagreement dissolves \u2014 which would make my \"re-measure the premise\" the wrong recommendation and \"withdraw B209\" the right one.\n\n**disagreement** I reject \"an upper bound that cannot exclude a rate of 0.215311 is weak evidence.\" It is not on the evidence axis at all. Calling it weak invites the repair \"take more samples\", which here makes the bound *tighter without adding information* \u2014 the worst possible outcome, because it manufactures false confidence from the same unchanging pid. I also disagree with your framing that the probe \"polls the gate's own `_RUNNER_PATTERNS`, read out of the hook rather than typed\" as a sufficiency argument: reading the matcher from the hook guarantees you measure the right *population*, and says nothing about whether the *denominator* is a risk set. It was not.\n\n---\n\n## Q3. Was the testing of the adopted proposals sufficient?\n\n**question** What did the testing not cover; is 1-of-6 the weak point?\n\n**verdict** **Yes, 1-of-6 is the weak point** \u2014 \"0 failures in 1 trial\" bounds the per-harness failure rate at \u22640.793, consistent with up to 4.76 of the 6 being broken \u2014 but the binomial framing understates the fix's *real* strength and misplaces the risk.\n\n**reasoning** Same closed form, `z\u00b2/(n+z\u00b2)`:\n\n```\n  0 failures in 1 trial -> Wilson 95% upper = 0.793451\n  i.e. consistent with up to 4.76 of the 6 repaired harnesses being broken.\n  0 failures in 6 trials -> upper = 0.390334  (up to 2.34 of 6)\n```\n\nSo as an independent-trials argument, running 1 of 6 is near-vacuous. But the 6 are **not independent trials**: you confirmed first that all 6 share one diagnosis (`from pathlib import Path`) and applied one fix. For a common-cause defect with a common-cause fix, one completion run is far more informative than `n=1` implies \u2014 it exercises the shared mechanism end-to-end. The residual risk is not \"do 5 independent things work\" but \"does the shared fix interact with per-harness differences\", and *that* risk is invisible to both compilation and `--help`.\n\nConcretely, what compilation and `--help` do **not** cover, and why it matters here: `--help` exits inside the guard, before the restore path is ever entered; compilation proves the import parses. The fix was to an *import*, and the thing that import feeds is the mutate-and-restore cycle. Your 1 completion run verified restore by SHA-256 at 7 of 7 mutations RED \u2014 that is the right observable, and it is the one the other 5 have no evidence for. Note your own third recorded vacuity case was precisely a *restore* observable reading wrong. The gap is therefore in the highest-risk place, and 5 completion runs are cheap against the claim they support. Run them.\n\n**fix** NONE. This is an assessment of your testing, not a defect in an artefact; inventing a file here would be an addition nothing reaches. The action is to execute the other 5 harnesses to completion with SHA-256 restore verification \u2014 the instrument already exists and is already proven on 1 of 6.\n\n**falsifier** Not applicable, and I will say why rather than force one: the proposition is \"5 harnesses are untested\", which is a fact about what was *run*, not about code state. A differential falsifier needs a defect to toggle, and there is no defect here to toggle \u2014 your `--defect-file` arm would be byte-identical to the target and the tool would correctly refuse as vacuous. The arithmetic above is the evidence, and it is re-executable.\n\n**what_would_refute_me** All 5 remaining harnesses running to completion with verified restore. That converts my finding to no-change-needed and moves the bound to 0.390334 \u2014 still not tight, but the right 6 of 6.\n\n**disagreement** Your question offers 1-of-6 as the candidate weak point and it is, but you framed it as a *sampling* shortfall. It is really a **coverage** shortfall: the 5 unrun harnesses are not under-sampled, they are untested on the only observable that matters, while being fully tested on two that cannot fail informatively. `--help` exiting cleanly is close to guaranteed once the guard parses, so reporting it for 5 of 6 adds confidence that was never at risk \u2014 the same shape as Q2's tightening bound.\n\n---\n\n## Q4. Ledgered advisory line versus refusal\n\n**question** What measurement decides between them?\n\n**verdict** Decidable, and the predicate is cheap \u2014 but **this batch is not a data point for it**, and 1 commit could not settle it even if it were.\n\n**reasoning** The hook-evaluable predicate: on every commit, append `{commit_sha, rounds_since_head, honoured: bool}` where `honoured` is true iff `rounds_since_head > 0` *or* the commit was abandoned. That is a mechanical record, needs no judgement, and yields `lapse_rate = lapses / commits`. The decision rule is a comparison of two measured quantities, not a preference: **refusal dominates iff `lapse_rate \u00d7 cost(unreviewed commit) > block_rate \u00d7 cost(false block)`**, where `block_rate` is the fraction of commits where the line fires and a round genuinely was not owed. Both terms come out of the same ledger.\n\nThe distinguishing outcome is sharp. Advisory-plus-ledger and refusal differ **only** in the cases where the line fires: so ledger a stretch of commits and read the `honoured` column. If `lapse_rate \u2192 0` once the column exists \u2014 i.e. being *visible* is what fixed it \u2014 advisory suffices and refusal is strictly more surface for no gain. If lapses persist at a visible rate, observation is not sufficient and refusal is the measured answer. cc2's point that \"unrecorded report was the defect rather than report itself\" is testable exactly here, and that is the right reframing.\n\nWhat settles it quantitatively:\n\n```\n  0 lapses in 1 commit -> Wilson 95% upper on the lapse rate = 0.793451\n  prior round measured 7 of 10 lapses = 0.700, which is INSIDE [0, 0.793].\n  commits needed, 0 lapses, to push the upper bound below:\n    e=0.30  -> 9 commits        e=0.10  -> 35 commits\n```\n\nSo ~9 ledgered commits distinguish \"fixed\" from \"still lapsing at the prior rate\", and ~35 give a usefully tight bound.\n\n**fix** NONE. A ledger is a real addition, but writing one here would be an addition nothing reaches \u2014 it needs to be wired into the commit hook and executed by a test, and I have neither the hook's dispatch path measured nor a round's worth of commits to validate it against. Per the additive standard I decline to ship an unreached entry point; this project has done that 11 times. The measurement above is what Q4 asked for.\n\n**what_would_refute_me** A cost asymmetry large enough to swamp the rates \u2014 if one unreviewed commit can void an experiment's headline result the way Exp 48's falsifier did, then `cost(unreviewed commit)` is so far above `cost(false block)` that refusal wins at *any* non-zero lapse rate and the ledger measurement is moot. That is a question about the cost terms, and I have not measured them; if the founder can name one voided experiment per unreviewed commit, refuse and stop measuring.\n\n**disagreement** Strongest disagreement in this brief: **\"this batch is itself 1 data point\" is wrong, and it is wrong in the direction that favours the line.** The line reported and the board was killed \u2014 but it was killed by *a human reading the line and choosing to act*, after the preceding round had just measured 7 of 10 lapses and made that lapse salient. That is a data point about human attention under fresh scrutiny, not about the reporting line's efficacy. The advisory condition it would need to test is \"the line reports and nobody is primed to care\", which is the condition under which all 7 lapses happened and is exactly the condition this batch does not instantiate. Counting it as evidence for advisory is the Hawthorne case, and it is the same error as Q2: a measurement taken in a regime where the failure could not occur.\n\n---\n\n## Termination\n\n**5 passes.** Pass 1 read the predicate and located the unjoined conjunction. Pass 2 executed the counterexample, fixed it, drove the differential. Pass 3 ran the population diff, found my own glob was top-level-only, and redid it recursively over 840 \u2014 which is also what reconciled your 839. Pass 4 found the `classify` denominator defect and derived the polling-rate artefact. Pass 5 re-read my own probe fix and found the `else` branch printing \"Nothing matched\" when processes had matched; fixed. A sixth pass over both fixed files produced no new above-threshold findings.\n\n**Two above-threshold findings, both with delivered fixes and DISCRIMINATING falsifiers:**\n\n| | file | category |\n|---|---|---|\n| the dash-m proxy never required the insert to carry the file-derived path | `bench/tests/test_help_never_acts_2026-09-11.py` | \u00a710.3 verification-integrity corruption |\n| the full-replacement denominator is poll count, not a risk set | `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` | \u00a710.3 verification-integrity corruption |\n\n**No composability claim is made.** The two fixes touch unrelated artefacts and there is no measurement showing a composed repair beats either alone, so per the founder's 2026-10-02 definition each stands as the single fix. Reporting that they do not interfere would be the weak form his definition excludes, and I am not reporting it.\n\n**Q1's widening was right to be made and wrong as implemented** \u2014 it correctly stopped accusing two correct scripts, and the brief's instinct to distrust it was correct while its diagnosis of *which half* to distrust was not. The judgement you asked me to be explicit about: the wrong widening carries a severity at the critical level on the inherited application scale, but has caused **zero** realised loss in the current tree, and I would not have found it by reading \u2014 case `C` only became visible once the arguments of the insert were examined separately from the names beside it.",
+  "t_start_epoch": 1795453844.3163378,
+  "t_end_epoch": 1795454581.583573,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo",
+      "built": false
+    }
+  ]
+}

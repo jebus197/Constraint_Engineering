@@ -1,0 +1,47 @@
+panel (0 of 2 seats paid): the suite record is NOT green (exit code 1, 18 failed), but this round has 0 paid seats, so there is no spend to protect. Proceeding.
+=== maths panel — 2 dispatched seats + CC1 ===
+    PAID seats:   (brief 10,499 chars, about 2,624 tokens each)
+    free seats: cc2, fable (Max subscription)
+    star topology: BLIND round; 0 answered sibling(s) on the same brief, all declared
+    joint-round debt: 0 owed across 5 recorded round(s)
+    artefact stamp: 6 named artefact(s) stamped into the brief at dispatch; the seats receive the stamped text (11,658 chars)
+    topology recorded: blind round, blind_of=none, joint_of=none, stagger=20s -> topology.json
+    aliveness probe: asking 2 seat(s) to print Ready!, up to 3 attempts each, serialised
+[17:10:01]   [claude-cli:opus] done (4.2s, 6 chars)
+[17:10:04]   [claude-cli:fable] done (2.8s, 6 chars)
+      cc2: ALIVE  (4.16s, answered on attempt 1 of 3)
+      fable: ALIVE  (2.76s, answered on attempt 1 of 3)
+    cc2 confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo
+    fable confined to its own copy: /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo
+    fable: staggered start in 20s
+[17:10:44] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo
+[17:10:44] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo
+[17:10:44]   [claude-cli:opus] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo
+[17:11:04] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo
+[17:11:04] [panel] working directory: /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo
+[17:11:04]   [claude-cli:fable] attempt 1 in /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo
+[17:12:17]   [claude-cli:opus] attempt 1: 10 tool call(s) at 93s
+[17:13:10]   [claude-cli:fable] attempt 1: 10 tool call(s) at 126s
+[17:14:00]   [claude-cli:opus] attempt 1: 20 tool call(s) at 197s
+[17:15:16]   [claude-cli:fable] attempt 1: 20 tool call(s) at 252s
+[17:17:28]   [claude-cli:fable] 24 tool call(s) this attempt, 24 in total
+[17:17:28]   [claude-cli:fable] done (384.1s, 16536 chars)
+    preserved the prior attempt as fable.tools.attempt1.json.txt (a re-dispatch must not erase what it replaces)
+  [fable] ok=True chars=16536 tools=24 384.1s
+[17:18:18]   [claude-cli:opus] attempt 1: 30 tool call(s) at 454s
+[17:23:01]   [claude-cli:opus] 37 tool call(s) this attempt, 37 in total
+[17:23:01]   [claude-cli:opus] done (737.3s, 21699 chars)
+    preserved the prior attempt as cc2.tools.attempt1.json.txt (a re-dispatch must not erase what it replaces)
+  [cc2] ok=True chars=21699 tools=37 737.3s
+[17:23:01] [panel] working directory: (inherited — repo)
+    seats proposed edits to 8 file(s) IN THE COPY -> /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/panel_b12_20261123T170728Z/seat_proposals.diff (untested; not applied)
+    canonical tree unchanged (7900 tracked files re-hashed)
+    harvest preserved 2 seat-written file(s) to experimental_notes/seat_evidence/panel_b12_20261123T170728Z/cc2 -- they exist nowhere else a clone can reach
+    harvested 395591 byte(s) of seat-written files into /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/panel_b12_20261123T170728Z/sandbox_harvest
+    2 sandbox copy/copies KEPT, not deleted. They are listed in /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/panel_b12_20261123T170728Z/sandbox_manifest.json.
+    To remove them when you are finished with them: re-run with PANEL_REAP_SANDBOXES=1, or rm -rf /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo
+
+  2/2 responded. Logs: /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/logs/panel_b12_20261123T170728Z
+  completion barrier: round wall 737.3s, slowest cc2, total idle 333.1s (0.2259 of available seat-time), saving against serial 0.3426
+    fable: start +20.0s, ran 384.1s, then idle 333.1s waiting on the round
+    cc2: start +0.0s, ran 737.3s, then idle 0.0s waiting on the round

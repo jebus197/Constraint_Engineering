@@ -94,4 +94,15 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # A `--help` MUST NOT run: this script WRITES, mutating a tracked file
+    # in place and restoring it from the bytes it read first.
+    # The imports are LOCAL to this guard so it needs nothing of the host
+    # file: a subject using `from pathlib import Path` binds `Path`, not
+    # `pathlib`, and used to be declined for it.
+    import pathlib as _hp_pathlib
+    import sys as _hp_sys
+    _hp_sys.path.insert(
+        0, str(_hp_pathlib.Path(__file__).resolve().parent))
+    from _cli_help import answer_help
+    answer_help(__doc__, __file__)
     sys.exit(main())

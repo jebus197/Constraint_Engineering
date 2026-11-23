@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 23 November 2026 02:15 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 23 November 2026 18:47 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -27,9 +27,27 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
-## SESSION STATE — 2026-11-23 01:28 GMT (READ THIS FIRST)
+## SESSION STATE — 2026-11-23 18:47 GMT (READ THIS FIRST)
 
-**SESSION STATE — 2026-11-23 01:28 GMT (READ THIS FIRST).** Batches 1 through 4 of the autonomy handover are ALL LANDED. HEAD is `d99c6360` on `sim/shakedown-2026-09-29`; the tree carries only the 2 files `sv` regenerates. Read HEAD live with `git log --oneline -1`.
+**SESSION STATE — 2026-11-23 18:47 GMT (READ THIS FIRST).** Batch 11 LANDED as `40b00160` on `sim/shakedown-2026-09-29`. **Batch 12 is STAGED, PANEL-REVIEWED, and NOT YET COMMITTED** — its first board refused at 47:55 on 5 failures, all 5 since repaired. Read HEAD live with `git log --oneline -1`.
+
+**WHAT BATCH 12 CONTAINS.** Entry B212, the help-flag repair that regressed, is CLOSED at **0 of 839 scripts on the working tree under both direct invocation and `python3 -m`** — where the September repair had it. Entry B215 records the joint panel round. 2 panel proposals were adopted after being tested: cc2's fixer change, whose diagnosis that all 6 declined files use `from pathlib import Path` was confirmed before adoption, and cc2's DIFFERENTIAL FALSIFIER rule, now `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py`.
+
+**★ THE PANEL REFUTED 2 THINGS I BUILT IN THE SAME BATCH, AND BOTH CORRECTIONS ARE IN THE RECORD RATHER THAN QUIETLY APPLIED.** (1) My widening of the dash-m predicate asked its 2 conditions SEPARATELY of the same node bag, so a CONSTANT-path insert with an unrelated file-derived name beside it was credited — reproduced in a temporary directory, the predicate said safe and the script WROTE A FILE. The condition is now joined. (2) A Wilson bound of mine is WITHDRAWN as not-evidence: at 0 events the upper bound is exactly `z^2/(n + z^2)`, proved in SymPy with statsmodels agreeing at n = 9, 14, 69 and 200 to machine precision, so with n the POLL COUNT the width was set by `--interval`. The same unchanging process gives 69 pairs and 0.052737 at 0.25 s spacing against 9 pairs and 0.299145 at 2.0 s. The denominator is now OPPORTUNITIES and prints no bound when there are none.
+
+**★ THE BOARD-COST QUESTION IS LIVE AND HIS RULING IS PARTLY GIVEN.** An external advisory claimed the board exceeds 3 hours and should be reserved for milestones. **Measured over 111 determinate ledger runs: mean 34.07 min, median 34.10 min, LONGEST EVER 52.4 min, and 0 of 111 over 3 hours.** The 3.13 h figure is the FULL SUITE, 18,419 tests, a different instrument. **The advisory conflated the 2 and must not be adopted on that basis.** What IS true: on 2026-11-23, board wall-clock was 11.03 h inside a 17.53 h span = 0.629305 of elapsed time; and the growth is real at **1.6484 min/day, p = 4.520388e-21, R^2 = 0.5585**, on scipy and statsmodels agreeing to 1.33e-15. **IT DECOMPOSES EXACTLY:** 4.0172x total = guard COUNT 126 to 329 = 2.6111x times PER-GUARD cost 0.093386 to 0.143675 min = 1.5385x, identity confirmed. **Guard count has been FLAT at 329 since 2026-11-22**, so the live term is per-guard cost. **The leading cause hypothesis was MEASURED AND REFUTED** — caching the `scripts/` walk saves 10.25 s = 0.0036 of a board. The durations feed shows the top 25 tests are only 0.2699 of the board, so there is no single hotspot: existing guard FILES are gaining tests, which is what doing the work properly produces.
+
+**HIS RULING SO FAR, 2026-11-23:** a full board runs BEFORE each experiment, **and that policy holds only through the remaining DEVELOPMENT stages** — it would be impractical after release. He has NOT adopted the advisory and has asked that it go to the free panel first.
+
+**THE BOARD AND SUITE FIGURES, WITH THEIR PROVENANCE SO A READER CAN RE-RUN THEM.** Batch 11's landing board returned **5532 passed, 0 failed, 23 skipped, 2 xfailed in 3054.65 s (50:54)**, and batch 12's FIRST board returned **5543 passed, 5 failed in 2875.78 s (47:55)** before all 5 were repaired. Both are BOARD figures — the gate's own `GUARDS` list of 329 guards, which is about a 6th of `bench/tests/` entire, not the suite. Re-derive the deciding subset with `python3 scripts/which_guards_does_this_commit_risk_2026-11-22.py --paths-only` and run it with `python3 -m pytest -q -p no:cacheprovider` against those paths; the per-board cost history is read by `scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py`. **THE LAST FULL-SUITE MEASUREMENT remains the one entry B165 names: 18,385 passed, 18 failed, 49 skipped, 2 xfailed, 1 error in 11,273.03 s = 3 h 07 m 53 s at `7e1cbb0b`**, recorded through `scripts/suite_record.py record --clean` on a tree verified at 0 uncommitted paths. It is CITED, NOT RE-RUN here.
+
+**RESUME POINTER.** 1. Land batch 12: pre-board the 44 derived guards, then commit and push — this commit doubles as the pre-panel `sv` he asked for. 2. Dispatch the board-policy round; its brief is drafted and validated at `brief_board_policy_DRAFT.md` in the session scratchpad and needs its figures declared against `scripts/why_is_the_board_getting_slower_DRAFT.py`, also drafted there. 3. `sv` again after the round. 4. Write the board-policy conclusion into `.claude/CLAUDE.md`. 5. Then B209, whose churn premise is now CONTRADICTED by `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` and which must be re-measured against a real board before either candidate repair is chosen.
+
+**THE TICKET-STORE DISCIPLINE IS NOW IN `.claude/CLAUDE.md`** with the batch definition (10 to 12 items, median 11.0 and 10.5 on 2 corpora) and the panel protocol, because he asked for it where a compaction cannot lose it. Measured before writing: `pf` holds 2885 of 3602 tickets, 1 of 9 kinds used on 2026-11-23, `frx` has 1 ticket in the whole store, and **3046 of 3602 = 0.845641 carry no issue id**, Wilson [0.833475, 0.857071].
+
+## SESSION STATE — 2026-11-23 01:28 GMT [HISTORICAL — the block above supersedes it]
+
+**SESSION STATE — 2026-11-23 01:28 GMT [HISTORICAL].** Batches 1 through 4 of the autonomy handover are ALL LANDED. HEAD is `d99c6360` on `sim/shakedown-2026-09-29`; the tree carries only the 2 files `sv` regenerates. Read HEAD live with `git log --oneline -1`.
 
 **THE SUITE FIGURES, WITH THEIR PROVENANCE.** Batch 4's landing board ran the gate's own `GUARDS` list and returned **5495 passed, 0 failed, 24 skipped, 2 xfailed in 2919.63 s (48:39)**; batch 3's returned **5491 passed, 0 failed, 22 skipped, 2 xfailed**. Both are BOARD figures, which are about a 6th of the suite -- the gate's list, not `bench/tests/` entire. **The last FULL-SUITE measurement is still the stale one entry B165 names: 17,760 passed, 32 failed, 40 skipped in 11,825.11 s at `6304f771` on 2026-11-14, from `python3 -m pytest bench/tests/ -q --netguard-strict`, measured on a tree that was NOT clean.** It is CITED, NOT RE-RUN, and the gap between a board and the suite is exactly what B165 exists to close.
 

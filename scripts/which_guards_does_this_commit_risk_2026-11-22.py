@@ -149,7 +149,13 @@ def guards_naming(repo: pathlib.Path, code: list[str]) -> set[str]:
     return hit
 
 
-def main() -> int:
+def main(argv=None) -> int:
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--paths-only", action="store_true",
+                    help="print the deciding guards 1 per line and nothing "
+                         "else, for a caller that must not scrape prose")
+    _args = ap.parse_args(argv)
     files = staged(REPO)
     code = behaviour_changing(files)
     if not code:
@@ -162,6 +168,23 @@ def main() -> int:
     deciding = sorted((naming & board) - CONTAINS_THE_BOARD)
     advisory = sorted(naming - board - CONTAINS_THE_BOARD)
     skipped = sorted(naming & CONTAINS_THE_BOARD)
+
+    #: ★ MACHINE-READABLE MODE, SHARING THE NARRATIVE'S OWN `deciding`
+    #: EXPRESSION -- including the `CONTAINS_THE_BOARD` exclusion. A caller that
+    #: derives the set by hand misses that exclusion and may run guards which
+    #: make a real commit inside themselves, nesting a board inside a
+    #: pre-flight. Measured on this commit the exclusion changed nothing, 35
+    #: against 35, so the hazard is latent here rather than realised -- which is
+    #: exactly when it is cheap to close.
+    #:
+    #: IT EXISTS BECAUSE SCRAPING THE PROSE WENT WRONG ON 2026-11-23: the
+    #: printed command was truncated at 4 paths with an ellipsis, a regex over
+    #: the output returned 8 of 44 guards, and the pre-board reported itself
+    #: complete having run 18 per cent of the set.
+    if _args.paths_only:
+        for g in deciding:
+            print(g)
+        return 0
 
     print("=" * 74)
     print("WHICH GUARDS DOES THIS COMMIT RISK?")
@@ -185,10 +208,20 @@ def main() -> int:
     for g in advisory:
         print(f"    {g}")
 
+    #: ★ THE WHOLE COMMAND, NOT ITS FIRST 4 PATHS. Until 2026-11-23 this
+    #: printed `deciding[:4]` followed by a literal `...`, so the command it
+    #: told the operator to run was UNRUNNABLE whenever the deciding set
+    #: exceeded 4 -- which it always does. Worse, it invited exactly the error
+    #: it caused on 2026-11-23: the printed text was scraped with a regex, the
+    #: ellipsis swallowed the rest, and a pre-board ran **8 of 44** guards while
+    #: reporting itself complete. An 82 per cent miss, presented as a pass.
     print("\n  run the deciding set with:")
     print("    python3 -m pytest -q -p no:cacheprovider \\\n      "
-          + " \\\n      ".join(deciding[:4])
-          + (" \\\n      ..." if len(deciding) > 4 else ""))
+          + " \\\n      ".join(deciding))
+    print(f"\n  ({len(deciding)} guard(s) above -- the FULL command, not a "
+          f"sample. Use --paths-only to")
+    print("   get them 1 per line for a script, which is safer than scraping "
+          "this text.)")
     return 0
 
 
@@ -196,7 +229,10 @@ if __name__ == "__main__":
     sys.path.insert(0, str(REPO / "scripts"))
     try:
         from _cli_help import answer_help
-        answer_help(__doc__, __file__)
+        #: `takes_no_arguments=False` because this script now has
+        #: `--paths-only`. B214: the default refuses a caller's own flags with
+        #: exit 2 before argparse is reached, making the flag unreachable.
+        answer_help(__doc__, __file__, takes_no_arguments=False)
     except ImportError:
         pass
     sys.exit(main())

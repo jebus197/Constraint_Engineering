@@ -1,0 +1,660 @@
+### cc2:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-23 17:23:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/.cdsfl_deny_canonical_writes.sb	2026-11-23 17:10:44
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### cc2:attempt-1:bench/tests/test_help_never_acts_2026-09-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_help_never_acts_2026-09-11.py	2026-11-23 16:46:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/bench/tests/test_help_never_acts_2026-09-11.py	2026-11-23 17:14:16
+@@ -222,15 +222,31 @@
+             #: PRECEDING SIBLINGS COUNT, not only the try's own prefix.
+             before = ([n for s in seq[:idx] for n in ast.walk(s)]
+                       + [n for s in node.body[:at] for n in ast.walk(s)])
+-            inserts = any(isinstance(n, ast.Call)
+-                          and getattr(n.func, "attr", None) == "insert"
+-                          and getattr(getattr(n.func, "value", None),
+-                                      "attr", None) == "path"
+-                          for n in before)
+-            uses_file = any(isinstance(n, ast.Name)
+-                            and (n.id == "__file__" or n.id in derived)
+-                            for n in before)
+-            if inserts and uses_file:
++            #: JOINED 2026-11-23 (panel batch 12, seat fable). The 2 conditions
++            #: were previously asked SEPARATELY of the same bag of nodes -- "is
++            #: there a sys.path insert anywhere before the import" AND "is there
++            #: a file-derived name anywhere before the import" -- and nothing
++            #: required them to be the SAME expression. That credits a script
++            #: whose insert takes a CONSTANT path while a file-derived name sits
++            #: beside it for an unrelated reason. DEMONSTRATED BY EXECUTION, not
++            #: argued: such a script run as `python3 -m scripts.x --help`
++            #: swallows the ImportError and WRITES a file. The file-derived value
++            #: must be an ARGUMENT OF THE INSERT, which is the only reading under
++            #: which the insert says anything about the script's own location.
++            #: STILL A STATIC PROXY: `sys.path.insert(0, str(REPO / "vendor"))`
++            #: is file-derived and is credited though it is not the script's own
++            #: directory. That residual is unchanged by this edit.
++            inserts = [n for n in before
++                       if isinstance(n, ast.Call)
++                       and getattr(n.func, "attr", None) == "insert"
++                       and getattr(getattr(n.func, "value", None),
++                                   "attr", None) == "path"]
++            inserts_file_derived = any(
++                any(isinstance(x, ast.Name)
++                    and (x.id == "__file__" or x.id in derived)
++                    for arg in call.args for x in ast.walk(arg))
++                for call in inserts)
++            if inserts_file_derived:
+                 continue
+             for part in (node.body, node.orelse):
+                 for s in part:
+
+### cc2:attempt-1:bench/ticket_store.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/ticket_store.py	2026-11-23 14:53:23
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/bench/ticket_store.py	2026-11-23 17:21:51
+@@ -1500,8 +1500,8 @@
+         deferral, 4 OPEN and 1 UNDECIDED, and **0 UNCONFIRMED rows carry one**,
+         so the widening added exactly the 1 row that was missing.
+         """
+-        return [t for t in self._by_tid.values()
+-                if t.status in LIVE and t.deferred and not t.blocker]
++        return [t for t in self.open_tickets()
++                if t.deferred and not t.blocker]
+ 
+     def blockers(self) -> list["Ticket"]:
+         """Tickets declared to stop all other work. By his definition, rare."""
+
+### cc2:attempt-1:scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py	2026-11-23 16:32:28
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py	2026-11-23 17:20:30
+@@ -30,6 +30,9 @@
+ import sys
+ import time
+ 
++#: z^2 at 95%, for the poll-pair diagnostic printed when no rate is identified.
++Z2 = 1.959963984540054 ** 2
++
+ REPO = pathlib.Path(__file__).resolve().parents[1]
+ GATE = REPO / "hooks" / "cy_monitor_gate.py"
+ 
+@@ -59,12 +62,50 @@
+ 
+ 
+ def classify(polls):
+-    """(full_replacements, identical, other, pairs_considered)."""
+-    full = same = other = pairs = 0
++    """(full_replacements, identical, other, pairs_considered, opportunities).
++
++    ★ `opportunities` ADDED 2026-11-23 (panel batch 12, seat fable), BECAUSE
++    `pairs_considered` IS NOT A RISK SET AND THE INTERVAL BUILT ON IT IS NOT
++    IDENTIFIED BY THE DATA.
++
++    2 defects, both demonstrated by execution rather than argued:
++
++    1. A FULL REPLACEMENT CANNOT OCCUR IN A PAIR WITH AN EMPTY SIDE, yet such
++       pairs entered the denominator. `classify([{1}, set()] * 8)` returns 15
++       pairs and 0 full replacements, giving a Wilson upper bound of 0.203883 --
++       TIGHTER than the figure this script was written to report -- from a
++       sequence in which the event was impossible in every single pair.
++
++    2. THE BOUND IS A FUNCTION OF `--interval`, A FREE PARAMETER, NOT OF THE
++       WORLD. At k=0 the Wilson upper bound is exactly z^2/(n + z^2) (derived
++       with SymPy, confirmed on an independent kernel), so it falls monotonically
++       as n rises. One unchanging pid polled over the same 106 s yields 14 pairs
++       at 2.0 s -> 0.215311, and 1060 pairs at 0.1 s -> 0.003611, on IDENTICAL
++       evidence. Measured, not hypothesised: a 20 s run at 1.0 s produced 19
++       pairs and an upper bound of 0.168179 -- a TIGHTER bound from a FIFTH of
++       the observation. An interval that narrows as you observe less is not
++       measuring anything.
++
++    `opportunities` counts consecutive pairs in which the matched set ACTUALLY
++    CHANGED and both sides are non-empty: the occasions on which a full
++    replacement was a possible outcome. With 0 opportunities no rate is
++    identified at all, which is the honest reading of the observed data.
++
++    RESIDUAL, STATED RATHER THAN HIDDEN: full/opportunities is still not fully
++    interval-invariant, because slower polling aggregates several changes into
++    one observed change and so makes a full replacement likelier per change. It
++    is a denominator of events rather than of non-events, which is strictly
++    better, not perfect.
++
++    NOTHING IS REMOVED: every previously printed count is still printed.
++    """
++    full = same = other = pairs = opportunities = 0
+     prev = None
+     for s in polls:
+         if prev is not None and (prev or s):
+             pairs += 1
++            if prev and s and prev != s:
++                opportunities += 1
+             if prev and s and not (prev & s):
+                 full += 1
+             elif prev == s:
+@@ -72,7 +113,7 @@
+             else:
+                 other += 1
+         prev = s
+-    return full, same, other, pairs
++    return full, same, other, pairs, opportunities
+ 
+ 
+ def main(argv=None) -> int:
+@@ -96,7 +137,7 @@
+         polls.append(observe(pats))
+         time.sleep(a.interval)
+ 
+-    full, same, other, pairs = classify(polls)
++    full, same, other, pairs, opportunities = classify(polls)
+     sizes = sorted({len(s) for s in polls})
+     print(f"  polls taken                                   : {len(polls)}")
+     print(f"  pid-set sizes seen                            : {sizes}")
+@@ -104,27 +145,42 @@
+     print(f"  FULL REPLACEMENTS (both non-empty, no overlap): {full}")
+     print(f"  identical pairs                               : {same}")
+     print(f"  partial / one side empty                      : {other}")
++    print(f"  OPPORTUNITIES (set actually changed, both non-empty): {opportunities}")
+ 
+-    if pairs:
++    if pairs and not opportunities:
++        #: ★ THE REFUSAL, ADDED 2026-11-23. A poll-pair interval is reported as
++        #: a DIAGNOSTIC of the polling rate and explicitly NOT as a rate in the
++        #: world, because 0 opportunities identifies no rate. The counts above
++        #: are unchanged; only the claim attached to them is corrected.
++        print(f"\n  full-replacement rate : UNIDENTIFIED.")
++        print(f"  The matched set never changed in any of the {pairs} pairs, so a")
++        print(f"  full replacement was never a possible outcome and there is no")
++        print(f"  denominator. A Wilson interval on {pairs} poll-pairs would be")
++        print(f"  z^2/(n+z^2) = {Z2 / (pairs + Z2):.6f}, which is a function of")
++        print(f"  --interval and not of the world: poll the SAME unchanging run")
++        print(f"  10x faster and it reads {Z2 / (10 * pairs + Z2):.6f} on identical evidence.")
++        print(f"  NO BOUND IS REPORTED. Observe a real board, where the set churns.")
++    elif pairs:
+         from statsmodels.stats.proportion import proportion_confint
+         import mpmath as mp
+         mp.mp.dps = 40
+-        lo, hi = proportion_confint(full, pairs, method="wilson")
++        lo, hi = proportion_confint(full, opportunities, method="wilson")
+         # route 2: the closed form, independent of statsmodels
+         z = mp.mpf("1.959963984540054235524594430520551527955")
+-        n, k = mp.mpf(pairs), mp.mpf(full)
++        n, k = mp.mpf(opportunities), mp.mpf(full)
+         ph = k / n
+         den = 1 + z**2 / n
+         ctr = (ph + z**2 / (2 * n)) / den
+         hw = (z / den) * mp.sqrt(ph * (1 - ph) / n + z**2 / (4 * n**2))
+         d = max(abs(float(ctr - hw) - lo), abs(float(ctr + hw) - hi))
+-        print(f"\n  full-replacement rate : {full} of {pairs} = {full/pairs:.6f}")
++        print(f"\n  full-replacement rate : {full} of {opportunities} OPPORTUNITIES "
++              f"= {full/opportunities:.6f}")
+         print(f"  Wilson 95%            : [{lo:.6f}, {hi:.6f}]"
+               f"   (mpmath closed form agrees to {d:.2e})")
+         assert d < 1e-9, f"the 2 Wilson routes disagree by {d}"
+ 
+     print("\n  WHAT THIS BEARS ON.")
+-    if pairs and full == 0:
++    if opportunities and full == 0:
+         print("    The scenario the 2 seats weigh differently -- cc2's S3 and")
+         print("    fable's R1, which are the same scenario -- did NOT occur in")
+         print("    any observed pair. That CORROBORATES fable's 'constructed,")
+@@ -135,10 +191,23 @@
+         print("    per guard file. A stable single pid across every pair is not")
+         print("    what that premise predicts, so the premise needs re-measuring")
+         print("    against a real board before B209's repair is chosen.")
+-    elif pairs:
++    elif opportunities:
+         print("    A full replacement WAS observed, which promotes the disputed")
+         print("    scenario from constructed to demonstrated and strengthens the")
+         print("    case for cc2's composed fix.")
++    elif pairs:
++        #: ★ SPLIT OUT 2026-11-23. This case -- processes matched, but the set
++        #: never changed -- used to print "nothing matched", which was false,
++        #: and used to be read as corroboration, which it cannot be.
++        print("    Processes DID match, but the matched set never changed, so")
++        print("    the disputed scenario was never PUT AT RISK of occurring.")
++        print("    THIS CORROBORATES NEITHER SEAT. It does not support fable's")
++        print("    'none observed', because a non-occurrence in 0 opportunities")
++        print("    is not an observation; and it does not support cc2's weight")
++        print("    either. It DOES cut against entry B209's own premise, which")
++        print("    predicts the set churns as a board replaces its pytest child")
++        print("    per guard file -- so that premise is the thing to re-measure,")
++        print("    against a real board rather than a single pytest invocation.")
+     else:
+         print("    Nothing matched the gate's patterns while this ran, so the")
+         print("    probe is UNINFORMATIVE -- run it while a suite or board runs.")
+
+### cc2:attempt-1:scripts/the_insert_must_carry_the_file_2026-11-23.py
+--- /dev/null	2026-11-23 17:23:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/scripts/the_insert_must_carry_the_file_2026-11-23.py	2026-11-23 17:13:45
+@@ -0,0 +1,190 @@
++#!/usr/bin/env python3
++"""Does the dash-m proxy require the sys.path insert to CARRY the file-derived path?
++
++DESTINATION `scripts/`. Written 2026-11-23, panel batch 12, Q1, seat fable.
++
++THE DEFECT THIS FALSIFIES. `_help_calls_unreachable_under_dash_m` in
++`bench/tests/test_help_never_acts_2026-09-11.py` was widened on 2026-11-23 to
++credit a `sys.path` insert among the swallowing `try`'s PRECEDING SIBLINGS, and
++to reach `__file__` through a module-level name. The widening asked its 2
++conditions SEPARATELY of the same bag of statements:
++
++    inserts   = "a sys.path.insert call appears before the import"
++    uses_file = "a file-derived name appears before the import"
++
++Nothing required them to be the SAME expression. So a script whose insert takes
++a CONSTANT path, with a file-derived name beside it for an unrelated reason, is
++credited as answering `--help` under `python3 -m` -- and it does not. Run that
++script as `python3 -m scripts.x --help` and its ordinary work runs and WRITES.
++
++The repository's own discrimination case
++`test_a_file_derived_name_is_required_not_just_any_insert` does not catch this:
++it builds its constant-path variant by REPLACING the `__file__` assignment, so
++`__file__` vanishes from the whole module and `uses_file` is False for a reason
++the real shape does not share.
++
++WHAT THIS ASSERTS. It imports the REAL predicate from the REAL test module -- no
++retyped copy -- and asserts that 3 constant-path shapes are REFUSED while the 4
++genuinely-repaired shapes, including the 2 scripts the widening was written for,
++are still CREDITED. It raises AssertionError when the defect is present.
++
++IT IS DIFFERENTIAL BY CONSTRUCTION. Both directions are asserted here, so the
++check cannot pass by refusing everything -- and it is additionally driven
++through `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py`, which
++runs it against the pre-widening-fix bytes and the fixed bytes and requires the
++2 verdicts to disagree.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++MATCHERS = REPO / "bench" / "tests" / "test_help_never_acts_2026-09-11.py"
++
++#: A file-derived name used for something OTHER than the insert. The insert
++#: itself takes a constant, so `-m` still cannot import `_cli_help`.
++CONSTANT_INSERT_DERIVED_NAME_BESIDE = (
++    "import sys, pathlib\n"
++    "HERE = pathlib.Path(__file__).resolve().parent\n"
++    "def main():\n"
++    "    open('x','w').write('y')\n"
++    "    return 0\n"
++    "if __name__ == '__main__':\n"
++    "    sys.path.insert(0, '/somewhere/else')\n"
++    "    print(HERE)\n"
++    "    try:\n"
++    "        from _cli_help import answer_help\n"
++    "        answer_help(__doc__, __file__)\n"
++    "    except ImportError:\n"
++    "        pass\n"
++    "    sys.exit(main())\n")
++
++#: The same, with the literal `__file__` beside the insert instead of a name.
++CONSTANT_INSERT_BARE_FILE_BESIDE = (
++    "import sys, pathlib\n"
++    "def main():\n"
++    "    open('x','w').write('y')\n"
++    "    return 0\n"
++    "if __name__ == '__main__':\n"
++    "    sys.path.insert(0, '/somewhere/else')\n"
++    "    print(pathlib.Path(__file__).name)\n"
++    "    try:\n"
++    "        from _cli_help import answer_help\n"
++    "        answer_help(__doc__, __file__)\n"
++    "    except ImportError:\n"
++    "        pass\n"
++    "    sys.exit(main())\n")
++
++#: The insert is INSIDE the try, still constant, with `__file__` used beside it.
++CONSTANT_INSERT_INSIDE_TRY = (
++    "import sys, pathlib\n"
++    "def main():\n"
++    "    open('x','w').write('y')\n"
++    "    return 0\n"
++    "if __name__ == '__main__':\n"
++    "    try:\n"
++    "        sys.path.insert(0, '/somewhere/else')\n"
++    "        print(pathlib.Path(__file__).name)\n"
++    "        from _cli_help import answer_help\n"
++    "        answer_help(__doc__, __file__)\n"
++    "    except ImportError:\n"
++    "        pass\n"
++    "    sys.exit(main())\n")
++
++MUST_REFUSE = {
++    "constant insert, derived name beside it": CONSTANT_INSERT_DERIVED_NAME_BESIDE,
++    "constant insert, bare __file__ beside it": CONSTANT_INSERT_BARE_FILE_BESIDE,
++    "constant insert inside the try": CONSTANT_INSERT_INSIDE_TRY,
++}
++
++#: The insert CARRIES the file-derived path. These are the forms the widening
++#: was written to accept and they must not regress.
++SIBLING_INSERT_VIA_NAME = (
++    "import sys, pathlib\n"
++    "REPO = pathlib.Path(__file__).resolve().parents[1]\n"
++    "def main():\n"
++    "    open('x','w').write('y')\n"
++    "    return 0\n"
++    "if __name__ == '__main__':\n"
++    "    sys.path.insert(0, str(REPO / 'scripts'))\n"
++    "    try:\n"
++    "        from _cli_help import answer_help\n"
++    "        answer_help(__doc__, __file__)\n"
++    "    except ImportError:\n"
++    "        pass\n"
++    "    sys.exit(main())\n")
++
++INSIDE_INSERT_VIA_FILE = (
++    "import sys, pathlib\n"
++    "def main():\n"
++    "    open('x','w').write('y')\n"
++    "    return 0\n"
++    "if __name__ == '__main__':\n"
++    "    try:\n"
++    "        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))\n"
++    "        from _cli_help import answer_help\n"
++    "        answer_help(__doc__, __file__)\n"
++    "    except ImportError:\n"
++    "        pass\n"
++    "    sys.exit(main())\n")
++
++MUST_CREDIT = {
++    "preceding-sibling insert via a file-derived name": SIBLING_INSERT_VIA_NAME,
++    "insert inside the try, built from __file__": INSIDE_INSERT_VIA_FILE,
++}
++
++#: The 2 real scripts the widening was written for, plus the original subject.
++REAL_SUBJECTS = ("the_restore_mutations_2026-11-22.py",
++                 "the_majority_separation_mutations_2026-11-22.py",
++                 "assemble_panel_record.py")
++
++
++def main() -> int:
++    spec = importlib.util.spec_from_file_location("_hna", MATCHERS)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    answers_help = m.answers_help
++
++    bad = []
++    for label, src in MUST_REFUSE.items():
++        got = answers_help(src, under_dash_m=True)
++        print(f"  must REFUSE  {label:42s} -> {got}")
++        if got is not False:
++            bad.append(f"CREDITED a constant-path insert: {label}")
++
++    for label, src in MUST_CREDIT.items():
++        got = answers_help(src, under_dash_m=True)
++        print(f"  must CREDIT  {label:42s} -> {got}")
++        if got is not True:
++            bad.append(f"REFUSED a genuinely repaired guard: {label}")
++
++    for name in REAL_SUBJECTS:
++        p = REPO / "scripts" / name
++        got = answers_help(p.read_text(encoding="utf-8"), under_dash_m=True)
++        print(f"  must CREDIT  {name:42s} -> {got}")
++        if got is not True:
++            bad.append(f"REFUSED a real script that does answer --help: {name}")
++
++    if bad:
++        print("FALSIFIED")
++        raise AssertionError(
++            "the dash-m proxy does not require the sys.path insert to carry the "
++            "file-derived path:\n  " + "\n  ".join(bad))
++    print("\n  the insert must CARRY the file-derived path: upheld in both "
++          "directions.")
++    return 0
++
++
++if __name__ == "__main__":
++    # argparse is not used: this script takes no arguments, so `_cli_help`'s
++    # own contract applies and `answer_help` is the right guard. The insert
++    # CARRIES the file-derived path, which is the property under test here.
++    sys.path.insert(0, str(REPO / "scripts"))
++    try:
++        from _cli_help import answer_help
++        answer_help(__doc__, __file__)
++    except ImportError:
++        pass
++    raise SystemExit(main())
+
+### cc2:attempt-1:scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py
+--- /dev/null	2026-11-23 17:23:01
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5dmmysk2/repo/scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py	2026-11-23 17:20:25
+@@ -0,0 +1,118 @@
++#!/usr/bin/env python3
++"""Is the full-replacement denominator a RISK SET, or just the polling rate?
++
++DESTINATION `scripts/`. Written 2026-11-23, panel batch 12, Q2, seat fable.
++
++THE DEFECT THIS FALSIFIES, in `classify` of
++`scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py`. The reported
++denominator was `pairs_considered`: every consecutive pair of polls with at
++least one non-empty side. 2 consequences, both demonstrated by running it:
++
++  1. A PAIR WITH AN EMPTY SIDE CANNOT CONTAIN A FULL REPLACEMENT, because the
++     definition requires both sides non-empty. Such pairs still entered the
++     denominator, so a sequence in which the event was IMPOSSIBLE throughout
++     yielded a tight bound: `[{1}, set()] * 8` gives 15 pairs, 0 events, Wilson
++     upper 0.203883 -- tighter than the 0.215311 the script reported.
++
++  2. AT k=0 THE WILSON UPPER BOUND IS EXACTLY z^2/(n + z^2), which is strictly
++     decreasing in n. Since n is the number of POLLS, the bound is set by
++     `--interval`, a free parameter, not by the world. The same unchanging
++     single pid over the same 106 s reads 0.215311 at 2.0 s spacing and
++     0.003611 at 0.1 s spacing.
++
++THE FIX UNDER TEST. `classify` now also returns `opportunities`: pairs in which
++the matched set ACTUALLY CHANGED with both sides non-empty -- the occasions on
++which a full replacement was a possible outcome. With 0 opportunities the script
++reports UNIDENTIFIED and prints no bound.
++
++WHAT THIS ASSERTS, importing the REAL module and never a retyped copy:
++  A. `classify` exposes an opportunity count at all.
++  B. A sequence with an empty side in every pair yields 0 opportunities.
++  C. An unchanging set yields 0 opportunities however many polls are taken, so
++     the count does NOT move with the polling rate.
++  D. A genuine full replacement IS counted as an opportunity -- anti-vacuity,
++     so the fix cannot pass by reporting 0 for everything.
++  E. The closed form z^2/(n+z^2) that makes defect 2 true is itself correct.
++"""
++from __future__ import annotations
++
++import importlib.util
++import pathlib
++import sys
++
++REPO = pathlib.Path(__file__).resolve().parents[1]
++PROBE = REPO / "scripts" / "does_the_matched_set_ever_fully_replace_2026-11-23.py"
++Z2 = 1.959963984540054 ** 2
++
++
++def main() -> int:
++    spec = importlib.util.spec_from_file_location("_probe", PROBE)
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++
++    bad = []
++
++    got = m.classify([{1}] * 15)
++    print(f"  A/C unchanging set, 15 polls        -> classify = {got}")
++    if len(got) < 5:
++        bad.append("classify exposes no opportunity count: the denominator is "
++                   "still the poll count, which is set by --interval")
++        print("FALSIFIED")
++        raise AssertionError("\n  ".join(bad))
++
++    if got[4] != 0:
++        bad.append(f"an unchanging set reported {got[4]} opportunities; a set "
++                   f"that never changed never put the event at risk")
++
++    faster = m.classify([{1}] * 150)
++    print(f"  C   same set, 10x the polls         -> classify = {faster}")
++    if faster[4] != got[4]:
++        bad.append(f"the opportunity count moved from {got[4]} to {faster[4]} "
++                   f"when only the polling rate changed, so it is still an "
++                   f"artefact of --interval")
++    if faster[3] <= got[3]:
++        bad.append("the poll-pair count did NOT grow with the polling rate, so "
++                   "this falsifier is not exercising the defect it claims")
++
++    empty = m.classify([{1}, set()] * 8)
++    print(f"  B   alternating matched/empty       -> classify = {empty}")
++    if empty[4] != 0:
++        bad.append(f"pairs with an empty side contributed {empty[4]} "
++                   f"opportunities, though a full replacement is impossible "
++                   f"in such a pair by definition")
++
++    real = m.classify([{1}, {2}])
++    print(f"  D   a genuine full replacement      -> classify = {real}")
++    if real[0] != 1:
++        bad.append("a genuine full replacement was not counted as an event")
++    if real[4] != 1:
++        bad.append("a genuine full replacement was not counted as an "
++                   "opportunity, so the fix reports 0 for everything and is "
++                   "vacuous")
++
++    for n, expect in ((14, 0.215311), (1060, 0.003611)):
++        bound = Z2 / (n + Z2)
++        print(f"  E   z^2/(n+z^2) at n={n:<5}          -> {bound:.6f} "
++              f"(expected {expect})")
++        if abs(bound - expect) > 5e-7:
++            bad.append(f"the closed form disagrees with the reported bound at "
++                       f"n={n}: {bound:.6f} vs {expect}")
++
++    if bad:
++        print("FALSIFIED")
++        raise AssertionError(
++            "the full-replacement denominator is not a risk set:\n  "
++            + "\n  ".join(bad))
++    print("\n  the denominator counts OPPORTUNITIES, is invariant to the polling "
++          "rate,\n  and still counts a real replacement. Upheld in both directions.")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.path.insert(0, str(REPO / "scripts"))
++    try:
++        from _cli_help import answer_help
++        answer_help(__doc__, __file__)
++    except ImportError:
++        pass
++    raise SystemExit(main())
+
+### fable:attempt-1:.cdsfl_deny_canonical_writes.sb
+--- /dev/null	2026-11-23 17:23:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo/.cdsfl_deny_canonical_writes.sb	2026-11-23 17:11:04
+@@ -0,0 +1,19 @@
++(version 1)
++(allow default)
++(deny file-write* (subpath "/Users/georgejackson/Developer_Projects/Constraint_Engineering"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/commands"))
++(deny file-write* (subpath "/Users/georgejackson/.claude/agents"))
++(deny file-write* (literal "/Users/georgejackson/.claude/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/.claude/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/.claude/mcp_settings.json"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/hooks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/plugins"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/scheduled-tasks"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/commands"))
++(deny file-write* (subpath "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/agents"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/settings.json"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/CLAUDE.md"))
++(deny file-write* (literal "/Users/georgejackson/Library/Mobile Documents/com~apple~CloudDocs/claude_sync/claude_config/mcp_settings.json"))
+
+### fable:attempt-1:bench/tests/test_help_never_acts_2026-09-11.py
+--- /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tests/test_help_never_acts_2026-09-11.py	2026-11-23 16:46:09
++++ /var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c0r2oe3m/repo/bench/tests/test_help_never_acts_2026-09-11.py	2026-11-23 17:14:26
+@@ -222,15 +222,24 @@
+             #: PRECEDING SIBLINGS COUNT, not only the try's own prefix.
+             before = ([n for s in seq[:idx] for n in ast.walk(s)]
+                       + [n for s in node.body[:at] for n in ast.walk(s)])
+-            inserts = any(isinstance(n, ast.Call)
+-                          and getattr(n.func, "attr", None) == "insert"
+-                          and getattr(getattr(n.func, "value", None),
+-                                      "attr", None) == "path"
+-                          for n in before)
+-            uses_file = any(isinstance(n, ast.Name)
+-                            and (n.id == "__file__" or n.id in derived)
+-                            for n in before)
+-            if inserts and uses_file:
++            #: ★ TIGHTENED 2026-11-23 (panel batch 12, Q1). The widened form
++            #: scanned `before` for an insert and for a file-derived name as 2
++            #: INDEPENDENT any() passes, so a CONSTANT-path insert was credited
++            #: whenever an unrelated sibling merely mentioned `__file__` or a
++            #: derived name -- driven, that shape exits 0 under `-m --help` and
++            #: runs its ordinary work. The file-derived name must appear INSIDE
++            #: the insert call's own arguments. Still a 1-step dataflow proxy:
++            #: it does not prove the inserted path is the script's directory.
++            file_derived_insert = any(
++                isinstance(n, ast.Call)
++                and getattr(n.func, "attr", None) == "insert"
++                and getattr(getattr(n.func, "value", None),
++                            "attr", None) == "path"
++                and any(isinstance(x, ast.Name)
++                        and (x.id == "__file__" or x.id in derived)
++                        for arg in n.args for x in ast.walk(arg))
++                for n in before)
++            if file_derived_insert:
+                 continue
+             for part in (node.body, node.orelse):
+                 for s in part:
+@@ -509,3 +518,38 @@
+         assert answers_help(src, under_dash_m=True) is False, (
+             "an insert built from a constant was credited, so the predicate no "
+             "longer checks that the path is derived from the script's location")
++
++    def test_a_decoy_derived_name_beside_a_constant_insert_is_refused(self):
++        """★ ADDED 2026-11-23 (panel batch 12, Q1). The 2026-11-23 widening
++        scanned for the insert and for a file-derived name INDEPENDENTLY over
++        the preceding statements, so a CONSTANT-path insert was credited
++        whenever any unrelated sibling mentioned `__file__` or a derived name.
++        Driven under `python3 -m` with `--help`: that shape exits 0 and runs
++        its ordinary work, writing a file. The derived name must appear inside
++        the insert call's arguments."""
++        decoy = (
++            "import sys, pathlib\n"
++            "HERE = pathlib.Path(__file__).resolve().parent\n"
++            "def main():\n"
++            "    open('x','w').write('y')\n"
++            "    return 0\n"
++            "if __name__ == '__main__':\n"
++            "    print('running from', HERE)\n"
++            "    sys.path.insert(0, '/somewhere/else')\n"
++            "    try:\n"
++            "        from _cli_help import answer_help\n"
++            "        answer_help(__doc__, __file__)\n"
++            "    except ImportError:\n"
++            "        pass\n"
++            "    sys.exit(main())\n")
++        assert answers_help(decoy, under_dash_m=True) is False, (
++            "a constant insert was credited because an unrelated statement "
++            "mentioned a file-derived name; the dataflow link is broken")
++        #: the same decoy with `__file__` itself as the unrelated mention
++        bare_decoy = decoy.replace(
++            "    print('running from', HERE)\n",
++            "    print('running', __file__)\n")
++        assert answers_help(bare_decoy, under_dash_m=True) is False
++        #: and it still answers under direct invocation, which keeps the 2
++        #: figures distinct measurements.
++        assert answers_help(decoy, under_dash_m=False) is True

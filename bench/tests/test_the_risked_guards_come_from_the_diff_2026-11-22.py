@@ -28,6 +28,8 @@ known inputs, because a test that asserts on the module's source text asserts
 only that it describes itself consistently.
 """
 from __future__ import annotations
+import re
+import subprocess
 
 import importlib.util
 import pathlib
@@ -179,3 +181,68 @@ class TestTheBoardContainingGuardIsExcluded:
         mention the gate. 1 known file, named once."""
         assert isinstance(mod.CONTAINS_THE_BOARD, (set, frozenset))
         assert len(mod.CONTAINS_THE_BOARD) == 1
+
+
+class TestThePrintedCommandIsRunnable:
+    """★ ADDED 2026-11-23 AFTER THE PRINTED COMMAND CAUSED AN 18-PER-CENT RUN.
+
+    The narrative printed `deciding[:4]` followed by a literal ellipsis, so the
+    command it told the operator to run was unrunnable whenever the deciding set
+    exceeded 4 -- which it always does. On 2026-11-23 that output was scraped
+    with a regex, the ellipsis swallowed the rest, and a pre-board ran **8 of
+    44** guards while reporting itself complete.
+
+    2 things are held here: the narrative must print the WHOLE command, and
+    `--paths-only` must emit paths and nothing else, so a caller never has to
+    scrape prose again.
+    """
+
+    def _run(self, *args):
+        return subprocess.run(
+            [sys.executable,
+             str(REPO / "scripts" / "which_guards_does_this_commit_risk_2026-11-22.py"),
+             *args],
+            cwd=str(REPO), capture_output=True, text=True, timeout=600)
+
+    def test_the_narrative_prints_no_ellipsis_in_its_command(self):
+        r = self._run()
+        assert r.returncode == 0, r.stdout[-500:] + r.stderr[-300:]
+        if "run the deciding set with" not in r.stdout:
+            pytest.skip("nothing staged changes behaviour, so no command is printed")
+        tail = r.stdout.split("run the deciding set with")[1]
+        assert "..." not in tail, (
+            "the printed command is truncated with an ellipsis, so copying it "
+            "runs a SUBSET while looking complete")
+
+    def test_paths_only_emits_paths_and_nothing_else(self):
+        r = self._run("--paths-only")
+        assert r.returncode == 0, r.stdout[-500:] + r.stderr[-300:]
+        lines = [l for l in r.stdout.splitlines() if l.strip()]
+        if not lines:
+            pytest.skip("nothing staged changes behaviour")
+        bad = [l for l in lines
+               if not re.fullmatch(r"bench/tests/test_[A-Za-z0-9_-]+\.py", l)]
+        assert not bad, (
+            f"--paths-only emitted {len(bad)} line(s) that are not guard paths, "
+            f"so a caller splitting on newlines gets prose: {bad[:3]}")
+
+    def test_paths_only_agrees_with_the_narrative_count(self):
+        """The 2 routes must not disagree -- that is the producer/consumer
+        defect this project keeps finding."""
+        n = self._run("--paths-only")
+        text = self._run()
+        if "DECIDING (also on the gate)" not in text.stdout:
+            pytest.skip("nothing staged changes behaviour")
+        declared = int(re.search(r"DECIDING \(also on the gate\)\s*:\s*(\d+)",
+                                 text.stdout).group(1))
+        emitted = len([l for l in n.stdout.splitlines() if l.strip()])
+        assert emitted == declared, (
+            f"--paths-only emitted {emitted} path(s) while the narrative "
+            f"declares {declared} deciding guard(s); the 2 routes disagree")
+
+    def test_the_flag_is_reachable_at_all(self):
+        """B214: `answer_help` defaults to refusing a caller's own flags with
+        exit 2 before argparse is reached, which would make this unreachable."""
+        r = self._run("--paths-only")
+        assert r.returncode != 2 or "unrecognised" not in r.stderr.lower(), (
+            "--paths-only was refused before the script's own parser ran")

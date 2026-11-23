@@ -490,3 +490,252 @@ def test_the_batch_definition_predicate_admits_a_markdown_heading():
     #: AND IT MUST NOT OVER-MATCH: prose mentioning a decision is not a heading.
     assert not m.DECISION.findall("the DECISION 1 was recorded in prose\n"), (
         "the pattern matches mid-sentence prose, which would inflate every count")
+
+
+# ===========================================================================
+# THE PROBE THAT SETTLES WHAT THE 2 SEATS WEIGHED DIFFERENTLY. 2026-11-23.
+#
+# The joint round's seats disagreed on entry B209's repair. Driven, BOTH their
+# scorers reproduce, and the disagreement is narrower than it looked: cc2's
+# scenario S3 and fable's scenario R1 are the SAME scenario -- the overlap key
+# failing when the matched process set is fully replaced between 2 consecutive
+# polls. They agree on the fact and differ on its WEIGHT, which only a
+# measurement of whether the scenario is REALISABLE can settle.
+#
+# ★ THE TEST BELOW RUNS IT WITH NOTHING MATCHING, ON PURPOSE. Running it while
+# a suite is live would nest pytest inside pytest, which this project forbids.
+# The property that CAN be checked without that is the fail-safe direction: with
+# nothing matched it must report itself UNINFORMATIVE rather than reporting 0
+# full replacements as though 0 were a finding. A probe that reads "0 of 0" and
+# calls it evidence is the vacuity this whole session kept meeting.
+# ===========================================================================
+
+
+def test_the_replacement_probe_reports_no_bound_without_opportunities():
+    """★ UPDATED 2026-11-23 BY THE BATCH-12 PANEL, AND THE OLD ASSERTION WAS
+    TOO WEAK RATHER THAN WRONG.
+
+    The first version only required the word UNINFORMATIVE when nothing
+    matched. A seat showed the deeper defect: the probe reported a Wilson
+    interval over a denominator of POLL PAIRS, and at 0 events that bound is
+    exactly z^2/(n + z^2) -- strictly decreasing in n, where n is the poll
+    count. So the bound was set by `--interval`, a free parameter. Measured on
+    the same unchanging process over 20 s: 69 pairs give an upper bound of
+    0.052737 at 0.25 s spacing against 9 pairs and 0.299145 at 2.0 s. A factor
+    of 5.7 on identical evidence.
+
+    The denominator is now OPPORTUNITIES -- pairs where the matched set
+    actually changed with both sides non-empty -- and the binding requirement
+    is that with 0 of them the probe prints NO BOUND AT ALL.
+    """
+    #: ★ THIS TEST WAS WRONG BY CONSTRUCTION AND THE BOARD CAUGHT IT. Its
+    #: first version asserted that the probe reports UNIDENTIFIED, which holds
+    #: only when NOTHING matches `pgrep -f "pytest.*bench/tests"`. Run on the
+    #: commit board it matches THE BOARD ITSELF, plus any sibling pytest, so
+    #: opportunities were non-zero and a bound was correctly printed. The test
+    #: failed on a 47 min 55 s board for a reason that was its own.
+    #:
+    #: `feedback_a_watcher_is_part_of_what_it_watches` names exactly this. The
+    #: repair is to assert the INVARIANT rather than the ambient state: a bound
+    #: may appear ONLY when opportunities are non-zero, whatever happens to be
+    #: running. That holds inside a board, outside one, and on an idle machine.
+    r = _run("does_the_matched_set_ever_fully_replace_2026-11-23.py",
+             "--seconds", "4", "--interval", "1")
+    assert r.returncode == 0, r.stdout[-700:] + r.stderr[-400:]
+    out = r.stdout
+    import re as _re
+    m = _re.search(r"FULL REPLACEMENTS[^:]*:\s*(\d+)", out)
+    assert m, f"the probe no longer reports a full-replacement count:\n{out[-500:]}"
+    opp = _re.search(r"opportunit[^\n]*?(\d+)", out, _re.I)
+    reported_bound = "Wilson 95%" in out
+    if "UNIDENTIFIED" in out or "NO BOUND IS REPORTED" in out:
+        assert not reported_bound, (
+            "the probe said the rate is unidentified AND printed a bound; those "
+            "cannot both be true")
+    else:
+        #: a bound appeared, so the probe must have had opportunities to justify
+        #: it -- the whole point of the batch-12 repair.
+        assert opp is not None, (
+            "a bound was printed with no opportunity count reported, which is "
+            "the defect the panel found: a Wilson width set by the polling rate")
+    #: AND THE AMBIENT-INDEPENDENT HALF, driven directly rather than observed:
+    #: 0 opportunities must be reported for an unchanging set however many
+    #: polls are taken.
+    import importlib.util, sys as _sys
+    spec = importlib.util.spec_from_file_location(
+        "_rp2", S / "does_the_matched_set_ever_fully_replace_2026-11-23.py")
+    mod = importlib.util.module_from_spec(spec)
+    _sys.modules["_rp2"] = mod
+    spec.loader.exec_module(mod)
+    assert mod.classify([{1}] * 20)[4] == 0, (
+        "an unchanging set reported a non-zero opportunity count, so the "
+        "denominator is still the polling rate")
+    assert mod.classify([{1, 2}, {3, 4}])[4] == 1, (
+        "a genuine full replacement is no longer counted as an opportunity")
+
+
+def test_the_replacement_probe_reads_the_gates_own_patterns():
+    """It must not spell the matcher itself -- that would measure the probe.
+
+    Asserted by CALLING the accessor, so a hardcoded tuple would not pass.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_repl", S / "does_the_matched_set_ever_fully_replace_2026-11-23.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    pats = m.gate_patterns()
+    assert pats, "no patterns returned"
+    gate = m.GATE.read_text()
+    for pat in pats:
+        assert pat in gate, (
+            f"pattern {pat!r} is not in {m.GATE.name}, so the probe is "
+            f"measuring a population the gate does not watch")
+
+
+def test_the_replacement_probe_classifies_all_three_pair_kinds():
+    """The classifier, driven on constructed sequences rather than described."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_repl2", S / "does_the_matched_set_ever_fully_replace_2026-11-23.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    #: ★ 5 FIELDS SINCE THE BATCH-12 PANEL: the last is OPPORTUNITIES, the
+    #: pairs in which the matched set actually changed with both sides
+    #: non-empty -- the only occasions on which a full replacement was a
+    #: possible outcome, and therefore the only defensible denominator.
+    #: a FULL replacement: both non-empty, disjoint -- the disputed scenario
+    assert m.classify([{1, 2}, {3, 4}]) == (1, 0, 0, 1, 1)
+    #: identical: a pair, but NO opportunity -- nothing could have happened
+    assert m.classify([{1}, {1}]) == (0, 1, 0, 1, 0)
+    #: partial overlap is not a full replacement, but IS an opportunity
+    assert m.classify([{1, 2}, {2, 3}]) == (0, 0, 1, 1, 1)
+    #: an empty poll either side cannot contain the event, so no opportunity
+    assert m.classify([{1}, set()]) == (0, 0, 1, 1, 0)
+    #: two empties contribute no pair at all
+    assert m.classify([set(), set()]) == (0, 0, 0, 0, 0)
+    #: ★ THE PROPERTY THE WHOLE REPAIR EXISTS FOR: the opportunity count must
+    #: NOT move with the polling rate. 10x the polls of an unchanging set is
+    #: 10x the pairs and still 0 opportunities.
+    assert m.classify([{1}] * 15)[4] == 0
+    assert m.classify([{1}] * 150)[4] == 0
+    assert m.classify([{1}] * 150)[3] > m.classify([{1}] * 15)[3], (
+        "the pair count should grow with the polling rate -- that is exactly "
+        "why it is the wrong denominator")
+
+
+class TestTheDifferentialFalsifierHarness:
+    """★ ADOPTED FROM THE 2026-11-23 JOINT PANEL AFTER BEING TESTED IN BOTH
+    DIRECTIONS, which is the founder's standing condition: a panel's proposal is
+    a hypothesis, not a fix.
+
+    IT ANSWERS A FAILURE THIS SESSION MET TWICE. A falsifier was run against a
+    tree where the defect had ALREADY been repaired, so nothing could move, and
+    the clean result was one sentence away from being recorded as a refutation
+    of a correct diagnosis. "Assert the precondition" cannot be the rule,
+    because it requires having already named the way the run could be vacuous.
+    The differential rule needs no foresight: run the falsifier with the defect
+    PRESENT and with it ABSENT, and require the 2 verdicts to DISAGREE.
+    Agreement in either direction is vacuity.
+
+    VALIDATED AGAINST KNOWN ANSWERS before adoption, not merely executed:
+    pointed at the real guard for the board-scoped snapshot it reported
+    DISCRIMINATES (3 failed with the defect, 21 passed without); pointed at an
+    unrelated guard it reported VACUOUS and exited 1, and said in as many words
+    that such a run must never auto-confirm and never be read as a refutation.
+    The target was restored byte-for-byte in both arms.
+
+    THE FALSIFIERS BELOW ARE NOT pytest, DELIBERATELY. A test under
+    `bench/tests/` already runs inside pytest, so driving pytest as the
+    falsifier would nest the runner. A `python3 -c` probe exercises the same 2
+    code paths without that.
+    """
+
+    HARNESS = "a_falsifier_must_disagree_with_itself_2026-11-23.py"
+
+    def _case(self, tmp_path, falsifier_py, good, bad):
+        target = tmp_path / "subject.py"
+        target.write_text(good)
+        defect = tmp_path / "subject_defective.py"
+        defect.write_text(bad)
+        probe = tmp_path / "probe.py"
+        probe.write_text(falsifier_py)
+        r = subprocess.run(
+            [sys.executable, str(S / self.HARNESS),
+             "--target", str(target), "--defect-file", str(defect),
+             "--cwd", str(tmp_path),
+             "--", sys.executable, str(probe), str(target)],
+            capture_output=True, text=True, timeout=600, cwd=REPO)
+        return r, target, good
+
+    def test_it_reports_a_discriminating_falsifier(self, tmp_path):
+        """A probe that reads the subject must see the difference."""
+        probe = ("import sys, pathlib\n"
+                 "src = pathlib.Path(sys.argv[1]).read_text()\n"
+                 "assert 'GOOD' in src, 'the defect is present'\n")
+        r, target, good = self._case(
+            tmp_path, probe, "MARKER = 'GOOD'\n", "MARKER = 'BAD'\n")
+        assert "DISCRIMINATES" in r.stdout, r.stdout[-700:]
+        assert r.returncode == 0, f"exit {r.returncode}: {r.stdout[-400:]}"
+        assert target.read_text() == good, "the target was not restored"
+
+    def test_it_reports_a_vacuous_falsifier(self, tmp_path):
+        """★ THE DIRECTION THAT MATTERS. A probe blind to the defect passes in
+        BOTH arms, and must be refused rather than read either way."""
+        probe = "import sys\nassert True\n"
+        r, target, good = self._case(
+            tmp_path, probe, "MARKER = 'GOOD'\n", "MARKER = 'BAD'\n")
+        assert "VACUOUS" in r.stdout, r.stdout[-700:]
+        assert r.returncode != 0, (
+            "a vacuous falsifier exited 0, so a caller gating on the exit code "
+            "would treat 'cannot see the defect' as success")
+        assert target.read_text() == good, "the target was not restored"
+
+    def test_it_restores_the_target_even_when_the_falsifier_dies(self, tmp_path):
+        """A harness that leaves a mutation behind is worse than none. This
+        session found exactly that: a reverted repair sitting uncommitted."""
+        probe = "import sys\nraise SystemExit(3)\n"
+        r, target, good = self._case(
+            tmp_path, probe, "MARKER = 'GOOD'\n", "MARKER = 'BAD'\n")
+        assert target.read_text() == good, (
+            "the target was left mutated after the falsifier exited non-zero")
+        assert "restored byte-for-byte : True" in r.stdout, r.stdout[-500:]
+
+
+# ===========================================================================
+# THE 2 FALSIFIERS THE BATCH-12 PANEL DELIVERED, ADOPTED AFTER BEING RUN.
+# Appended 2026-11-23.
+#
+# Each targets a defect in work I had just built, and each was executed before
+# the fix it justifies was accepted:
+#
+#   * `the_insert_must_carry_the_file_2026-11-23.py` -- my widening of the
+#     dash-m predicate asked `inserts` and `uses_file` SEPARATELY of the same
+#     node bag, so a CONSTANT-path insert with an unrelated file-derived name
+#     beside it was credited. Reproduced in a temporary directory: the
+#     predicate said True and the script WROTE A FILE when run as
+#     `python3 -m evil --help`.
+#   * `the_replacement_denominator_must_be_opportunities_2026-11-23.py` -- my
+#     replacement probe reported a Wilson bound over POLL PAIRS, which at 0
+#     events is exactly z^2/(n + z^2) and therefore set by `--interval`.
+#
+# BOTH ARE SELF-CONTAINED: they import the real modules and spawn no pytest, so
+# the board can run them.
+# ===========================================================================
+
+
+def test_the_insert_falsifier_upholds_the_joined_condition():
+    r = _run("the_insert_must_carry_the_file_2026-11-23.py")
+    assert r.returncode == 0, r.stdout[-900:] + r.stderr[-400:]
+    assert r.stdout.strip(), "the falsifier printed nothing"
+
+
+def test_the_denominator_falsifier_shows_rate_invariance():
+    """The property that matters: the opportunity count must not move with the
+    polling rate, while a real replacement is still counted."""
+    r = _run("the_replacement_denominator_must_be_opportunities_2026-11-23.py")
+    assert r.returncode == 0, r.stdout[-900:] + r.stderr[-400:]
+    assert "invariant to the polling rate" in r.stdout, r.stdout[-700:]
+    assert "Upheld in both directions" in r.stdout, (
+        "the falsifier no longer reports the anti-vacuity arm, so a fix that "
+        "returned 0 opportunities for everything would pass it")
