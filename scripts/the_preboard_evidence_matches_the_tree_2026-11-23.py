@@ -53,6 +53,29 @@ import sys
 #: lives there and is likewise untracked).
 EVIDENCE = pathlib.Path(".cdsfl_tmp") / "preboard_evidence.json"
 
+#: ★ THE STAGE-0 SNAPSHOT, ADDED 2026-11-23 AFTER THE FIRST LIVE USE REPORTED A
+#: FALSE POSITIVE ON 4 OF 4 COMMITS -- including ones where the evidence was
+#: recorded seconds before `git commit` with nothing touched in between.
+#:
+#: THE CAUSE, MEASURED, AND MY FIRST ATTEMPT TO FALSIFY IT WAS VACUOUS. The
+#: gate REPAIRS and then RE-STAGES its own repairs before the reporting line
+#: runs: the memory-ledger refresh rewrites `resources/MEMORY_EXCLUSIONS.md`
+#: and leaves it UNSTAGED -- at which point the digest is still unchanged --
+#: and a later stage stages everything, which moves it. Driven: a staged stale
+#: ledger digests f16746db6bb17a37, survives the refresh unchanged, and becomes
+#: 072e2b9d6a60440a once the repairs are re-staged. **An earlier run of this
+#: same experiment showed NO movement and appeared to refute the diagnosis; it
+#: was exercising the repair on an ALREADY-REPAIRED tree, so nothing could
+#: move. A falsifier run on an already-satisfied precondition proves nothing.**
+#:
+#: SO THE COMPARISON HAS TO BE LIKE WITH LIKE: the evidence describes the index
+#: AS THE OPERATOR LEFT IT, and that is what must be compared, not the index
+#: after the gate has edited and re-staged on its own account. `--snapshot`,
+#: called at the gate's stage 0 before any repair, records that index. When a
+#: snapshot is present the verdict uses it; with none it falls back to the live
+#: index, which is the standalone behaviour.
+SNAPSHOT = pathlib.Path(".cdsfl_tmp") / "preboard_snapshot.json"
+
 
 def _git(*args: str) -> "tuple[int, str]":
     """(exit code, stdout). Never raises: a missing git is a fall-open."""
@@ -119,11 +142,28 @@ def verdict(repo: pathlib.Path) -> "tuple[str, str]":
     was = rec.get("digest")
     if not isinstance(was, str) or not was:
         return "UNKNOWN", "the evidence record carries no digest"
-    now = staged_digest(repo)
+
+    #: PREFER THE STAGE-0 SNAPSHOT over the live index. See SNAPSHOT above:
+    #: inside the gate the live index has already been moved by the gate's own
+    #: repair-and-re-stage, so comparing against it accuses the operator of an
+    #: edit the GATE made. The snapshot is the index as the operator left it.
+    now, source = None, "the live index"
+    sp = repo / SNAPSHOT
+    if sp.is_file():
+        try:
+            snap = json.loads(sp.read_text(encoding="utf-8"))
+            cand = snap.get("digest")
+            if isinstance(cand, str) and cand:
+                now, source = cand, "the stage-0 snapshot"
+        except Exception:                                    # noqa: BLE001
+            now = None                       # falls through to the live index
+    if now is None:
+        now = staged_digest(repo)
+        source = "the live index"
     if now is None:
         return "UNKNOWN", "the staged digest could not be computed"
     if now == was:
-        return "FRESH", (f"the index is unchanged since {rec.get('guards', '?')} "
+        return "FRESH", (f"{source} is unchanged since {rec.get('guards', '?')} "
                          f"guard(s) ran: {rec.get('result', 'no result recorded')}")
     return "STALE", (
         f"THE INDEX HAS MOVED since the pre-board run of "
@@ -138,6 +178,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--record", action="store_true",
                     help="store the current staged digest as the evidence")
+    ap.add_argument("--snapshot", action="store_true",
+                    help="record the index AS IT IS NOW, for the gate's stage 0, "
+                         "so a later check compares like with like")
+    ap.add_argument("--clear-snapshot", action="store_true",
+                    help="remove the stage-0 snapshot")
     ap.add_argument("--guards", type=int, default=0,
                     help="how many guards the pre-board run executed")
     ap.add_argument("--result", default="",
@@ -148,7 +193,35 @@ def main() -> int:
     a = ap.parse_args()
     repo = pathlib.Path(a.repo).resolve()
 
+    if a.clear_snapshot:
+        try:
+            (repo / SNAPSHOT).unlink(missing_ok=True)
+        except Exception:                                    # noqa: BLE001
+            pass
+        return 0
+
+    if a.snapshot:
+        d = staged_digest(repo)
+        if d is None:
+            return 0                      # falls open: no snapshot, no claim
+        try:
+            (repo / SNAPSHOT).parent.mkdir(parents=True, exist_ok=True)
+            (repo / SNAPSHOT).write_text(json.dumps({"digest": d}),
+                                         encoding="utf-8")
+        except Exception:                                    # noqa: BLE001
+            return 0
+        if not a.quiet:
+            print(f"preboard-snapshot: stage-0 index digest {d[:12]}")
+        return 0
+
     if a.record:
+        #: A NEW RECORD INVALIDATES ANY OLD SNAPSHOT. Without this a snapshot
+        #: left by a previous commit attempt would be compared against fresh
+        #: evidence, which is the stale-verdict defect in mirror image.
+        try:
+            (repo / SNAPSHOT).unlink(missing_ok=True)
+        except Exception:                                    # noqa: BLE001
+            pass
         rec = record(repo, a.guards, a.result)
         if rec is None:
             print("preboard-evidence: NOT recorded (no digest); nothing is "

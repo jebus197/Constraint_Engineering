@@ -202,3 +202,87 @@ class TestItWritesNothingItShouldNot:
         before = _git(sandbox, "count-objects", "-v").stdout
         mod.staged_digest(sandbox)
         assert _git(sandbox, "count-objects", "-v").stdout == before
+
+
+class TestTheStageZeroSnapshotFixesTheFalsePositive:
+    """★ ADDED 2026-11-23 AFTER THE FIRST LIVE USE FAILED ON 4 OF 4 COMMITS.
+
+    The reported line sits below the gate's repair stages, which rewrite tracked
+    files and RE-STAGE them. So the index moves on the GATE's account and the
+    line accused the operator of an edit the gate had made. Measured: a staged
+    stale ledger digests f16746db6bb17a37, survives the refresh UNCHANGED --
+    the refresh leaves it unstaged -- and becomes 072e2b9d6a60440a once the
+    repairs are re-staged. **It is the RE-STAGING that moves it.**
+
+    AN EARLIER ATTEMPT TO FALSIFY THAT ACCOUNT APPEARED TO REFUTE IT, and the
+    attempt was VACUOUS: it ran the repair on an already-repaired tree, where
+    nothing could move. A falsifier run on an already-satisfied precondition
+    proves nothing, and that is recorded here because the same shape -- testing
+    a defence with the input it is meant to pass -- has now bitten twice.
+
+    THE FIX IS LIKE-FOR-LIKE COMPARISON, not a looser threshold: `--snapshot`
+    at the gate's stage 0 records the index AS THE OPERATOR LEFT IT. The
+    discriminating requirement is that it must NOT mask a genuine operator
+    edit, which `test_it_does_not_mask_an_operator_edit` holds.
+    """
+
+    def test_a_gate_caused_move_reads_fresh_with_a_snapshot(self, mod, sandbox):
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        mod.record(sandbox, 9, "probe run")
+        # the operator's index, snapshotted at stage 0
+        d = mod.staged_digest(sandbox)
+        p = sandbox / mod.SNAPSHOT
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"digest": d}))
+        # now the GATE repairs and re-stages on its own account
+        (sandbox / "ledger.txt").write_text("refreshed by the gate\n")
+        _git(sandbox, "add", "ledger.txt")
+        state, why = mod.verdict(sandbox)
+        assert state == "FRESH", (
+            f"a gate-caused index move was reported {state!r}; the snapshot "
+            f"exists precisely so the gate's own re-staging is not read as an "
+            f"operator edit. why={why}")
+        assert "snapshot" in why
+
+    def test_it_does_not_mask_an_operator_edit(self, mod, sandbox):
+        """★ THE DISCRIMINATING CASE. A fix that silenced everything would pass
+        the test above and be worthless."""
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        mod.record(sandbox, 9, "probe run")
+        # the OPERATOR edits after the run, and THEN the gate snapshots
+        (sandbox / "b.txt").write_text("edited after the run\n")
+        _git(sandbox, "add", "b.txt")
+        d = mod.staged_digest(sandbox)
+        p = sandbox / mod.SNAPSHOT
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps({"digest": d}))
+        assert mod.verdict(sandbox)[0] == "STALE", (
+            "the snapshot masked a genuine operator edit, which would make the "
+            "whole check vacuous -- the stage-0 snapshot must capture the "
+            "operator's index INCLUDING any edit made after the pre-board run")
+
+    def test_a_corrupt_snapshot_falls_back_to_the_live_index(self, mod, sandbox):
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        mod.record(sandbox, 9, "x")
+        p = sandbox / mod.SNAPSHOT
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("not json")
+        assert mod.verdict(sandbox)[0] == "FRESH"       # live index, unchanged
+
+    def test_recording_clears_a_previous_snapshot(self, sandbox):
+        """A snapshot left by an earlier attempt must not outlive new evidence."""
+        (sandbox / "a.txt").write_text("one\n")
+        _git(sandbox, "add", "a.txt")
+        subprocess.run([sys.executable, str(SUBJECT), "--repo", str(sandbox),
+                        "--snapshot", "--quiet"], capture_output=True, timeout=300)
+        snap = sandbox / "" / ".cdsfl_tmp" / "preboard_snapshot.json"
+        assert snap.exists()
+        subprocess.run([sys.executable, str(SUBJECT), "--repo", str(sandbox),
+                        "--record", "--guards", "1"], capture_output=True, timeout=300)
+        assert not snap.exists(), (
+            "a stale snapshot survived a new --record, so fresh evidence would "
+            "be compared against an old index -- the stale-verdict defect in "
+            "mirror image")

@@ -778,6 +778,30 @@ bench/tests/test_todays_producers_run_2026-11-22.py"
 # ONLY THE EXACT PATHS EACH REPAIR REPORTS CHANGING are staged, so an unrelated
 # work-in-progress edit in the same file is never swept in.
 
+# ★ B211 STAGE-0 SNAPSHOT. THIS MUST STAY ABOVE EVERY REPAIR, and the reason is
+# measured. The reported pre-board-evidence line further down compares the
+# operator's recorded evidence against the index -- but the repairs below REWRITE
+# tracked files and then RE-STAGE them, so by the time that line runs the index
+# has moved on the GATE's account, not the operator's. On its first live use the
+# line therefore reported STALE on 4 of 4 commits, including ones where the
+# evidence was recorded seconds before `git commit` with nothing touched between.
+#
+# Driven: a staged stale ledger digests f16746db6bb17a37, SURVIVES the refresh
+# unchanged -- the refresh leaves it unstaged -- and becomes 072e2b9d6a60440a
+# once the repairs are re-staged. So it is the RE-STAGING that moves it.
+#
+# An earlier attempt to falsify that account showed no movement and appeared to
+# refute it; that run exercised the repair on an ALREADY-REPAIRED tree, so
+# nothing could move. A falsifier run on an already-satisfied precondition
+# proves nothing.
+#
+# This records the index AS THE OPERATOR LEFT IT so the later comparison is like
+# with like. It writes only to untracked scratch and falls open on every path.
+if [ -f scripts/the_preboard_evidence_matches_the_tree_2026-11-23.py ]; then
+    python3 scripts/the_preboard_evidence_matches_the_tree_2026-11-23.py \
+        --snapshot --quiet >/dev/null 2>&1 || true
+fi
+
 RESTAGE_LIB="hooks/stage0_restage.sh"
 if [ ! -f "$RESTAGE_LIB" ]; then
     echo "pre-commit: $RESTAGE_LIB is missing." >&2
