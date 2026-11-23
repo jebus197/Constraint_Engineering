@@ -1,0 +1,215 @@
+# PANEL BRIEF — DRAFT: the board-cost policy, and an external advisory that is wrong on its central number
+
+**STATUS: DISPATCHED to the free seats.** The founder has NOT adopted the advisory
+under discussion and has said explicitly it must not become policy until he and
+I agree it is accurate and sane. This round is to test it, not to implement it.
+
+**WHAT PROMPTED IT.** An external reviewer produced an advisory arguing that the
+project's commit board has grown past 3 hours, that running it before every
+commit is not standard practice, and that it should be reserved for major
+milestones with cheaper layers used for ordinary batches. The founder's concern
+underneath it is specific and legitimate: *that at the current rate the project
+might never finish and the majority of time will be consumed by board runs.*
+
+## THE ADVISORY'S CENTRAL CLAIM IS FALSE, AND THE ERROR IS A CONFLATION
+
+Measured over the project's own duration ledger, 113 determinate runs:
+**mean 34.38 min, median 34.13 min, longest board ever recorded 55.22 min, and
+0 of 113 boards exceeded 3 hours.**
+
+<!-- figure: determinate boards | scripts/why_is_the_board_getting_slower_2026-11-23.py | 113 -->
+<!-- figure: mean board minutes | scripts/why_is_the_board_getting_slower_2026-11-23.py | 34.38 -->
+<!-- figure: longest board minutes | scripts/why_is_the_board_getting_slower_2026-11-23.py | 55.22 -->
+<!-- figure: boards over 3 hours | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0 of 113 -->
+
+**EVERY FIGURE IN THIS BRIEF WAS RE-DERIVED BEFORE DISPATCH, AND THE FIRST
+ATTEMPT WAS WRONG.** The producer resolved its repository root by counting
+directory levels, so when run from a scratch directory `LEDGER.is_file()` was
+False, `determinate_rows()` returned [] and EVERY FIGURE IN THE PREVIOUS DRAFT
+OF THIS BRIEF WAS COMPUTED ON AN EMPTY SET. Re-pointed, it finds 112 rows,
+matching `scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py`
+exactly. The superseded values are named here deliberately so a reader who
+remembers them can see which moved: 111 runs then 112, means 34.07 then 34.19,
+longest 52.4 then 52.38. THE FIGURES MOVE ON EVERY BOARD -- batch 12 landing
+mid-preparation moved all 9 again -- so they are SYNCED FROM THE PRODUCER
+immediately before dispatch rather than typed.
+
+The 3.13 h figure belongs to the FULL SUITE, 18,419 tests, a different
+instrument run rarely. The BOARD is 329 guards, about 5,532 tests. **The
+advisory treats the 2 as 1**, and that conflation sits under its whole argument.
+
+**ITS LAYERING RECOMMENDATION IS ALSO PARTLY ALREADY BUILT.** 3 layers exist: a
+pre-board ladder derived from the staged diff (35 to 44 guards, about 5 min,
+used 4 times on 2026-11-23), the board (about 47 min today), and the full suite
+(3.13 h). What the advisory adds is a rule for WHEN each is required.
+
+## BUT THE FOUNDER'S CONCERN IS CORRECT, AND THE SHARPEST FINDING IS NOT IN THE ADVISORY AT ALL
+
+**Window 2026-11-23: 12.75 h of board wall-clock in a 20.52 h span = 0.621398
+of elapsed time.** So boards did dominate the day. 9 commits landed against 16
+determinate boards = 1.7778 boards per commit; refused 7 of 16 = 0.437500,
+Wilson [0.230987, 0.668214].
+
+<!-- figure: day board share | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0.621398 -->
+<!-- figure: boards per commit | scripts/why_is_the_board_getting_slower_2026-11-23.py | 1.7778 -->
+<!-- figure: day refusal rate | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0.437500 -->
+
+**AN ARGUMENT THIS BRIEF PREVIOUSLY MADE IS WITHDRAWN, AND IT WAS MINE.** The
+earlier draft said the board count was "exactly what the measured refusal rate
+predicts", so no board was wasted. That is an IDENTITY, not evidence: with
+`r = refused/n` and `boards_per_commit = n/commits`, `1/(1-r) = n/(n-refused)`,
+and the 2 are equal whenever `commits = n - refused` -- which holds because
+every board that passes yields 1 commit. SymPy returns a difference of exactly 0
+under that substitution, so the match CANNOT fail and establishes nothing about
+waste. The question it was standing in for is whether each REFUSAL was
+necessary, which is measurable and is answered below.
+
+**5 OF 7 REFUSALS ON 2026-11-23 WERE AVOIDABLE WITH NO REDUCTION IN GATE
+STRENGTH: 3.9875 h of the 5.5606 h spent on refusals.** 0.714286, Wilson
+[0.358934, 0.917781], Clopper-Pearson [0.290421, 0.963307]. The breakdown:
+
+- **3 of 7, 2.4006 h — THE LADDER ALREADY SELECTS THOSE GUARDS.** The
+  diff-derived pre-board ladder selects 47 guards and 3 of the 5 distinct guards
+  that refused today are in that selection. They refused anyway because the hook
+  only VERIFIES a stage-0 snapshot; nothing compels the ladder to RUN. An
+  existing, measured, useful mechanism that no caller reaches is the exact shape
+  `additive-standard` names as a non-addition.
+- **2 of 7, 1.5869 h — A CONCURRENCY ARTEFACT, NOT A DEFECT.** Exactly 1
+  overlapping board pair ran today (05:15:12-06:02:59 and 05:16:27-06:03:53,
+  overlap 46.5 min) and BOTH refused naming the same guard,
+  `test_the_parked_file_regenerates_without_losing_him_2026-10-17.py`. That
+  guard calls `blocker_triage.park()`, which refuses while a board runs. The
+  detector excludes its OWN process chain, so a lone board passes; 2 concurrent
+  boards each detect the other. `park()` is the only function that raises, and
+  of the 3 guards that call it, 2 already use the `CDSFL_BT_BOARD` seam -- the
+  2 that test the interlock. Exactly 1 was unprotected, and it is the one that
+  failed.
+- **2 of 7, 1.5731 h — would need a WIDER ladder selection**, being state
+  guards the diff does not name.
+
+**ALL 5 DISTINCT NAMED GUARDS ARE GREEN NOW**, and together they run in
+155.41 s = 2.5902 min, against refusing boards whose mean duration was
+2859.71 s = 47.66 min, 95 per cent t-interval [45.82, 49.50] min.
+
+**THE GROWTH IS REAL AND IS THE ADVISORY'S ONE STRONG POINT.** On 2 agreeing
+routes, scipy `linregress` and statsmodels OLS agreeing to 1.33e-15: **slope
+1.6606 min/day, p = 2.251202e-22, R^2 = 0.5753, 95 per cent CI on the slope
+[1.3952, 1.9260] min/day.**
+
+<!-- figure: growth slope min per day | scripts/why_is_the_board_getting_slower_2026-11-23.py | 1.6606 -->
+<!-- figure: growth R squared | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0.5753 -->
+
+**SO THE ADVISORY DESCRIBES THE PROJECT'S NEAR FUTURE WHILE MIS-DESCRIBING ITS
+PRESENT. The honest limit: R^2 = 0.5753 explains a little over half the
+variance, so the growth is established and no dated projection is a forecast.**
+A WINDOW NOTE, because the 2 are easy to conflate: 6 refusals among boards
+STARTING on 2026-11-23 and 7 among boards ENDING on it, 1 having begun on
+2026-11-22. Both are correct for their window.
+
+---
+
+## Q1. SHOULD THE BOARD BE RESERVED FOR MILESTONES, GIVEN THE LAYERS ALREADY EXIST?
+
+The pre-board ladder already selects the guards a staged diff puts at risk, runs
+in about 5 min, and caught 12 failures on 2026-11-23 that would otherwise have
+cost whole boards. **The question is therefore not whether to build a cheap
+layer but whether the ladder is strong enough to REPLACE a board for ordinary
+batches.**
+
+**WHAT ARGUES AGAINST IT, from this project's own record.** The ladder derives
+its set from the diff, so it is blind to any guard the diff does not name. On
+2026-11-23 a guard that was RED AT HEAD -- `test_help_never_acts_2026-09-11.py`
+-- let a batch land, because it is ADVISORY and off the board entirely. A
+selection-based layer inherits every blindness of its selector.
+
+**THE QUESTION.** Is a diff-derived ladder a sound substitute for a full board
+on an ordinary batch, and what class of regression would it structurally miss?
+Name the concrete failure your answer permits.
+
+## Q2. WHAT IS DRIVING 1.6606 MIN/DAY, AND CAN IT BE FIXED RATHER THAN ROUTED AROUND?
+
+**PART OF THIS IS ALREADY MEASURED AND 1 HYPOTHESIS IS REFUTED.** The
+leading candidate -- that guards each re-walk a growing `scripts/` directory
+-- was measured: caching that walk saves about 10.25 s, which is 0.0036 of a
+47 min board, and the timing interval straddles 0. The cause is therefore
+NOT identified, and that is the honest state.
+
+**This is the question I most want answered, because loosening the gate treats
+the symptom.** If the growth is archive-parametrised tests whose cost scales
+with the experimental archive, that is fixable at source and the policy question
+largely dissolves. If it is irreducible breadth, the policy question is real.
+
+The board emits `--durations=25` on every run, so per-test cost is already
+recorded rather than needing to be guessed.
+
+**THE QUESTION.** Decompose the growth. Is it (a) more guards on the list, (b)
+existing guards getting slower as the archive grows, or (c) something else?
+Give the decomposition with its producer.
+
+## Q3. BOARD BEFORE AN EXPERIMENT, AFTER, OR BOTH?
+
+The founder asks directly. **My position, for falsification:** BEFORE, and not
+both -- unless the experiment changed code. An experiment run on unverified code
+can waste far more than a board costs; an experiment that only produces data
+leaves the code untouched, so a post-board re-verifies bytes nobody altered.
+
+**THE QUESTION.** Is that right? The case I can see against it is that an
+experiment's own harness may write code or configuration during a run, in which
+case "did the code change" is itself a measurement rather than an assumption.
+
+## Q4. IS A THRESHOLD OF 25 TO 30 CHANGES SAFE?
+
+The advisory recommends a full board only after about 25 to 30 distinct
+non-trivial changes accumulate. **Measured against today, a batch is 10 to 12
+items**, so that threshold means roughly every 3rd batch is boarded.
+
+**WHAT ARGUES AGAINST IT.** This project's record is that a gate which stops
+refusing stops being consulted, and that a guard off the board drifts in
+silence -- demonstrated the same day by a guard red at HEAD that no board ran.
+
+**THE QUESTION.** Is a count the right threshold variable at all, or should it
+be a PREDICATE over what the diff touches? State a predicate a hook could
+evaluate.
+
+---
+
+## PRODUCE A FIX, AND TEST IT
+
+A finding without a fix is incomplete, and a fix without a falsifier the seat
+has EXECUTED is a hypothesis. Report the exact command and its output verbatim.
+**Deliver your fix as a file.** Write it INTO the sandbox repository tree
+at its real path. A fix described in prose is not delivered, and a fix
+written to scratch space is destroyed at teardown: rounds 5 and 6 on
+2026-09-10 returned 0 source files for exactly that reason while both
+seats reported working code.
+
+**Use `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py`** on any
+falsifier you write, or say why it does not fit.
+
+**Where more than 1 repair is in play, composability is a CLAIM THAT REQUIRES A
+MEASUREMENT** -- compose only on demonstrated dominance over each part alone,
+and prefer the single fix where it performs as well.
+
+## WHAT WOULD REFUTE YOU
+
+State what evidence would overturn your own answer. **And state explicitly
+whether you think the external advisory should be adopted, rejected, or adopted
+with the corrections above** -- the founder has asked that question and has not
+decided it.
+
+## OUTPUT SHAPE
+
+For each of Q1 to Q4: `question`, `verdict` in 1 sentence, `reasoning` naming
+the instrument you ran, `commands_run` verbatim, `fix` as a repository-relative
+path or NONE, `falsifier` with the result of EXECUTING it,
+`what_would_refute_me`, and `disagreement` -- your strongest disagreement with
+this brief's framing, including with any figure in it. Mandatory, may not be
+empty.
+
+**Do not converge.** Disagreement is preserved as information.
+
+## TERMINATION
+
+Stop when a further pass produces no new above-threshold findings and state how
+many passes you ran. A finding is above threshold if missing it could cause a
+real-world failure, an unsafe condition, or a wrong decision by the founder.

@@ -1,0 +1,357 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 28636,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls; echo ---; ls scripts | head -50; echo ---; ls bench | head -40\", \"description\": \"Orient in sandbox\"}",
+      "t_offset_s": 5.942
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp 2>/dev/null; which wolframscript; python3 -c \\\"import scipy, statsmodels, sympy, mpmath; print('ok')\\\"\", \"description\": \"Check tool availability\"}",
+      "t_offset_s": 6.14
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la | head -20; echo \\\"--- git?\\\"; ls -d .git 2>/dev/null || echo \\\"NO .git\\\"; echo \\\"--- ledger\\\"; find . -iname \\\"*duration*\\\" -maxdepth 3 2>/dev/null | head -20\", \"description\": \"Check git and ledger files\"}",
+      "t_offset_s": 14.128
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wc -l scripts/why_is_the_board_getting_slower_2026-11-23.py scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py scripts/what_is_a_significant_batch_2026-11-23.py scripts/was_this_batch_reviewed_2026-11-22.py hooks/pre-commit 2>&1\", \"description\": \"Size key artefacts\"}",
+      "t_offset_s": 16.107
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo/scripts/why_is_the_board_getting_slower_2026-11-23.py\"}",
+      "t_offset_s": 19.028
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; wc -l .cdsfl_tmp/precommit_durations.jsonl; head -2 .cdsfl_tmp/precommit_durations.jsonl; echo ...; tail -3 .cdsfl_tmp/precommit_durations.jsonl\", \"description\": \"Inspect duration ledger\"}",
+      "t_offset_s": 20.023
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 scripts/why_is_the_board_getting_slower_2026-11-23.py 2>&1 | tail -45\", \"description\": \"Run board growth producer\"}",
+      "t_offset_s": 25.989
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -c \\\"\\nimport json\\nrows=[json.loads(l) for l in open('.cdsfl_tmp/precommit_durations.jsonl') if l.strip()]\\nprint('total rows', len(rows))\\nkeys={}\\nfor r in rows:\\n    for k in r: keys[k]=keys.get(k,0)+1\\nprint(keys)\\nwith_g=[r for r in rows if 'guards' in r]\\nprint('with guards:', len(with_g))\\nimport collections\\nprint(collections.Counter((r['at'][:10], r['guards']) for r ",
+      "t_offset_s": 28.602
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/why_is_the_board_getting_slower_2026-11-23.py 2>&1 | tail -48\", \"description\": \"Run board growth producer\"}",
+      "t_offset_s": 31.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/why_is_the_board_getting_slower_2026-11-23.py --help 2>&1 | sed -n '1,40p'\", \"description\": \"Run producer help\"}",
+      "t_offset_s": 53.912
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,120p' scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py\", \"description\": \"Read cost-over-time script head\"}",
+      "t_offset_s": 54.809
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport re, pathlib, collections\\nt=pathlib.Path('hooks/pre-commit').read_text()\\nnames=[l.strip() for l in t.splitlines() if re.fullmatch(r\\\"bench/tests/test_[A-Za-z0-9_-]+\\\\.py\\\", l.strip())]\\nprint('board guards:', len(names))\\ndated=0; undated=[]\\ndates=[]\\nfor n in names:\\n   ",
+      "t_offset_s": 78.826
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; ls bench/logs/ 2>/dev/null | head -30; echo ---; ls .cdsfl_tmp/ ; echo ---; grep -n \\\"durations\\\" hooks/pre-commit | head -20\", \"description\": \"Look for durations output\"}",
+      "t_offset_s": 80.248
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; for f in bench/logs/*board*.log; do echo \\\"== $f $(wc -c <$f)\\\"; grep -c \\\"slowest\\\" $f 2>/dev/null; done; echo ---; grep -rl \\\"slowest durations\\\" bench/logs .cdsfl_tmp logs 2>/dev/null | head -20\", \"description\": \"Find durations tables in logs\"}",
+      "t_offset_s": 85.413
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; ls bench/logs | head; echo \\\"--- search slowest\\\"; grep -rl \\\"slowest\\\" --include=*.log --include=*.txt . 2>/dev/null | head -20\", \"description\": \"Search for pytest durations tables\"}",
+      "t_offset_s": 88.278
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; ls -la .cdsfl_tmp/*.log; echo ---; grep -l \\\"slowest\\\" .cdsfl_tmp/*.log; echo \\\"--- sample\\\"; grep -n -A5 \\\"slowest\\\" .cdsfl_tmp/batch_board_2026-11-17.log | head -20; echo \\\"--- tail of one\\\"; tail -5 .cdsfl_tmp/batch6_board_2026-11-17.log\", \"description\": \"Inspect board logs for durations\"}",
+      "t_offset_s": 93.508
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rl \\\"passed in\\\" .cdsfl_tmp 2>/dev/null | head -30; echo \\\"=== all logs anywhere with PASS lines\\\"; grep -rl \\\"\\\\[        PASS\\\\]\\\" . --exclude-dir=.git 2>/dev/null | head -30\", \"description\": \"Find all board logs with per-guard timing\"}",
+      "t_offset_s": 101.187
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport re,pathlib,glob\\nfor f in sorted(glob.glob('.cdsfl_tmp/batch*_board_2026-11-17.log')):\\n    t=pathlib.Path(f).read_text()\\n    m=re.findall(r'passed in ([\\\\d.]+)s', t)\\n    print(f, 'guard-timing lines:', len(m), 'sum s:', round(sum(float(x) for x in m),1))\\nprint('--- head",
+      "t_offset_s": 124.891
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; head -5 .cdsfl_tmp/board_census.txt; wc -l .cdsfl_tmp/board_census.txt .cdsfl_tmp/board_census_files.txt; echo \\\"=== hook guards field\\\"; grep -n -B8 \\\"precommit_durations\\\" hooks/pre-commit | head -40\", \"description\": \"Board census and hook ledger write\"}",
+      "t_offset_s": 149.585
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport re,pathlib\\nt=pathlib.Path('hooks/pre-commit').read_text()\\n# how is GUARDS defined\\nfor i,l in enumerate(t.splitlines(),1):\\n    if 'GUARDS=' in l or 'GUARDS=\\\"' in l: print(i,l[:160])\\nEOF\\necho \\\"=== lines containing bench/tests/ not matching strict regex, inside GUARDS ",
+      "t_offset_s": 161.013
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport re,pathlib\\nlines=pathlib.Path('hooks/pre-commit').read_text().splitlines()\\n# find end of GUARDS heredoc/string\\ns=365\\nend=None\\nfor i in range(s,len(lines)):\\n    if lines[i].rstrip().endswith('\\\"') and i>s:\\n        end=i; break\\nprint('block', s+1, 'to', end+1)\\nblk=li",
+      "t_offset_s": 166.562
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rn \\\"bench/tests/test_\\\\[A-Za-z0-9_-\\\\]\\\" --include=*.py . | head -20; echo \\\"=== other board-list parsers\\\"; grep -rln \\\"GUARDS\\\" --include=*.py scripts bench/tests | head -20; echo; ls -la hooks/pre-commit\", \"description\": \"Find other users of the board-list regex\"}",
+      "t_offset_s": 180.982
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"bench/tests/test_\\\\[A-Za-z0-9_-\\\\]\", \"output_mode\": \"content\", \"-n\": true}",
+      "t_offset_s": 184.051
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"GUARDS\", \"path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo/scripts\", \"output_mode\": \"files_with_matches\", \"head_limit\": 30}",
+      "t_offset_s": 184.862
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -n -A6 \\\"GUARDS\\\" scripts/which_guards_does_this_commit_risk_2026-11-22.py | head -40; echo \\\"====\\\"; grep -n -A6 \\\"GUARDS\\\" scripts/what_the_commit_gate_actually_runs_2026-11-01.py | head -30\", \"description\": \"Compare board-list parsers\"}",
+      "t_offset_s": 190.198
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport json, datetime as dt, numpy as np\\nimport statsmodels.api as sm\\nfrom scipy import stats as ss\\nrows=[]\\nfor l in open('.cdsfl_tmp/precommit_durations.jsonl'):\\n    l=l.strip()\\n    if not l: continue\\n    r=json.loads(l)\\n    s=float(r.get('seconds',0))\\n    if s<120: cont",
+      "t_offset_s": 221.968
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport json, re, pathlib, datetime as dt, numpy as np, collections\\nimport statsmodels.api as sm\\n\\nhook=pathlib.Path('hooks/pre-commit').read_text()\\nm=re.search(r'GUARDS=\\\"(.*?)\\\"', hook, re.S)\\npaths=sorted({x.strip() for x in m.group(1).split() if x.strip()})\\nprint('board ent",
+      "t_offset_s": 254.356
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '698,790p' hooks/pre-commit\", \"description\": \"Read hook board execution\"}",
+      "t_offset_s": 284.212
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -n 'for g in\\\\|\\\\$GUARDS\\\\|pytest' hooks/pre-commit | sed -n '1,60p'\", \"description\": \"Find how GUARDS are executed\"}",
+      "t_offset_s": 289.546
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; cat > /tmp/cohort_probe.py <<'EOF'\\n\\\"\\\"\\\"Is the per-guard cost growth in the OLD guards or in the NEW ones?\\\"\\\"\\\"\\nimport json, re, pathlib, subprocess, time, random, datetime as dt\\nhook = pathlib.Path('hooks/pre-commit').read_text()\\nm = re.search(r'GUARDS=\\\"(.*?)\\\"', hook, re.S)\\npaths = sorted(",
+      "t_offset_s": 323.738
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '100,200p' scripts/which_guards_does_this_commit_risk_2026-11-22.py\", \"description\": \"Read ladder selector\"}",
+      "t_offset_s": 340.54
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat /tmp/cohort_probe.log\", \"description\": \"Read cohort probe results\"}",
+      "t_offset_s": 343.885
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF' 2>&1 | tail -40\\nimport json, re, pathlib, subprocess, time, random\\nhook = pathlib.Path('hooks/pre-commit').read_text()\\nm = re.search(r'GUARDS=\\\"(.*?)\\\"', hook, re.S)\\npaths = sorted({x.strip() for x in m.group(1).split() if x.strip()})\\ncoh = {}\\nfor p in paths:\\n    mm = re.sea",
+      "t_offset_s": 358.91
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '55,105p' hooks/pre-commit; echo \\\"=== where does the board pytest sit relative to the timer / trap\\\"; grep -n \\\"_CDSFL_T0\\\\|_cdsfl_secs\\\\|trap\\\\|SECONDS\\\" hooks/pre-commit | head -30\", \"description\": \"Find what the hook timer covers\"}",
+      "t_offset_s": 499.051
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -n \\\"_CDSFL_BOARD_LOG=\\\" hooks/pre-commit; echo \\\"=== tail board_census.txt\\\"; tail -6 .cdsfl_tmp/board_census.txt; echo \\\"=== grep elapsed lines anywhere\\\"; grep -rn \\\"passed in \\\\|=====\\\" .cdsfl_tmp/board_census.txt | tail -5; ls -la .cdsfl_tmp/board_census.txt .cdsfl_tmp/precommit_seconds; c",
+      "t_offset_s": 512.382
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '1220,1250p' hooks/pre-commit; echo \\\"=== any rm of the board log?\\\"; grep -n \\\"_CDSFL_BOARD_LOG\\\" hooks/pre-commit\", \"description\": \"Board log retention\"}",
+      "t_offset_s": 543.011
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rln \\\"durations\\\" scripts bench/tests bench/dm 2>/dev/null | head -20; echo \\\"=== B207\\\"; grep -rn \\\"B207\\\" --include=\\\"*.py\\\" --include=\\\"*.md\\\" . 2>/dev/null | head -10\", \"description\": \"Find the durations reader B207 wired\"}",
+      "t_offset_s": 576.243
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rn \\\"slowest\\\\|durations\\\" scripts/the_board_is_unwatchable_2026-11-14.py | head -20; echo \\\"=== which_tests_outlive\\\"; grep -n \\\"slowest\\\\|durations\\\\|def \\\" scripts/which_tests_outlive_the_global_timeout_2026-10-18.py | head -25\", \"description\": \"Inspect candidate durations readers\"}",
+      "t_offset_s": 581.707
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '165,200p' scripts/which_tests_outlive_the_global_timeout_2026-10-18.py\", \"description\": \"Read read_durations\"}",
+      "t_offset_s": 593.463
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '1250,1270p' hooks/pre-commit; echo \\\"=== writable?\\\"; touch scripts/.__wtest && echo \\\"scripts writable\\\" && rm scripts/.__wtest; touch hooks/.__wtest && echo \\\"hooks writable\\\" && rm hooks/.__wtest\", \"description\": \"Hook rm context and writability\"}",
+      "t_offset_s": 595.314
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport re, pathlib\\nhook=pathlib.Path('hooks/pre-commit').read_text()\\nboard=sorted({x.strip() for x in re.search(r'GUARDS=\\\"(.*?)\\\"',hook,re.S).group(1).split() if x.strip()})\\npop=[]; named=[]\\nfor p in board:\\n    f=pathlib.Path(p)\\n    if not f.is_file(): continue\\n    t=f.rea",
+      "t_offset_s": 628.526
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport importlib.util, pathlib, sys\\nspec=importlib.util.spec_from_file_location(\\\"ladder\\\",\\\"scripts/which_guards_does_this_commit_risk_2026-11-22.py\\\")\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\nREPO=pathlib.Path('.').resolve()\\nnew=[\\\"scripts/a_brand_",
+      "t_offset_s": 640.193
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rln \\\"why_is_the_board_getting_slower\\\" bench/tests scripts hooks docs 2>/dev/null | head; echo \\\"=== hook pinned literals test\\\"; grep -rln \\\"no:cacheprovider\\\" bench/tests | head\", \"description\": \"Check for guards pinning the producer and the hook literal\"}",
+      "t_offset_s": 666.43
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo/hooks/pre-commit\", \"offset\": 1246, \"limit\": 10}",
+      "t_offset_s": 672.642
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo/hooks/pre-commit\", \"old_string\": \"OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\nrm -f \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null\", \"new_string\": \"OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\n# >>> CDSFL durations retention, 2026-11-23\\n# \\u2605 RETAIN THE DURATIONS TABLE BEFORE THE LOG I",
+      "t_offset_s": 689.283
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; cp hooks/pre-commit /tmp/pre-commit.orig; python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('hooks/pre-commit')\\nt = p.read_text()\\nanchor = 'OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\\\nrm -f \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null'\\nassert t.count(anchor) == 1, t.count(anchor)\\nblock = r'''OUT=$(c",
+      "t_offset_s": 709.408
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo/scripts/the_durations_table_is_deleted_unread_2026-11-23.py\", \"content\": \"#!/usr/bin/env python3\\n\\\"\\\"\\\"The board's `--durations` table was produced and deleted 1 line later.\\n\\nDESTINATION `scripts/`. Written 2026-11-23. FALSIFIER for the retention block\\nin `hooks/pre-commit` marked `>>> CDSFL durat",
+      "t_offset_s": 757.118
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; cat > scripts/the_durations_table_is_deleted_unread_2026-11-23.py <<'CDSFLEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The board's `--durations` table was produced and deleted 1 line later.\\n\\nDESTINATION `scripts/`. Written 2026-11-23. FALSIFIER for the retention block\\nin `hooks/pre-commit` marked `>>> CDS",
+      "t_offset_s": 795.398
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; echo \\\"=== DEFECT-PRESENT ARM (the hook as dispatched) ===\\\"; python3 scripts/the_durations_table_is_deleted_unread_2026-11-23.py --hook /tmp/pre-commit.orig; echo \\\"exit=$?\\\"; echo; echo \\\"=== also check --help never acts ===\\\"; python3 scripts/the_durations_table_is_deleted_unread_2026-11-23.py --",
+      "t_offset_s": 803.843
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py --help 2>&1 | head -40\", \"description\": \"Read differential tool interface\"}",
+      "t_offset_s": 805.029
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py --target hooks/pre-commit --defect-file /tmp/pre-commit.orig -- python3 scripts/the_durations_table_is_deleted_unread_2026-11-23.py 2>&1 | tail -25\", \"description\": \"Drive the differential tool\"}",
+      "t_offset_s": 809.389
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; cp scripts/why_is_the_board_getting_slower_2026-11-23.py /tmp/why_board.orig; python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('scripts/why_is_the_board_getting_slower_2026-11-23.py')\\nt = p.read_text()\\n\\n# ---- 1. the docstring: no volatile figure, and claim 3 withdrawn ------------\\nold_doc_",
+      "t_offset_s": 887.317
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('scripts/why_is_the_board_getting_slower_2026-11-23.py')\\nt = p.read_text()\\ni = t.index('\\\"\\\"\\\"Why is the commit board')\\nj = t.index('\\\"\\\"\\\"', i + 3) + 3\\nnew_doc = '''\\\"\\\"\\\"Why is the commit board getting slower, and what would actually fix it",
+      "t_offset_s": 913.51
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'PYEOF'\\nimport pathlib\\np = pathlib.Path('scripts/why_is_the_board_getting_slower_2026-11-23.py')\\nt = p.read_text()\\nold_fn = '''def board_guard_count(text: str | None = None) -> int:\\n    \\\"\\\"\\\"Guards on the board, counted from the hook rather than typed.\\\"\\\"\\\"\\n    t = text if text i",
+      "t_offset_s": 944.839
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; cat > scripts/the_board_count_must_match_its_own_subject_2026-11-23.py <<'CDSFLEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The board guard count was short by 2, and the 2 were the ends of the list.\\n\\nDESTINATION `scripts/`. Written 2026-11-23. FALSIFIER for\\n`scripts/why_is_the_board_getting_slower_2026-11",
+      "t_offset_s": 984.164
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py --target scripts/why_is_the_board_getting_slower_2026-11-23.py --defect-file /tmp/why_board.orig -- python3 scripts/the_board_count_must_match_its_own_subject_2026-11-23.py 2>&1 | tail -22\", \"description\": \"Differential check falsif",
+      "t_offset_s": 993.3
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'PYEOF'\\nimport pathlib\\np=pathlib.Path('scripts/the_board_count_must_match_its_own_subject_2026-11-23.py')\\nt=p.read_text()\\nold='''    rows = mod.determinate_rows()\\n    if len(rows) >= 8:'''\\nnew='''    rows = mod.determinate_rows()\\n    if not hasattr(mod, \\\"decompose\\\"):\\n        # ",
+      "t_offset_s": 1006.073
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 -m pytest -q -p no:cacheprovider bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py bench/tests/test_a_refusal_names_every_failure_2026-11-09.py bench/tests/test_precommit_guard_2026-09-09.py bench/tests/test_the_board_cost_producer_runs_2026-11-14.py bench/tests/test_the_cheap_ch",
+      "t_offset_s": 1018.533
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; /Users/georgejackson/Developer_Projects/Constraint_Engineering/bench/tools/wolfram_gate/serial/wolframscript -code 'z=Quantile[NormalDistribution[],0.975]; k=54; n=113; p=k/n; d=1+z^2/n; c=(p+z^2/(2 n))/d; hw=z*Sqrt[p(1-p)/n+z^2/(4 n^2)]/d; N[{c-hw,c+hw},8]' 2>&1; echo \\\"exit=$?\\\"\", \"description\": \"",
+      "t_offset_s": 1021.307
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; cp hooks/pre-commit /tmp/pre-commit.fixed; cp /tmp/pre-commit.orig hooks/pre-commit; python3 -m pytest -q -p no:cacheprovider \\\"bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py::TestThePremiseIsAlive::test_the_hook_is_the_live_hook\\\" 2>&1 | tail -4; cp /tmp/pre-commit.fixed hooks/pre-co",
+      "t_offset_s": 1098.583
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 -m pytest -q -p no:cacheprovider bench/tests/test_help_is_answered_2026-09-11.py bench/tests/test_a_help_flag_must_not_mutate_the_tree_2026-11-12.py 2>&1 | tail -8\", \"description\": \"Run the help ratchet over the new scripts\"}",
+      "t_offset_s": 1100.283
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; python3 - <<'EOF'\\nimport json, statistics as st\\nrows=[json.loads(l) for l in open('.cdsfl_tmp/precommit_durations.jsonl') if l.strip()]\\ns=[r['staged'] for r in rows if 'staged' in r]\\nprint('rows with a staged count:', len(s))\\nprint('staged files per commit attempt: min %d median %d mean %.1f ma",
+      "t_offset_s": 1156.028
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rn \\\"timeout\\\" scripts/the_commit_timeout_left_the_board_running_2026-11-10.py | head -12; echo \\\"=== global commit timeout value\\\"; grep -rn \\\"timeout=\\\\|_COMMIT_TIMEOUT\\\\|3600\\\\|5400\\\" scripts/the_commit_timeout_left_the_board_running_2026-11-10.py 2>/dev/null | head -8\", \"description\": \"Che",
+      "t_offset_s": 1225.003
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; grep -rn \\\"timeout\\\" scripts/cdsfl_sv.py 2>/dev/null | head -20; echo \\\"=== sed around\\\"; grep -rn \\\"COMMIT_TIMEOUT\\\\|commit.*timeout=\\\\|timeout=.*commit\\\" --include=*.py scripts bench 2>/dev/null | head -12\", \"description\": \"Find the sv commit timeout value\"}",
+      "t_offset_s": 1237.573
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '640,670p;740,778p' scripts/cdsfl_sv.py; echo \\\"=== evaluate it\\\"; python3 -c \\\"\\nimport importlib.util,pathlib\\ns=importlib.util.spec_from_file_location('sv','scripts/cdsfl_sv.py');m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\\nprint('commit_timeout() =', m.commit_timeout(path",
+      "t_offset_s": 1241.752
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; sed -n '670,740p' scripts/cdsfl_sv.py | grep -n \\\"max\\\\|return\\\\|rows\\\\|def \\\\|sorted\\\\|\\\\[-\\\" | head -20\", \"description\": \"How recorded_hook_seconds picks its value\"}",
+      "t_offset_s": 1257.816
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo; for f in hooks/pre-commit scripts/why_is_the_board_getting_slower_2026-11-23.py scripts/the_durations_table_is_deleted_unread_2026-11-23.py scripts/the_board_count_must_match_its_own_subject_2026-11-23.py; do printf \\\"%-70s %s %s\\\\n\\\" \\\"$f\\\" \\\"$(sha256sum $f 2>/dev/null | cut -c1-16 || shasum -a256 ",
+      "t_offset_s": 1285.85
+    }
+  ],
+  "n_tool_calls": 67,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 1433.0,
+  "response": "**6 passes.** Sandbox caveat stated once: no `.git`, so every git-derived figure in the brief (`9 commits`, `boards per commit`, `3 of 5 refusals in the ladder's selection`) is unreproducible here and I substituted what the ledger and the hook themselves carry. Both fixes are in the tree; both falsifiers DISCRIMINATE. Wolfram ran (local Wolfram Engine, exit 0, no `Name::tag`, no `$Failed`).\n\n---\n\n## QJ \u2014 THE OTHER SEAT\n\n**Where `cc2`'s strongest claim fails.** Its Q2 verdict \u2014 *\"not evidence at all: it is a function of `--interval`, a free parameter\"* \u2014 is **right about the mechanism and mis-filed in its conclusion**, and its own table refutes its own framing.\n\nDerived: at k=0 the Wilson upper bound is exactly `z\u00b2/(n+z\u00b2)`, a function of **n alone**. `cc2` then writes *\"A fifth of the observation time produced a tighter bound than yours\u2026 An interval that narrows as you look less is measuring the observer.\"* But 19 pairs over 20 s gave 0.168179 and 14 pairs over 106 s gave 0.215311 **because 19 > 14**, not because the window shrank \u2014 `z\u00b2/(19+z\u00b2) = 3.84146/22.84146 = 0.168179`, and duration does not appear. `cc2`'s own three rows (14 / 53 / 1060 pairs, *same* 106 s run) say so explicitly two paragraphs earlier. The bound narrows as you **poll more**, at any duration. So the rhetorical framing mislocates the fault, and the real fault is the one `cc2` *also* states and proves on `classify`: the denominator is poll-pairs, not opportunities. That half is correct, executable, and **sharper than my blind answer** \u2014 I said \"wrong population/regime\"; \"the denominator is not a risk set\" is the same defect stated as a predicate you can toggle. **I adopt it over my own framing.**\n\nBut \"not evidence at all\" is wrong as a classification. `z\u00b2/(n+z\u00b2)` *is* a valid 95% upper bound on a well-defined quantity: P(a consecutive poll pair exhibits a full replacement). That quantity is design-dependent and nobody cares about it \u2014 which makes this a **wrong-estimand** error, not a non-evidence error. The distinction is not pedantic: `cc2`'s own prescribed repair (\"the denominator is observed set-change events\") is itself a bound of exactly the same family, so if the first is \"not evidence\" the second cannot be evidence either. The admissible statement is: valid bound, mis-specified estimand, not invariant under the sampling design.\n\n**Does \"this batch is itself 1 data point is wrong in the direction that favours the line\" survive my reading?** Partly \u2014 as a hypothesis, not as a finding. We agree on the bottom line (0/1 \u2192 Wilson [0, 0.7935], decides nothing; I computed that blind). `cc2` goes further: the board was killed by *a human primed by the prior round's 7/10*, so the batch was taken in a regime where the failure could not occur. That causal claim about attention has **no producer**, and `cc2` supplies none \u2014 which is the project's own `measured-rate-travels-with-its-script` violation, charged correctly elsewhere in the same reply. And it changes no decision: 0/1 already excludes nothing, so Hawthorne contamination is a second reason to discard a data point already discarded.\n\n**One further genuine disagreement.** `cc2`'s Q4 rule \u2014 `lapse_rate \u00d7 cost(unreviewed) > block_rate \u00d7 cost(false block)` \u2014 is called *\"a comparison of two measured quantities, not a preference.\"* It is not: both cost terms are unmeasured, and `cc2` concedes this later (*\"I have not measured them\"*). Each side is one measured factor times one unmeasured factor. That is a preference wearing an inequality.\n\n**Where I find no disagreement, and will not manufacture one.** Q1: `cc2`'s case `C` (bare `__file__` sibling, no derived name) and my `ATTACK2` are the same counterexample to the same unjoined conjunction; we reached it independently and converge. Q3: `cc2`'s disagreement paragraph states the coverage framing I argued for. Converged on both.\n\n---\n\n## Q1 \u2014 SHOULD THE BOARD BE RESERVED FOR MILESTONES?\n\n**question** Is a diff-derived ladder a sound substitute for a full board on an ordinary batch, and what class of regression would it structurally miss?\n\n**verdict** **No** \u2014 the ladder is selection-by-literal-path, and **68 of 332 board guards (0.2048) derive their subject set at runtime**, so for a *newly added* member of such a population the selector returns nothing; I executed the real selector on one new file and it selected **0 guards**, including the guard that decides the case.\n\n**reasoning** Instrument: the real `guards_naming` / `board_guards` imported from `scripts/which_guards_does_this_commit_risk_2026-11-22.py`, plus an AST-free source scan of all 332 board entries. `guards_naming` credits a guard iff the changed path or its basename appears **in the guard's text**. A guard that globs its population (`.glob`/`rglob`/`iterdir`/`os.walk`) contains no literal member path, so a new member cannot select it \u2014 while being exactly the member it exists to judge.\n\nThe concrete failure my answer permits, executed: stage one new producer. The ladder runs nothing; `test_help_is_answered_2026-09-11.py` is on the board and is **not** selected. A ladder-only commit of a new script whose `--help` performs its measurement therefore lands green \u2014 the 54,480-byte record class the help ratchet exists to prevent. 45 of the 68 glob `scripts/` or `bench/tests/` specifically.\n\nNote the asymmetry that makes this worse than a coverage gap: those same population-quantified guards are the **expensive** ones (below), so a cost-driven policy routes around precisely the guards that cost the most *and* are structurally unreachable by the cheap layer.\n\n**commands_run**\n```\npython3 - <<EOF   # real selector, one newly added file\nstaged (new file only)      : ['scripts/a_brand_new_producer_2026-11-23.py']\nguards naming it            : 0\nDECIDING (ladder would run) : 0 []\nis the --help population guard selected?  False  (on the board: True )\nEOF\npython3 - <<EOF   # population scan over the real board list\nboard entries           : 332\npopulation-quantified   : 68 = 0.2048\n  globbing scripts/ or bench/tests/ : 45\nEOF\n```\n\n**fix** NONE for the selector. Crediting all 68 on every added file costs the Sep/Oct heavy guards and I have no measurement that it beats the board it would replace; under the additive and simplest-sufficient standards I decline to ship it. The answer to Q1 is a policy answer: do not substitute. My delivered fixes are at Q2, where the measurement that *would* decide the policy was being destroyed.\n\n**falsifier** The selector demonstration above is executable and repeatable but is not a differential falsifier: there is no defect to toggle, since the selector is behaving as designed and the blindness is a property of selection itself. I say so rather than force one; `a_falsifier_must_disagree_with_itself_2026-11-23.py` would correctly refuse it as vacuous (its own case 2).\n\n**what_would_refute_me** A board guard set in which every population-quantified guard also enumerates its members statically \u2014 then a diff names them and the selector reaches them. Measured 68 of 332 today. Or a selector amendment that treats *added* paths as risking every guard globbing their parent directory, with a measurement showing the resulting set costs materially less than a board while catching the 2026-11-23 refusals.\n\n**disagreement** The brief frames Q1 as ladder **strength**. The deciding property is **reachability**, and it is not a matter of degree: no amount of ladder tuning reaches a guard whose population the diff cannot name. Second, the brief's \"3 of the 5 distinct guards that refused today are in that selection\" rests on `staged()`, which has no input in any seat's sandbox \u2014 it is a figure no seat can check, and it is load-bearing for the brief's \"5 of 7 refusals were avoidable\".\n\n---\n\n## Q2 \u2014 WHAT IS DRIVING 1.6606 MIN/DAY?\n\n**question** Decompose the growth: (a) more guards, (b) existing guards getting slower, or (c) something else. Give the decomposition with its producer.\n\n**verdict** **(b), and by a factor of 2 over (a)** \u2014 over the window the ledger actually covers, board time grew **4.3357\u00d7** as guard count grew **1.4310\u00d7** and per-guard cost grew **3.0298\u00d7**; and the one instrument that could attribute it further \u2014 the board's own `--durations=25` table \u2014 **was being generated and `rm -f`'d 15 lines later on every one of 113 boards**, which is my headline finding and is now fixed.\n\n**reasoning, four instruments.**\n\n*1. A rival hypothesis, tested and refuted.* The regression pools passing and refusing boards. Refusing boards are **longer** by 3.2589 min (p = 0.0212, Welch t = 2.0920, p = 0.0388), but adding the refusal indicator moves the time slope only 1.6606 \u2192 1.6395 (R\u00b2 0.5753 \u2192 0.5954). Refusal composition is not the confounder.\n\n*2. A second rival, also refuted.* The ledger's `seconds` is the **whole hook**, not the board, so the decomposition's numerator could have been dominated by stage-0 repairs. The one retained board log (`.cdsfl_tmp/board_census.txt`, 2026-11-21) ends `34 failed, 5129 passed, 27 skipped, 47 errors in 2615.21s (0:43:35)` against a hook mean of 43.7 min = 2622 s for that day's 3 rows \u2192 the guard pytest is **0.997** of the hook. The numerator is sound.\n\n*3. The decomposition, now with a producer.* The hook records its `guards` covariate on only **26 of 141** rows, all at 330\u2013331, i.e. **zero variation** \u2014 so the series the decomposition needs cannot be read off the ledger at all, which is why the earlier hand decomposition had to reach outside it. I reconstructed the series from each board guard's own filename date and **validated it where ground truth exists**: on the 2 days the hook recorded `guards`, the proxy reads exactly +1, a constant offset that cancels in a ratio. Bias stated in the code in both directions (late additions counted early; removed guards not counted).\n\n*4. The cause is localised, and it is not what \"per-guard cost\" suggests.* 19 board guards sampled by cohort, one pytest process each: 2026-09 (n=6) mean **8.13 s**, 2026-10 (n=6) **4.04 s**, 2026-11 (n=6) **0.80 s**. The newest cohort is **217 of 332 guards and the cheapest by an order of magnitude**; the single most expensive guard sampled is `test_help_is_answered_2026-09-11.py` at **38.21 s**, which walks the whole `scripts/` population. So \"per-guard cost rose 3\u00d7\" is a *mean* effect concentrated in a handful of population-quantified guards whose cost tracks the repository \u2014 not a diffuse slowdown, and **not** more guards. Honest limit: my cohort means project only ~672 s against a 2615 s board, so the heavy tail is under-sampled and this arm localises the cause without quantifying it.\n\nWhich is exactly why the `--durations=25` table matters, and why I stopped modelling and went to look for it. It is written only into `$_CDSFL_BOARD_LOG` (hook line 1238) and `rm -f`'d at line 1253. The reader B207 was wired to feed **already exists** \u2014 `scripts/which_tests_outlive_the_global_timeout_2026-10-18.py --durations LOG`, whose `read_durations` parses pytest's `12.34s call path::test` rows. B207 closed the half where nothing emitted the table and left the half where nothing can read it: the addition still reached nothing, the class this project has measured 11 times. \u00a710 category 4, silent evidence loss.\n\n**commands_run**\n```\npython3 scripts/why_is_the_board_getting_slower_2026-11-23.py\n  guards on the board NOW: 332\n  -- THE DECOMPOSITION, window 2026-11-08 to 2026-11-23, 5 boards at each end --\n    board minutes      11.77 -> 51.02   = 4.3357x\n    guards (PROXY)     232.0 -> 332.0   = 1.4310x\n    per-guard minutes  0.050718 -> 0.153665 = 3.0298x\n    arithmetic check   1.4310 x 3.0298 = 4.3357 (identity, verifies nothing)\n    the larger factor over this window is PER-GUARD COST\n\npython3 - <<EOF   # rival hypothesis: refusal composition\nexit!=0 n=54 mean 36.69 min ; exit==0 n=59 mean 32.27 min\nWelch t: statistic=2.0919693025062904, pvalue=0.038770564098326056\nA slope 1.6606  R2 0.5753\nB time slope 1.6395 (p=1.93e-22)  refusal coef 3.2589 (p=0.0212)  R2 0.5954\nEOF\n\ntail -1 .cdsfl_tmp/board_census.txt\n34 failed, 5129 passed, 27 skipped, 3 warnings, 47 errors in 2615.21s (0:43:35)\n\npython3 /tmp/cohort_probe.py        # 19 guards, one pytest each\n2026-09    38.21s rc=0       test_help_is_answered_2026-09-11.py\n2026-11     0.57s rc=0       test_the_co_author_trailer_is_not_doubled_2026-11-14.py\n  ... cohort means 8.13s / 4.04s / 0.80s for 09 / 10 / 11\n\nwolframscript -code 'z=Quantile[NormalDistribution[],0.975]; k=54; n=113; ...'\nComputed with Wolfram Language (local Wolfram Engine, via wolframscript).\n{0.3880285457255058, 0.569178424724315}      # == statsmodels [0.388029, 0.569178]\n```\n\n**fix** two files, delivered into the tree:\n\n1. **`hooks/pre-commit`** (sha256 `9845736222adcc0d`, 85559 bytes) \u2014 a retention block marked `>>> CDSFL durations retention`, inserted **above** the `rm -f`, writing the durations rows plus a board stamp to `.cdsfl_tmp/board_durations/<stamp>_<pid>.log`. One file per board, because `read_durations` keys a dict by test id and appending boards into one file would have each silently overwrite the last \u2014 so a per-board path is the whole interface and **the existing reader is unchanged**. Every command redirected, group ends `|| true`, nothing read by the refusal path: it cannot fail a commit. `bash -n` clean; the pinned `no:cacheprovider` literal is byte-identical and still at line 1238, so all 4 anchors that count it still count 1.\n2. **`scripts/why_is_the_board_getting_slower_2026-11-23.py`** (sha256 `f38b926aa21e362e`) \u2014 `board_guard_count()` now uses the `GUARDS=\"(.*?)\"` expression **already in the tree** rather than a third regex; added `guard_count_series()` and `decompose()`; labelled the withdrawn `1/(1-r)` line as the identity it is; removed every volatile figure from the docstring.\n\n**falsifier** both executed, both driven through `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py`:\n\n```\n--- scripts/the_durations_table_is_deleted_unread_2026-11-23.py\n# extracts the retention block FROM THE REAL HOOK between its markers, runs it\n# under `sh` in a TemporaryDirectory against a real pytest durations table, then\n# feeds whatever it wrote to the REAL read_durations imported from the real reader.\n  retained files             : ['20261123T203411Z_59488.log']\n  rows the REAL reader parsed: 4\n  board stamp                : # board at=2026-11-23T20:34:11Z exit=1 guards=2\n  the durations table survives ... Defect ABSENT.          exit=0\n\n  DEFECT PRESENT  exit=1    FALSIFIED-token=True  -> FAIL\n                  | AssertionError: no durations retention block in the hook\n  DEFECT ABSENT   exit=0    FALSIFIED-token=False  -> PASS\n  target restored byte-for-byte : True\n  DISCRIMINATES\n\n--- scripts/the_board_count_must_match_its_own_subject_2026-11-23.py\n  1. synthetic 3-entry GUARDS block -> 3 (must be 3)\n  2. real hook: producer 332 vs independent block parser 332\n  3. real hook: producer 332 vs the hook own grep -c 332\n  4. decomposition 1.4310 x 3.0298 = 4.3357 vs total 4.3357  window 2026-11-08..2026-11-23\n  5. volatile figures in the docstring: none                exit=0\n\n  DEFECT PRESENT  exit=1    FALSIFIED-token=True  -> FAIL\n                  | AssertionError: the synthetic block of 3 guards counted as 1;\n                  |   the first and/or last entry is being dropped\n  DEFECT ABSENT   exit=0    FALSIFIED-token=False  -> PASS\n  target restored byte-for-byte : True\n  DISCRIMINATES\n```\n\nOn the first drive, falsifier B failed the defect arm by **absence** (`AttributeError: no attribute 'decompose'`) \u2014 the tool's own vacuity case 2 \u2014 so the count arms that had already detected the real defect never printed. Hardened with a `hasattr` guard and re-driven; it now fails on the count defect by name. Recorded in the file, because a falsifier that dies before reporting gives the right exit code for the wrong reason.\n\nRegression: `test_help_is_answered` + `a_help_flag_must_not_mutate_the_tree` \u2192 **38 passed**, so both new scripts answer `--help` without acting. Hook-anchored guards \u2192 **1 failed, 51 passed, 2 skipped**; the one failure is `test_the_hook_is_the_live_hook`, which asserts on `git config core.hooksPath` and fails **identically against the pristine hook** (`1 failed in 0.29s`), i.e. the sandbox's absent `.git`. Hook restored to the fixed state after that baseline, verified by digest.\n\n**Two fixes, and I make NO composability claim.** They touch unrelated artefacts, and under the founder's 2026-10-02 definition I have no measurement showing a composed repair beats either alone. Reporting that they do not interfere is the weak form he excludes, so I am not reporting it.\n\n**what_would_refute_me** A real board whose retained durations table shows cost spread evenly across the 332 guards rather than concentrated in the population-quantified ones \u2014 then \"existing guards getting slower\" is diffuse, my localisation is wrong, and the policy question becomes real breadth. Equally: if the filename-date proxy is badly wrong because guards joined the board long after being written, the 1.4310\u00d7 count ratio is understated and (a) may dominate after all; the proxy is validated at only 2 points and I say so in the code. And the retention block has never run inside a real `git commit` \u2014 only its verbatim text under `sh` against real pytest output. That is the limit of my evidence.\n\n**disagreement** The brief states: *\"The board emits `--durations=25` on every run, so per-test cost is already recorded rather than needing to be guessed.\"* **That is false, and it is the most load-bearing error in the brief** \u2014 the table was deleted one line after being produced, 113 times, and the falsifier above demonstrates it. The brief also asserts *\"PART OF THIS IS ALREADY MEASURED\"* on the back of it. Second: the brief's \"The BOARD is 329 guards\" is wrong on three agreeing routes (332); the producer said 330, the hook's own ledger recorded 331 at 20:04 before the list gained an entry at 20:06, and the brief says 329 \u2014 **four figures for one quantity**, the board's first guard invisible to all but one of them. Third: the brief's claim-4 decomposition (\"guard COUNT 126 \u2192 329 = 2.6111\u00d7 times PER-GUARD 1.5385\u00d7\") took its count ratio from a **wider window than its time ratio**, which is the whole reason count appeared dominant; over one window it is not, and the \"decomposes EXACTLY with an identity check\" reassurance is the same vacuous self-verification the brief withdrew for `1/(1-r)` \u2014 two instances of one error class in one artefact.\n\n---\n\n## Q3 \u2014 BOARD BEFORE AN EXPERIMENT, AFTER, OR BOTH?\n\n**question** Is \"BEFORE, and not both \u2014 unless the experiment changed code\" right?\n\n**verdict** Right in its ordering and **wrong in its \"unless\"**, which makes the post-board conditional on a predicate nothing evaluates; the repair is to make \"did the code change\" a *computed* digest comparison that costs seconds against a 47-minute board.\n\n**reasoning** The brief names its own counter and then leaves it as an assumption. An experiment harness in this repository writes under `bench/logs/` and `.cdsfl_tmp/`, and the pre-commit hook itself contains stage-0 repairs that **rewrite tracked files and re-stage them** \u2014 the hook's own comment records that re-staging being added because repairs were \"permanently one commit behind\". So a run that is nominally data-only can move tracked bytes, and the brief's \"unless\" is exactly the case that cannot be assumed either way.\n\nThe predicate is cheap and already has all its inputs: digest the tracked code set before the experiment, digest it after, compare. Non-equal \u2192 the post-board is owed; equal \u2192 a post-board re-verifies bytes nobody altered, and the brief's reasoning holds. That is seconds against 2860 s, so the asymmetry is ~3 orders of magnitude and the measurement is strictly cheaper than the assumption it replaces. \"Both\" as a standing policy is the one answer the evidence excludes: it pays the 47-minute board for a hypothesis a digest settles.\n\n**commands_run** No new execution for this answer; it rests on the stage-0 re-staging behaviour read in `hooks/pre-commit` and on the board-cost figures measured above (mean 34.38 min over 113 runs, latest 3313 s).\n\n**fix** NONE. The digest comparison belongs in the experiment runner's entry and exit, which cannot execute in a git-less sandbox, so shipping it here would be an addition no test can reach \u2014 the 11-times-measured class. The specification is complete enough to implement and test where a `.git` exists.\n\n**falsifier** Not applicable and I will not force one: the proposition is about which of two policies to adopt, not about a code state, so there is no defect to toggle and the differential tool would correctly refuse the run as vacuous.\n\n**what_would_refute_me** Evidence that the experiment harnesses provably cannot write tracked files \u2014 then \"did the code change\" is answerable statically and the brief's \"unless\" is safe as written. Or a cost measurement showing the digest comparison is not cheap relative to a board, which would be surprising at 3 orders of magnitude.\n\n**disagreement** The brief presents its own counter-case and does not resolve it, which leaves the policy resting on an unevaluated predicate \u2014 the same shape as Q2's \"already recorded\". A policy whose trigger nobody computes defaults in practice to whichever branch is cheaper to skip.\n\n---\n\n## Q4 \u2014 IS A THRESHOLD OF 25 TO 30 CHANGES SAFE?\n\n**question** Is a count the right threshold variable, or should it be a predicate over what the diff touches?\n\n**verdict** **A count is the wrong variable**, and the measured distribution shows why \u2014 3 of 26 recorded attempts sit at exactly **24** staged files, one file below a 25 threshold, and splitting a commit is free; but the deeper finding is that **no cost ceiling exists anywhere in this system**, and the one number that looks like one is a monotone function of the quantity it would bound.\n\n**reasoning** The hook records a `staged` covariate on 26 attempts: min 4, **median 14**, mean 21.0, max 69; **7 of 26 reach 25**. The distribution clusters at 4\u20136, 12\u201315, **24**, and 38\u201369. A threshold at 25 cuts between the 24 cluster and the 28 cluster, so three recorded attempts miss it by one file, and any author who prefers not to be boarded splits once. A gate whose trigger is free to avoid is the brief's own cited failure mode \u2014 \"a gate which stops refusing stops being consulted\" \u2014 reached by a different route.\n\nThe predicate a hook *can* evaluate, and it is a predicate over what the diff touches rather than how much: **board iff the staged set contains a file that any population-quantified board guard's population includes** \u2014 i.e. a new or changed member of a globbed set (`scripts/*.py`, `bench/tests/test_*.py`), **or** the staged set contains `hooks/pre-commit` or a guard file. That is precisely the 68-guard class Q1 showed a diff-derived selector cannot reach, so it routes the one case the cheap layer is blind to onto the board and lets the ladder decide the rest. Both inputs are already in hand: the staged list, and the glob scan I executed above.\n\n**And the finding neither the advisory nor the brief contains.** `scripts/cdsfl_sv.py::commit_timeout()` is `max(300, 4 \u00d7 max(seconds over the last 10 ledger rows))`. Today that is `max(300, 4 \u00d7 3313) = 13252 s = 3.68 h`. The only ceiling in the system **tracks the quantity it bounds** and therefore can never bind. Meanwhile the hook's own header states the limit as 11 minutes = 660 s, on the founder's reasoning that \"a per-commit gate costing 11 minutes would be bypassed within a day\"; the latest board is 3313 s = **5.02\u00d7 that stated limit**, and the mean over 113 runs is 2062.8 s = 3.13\u00d7. Nothing refuses and nothing reports on it \u2014 by design: `what_the_commit_gate_actually_costs_over_time_2026-11-08.py` says in terms that it declines to refuse because the limit is **B103**, \"which is his decision\", undecided since 2026-11-08.\n\nSo the founder's finishing-risk question **is B103**, and the external advisory is a wrong attempt to answer it. The decision he is being asked for is not \"loosen the gate\" but \"what bound, against what tier split\" \u2014 and the overshoot against his own stated number is now 5.02\u00d7.\n\nA necessary caveat on the brief's refutation of the advisory: \"0 of 113 boards exceeded 3 hours\" is measured on a sample **right-censored by a limit derived from that same sample**. It is a correct refutation of the advisory's present-tense claim (the observed max is 55.22 min, far inside 3.68 h, and 113 of 113 completed), and it is **not** evidence about where cost is heading, because the ceiling moves with the data. This project has the error class on record (`the_cap_was_measured_on_censored_data_2026-10-08.py`).\n\n**commands_run**\n```\npython3 - <<EOF   # staged-file distribution from the hook's own covariate\nrows with a staged count: 26\nstaged files per commit attempt: min 4 median 14 mean 21.0 max 69\nattempts with staged >= 25 : 7 of 26\nsorted: [4,5,5,6,6,6,6,6,6,6,12,12,13,15,15,15,24,24,24,28,38,49,49,49,53,69]\nEOF\npython3 - <<EOF   # the only ceiling in the system\nledger max over last 10 rows = 3313 s -> commit_timeout = max(300, 4*3313) = 13252 s = 3.68 h\nhook stated limit 660 s; latest board 3313 s = 5.02 x the stated limit\nEOF\n```\n\n**fix** NONE delivered, deliberately. The predicate belongs in `hooks/pre-commit`'s dispatch and needs a staged list and a commit to validate against; neither exists in a git-less sandbox, so an implementation here would be an unreached entry point. The glob scan the predicate needs is executed above and is the only part that required measurement.\n\n**falsifier** For the eventual implementation: stage a new `scripts/*.py` with no other change and the predicate must demand a board (0 guards selected by the ladder, per Q1's executed run); stage a `.md` note alone and it must not. Not executable here; stated per the one-shot rule rather than simulated.\n\n**what_would_refute_me** A measurement showing that commits are *not* split to avoid a threshold once one exists \u2014 then a count is cheap and adequate and my objection is theoretical. Or a founder ruling fixing the cost bound directly (B103), which makes the threshold variable a downstream detail. On the ceiling finding: evidence that some other mechanism does refuse on cost, which would mean `commit_timeout`'s self-sizing is irrelevant rather than load-bearing.\n\n**disagreement** The brief's \"Measured against today, a batch is 10 to 12 items\" has no producer in this sandbox; the hook's own `staged` field gives a median of 14 files and a maximum of 69, so \"roughly every 3rd batch is boarded\" is derived from a figure that cannot be checked here against one that can. And the brief treats \"0 of 113 boards exceeded 3 hours\" as settling the advisory; it settles the present tense only, on a censored sample.\n\n---\n\n## THE ADVISORY: REJECT, WITH ONE ELEMENT ADOPTED\n\n**Reject the central claim.** 113 determinate boards, mean 34.38 min, median 34.13, longest ever 55.22 min, **0 over 3 hours**. The 3.13 h figure is the full suite \u2014 a different instrument. The conflation sits under the whole argument, so the argument does not survive it.\n\n**Reject the milestone recommendation.** It would substitute a selection-based layer that is structurally blind to 68 of 332 board guards, demonstrated by execution: one new file, 0 guards selected, the deciding guard not among them. Under the additive standard a removal needs a committed measurement showing the replacement dominates on a named property. None exists, and the measurement I ran points the other way.\n\n**Reject the 25\u201330 count threshold** as the variable, on the measured distribution: three attempts at exactly 24, and splitting is free.\n\n**Adopt one element: the growth is real and the advisory is the only party that named it as the live risk.** Slope 1.6606 min/day, p = 2.251202e-22, R\u00b2 = 0.5753, 95% CI [1.3952, 1.9260] on two agreeing routes. R\u00b2 of 0.5753 explains a little over half the variance, so the growth is established and no dated projection is a forecast. Its cause is now decomposed \u2014 per-guard cost 3.0298\u00d7 against guard count 1.4310\u00d7 \u2014 and localised to population-quantified guards, with the attribution instrument unblocked rather than inferred.\n\n**And the question actually in front of the founder is B103, not the advisory.** The hook's own stated limit is 660 s; boards run at 5.02\u00d7 it; the only ceiling in the system is `4 \u00d7` the thing it bounds. That is the decision, it has been open since 2026-11-08, and it is answerable with the durations table that will now survive the next board.",
+  "t_start_epoch": 1795465255.9697862,
+  "t_end_epoch": 1795466688.997153,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_ff_qnnga/repo",
+      "built": false
+    }
+  ]
+}

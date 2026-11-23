@@ -1,0 +1,623 @@
+# PANEL BRIEF — DRAFT: the board-cost policy, and an external advisory that is wrong on its central number
+
+**STATUS: DISPATCHED as a JOINT round on `panel_b12_20261123T170728Z`.** The founder has NOT adopted the advisory
+under discussion and has said explicitly it must not become policy until he and
+I agree it is accurate and sane. This round is to test it, not to implement it.
+
+**WHAT PROMPTED IT.** An external reviewer produced an advisory arguing that the
+project's commit board has grown past 3 hours, that running it before every
+commit is not standard practice, and that it should be reserved for major
+milestones with cheaper layers used for ordinary batches. The founder's concern
+underneath it is specific and legitimate: *that at the current rate the project
+might never finish and the majority of time will be consumed by board runs.*
+
+---
+
+# PART 0 — THE JOINT ROUND YOU OWE, AND THE REPLY YOU HAVE NOT SEEN
+
+**THIS IS A JOINT ROUND on `panel_b12_20261123T170728Z`.** Both seats answered
+that brief BLIND, neither having seen the other. The dispatcher REFUSED to open
+a new blind round while that debt stood, and it was right to: a blind reply
+never cross-examined is an opinion the project must then arbitrate alone.
+
+**WHAT HAPPENED TO YOUR Q1 FINDING, so you need not repeat work.** Both seats
+independently found that `inserts` and `uses_file` were asked SEPARATELY of the
+same node list, so a constant-path `sys.path.insert` was credited whenever any
+unrelated preceding statement mentioned `__file__`. THAT WAS ADOPTED: commit
+`fa687fda`, `bench/tests/test_help_never_acts_2026-09-11.py:249`, now
+`if inserts_file_derived:`, requiring the derived name inside `call.args`.
+
+**AND TESTING YOUR PROPOSAL FOUND SOMETHING YOU SHOULD KNOW.** Seat `fable`
+named a regression test,
+`test_a_decoy_derived_name_beside_a_constant_insert_is_refused`. THE FIX HAD
+LANDED WITHOUT IT. Verified by execution: the shipped predicate refuses the
+decoy (False) while the unmodified fixture is still credited (True), so the
+repair was correct -- but nothing held the case that motivated it, and reverting
+the join would have gone unnoticed. The test is now added, goes RED against the
+reverted join, and the file was restored byte-identical afterwards. A fix
+without its own falsifier is a defect class this project has recorded in its
+own right.
+
+**WHAT IS ASKED OF YOU NOW.** Read the other seat's complete reply below, then
+answer QJ in addition to Part 1's questions.
+
+**QJ. Where does the other seat's strongest claim fail, or where does it defeat
+your own?** Name the specific claim. If you now think your own blind answer was
+wrong, say so plainly -- a reversal with a reason is worth more than a defence.
+If you find no genuine disagreement, say so rather than manufacturing one; a
+fabricated disagreement is worse than agreement.
+
+**2 claims the orchestrator wants pressure on**, both bearing on figures this
+project relies on:
+- `cc2` holds that an upper bound of 0.215311 from 0 of 14 is **not evidence at
+  all**, being a function of `--interval`, a free parameter. Is that right, or
+  is it evidence of a bounded kind that `cc2` has mis-filed?
+- `cc2` holds that "this batch is itself 1 data point" is wrong **in the
+  direction that favours the line**. Does that survive the other seat's reading?
+
+### SEAT `cc2` — ITS COMPLETE REPLY, UNALTERED (21699 characters)
+
+`````text
+Five passes run. Both fixes are in the tree, both falsifiers DISCRIMINATE, and the targeted suite is unchanged at `3 failed, 12 passed` (the 3 failures are the absent `.git` in the staged sandbox, identical before and after my edits).
+
+---
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `bench/tests/test_help_never_acts_2026-09-11.py` | `3250a7a577e75f90` | 31446 | 2026-11-23T20:15:32+00:00 |
+| `scripts/the_insert_must_carry_the_file_2026-11-23.py` | `66af7f26d47d0b07` | 7457 | 2026-11-23T17:28:22+00:00 |
+| `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` | `31d53477cc6b7068` | 11170 | 2026-11-23T17:28:22+00:00 |
+| `scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py` | `fef0033e85eb1355` | 5179 | 2026-11-23T17:28:22+00:00 |
+| `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py` | `d4c07b7eb005aa88` | 8770 | 2026-11-23T16:50:05+00:00 |
+| `scripts/was_this_batch_reviewed_2026-11-22.py` | `82d12af5b65bfd59` | 6690 | 2026-11-22T01:29:39+00:00 |
+| `scripts/what_is_a_significant_batch_2026-11-23.py` | `8b57505d8a9075a7` | 9182 | 2026-11-23T13:48:51+00:00 |
+| `scripts/why_is_the_board_getting_slower_2026-11-23.py` | `4cb07fcc74de64f6` | 11690 | 2026-11-23T19:45:59+00:00 |
+| `scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py` | `6fe0d6e59494190b` | 15746 | 2026-11-09T03:08:01+00:00 |
+| `bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py` | `3cf2f518855fb60b` | 18266 | 2026-11-23T20:06:34+00:00 |
+
+## Q1. The widened accepting predicate
+
+**question** Is the file-derived-name rule too permissive, and is a static predicate the right instrument?
+
+**verdict** The widening is wrong, but **not for the reason you distrust** — the defect is that `inserts` and `uses_file` are asked *separately* of the same bag of nodes and nothing requires them to be the same expression; I have a constructed source that is credited and, run as `python3 -m x --help`, **writes a file**.
+
+**reasoning** Instrument: the real `answers_help` imported from `bench/tests/test_help_never_acts_2026-09-11.py` (digest `c129c66e1abadfea`, as dispatched), plus direct execution of a constructed script under `-m`. Lines 225–232 of the dispatched file compute `inserts` (is there *any* `sys.path.insert` before the import) and `uses_file` (is there *any* file-derived name before the import) over the same node list, then accept on `inserts and uses_file`. The insert's **arguments are never inspected**. So a constant-path insert with a file-derived name beside it for an unrelated reason is credited.
+
+Your own discrimination case `test_a_file_derived_name_is_required_not_just_any_insert` does not catch this, and its docstring claims more than it tests: it builds its constant-path variant by *replacing* the `__file__` assignment, so `__file__` vanishes from the whole module and `uses_file` is False for a reason the realistic shape does not share. Scrub-the-module is a weaker property than insert-must-carry-the-path.
+
+Two constructed sources, both credited by the dispatched predicate:
+
+```
+B derived-name rule only     WRITES=True  dash-m credited=True
+C bare __file__ sibling      WRITES=True  dash-m credited=True
+```
+
+`C` uses **no derived name at all** — just a bare `__file__` among the preceding siblings. So the half of the widening you trust (preceding siblings) is independently sufficient to break the predicate, and the half you distrust (file-derived names) is not required. **Your self-distrust is aimed at the wrong half.**
+
+The concrete failure, executed rather than argued:
+
+```
+--- DIRECT invocation with --help ---
+usage: (help answered, nothing written)
+exit=0  wrote=NO
+
+--- python3 -m scripts.constant_insert_demo --help ---
+exit=0
+wrote=ORDINARY_WORK_RAN.txt
+this script just wrote a file
+```
+
+**Severity.** The help-ratchet domain declares no consequence scale of its own, so per the ordinal-severity rules it **inherits the application domain's** — the panel-record corpus, whose scale this guard's own comment names ("54,480 bytes of a record the founder's own directive requires preserved verbatim"). On that inherited ordering the defect is at the critical level under §10 category 3, **verification-integrity corruption**: a defect in the measurement machinery. I will not supply a number, and I note precisely what is *not* claimed — **0 scripts in the real tree are currently affected** (measured below), so the realised loss today is zero. The defect is in the guard's future accepting behaviour, not yet in the tree.
+
+**Is static the right instrument?** Yes, keep it static. An executing predicate costs ~18 s and needs no approximation, but it must *run 837 untrusted scripts with `--help`* to decide whether they write — the exact action the guard exists to prevent, on the exact population most likely to do it. That trades an approximation for a 19-way-door execution surface, and your own record says the flag "was never the only way in." The approximation is repairable; the execution risk is not. Repair the join.
+
+**fix** `bench/tests/test_help_never_acts_2026-09-11.py` (post-fix sha256 `d5c314c415abd8eb366a92`) — the file-derived value must be an **argument of the insert**. 13 lines, replacing two independent `any()` calls with one that walks `call.args`. No feature removed; the residual (`str(REPO / "vendor")` is file-derived but not the script's own directory) is unchanged and now stated in the code.
+
+**falsifier** `scripts/the_insert_must_carry_the_file_2026-11-23.py` — imports the real predicate, asserts 3 constant-path shapes REFUSED and 4 genuine shapes CREDITED including both scripts the widening was written for. Executed:
+
+```
+  must REFUSE  constant insert, derived name beside it    -> False
+  must REFUSE  constant insert, bare __file__ beside it   -> False
+  must REFUSE  constant insert inside the try             -> False
+  must CREDIT  preceding-sibling insert via a file-derived name -> True
+  must CREDIT  insert inside the try, built from __file__ -> True
+  must CREDIT  the_restore_mutations_2026-11-22.py        -> True
+  must CREDIT  the_majority_separation_mutations_2026-11-22.py -> True
+  must CREDIT  assemble_panel_record.py                   -> True
+exit=0
+```
+
+Driven through your differential rule against the pre-fix bytes:
+
+```
+  DEFECT PRESENT  exit=1  FALSIFIED-token=True  -> FAIL
+                  |   CREDITED a constant-path insert: constant insert, derived name beside it
+  DEFECT ABSENT   exit=0  FALSIFIED-token=False -> PASS
+  target restored byte-for-byte : True
+  DISCRIMINATES
+```
+
+Regression over the real population — **0 verdict flips on all 840 scripts** (recursive; `840 = your worktree 839 + my 1 new script`, which reconciles your figure exactly), and 0 dash-m offenders after the fix. The join is a pure tightening that touches no real script.
+
+**what_would_refute_me** A real tracked script that legitimately answers `--help` under `-m` while its insert's *arguments* contain no `__file__` and no file-derived name — e.g. one that mutates `sys.path` through a helper function call, `sys.path[0:0] = [...]`, or `site.addsitedir`. My fix would wrongly accuse it. I measured 0 such scripts in 840 today; one appearing tomorrow refutes the fix, and the repair is to credit those forms explicitly rather than to un-join the conjunction.
+
+**disagreement** Two with your framing. First, as above: you nominate the file-derived-name rule as the suspect and it is not the culprit — case `C` breaks the predicate with no derived name. Second, **your declared figure "6 of 837 at HEAD" is not re-executable by any seat in this dispatch.** The sandbox has no `.git`, so the producer refuses:
+
+```
+REFUSING: git cannot list scripts/ at HEAD: fatal: not a git repository
+```
+
+That refusal is correct behaviour — `tracked_scripts()` deliberately refuses rather than reporting 0 offenders from an empty list, which is good design. But it means your note about declaring HEAD's figure rather than the working tree's solved a validator problem while leaving the figure unverifiable *here*. I substituted a recursive glob and said so.
+
+---
+
+## Q2. 0 of 14, upper bound 0.215311
+
+**question** Is that bound evidence for either conclusion?
+
+**verdict** **Neither** — and the bound is not "weak evidence", it is **not evidence at all**: it is a function of `--interval`, a free parameter, computed over a denominator that includes trials in which the event was impossible.
+
+**reasoning** Two instruments. SymPy, symbolically: at k=0 the Wilson upper bound simplifies to exactly `z²/(n+z²)`, verified `upper - z²/(n+z²) == 0`. Confirmed on an independent kernel — Wolfram Language (local Wolfram Engine, via `wolframscript`, exit 0, no `Name::tag`, no `$Failed`) returned `0.2153108027376358`, `0.0036109316748686583`, and `0.` for the simplification difference. That form is strictly decreasing in `n`, and `n` is the **poll count**:
+
+```
+  pairs=   14  Wilson 95% upper = 0.215311   <- your 14 pairs
+  pairs=   53  upper = 0.067582   <- the SAME 106 s run at 2.0 s
+  pairs= 1060  upper = 0.003611   <- the SAME 106 s run at 0.1 s
+```
+
+Identical evidence — one unchanging pid — yields any bound you like. This is not hypothetical. I ran your probe against a live pytest for **20 seconds at 1.0 s spacing**:
+
+```
+  pid-set sizes seen                            : [2]
+  consecutive pairs considered                  : 19
+  FULL REPLACEMENTS (both non-empty, no overlap): 0
+  Wilson 95%            : [0.000000, 0.168179]   (mpmath closed form agrees to 2.78e-17)
+```
+
+**A fifth of the observation time produced a tighter bound than yours.** An interval that narrows as you look less is measuring the observer, not the world. (Your `2.78e-17` two-route agreement reproduced exactly; that part of the instrument is sound. Note also pid-set size was **2**, not 1 — so "size 1 throughout" is not an invariant of the setup.)
+
+Second defect, falsified directly on `classify`:
+
+```
+  alternating matched/empty -- event IMPOSSIBLE in every pair -> (0, 0, 15, 15)
+  alternating case: 0 of 15 pairs, Wilson 95% upper = 0.203883
+```
+
+A full replacement requires both sides non-empty *by definition*, so those 15 pairs could not have contained the event — and they produce a bound **tighter than the one you declared**. The denominator is not a risk set.
+
+So: withhold both claims, which is the reading you said you could see and could not refute. I confirm it and strengthen the ground. But one asymmetry survives — the probe does cut against B209's *premise*, because that premise predicts churn and 0 observed changes is inconsistent with churn *during a single pytest invocation*. That is weak and it is not the same as supporting either seat.
+
+**What would settle it.** The identified denominator is **observed set-change events**, not polls, and it must be collected where churn is possible: a real 34-minute board that spawns a pytest child per guard file, not one invocation. With 0 events observed you need `n ≥ z²(1−ε)/ε` change events: **35** for ε=0.10, **73** for ε=0.05, **381** for ε=0.01. There are 971 files in `bench/tests/`, so if a board really replaces its child per guard file, one board supplies hundreds of change events and ε=0.01 is reachable in a single board — which is exactly why observing one board is the measurement, and 14 polls of a pytest never will be.
+
+**fix** `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` (post-fix sha256 `31d53477cc6b7068cc5b6d`). `classify` now also returns `opportunities` — pairs where the set actually changed with both sides non-empty. With 0 opportunities the script prints **UNIDENTIFIED** and reports no bound, showing the poll-pair figure explicitly as a diagnostic of the polling rate. **Every previously printed count is still printed**; only the claim attached to them is corrected. I also split out a branch that would otherwise have printed "Nothing matched the gate's patterns" when processes *had* matched — found in my own fix on pass 5, and it now says the honest thing: corroborates neither seat.
+
+**falsifier** `scripts/the_replacement_denominator_must_be_opportunities_2026-11-23.py`. Executed:
+
+```
+  A/C unchanging set, 15 polls        -> classify = (0, 14, 0, 14, 0)
+  C   same set, 10x the polls         -> classify = (0, 149, 0, 149, 0)
+  B   alternating matched/empty       -> classify = (0, 0, 15, 15, 0)
+  D   a genuine full replacement      -> classify = (1, 0, 0, 1, 1)
+  E   z^2/(n+z^2) at n=14             -> 0.215311 (expected 0.215311)
+exit=0
+```
+
+Poll-pairs go **14 → 149** under 10× polling while opportunities stay **0**: the invariance is the whole point. Case D is the anti-vacuity arm — the fix cannot pass by reporting 0 for everything. Differential: `DEFECT PRESENT exit=1 FALSIFIED-token=True -> FAIL`, `DEFECT ABSENT exit=0 -> PASS`, `restored byte-for-byte: True`, **DISCRIMINATES**.
+
+**what_would_refute_me** One observed full replacement on a real board promotes the scenario from unrealised to demonstrated and makes cc2's weight the right one. Separately, if the board genuinely runs one long-lived pytest rather than a child per guard file, then B209's premise is simply false and the whole disagreement dissolves — which would make my "re-measure the premise" the wrong recommendation and "withdraw B209" the right one.
+
+**disagreement** I reject "an upper bound that cannot exclude a rate of 0.215311 is weak evidence." It is not on the evidence axis at all. Calling it weak invites the repair "take more samples", which here makes the bound *tighter without adding information* — the worst possible outcome, because it manufactures false confidence from the same unchanging pid. I also disagree with your framing that the probe "polls the gate's own `_RUNNER_PATTERNS`, read out of the hook rather than typed" as a sufficiency argument: reading the matcher from the hook guarantees you measure the right *population*, and says nothing about whether the *denominator* is a risk set. It was not.
+
+---
+
+## Q3. Was the testing of the adopted proposals sufficient?
+
+**question** What did the testing not cover; is 1-of-6 the weak point?
+
+**verdict** **Yes, 1-of-6 is the weak point** — "0 failures in 1 trial" bounds the per-harness failure rate at ≤0.793, consistent with up to 4.76 of the 6 being broken — but the binomial framing understates the fix's *real* strength and misplaces the risk.
+
+**reasoning** Same closed form, `z²/(n+z²)`:
+
+```
+  0 failures in 1 trial -> Wilson 95% upper = 0.793451
+  i.e. consistent with up to 4.76 of the 6 repaired harnesses being broken.
+  0 failures in 6 trials -> upper = 0.390334  (up to 2.34 of 6)
+```
+
+So as an independent-trials argument, running 1 of 6 is near-vacuous. But the 6 are **not independent trials**: you confirmed first that all 6 share one diagnosis (`from pathlib import Path`) and applied one fix. For a common-cause defect with a common-cause fix, one completion run is far more informative than `n=1` implies — it exercises the shared mechanism end-to-end. The residual risk is not "do 5 independent things work" but "does the shared fix interact with per-harness differences", and *that* risk is invisible to both compilation and `--help`.
+
+Concretely, what compilation and `--help` do **not** cover, and why it matters here: `--help` exits inside the guard, before the restore path is ever entered; compilation proves the import parses. The fix was to an *import*, and the thing that import feeds is the mutate-and-restore cycle. Your 1 completion run verified restore by SHA-256 at 7 of 7 mutations RED — that is the right observable, and it is the one the other 5 have no evidence for. Note your own third recorded vacuity case was precisely a *restore* observable reading wrong. The gap is therefore in the highest-risk place, and 5 completion runs are cheap against the claim they support. Run them.
+
+**fix** NONE. This is an assessment of your testing, not a defect in an artefact; inventing a file here would be an addition nothing reaches. The action is to execute the other 5 harnesses to completion with SHA-256 restore verification — the instrument already exists and is already proven on 1 of 6.
+
+**falsifier** Not applicable, and I will say why rather than force one: the proposition is "5 harnesses are untested", which is a fact about what was *run*, not about code state. A differential falsifier needs a defect to toggle, and there is no defect here to toggle — your `--defect-file` arm would be byte-identical to the target and the tool would correctly refuse as vacuous. The arithmetic above is the evidence, and it is re-executable.
+
+**what_would_refute_me** All 5 remaining harnesses running to completion with verified restore. That converts my finding to no-change-needed and moves the bound to 0.390334 — still not tight, but the right 6 of 6.
+
+**disagreement** Your question offers 1-of-6 as the candidate weak point and it is, but you framed it as a *sampling* shortfall. It is really a **coverage** shortfall: the 5 unrun harnesses are not under-sampled, they are untested on the only observable that matters, while being fully tested on two that cannot fail informatively. `--help` exiting cleanly is close to guaranteed once the guard parses, so reporting it for 5 of 6 adds confidence that was never at risk — the same shape as Q2's tightening bound.
+
+---
+
+## Q4. Ledgered advisory line versus refusal
+
+**question** What measurement decides between them?
+
+**verdict** Decidable, and the predicate is cheap — but **this batch is not a data point for it**, and 1 commit could not settle it even if it were.
+
+**reasoning** The hook-evaluable predicate: on every commit, append `{commit_sha, rounds_since_head, honoured: bool}` where `honoured` is true iff `rounds_since_head > 0` *or* the commit was abandoned. That is a mechanical record, needs no judgement, and yields `lapse_rate = lapses / commits`. The decision rule is a comparison of two measured quantities, not a preference: **refusal dominates iff `lapse_rate × cost(unreviewed commit) > block_rate × cost(false block)`**, where `block_rate` is the fraction of commits where the line fires and a round genuinely was not owed. Both terms come out of the same ledger.
+
+The distinguishing outcome is sharp. Advisory-plus-ledger and refusal differ **only** in the cases where the line fires: so ledger a stretch of commits and read the `honoured` column. If `lapse_rate → 0` once the column exists — i.e. being *visible* is what fixed it — advisory suffices and refusal is strictly more surface for no gain. If lapses persist at a visible rate, observation is not sufficient and refusal is the measured answer. cc2's point that "unrecorded report was the defect rather than report itself" is testable exactly here, and that is the right reframing.
+
+What settles it quantitatively:
+
+```
+  0 lapses in 1 commit -> Wilson 95% upper on the lapse rate = 0.793451
+  prior round measured 7 of 10 lapses = 0.700, which is INSIDE [0, 0.793].
+  commits needed, 0 lapses, to push the upper bound below:
+    e=0.30  -> 9 commits        e=0.10  -> 35 commits
+```
+
+So ~9 ledgered commits distinguish "fixed" from "still lapsing at the prior rate", and ~35 give a usefully tight bound.
+
+**fix** NONE. A ledger is a real addition, but writing one here would be an addition nothing reaches — it needs to be wired into the commit hook and executed by a test, and I have neither the hook's dispatch path measured nor a round's worth of commits to validate it against. Per the additive standard I decline to ship an unreached entry point; this project has done that 11 times. The measurement above is what Q4 asked for.
+
+**what_would_refute_me** A cost asymmetry large enough to swamp the rates — if one unreviewed commit can void an experiment's headline result the way Exp 48's falsifier did, then `cost(unreviewed commit)` is so far above `cost(false block)` that refusal wins at *any* non-zero lapse rate and the ledger measurement is moot. That is a question about the cost terms, and I have not measured them; if the founder can name one voided experiment per unreviewed commit, refuse and stop measuring.
+
+**disagreement** Strongest disagreement in this brief: **"this batch is itself 1 data point" is wrong, and it is wrong in the direction that favours the line.** The line reported and the board was killed — but it was killed by *a human reading the line and choosing to act*, after the preceding round had just measured 7 of 10 lapses and made that lapse salient. That is a data point about human attention under fresh scrutiny, not about the reporting line's efficacy. The advisory condition it would need to test is "the line reports and nobody is primed to care", which is the condition under which all 7 lapses happened and is exactly the condition this batch does not instantiate. Counting it as evidence for advisory is the Hawthorne case, and it is the same error as Q2: a measurement taken in a regime where the failure could not occur.
+
+---
+
+## Termination
+
+**5 passes.** Pass 1 read the predicate and located the unjoined conjunction. Pass 2 executed the counterexample, fixed it, drove the differential. Pass 3 ran the population diff, found my own glob was top-level-only, and redid it recursively over 840 — which is also what reconciled your 839. Pass 4 found the `classify` denominator defect and derived the polling-rate artefact. Pass 5 re-read my own probe fix and found the `else` branch printing "Nothing matched" when processes had matched; fixed. A sixth pass over both fixed files produced no new above-threshold findings.
+
+**Two above-threshold findings, both with delivered fixes and DISCRIMINATING falsifiers:**
+
+| | file | category |
+|---|---|---|
+| the dash-m proxy never required the insert to carry the file-derived path | `bench/tests/test_help_never_acts_2026-09-11.py` | §10.3 verification-integrity corruption |
+| the full-replacement denominator is poll count, not a risk set | `scripts/does_the_matched_set_ever_fully_replace_2026-11-23.py` | §10.3 verification-integrity corruption |
+
+**No composability claim is made.** The two fixes touch unrelated artefacts and there is no measurement showing a composed repair beats either alone, so per the founder's 2026-10-02 definition each stands as the single fix. Reporting that they do not interfere would be the weak form his definition excludes, and I am not reporting it.
+
+**Q1's widening was right to be made and wrong as implemented** — it correctly stopped accusing two correct scripts, and the brief's instinct to distrust it was correct while its diagnosis of *which half* to distrust was not. The judgement you asked me to be explicit about: the wrong widening carries a severity at the critical level on the inherited application scale, but has caused **zero** realised loss in the current tree, and I would not have found it by reading — case `C` only became visible once the arguments of the insert were examined separately from the names beside it.
+`````
+
+### SEAT `fable` — ITS COMPLETE REPLY, UNALTERED (16536 characters)
+
+`````text
+All verification complete. The same 3 pre-existing failures are the sandbox's missing `.git` (the population guard refusing loudly, as designed — identical before and after my change); 13 passed, up from 12 — the +1 is my regression test. Report follows.
+
+---
+
+# SEAT REPORT — batch 12, 2026-11-23
+
+**Sandbox caveat, stated once:** this sandbox stages no `.git`, so `tracked_scripts()` refuses (3 test failures, identical before and after my change — the fail-loud path working) and the brief's git-based populations (837 at HEAD / 839 worktree) are not reproducible here; my population figure is **825 by `scripts/*.py` glob**. Artefact digests at my read matched the dispatch stamps.
+
+---
+
+## Q1 — the widened predicate
+
+**verdict:** The widening is **wrong as shipped** — the file-derived-name rule is a broken dataflow link, and I constructed and dynamically confirmed a source it wrongly credits; the static instrument itself is right, and I have delivered and differential-checked the tightening.
+
+**reasoning:** `_help_calls_unreachable_under_dash_m` (lines 225–233 at dispatch) computes `inserts` and `uses_file` as **two independent `any()` scans over `before`**. Nothing requires the file-derived name to appear in the insert's argument. Constructed counterexample: a `sys.path.insert(0, '/somewhere/else')` (constant — the exact shape `test_a_file_derived_name_is_required_not_just_any_insert` exists to refuse) is credited whenever any *unrelated* preceding statement mentions `__file__` or a derived name — here `print('running from', HERE)`. Both variants (`HERE` decoy, bare `__file__` decoy) return `True` from `answers_help(…, under_dash_m=True)`. Dynamically driven under `python3 -m pkg.attack --help`: **exit 0, usage never printed, ordinary work ran and wrote a file.** The concrete failure the defect permits, named per the brief: a tracked writer of this shape passes the ratchet, and its `--help` under `-m` performs its write — the same class as the 54,480-byte record destruction of 2026-09-11, severity on this project's own scale **material** (§10 categories 1 and 4). Note the P-Pass's 5th discrimination test did not catch this because its constant-insert case *removed* the derived-name assignment entirely, so `derived` was empty — it tested the conjunction's second leg, never the broken coupling between the legs.
+
+On the instrument question: **static is right as the per-run ratchet.** An executing predicate *runs the defect it detects* — my dynamic run wrote a file; over 837 scripts, every broken guard performs its ordinary work, and the docstring records that 15 of 17 runners once billed a live dispatch on an unrecognised argument. "18 s and no approximation" is only true in a throwaway clone, which is per-run machinery and spend-risk the static proxy avoids. The existing division — static ratchet plus one-shot executing validation in a clone — is the simplest sufficient arrangement; the fix is to repair the proxy, not replace the instrument.
+
+**commands_run** (abridged to verdict lines; full outputs above):
+```
+python3 -m pytest bench/tests/test_help_never_acts_2026-09-11.py -q
+  → 3 failed (git-less sandbox, fail-loud), 12 passed   [pre-fix baseline]
+python3 - <<EOF  # static attack
+  → ATTACK credited under -m rule: True / ATTACK2 credited: True
+python3 -m pkg.attack --help   # dynamic, _cli_help beside script, constant insert
+  → exit=0, FILE WRITTEN: ordinary work ran under --help
+python3 -m pytest …::TestTheDashMProxyDiscriminates … -q   [post-fix]
+  → 8 passed
+python3 - <<EOF  # population diff, defect vs fixed, 825 scripts
+  → verdict changes defect->fixed: 0; offenders 0 both ways
+```
+
+**fix:** `bench/tests/test_help_never_acts_2026-09-11.py` — replaced the two independent scans with a single `file_derived_insert` scan requiring `__file__`/a derived name **inside the insert call's arguments**, plus regression test `TestTheDashMProxyDiscriminates::test_a_decoy_derived_name_beside_a_constant_insert_is_refused` (wired: executed by the suite, 13 passed post-fix). Fixed artefact sha256 `9d9945d77cec0e8a…`. 0 verdict changes over all 825 staged scripts — the tightening touches only the decoy class, so the 2 wrongly-accused scripts stay accepted.
+
+**falsifier:** executed via `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py --target bench/tests/test_help_never_acts_2026-09-11.py --defect-file /tmp/defect_copy_test_help.py -- python3 /tmp/q1_falsifier.py` →
+```
+DEFECT PRESENT  exit=1  FALSIFIED-token=True  -> FAIL
+DEFECT ABSENT   exit=0  FALSIFIED-token=False -> PASS
+target restored byte-for-byte : True
+DISCRIMINATES
+```
+(The in-tree regression test could not serve as the differential falsifier — swapped to the defect copy it fails by *absence*, the tool's own vacuity case 2 — so the falsifier imports `answers_help` from the target and runs in both arms.)
+
+**what_would_refute_me:** a driven run showing a script of the decoy shape *does* answer `--help` under `-m` (it cannot, unless `_cli_help` is importable from the constant path — in which case construct it with a path that provably isn't); or a tracked script whose verdict my tightening flips from accepted to accused while it dynamically answers `--help` under `-m` (my 0-of-825 diff says none exists today, but the HEAD/worktree git populations contain up to 14 scripts this sandbox does not stage).
+
+**disagreement:** The brief frames the residual risk as "a name assigned from `__file__` somewhere else in the module may have nothing to do with the path being inserted." That is the *smaller* half of the defect. The larger half, which the brief does not name, is that the name needed not be in the insert **at all** — the two conditions were never conjoined on the same node. Also: the brief's "P-PASS DONE, BOTH DIRECTIONS: 5 discrimination tests, 15 passed" overstates coverage — the constant-insert test deleted the derived assignment rather than decoupling it, so the pass exercised the predicate's legs but never their coupling, and the P-Pass was green over a live material defect.
+
+---
+
+## Q2 — 0 of 14, upper bound 0.215311
+
+**verdict:** The figure is arithmetically correct but bears on **neither** claim — this is a wrong-population problem, not a weak-sample problem, so both the corroboration of fable and the cut against B209's premise should be withheld.
+
+**reasoning:** Derived, two routes plus Wolfram: Wilson upper at k=0 is z²/(n+z²) = 3.84146/17.84146 = **0.215311** (statsmodels and mpmath closed form agree to 2.78e-17; Wolfram Language, local Wolfram Engine: 0.21531080273763578). So the interval is sound. But the probe polled beside a **single plain pytest invocation** — pid-set size 1 throughout. B209's premise is churn **between pytest children across guard files during a ~34-minute board**. A stable pid within one invocation is what *both* hypotheses predict for this regime; the probe's own docstring says so ("a short run is not a commit board"). Even n → ∞ in this regime decides nothing about the board regime. Therefore: (a) "corroborates fable" — withhold; fable's claim concerns the board. (b) "cuts against B209's premise" — withhold, and this one is actively wrong as stated: a single pid during one pytest run is fully consistent with per-guard-file replacement during a board, because no guard-file boundary with a child swap was spanned. **The sample that settles it:** run `does_the_matched_set_ever_fully_replace_2026-11-23.py` for the full duration of a real commit board (~34 min at 2 s intervals ≈ 1020 polls spanning every guard-file boundary). Derived thresholds: 0 full replacements in **≥ 73** pairs bounds the rate below 0.05; in **≥ 381** pairs below 0.01; a board-length run exceeds both. One observed full replacement promotes the scenario to demonstrated and the question of weight is over.
+
+**commands_run:**
+```
+python3 - <<EOF (statsmodels + mpmath)
+  → [0.000000, 0.215311]; closed form agrees to 2.78e-17
+  → exclude 0.05 needs n>=73; exclude 0.01 needs n>=381
+wolframscript -code 'z = Quantile[NormalDistribution[], 0.975]; N[z^2/(14 + z^2), 10]'
+  → 0.21531080273763578   [Wolfram Language attribution]
+```
+
+**fix:** NONE — the deliverable is the decision procedure above; the measuring instrument already exists in-tree and needs only to be run against a real board, which this sandbox cannot host.
+
+**falsifier:** the arithmetic was differentially self-checking (two independent routes agreeing to 2.78e-17, third route Wolfram); the regime-mismatch argument is logical, not executable here, and I say so rather than fake a run.
+
+**what_would_refute_me:** a board-length probe trace showing poll pairs that *did* span pytest-child replacements (e.g. pid-set sizes > 1 or non-identical pairs) — that would convert the 0-count into genuine evidence against realisability and my "wrong population" claim collapses; conversely a trace showing the board runs one pytest for all guard files refutes B209's premise directly and my withholding of (b) was too cautious.
+
+**disagreement:** The brief reports the probe "AS CORROBORATING fable AND AS CUTTING AGAINST B209's OWN PREMISE." Both reports exceed the data, and the second is the worse overreach: absence of churn in a regime with no churn opportunity is not evidence about churn. The script's own printed interpretation (lines 128–137) makes the same overclaim and should be softened to name the regime.
+
+---
+
+## Q3 — was the adoption testing sufficient?
+
+**verdict:** Sufficient for the help-flag property (measured on all 6) and the differential rule (validated both ways); **insufficient for the run-to-completion property, and the weak point is not the 1-of-6 sample but the extrapolation of a per-file behavioural claim from it.**
+
+**reasoning:** "Compiles and answers `--help` writing 0 bytes" and "runs to completion with all mutations RED and SHA-256-verified restore" are different predicates, and this repository's own record proves the gap: `a_falsifier_must_disagree_with_itself_2026-11-23.py` lines 20–23 record a mutation harness in this very session that compiled, was invoked — and exited at `REFUSED: the guard is RED before any mutation`, a startup refusal that compile + `--help` cannot see, caused by a file the author was not looking at. The repair touches exactly the header region (imports/guard) where a path or ordering slip produces that failure mode. The 5 unexecuted harnesses therefore carry an evidenced, nameable risk: silent inability to run, discovered only when next needed. Cost to close: 5 clone runs, bounded and known. Alternatively, state the adopted claim honestly as "1 of 6 verified to completion" and close the other 5 on first scheduled use. What the differential-rule testing did NOT cover: its two validations (discriminates on real guard, vacuous on unrelated guard) exercise verdicts 0 and 1 but not the **inverted-sense arm** (defect-present PASS / defect-absent FAIL, lines 154–156) — no known-answer test ever drove it.
+
+**commands_run:** the record cited was read in-tree (`Read scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py`); the 6 repaired harnesses are not identifiable in this sandbox (fixer report not staged — `grep` for the fixer and declined-file list returned no report), so I could not run the missing 5 here and say so rather than simulate it.
+
+**fix:** NONE deliverable here — the fix is an action: run the remaining 5 repaired harnesses to completion in a throwaway clone before the run-to-completion claim is recorded for 6.
+
+**falsifier:** for the future action, the in-tree differential tool itself is the falsifier (each harness run with one mutation un-reverted must go RED); not executable in this sandbox absent the 6 filenames.
+
+**what_would_refute_me:** the fixer's report naming the 6 files plus 5 clean completion runs — that would show the extrapolation happened to be safe (it would not show it was *justified*, which is the finding); or evidence that the repair transform provably cannot alter pre-mutation startup (e.g. it only inserts statements inside the `__main__` guard after all preconditions), which would reduce the residual risk below material.
+
+**disagreement:** The brief asks "is the 1-of-6 sample the weak point?" — framing it as a sample-size question invites the answer "run more." The defect is categorical, not statistical: run-to-completion was *claimed for the batch* while *measured for one member*. 6 of 6 at one property and 1 of 6 at another were reported in a single breath, and the brief's own sentence structure ("a repaired harness RAN TO COMPLETION") elides the quantifier.
+
+---
+
+## Q4 — ledgered advisory line vs refusal
+
+**verdict:** The deciding measurement exists and is cheap: ledger the existing advisory line's verdict-and-outcome per significant commit, and escalate to refusal on the first recorded lapse; **0 lapses in 9 ledgered significant commits is the stopping rule that vindicates the advisory**, because its Wilson interval then excludes the measured baseline regime.
+
+**reasoning:** The predicate a hook can evaluate is already implemented — `hooks/pre-commit` asks `was_this_batch_reviewed_2026-11-22.py` (`panel_rounds_since_HEAD == 0`, with `what_is_a_significant_batch_2026-11-23.py` scoping significance). The missing piece is one append per commit: `(commit_id, rounds_since_prev, significant?, proceeded?)`. Define a **lapse** = line reported 0 rounds on a significant commit ∧ commit proceeded ∧ no round completed before the next commit. Derived decision rule, all intervals computed above: baseline (unledgered advisory) is **7/10 lapses, Wilson [0.397, 0.892]**. A ledgered-advisory run of **0 lapses in 9** gives Wilson [0, 0.299] — **disjoint from the baseline interval**, so the ledgered advisory demonstrably dominates the unledgered one on the named property (lapse rate) and refusal's cost (blocked legitimate commits, also visible in the same ledger) is unjustified under the simplest-sufficient standard. **Any lapse ≥ 1 in the window → adopt refusal**, the escalation the hook's own comment pre-commits to. This batch's data point (reported → board killed) is 0/1, Wilson [0, 0.794] — consistent with everything, decides nothing, and I verified that rather than assuming it.
+
+**commands_run:**
+```
+python3 - <<EOF (statsmodels)
+  → baseline 7/10: [0.3968, 0.8922]; candidate 0/9: [0.0000, 0.2991]; disjoint: True
+  → this batch 0/1: [0.0000, 0.7935] (uninformative)
+```
+
+**fix:** NONE delivered — deliberately. The ledger append belongs in `hooks/pre-commit`, which cannot execute in this git-less sandbox, so an implementation here would be an addition no test can reach — the exact 11-times-measured defect class the additive standard names. The specification above is complete enough to implement and test where a `.git` exists.
+
+**falsifier:** for the eventual implementation: commit twice in a throwaway clone with 0 panel rounds; the ledger must gain 2 lapse rows (defect-absent arm: commit after a recorded round → 0 lapse rows). Not executable here; stated per the one-shot rule.
+
+**what_would_refute_me:** evidence that the 7/10 baseline commits were predominantly *insignificant* batches (the baseline would then overstate the lapse rate the ledger must beat, and the 0-in-9 threshold would be miscalibrated — recompute against the significant-only baseline); or a founder ruling that any single lapse of this class is intolerable regardless of rate, which collapses the measurement into immediate refusal.
+
+**disagreement:** The brief offers this batch as "1 data point: the line reported, and the board was killed." As computed, 0/1 carries an upper bound of 0.794 — it is consistent with a regime that lapses four times in five. Citing it as support for the auditability framing is the same shape of overclaim as Q2's: a count too small to exclude anything, narrated as if it leaned somewhere.
+
+---
+
+## TERMINATION
+
+**3 passes run.** Pass 1: read artefacts, reproduce baseline, construct and dynamically confirm the Q1 counterexample. Pass 2: fix, regression test, differential vacuity check, 825-script verdict diff, Q2/Q4 derivations with second and third routes. Pass 3: full-file re-run (13 passed, same 3 sandbox-only failures as baseline), re-read of the patched region, Q3 gap check against the in-tree record — **no new above-threshold findings**. Converged under §10: the one material defect found (Q1 decoupled conjunction, categories 1/4) is fixed, tested, and differential-verified; every residual finding is below threshold or handed over with its deciding measurement named.
+`````
+
+---
+
+# PART 1 — THE BOARD-COST POLICY
+
+## THE ADVISORY'S CENTRAL CLAIM IS FALSE, AND THE ERROR IS A CONFLATION
+
+Measured over the project's own duration ledger, 113 determinate runs:
+**mean 34.38 min, median 34.13 min, longest board ever recorded 55.22 min, and
+0 of 113 boards exceeded 3 hours.**
+
+<!-- figure: determinate boards | scripts/why_is_the_board_getting_slower_2026-11-23.py | 113 -->
+<!-- figure: mean board minutes | scripts/why_is_the_board_getting_slower_2026-11-23.py | 34.38 -->
+<!-- figure: longest board minutes | scripts/why_is_the_board_getting_slower_2026-11-23.py | 55.22 -->
+<!-- figure: boards over 3 hours | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0 of 113 -->
+
+**EVERY FIGURE IN THIS BRIEF WAS RE-DERIVED BEFORE DISPATCH, AND THE FIRST
+ATTEMPT WAS WRONG.** The producer resolved its repository root by counting
+directory levels, so when run from a scratch directory `LEDGER.is_file()` was
+False, `determinate_rows()` returned [] and EVERY FIGURE IN THE PREVIOUS DRAFT
+OF THIS BRIEF WAS COMPUTED ON AN EMPTY SET. Re-pointed, it finds 112 rows,
+matching `scripts/what_the_commit_gate_actually_costs_over_time_2026-11-08.py`
+exactly. The superseded values are named here deliberately so a reader who
+remembers them can see which moved: 111 runs then 112, means 34.07 then 34.19,
+longest 52.4 then 52.38. THE FIGURES MOVE ON EVERY BOARD -- batch 12 landing
+mid-preparation moved all 9 again -- so they are SYNCED FROM THE PRODUCER
+immediately before dispatch rather than typed.
+
+The 3.13 h figure belongs to the FULL SUITE, 18,419 tests, a different
+instrument run rarely. The BOARD is 329 guards, about 5,532 tests. **The
+advisory treats the 2 as 1**, and that conflation sits under its whole argument.
+
+**ITS LAYERING RECOMMENDATION IS ALSO PARTLY ALREADY BUILT.** 3 layers exist: a
+pre-board ladder derived from the staged diff (35 to 44 guards, about 5 min,
+used 4 times on 2026-11-23), the board (about 47 min today), and the full suite
+(3.13 h). What the advisory adds is a rule for WHEN each is required.
+
+## BUT THE FOUNDER'S CONCERN IS CORRECT, AND THE SHARPEST FINDING IS NOT IN THE ADVISORY AT ALL
+
+**Window 2026-11-23: 12.75 h of board wall-clock in a 20.52 h span = 0.621398
+of elapsed time.** So boards did dominate the day. 9 commits landed against 16
+determinate boards = 1.7778 boards per commit; refused 7 of 16 = 0.437500,
+Wilson [0.230987, 0.668214].
+
+<!-- figure: day board share | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0.621398 -->
+<!-- figure: boards per commit | scripts/why_is_the_board_getting_slower_2026-11-23.py | 1.7778 -->
+<!-- figure: day refusal rate | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0.437500 -->
+
+**AN ARGUMENT THIS BRIEF PREVIOUSLY MADE IS WITHDRAWN, AND IT WAS MINE.** The
+earlier draft said the board count was "exactly what the measured refusal rate
+predicts", so no board was wasted. That is an IDENTITY, not evidence: with
+`r = refused/n` and `boards_per_commit = n/commits`, `1/(1-r) = n/(n-refused)`,
+and the 2 are equal whenever `commits = n - refused` -- which holds because
+every board that passes yields 1 commit. SymPy returns a difference of exactly 0
+under that substitution, so the match CANNOT fail and establishes nothing about
+waste. The question it was standing in for is whether each REFUSAL was
+necessary, which is measurable and is answered below.
+
+**5 OF 7 REFUSALS ON 2026-11-23 WERE AVOIDABLE WITH NO REDUCTION IN GATE
+STRENGTH: 3.9875 h of the 5.5606 h spent on refusals.** 0.714286, Wilson
+[0.358934, 0.917781], Clopper-Pearson [0.290421, 0.963307]. The breakdown:
+
+- **3 of 7, 2.4006 h — THE LADDER ALREADY SELECTS THOSE GUARDS.** The
+  diff-derived pre-board ladder selects 47 guards and 3 of the 5 distinct guards
+  that refused today are in that selection. They refused anyway because the hook
+  only VERIFIES a stage-0 snapshot; nothing compels the ladder to RUN. An
+  existing, measured, useful mechanism that no caller reaches is the exact shape
+  `additive-standard` names as a non-addition.
+- **2 of 7, 1.5869 h — A CONCURRENCY ARTEFACT, NOT A DEFECT.** Exactly 1
+  overlapping board pair ran today (05:15:12-06:02:59 and 05:16:27-06:03:53,
+  overlap 46.5 min) and BOTH refused naming the same guard,
+  `test_the_parked_file_regenerates_without_losing_him_2026-10-17.py`. That
+  guard calls `blocker_triage.park()`, which refuses while a board runs. The
+  detector excludes its OWN process chain, so a lone board passes; 2 concurrent
+  boards each detect the other. `park()` is the only function that raises, and
+  of the 3 guards that call it, 2 already use the `CDSFL_BT_BOARD` seam -- the
+  2 that test the interlock. Exactly 1 was unprotected, and it is the one that
+  failed.
+- **2 of 7, 1.5731 h — would need a WIDER ladder selection**, being state
+  guards the diff does not name.
+
+**ALL 5 DISTINCT NAMED GUARDS ARE GREEN NOW**, and together they run in
+155.41 s = 2.5902 min, against refusing boards whose mean duration was
+2859.71 s = 47.66 min, 95 per cent t-interval [45.82, 49.50] min.
+
+**THE GROWTH IS REAL AND IS THE ADVISORY'S ONE STRONG POINT.** On 2 agreeing
+routes, scipy `linregress` and statsmodels OLS agreeing to 1.33e-15: **slope
+1.6606 min/day, p = 2.251202e-22, R^2 = 0.5753, 95 per cent CI on the slope
+[1.3952, 1.9260] min/day.**
+
+<!-- figure: growth slope min per day | scripts/why_is_the_board_getting_slower_2026-11-23.py | 1.6606 -->
+<!-- figure: growth R squared | scripts/why_is_the_board_getting_slower_2026-11-23.py | 0.5753 -->
+
+**SO THE ADVISORY DESCRIBES THE PROJECT'S NEAR FUTURE WHILE MIS-DESCRIBING ITS
+PRESENT. The honest limit: R^2 = 0.5753 explains a little over half the
+variance, so the growth is established and no dated projection is a forecast.**
+A WINDOW NOTE, because the 2 are easy to conflate: 6 refusals among boards
+STARTING on 2026-11-23 and 7 among boards ENDING on it, 1 having begun on
+2026-11-22. Both are correct for their window.
+
+---
+
+## Q1. SHOULD THE BOARD BE RESERVED FOR MILESTONES, GIVEN THE LAYERS ALREADY EXIST?
+
+The pre-board ladder already selects the guards a staged diff puts at risk, runs
+in about 5 min, and caught 12 failures on 2026-11-23 that would otherwise have
+cost whole boards. **The question is therefore not whether to build a cheap
+layer but whether the ladder is strong enough to REPLACE a board for ordinary
+batches.**
+
+**WHAT ARGUES AGAINST IT, from this project's own record.** The ladder derives
+its set from the diff, so it is blind to any guard the diff does not name. On
+2026-11-23 a guard that was RED AT HEAD -- `test_help_never_acts_2026-09-11.py`
+-- let a batch land, because it is ADVISORY and off the board entirely. A
+selection-based layer inherits every blindness of its selector.
+
+**THE QUESTION.** Is a diff-derived ladder a sound substitute for a full board
+on an ordinary batch, and what class of regression would it structurally miss?
+Name the concrete failure your answer permits.
+
+## Q2. WHAT IS DRIVING 1.6606 MIN/DAY, AND CAN IT BE FIXED RATHER THAN ROUTED AROUND?
+
+**PART OF THIS IS ALREADY MEASURED AND 1 HYPOTHESIS IS REFUTED.** The
+leading candidate -- that guards each re-walk a growing `scripts/` directory
+-- was measured: caching that walk saves about 10.25 s, which is 0.0036 of a
+47 min board, and the timing interval straddles 0. The cause is therefore
+NOT identified, and that is the honest state.
+
+**This is the question I most want answered, because loosening the gate treats
+the symptom.** If the growth is archive-parametrised tests whose cost scales
+with the experimental archive, that is fixable at source and the policy question
+largely dissolves. If it is irreducible breadth, the policy question is real.
+
+The board emits `--durations=25` on every run, so per-test cost is already
+recorded rather than needing to be guessed.
+
+**THE QUESTION.** Decompose the growth. Is it (a) more guards on the list, (b)
+existing guards getting slower as the archive grows, or (c) something else?
+Give the decomposition with its producer.
+
+## Q3. BOARD BEFORE AN EXPERIMENT, AFTER, OR BOTH?
+
+The founder asks directly. **My position, for falsification:** BEFORE, and not
+both -- unless the experiment changed code. An experiment run on unverified code
+can waste far more than a board costs; an experiment that only produces data
+leaves the code untouched, so a post-board re-verifies bytes nobody altered.
+
+**THE QUESTION.** Is that right? The case I can see against it is that an
+experiment's own harness may write code or configuration during a run, in which
+case "did the code change" is itself a measurement rather than an assumption.
+
+## Q4. IS A THRESHOLD OF 25 TO 30 CHANGES SAFE?
+
+The advisory recommends a full board only after about 25 to 30 distinct
+non-trivial changes accumulate. **Measured against today, a batch is 10 to 12
+items**, so that threshold means roughly every 3rd batch is boarded.
+
+**WHAT ARGUES AGAINST IT.** This project's record is that a gate which stops
+refusing stops being consulted, and that a guard off the board drifts in
+silence -- demonstrated the same day by a guard red at HEAD that no board ran.
+
+**THE QUESTION.** Is a count the right threshold variable at all, or should it
+be a PREDICATE over what the diff touches? State a predicate a hook could
+evaluate.
+
+---
+
+## PRODUCE A FIX, AND TEST IT
+
+A finding without a fix is incomplete, and a fix without a falsifier the seat
+has EXECUTED is a hypothesis. Report the exact command and its output verbatim.
+**Deliver your fix as a file.** Write it INTO the sandbox repository tree
+at its real path. A fix described in prose is not delivered, and a fix
+written to scratch space is destroyed at teardown: rounds 5 and 6 on
+2026-09-10 returned 0 source files for exactly that reason while both
+seats reported working code.
+
+**Use `scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py`** on any
+falsifier you write, or say why it does not fit.
+
+**Where more than 1 repair is in play, composability is a CLAIM THAT REQUIRES A
+MEASUREMENT** -- compose only on demonstrated dominance over each part alone,
+and prefer the single fix where it performs as well.
+
+## WHAT WOULD REFUTE YOU
+
+State what evidence would overturn your own answer. **And state explicitly
+whether you think the external advisory should be adopted, rejected, or adopted
+with the corrections above** -- the founder has asked that question and has not
+decided it.
+
+## OUTPUT SHAPE
+
+For each of Q1 to Q4: `question`, `verdict` in 1 sentence, `reasoning` naming
+the instrument you ran, `commands_run` verbatim, `fix` as a repository-relative
+path or NONE, `falsifier` with the result of EXECUTING it,
+`what_would_refute_me`, and `disagreement` -- your strongest disagreement with
+this brief's framing, including with any figure in it. Mandatory, may not be
+empty.
+
+**Do not converge.** Disagreement is preserved as information.
+
+## TERMINATION
+
+Stop when a further pass produces no new above-threshold findings and state how
+many passes you ran. A finding is above threshold if missing it could cause a
+real-world failure, an unsafe condition, or a wrong decision by the founder.

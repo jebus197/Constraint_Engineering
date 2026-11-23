@@ -580,3 +580,46 @@ class TestTheDashMProxyDiscriminates:
         assert answers_help(src, under_dash_m=True) is False, (
             "an insert built from a constant was credited, so the predicate no "
             "longer checks that the path is derived from the script's location")
+
+    def test_a_decoy_derived_name_beside_a_constant_insert_is_refused(self):
+        """A CONSTANT-path insert must not be credited because some UNRELATED
+        preceding statement happens to mention `__file__`.
+
+        ★ RAISED INDEPENDENTLY BY BOTH FREE SEATS, panel round
+        `panel_b12_20261123T170728Z`, and this is the case the sibling test
+        above CANNOT see. That test builds its constant-path variant by
+        REPLACING the `__file__` assignment, so `__file__` leaves the module
+        entirely and the predicate refuses for a reason the realistic shape does
+        not share. It exercises the conjunction's second leg and never the
+        COUPLING between the legs.
+
+        The shipped defect was 2 independent `any()` scans over the same node
+        list: `inserts` asked whether any `sys.path.insert` precedes the import,
+        `uses_file` asked whether any file-derived name precedes it, and nothing
+        required the name to be IN the insert's arguments. Seat `fable` drove it
+        dynamically under `python3 -m pkg.attack --help` and reported exit 0 with
+        the usage never printed and a file written; seat `cc2` reported the same
+        with 2 constructed sources, adding that a BARE `__file__` sibling
+        suffices, so the preceding-sibling half is independently enough to break
+        it. The repair requires the derived name inside `call.args`.
+
+        THIS TEST IS THE PART THAT WAS MISSING. The repair landed in `fa687fda`
+        with no guard for the exact case that motivated it, so a revert of the
+        join would have gone unnoticed -- a fix without its own falsifier, which
+        this project has recorded as a defect class in its own right.
+        """
+        src = self.SIBLING_INSERT.replace(
+            "    sys.path.insert(0, str(REPO / 'scripts'))\n",
+            "    print('running from', REPO)\n"
+            "    sys.path.insert(0, '/somewhere/else')\n")
+        assert src != self.SIBLING_INSERT, (
+            "the decoy substitution did not apply, so this test would assert "
+            "against the unmodified fixture and prove nothing")
+        assert answers_help(src, under_dash_m=True) is False, (
+            "a CONSTANT-path insert was credited because an unrelated statement "
+            "mentioned `__file__`. The 2 conditions have come apart again: the "
+            "derived name must appear INSIDE the insert call's arguments, not "
+            "merely somewhere before the import.")
+        assert answers_help(self.SIBLING_INSERT, under_dash_m=True) is True, (
+            "the unmodified fixture is no longer credited, so the tightening "
+            "has over-reached and this test is passing vacuously")

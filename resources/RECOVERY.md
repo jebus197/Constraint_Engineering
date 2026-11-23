@@ -27,7 +27,70 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
-## SESSION STATE — 2026-11-23 18:47 GMT (READ THIS FIRST)
+## SESSION STATE — 2026-11-23 20:30 GMT (READ THIS FIRST)
+
+**HEAD:** `fa687fda batch 12: B212 closed at 0 of 837, and 2 panel proposals adopted after testing`
+**Stamped:** 2026-11-23T20:25:44+00:00
+
+**BATCH 12 LANDED.** `fa687fda`, board exit 0, **5549 passed, 22 skipped, 2
+xfailed**, 331 guards, 38 files. Re-run that board's own population with
+`python3 -m pytest -q -p no:cacheprovider $(grep -oE 'bench/tests/[a-z0-9_]+[.]py' hooks/pre-commit)`.
+At 3313 s it is the **longest board ever recorded, 55.22 min**, past the
+previous 52.38 -- consistent with measured growth of 1.6606 min/day, whose
+producer is `scripts/why_is_the_board_getting_slower_2026-11-23.py`.
+
+**THE 4 cy AND TRIAGE GUARDS, RUN AGAINST THE GATE AS NOW INSTALLED: 42 passed**, 2 skipped,
+2 xfailed. Re-run with `python3 -m pytest -q -p no:cacheprovider
+bench/tests/test_the_cy_gate_releases_on_the_live_shape_2026-11-23.py
+bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py
+bench/tests/test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py
+bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py`.
+The 2 xfails are STRICT and stay on deliberately: they drive `spend()` with keys
+they construct, so a key-side repair cannot make them pass. B209's verdict lives
+in the first of those files.
+
+**BATCH 13 IS APPLIED AND UNCOMMITTED.** `git status` should show 4 modified and
+2 new:
+- `hooks/cy_monitor_gate.py` -- B209's repair, the composed form from seat `cc2`
+- `bench/tests/test_the_cy_gate_releases_on_the_live_shape_2026-11-23.py` -- NEW
+  deciding-layer guard, registered in `hooks/pre-commit`
+- `scripts/why_is_the_board_getting_slower_2026-11-23.py` -- NEW board-cost
+  producer with `day_share()`
+- `bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py`
+  -- the `CDSFL_BT_BOARD` seam B155 missed here
+- `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py` -- annotation only
+- `bench/tests/test_help_never_acts_2026-09-11.py` -- the decoy regression test
+  the panel's fix landed without
+- plus `experimental_notes/CDSFL_MASTER_TASK_LIST.md` (B209 closed, B216/B217
+  added), its Desktop mirror, and
+  `experimental_notes/B209_and_the_board_cost_2026-11-23.md` with its spoken twin
+
+**RESUME POINTER, in order:**
+1. **A JOINT PANEL ROUND IS RUNNING:**
+   `panel_joint_b12_boardpolicy_20261123T201748Z`, free seats `cc2` + `fable`,
+   dispatched 20:17 GMT. It discharges the joint-round debt owed by
+   `panel_b12_20261123T170728Z` AND carries the board-policy questions. Harvest
+   `cc2.json` / `fable.json` from that directory.
+2. **TEST what it proposes before adopting any of it** -- the standing rule, and
+   it has already paid twice today.
+3. Fold anything adopted into batch 13, run the ladder, then ONE board, then ONE
+   commit.
+4. `sv` after that.
+5. B216 awaits the panel's Q1 verdict: the pre-board ladder already selects 3 of
+   the 5 guards that refused today and NOTHING RUNS IT. Do not wire it before
+   the verdict; it changes when the gate runs.
+
+**DO NOT RUN 2 BOARDS CONCURRENTLY.** Measured today: exactly 1 overlapping pair
+(46.5 min overlap) and both refused naming a guard that only fails because each
+board detects the other. Cost 1.5869 h. Recorded as B217.
+
+**FIGURES IN ANY BOARD-COST CLAIM DRIFT ON EVERY BOARD.** Re-run
+`scripts/why_is_the_board_getting_slower_2026-11-23.py` before quoting any of
+them; they moved 3 times in one day. Current: 113 determinate boards, mean 34.38
+min, longest 55.22, 0 of 113 over 3 hours, growth 1.6606 min/day with
+p = 2.251202e-22 and R^2 = 0.5753.
+
+## SESSION STATE — 2026-11-23 18:47 GMT [HISTORICAL — the block above supersedes it]
 
 **SESSION STATE — 2026-11-23 18:47 GMT (READ THIS FIRST).** Batch 11 LANDED as `40b00160` on `sim/shakedown-2026-09-29`. **Batch 12 is STAGED, PANEL-REVIEWED, and NOT YET COMMITTED** — its first board refused at 47:55 on 5 failures, all 5 since repaired. Read HEAD live with `git log --oneline -1`.
 

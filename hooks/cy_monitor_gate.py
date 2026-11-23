@@ -271,22 +271,163 @@ def runner_processes() -> list[str]:
         return []
 
 
-def spend(key: str) -> int:
-    if not key:
-        return MAX_REFUSALS + 1
+#: ★ ENTRY B209, REPAIRED 2026-11-23 ON THE JOINT ROUND. An ABSOLUTE
+#: PER-SESSION CEILING -- the half of the repair that does NOT depend on
+#: guessing where one activity ends and the next begins.
+#:
+#: WHY A SECOND COUNTER RATHER THAN A BETTER KEY. The old design made ONE
+#: number serve 2 opposed purposes: the anti-trap bound, which wants a counter
+#: nothing can reset, and the fresh-budget-per-run, which wants a counter that
+#: resets whenever a new run starts. Both were driven by the key, so EVERY
+#: candidate key trades one against the other, and the trade is not a matter of
+#: taste -- a key that resets liberally cannot bind, and a key that never resets
+#: cannot protect a second run. Measured on 6 scenarios by
+#: `scripts/which_cy_refusal_key_survives_2026-11-23.py`: the overlap key ALONE
+#: fails the anti-trap side on a fully disjoint observation sequence, and the
+#: observed-idle epoch ALONE fails the protection side on 2 back-to-back runs
+#: with no idle Stop between them -- the case the 2026-11-23 dispatcher
+#: confirmed against real code at 61 then 62.
+#:
+#: SO THE 2 PURPOSES GET 2 COUNTERS. `n` is per-epoch and may reset as often as
+#: the epoch rule likes, which is what lets the epoch rule be LIBERAL and
+#: maximise protection. `total` is per SESSION, is reset by nothing except a new
+#: session id, and is what actually discharges "a session cannot be trapped".
+#: 3x so a session legitimately spanning several runs is not cut off at the
+#: first, while staying finite.
+MAX_REFUSALS_PER_SESSION = 3 * MAX_REFUSALS
+
+
+def _read_state() -> dict:
     try:
         sp = state_path()
         st = json.loads(sp.read_text(encoding="utf-8")) if sp.is_file() else {}
+        return st if isinstance(st, dict) else {}
     except Exception:                                        # noqa: BLE001
-        st = {}
-    if st.get("key") != key:
-        st = {"key": key, "n": 0}
-    st["n"] = int(st.get("n", 0)) + 1
+        return {}
+
+
+def _write_state(st: dict) -> bool:
     try:
         state_path().write_text(json.dumps(st), encoding="utf-8")
+        return True
     except Exception:                                        # noqa: BLE001
+        return False
+
+
+def _session_of(key: str) -> str:
+    """The session part of a refusal key. `spend()` needs it for `total`."""
+    return key.rsplit("|", 1)[0] if "|" in key else key
+
+
+def observed_set(live, unwatched, pids) -> list[str]:
+    """WHAT IS RUNNING RIGHT NOW, as an order-independent identity.
+
+    Watched run directories wherever there are any -- they are stable by
+    construction -- and the live pid list only as the fallback, which is the
+    only case B209 is about.
+    """
+    dirs = sorted(str(r["dir"]) for r in list(live) + list(unwatched))
+    if dirs:
+        return ["dir:" + d for d in dirs]
+    return sorted("pid:" + str(p) for p in pids)
+
+
+def note_idle() -> None:
+    """RECORD THAT THIS GATE SAW NOTHING RUNNING.
+
+    Called from `main()`'s idle early return, so it is the gate's OWN finding
+    and not an inference from a clock: when `main()` returns 0 there is
+    demonstrably no live run, and whatever runs next is a different activity.
+    It CANNOT fire mid-run, because mid-run `main()` never reaches it.
+    """
+    st = _read_state()
+    if st.get("act"):                    # only on a TRANSITION to empty
+        st["act"] = []
+        st["epoch"] = int(st.get("epoch") or 0) + 1
+        _write_state(st)
+
+
+def refusal_key(payload, live, unwatched, pids) -> str:
+    """The key the refusal budget counts against. EXTRACTED FROM `main()`.
+
+    The extraction is PART of the repair, not a tidy-up: conditions 1, 2 and 3
+    of B209 are all properties of the KEY, and a test that chooses its own keys
+    cannot judge a key construction that lives inline. Recorded by
+    `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py`'s own
+    `TestSpendResetsWhenItsKeyChanges` docstring before this repair existed.
+
+    THE EPOCH ADVANCES ON EITHER OF 2 SIGNALS, covering different gaps:
+      - an OBSERVED IDLE (`note_idle`): the gate found nothing running;
+      - a DISJOINT observation: not one member of the previous set survives.
+        Overlap is what separates "same activity, child replaced" from "a
+        different activity". The board's real shape is a CONSTANT parent plus a
+        moving child -- 1 real pytest invocation, `hooks/pre-commit:1237` --
+        so the set is not replaced, it OVERLAPS.
+
+    BEING LIBERAL HERE IS SAFE ONLY BECAUSE OF `MAX_REFUSALS_PER_SESSION`. A
+    wrong advance mid-activity resets `n` and would, on its own, re-open the
+    exact inertness of B209. That is why the 2 mechanisms ship together.
+    """
+    sess = str((payload or {}).get("session_id") or "")
+    now = observed_set(live, unwatched, pids)
+    st = _read_state()
+    prev = list(st.get("act") or [])
+    was = int(st.get("epoch") or 0)
+    epoch = was + 1 if (prev and now and not (set(prev) & set(now))) else was
+    if now != prev or epoch != was:
+        st["act"] = now
+        st["epoch"] = epoch
+        _write_state(st)
+    return f"{sess}|e{epoch}"
+
+
+def spend(key: str) -> int:
+    """Count one refusal against `key`. Returns the PER-EPOCH count.
+
+    ★ THE STATE DICT IS PRESERVED ACROSS A KEY CHANGE, AND THE OLD CODE
+    REPLACED IT. `st = {"key": key, "n": 0}` destroyed `act`, `epoch` and
+    `total`, so an epoch stored by `refusal_key()` was wiped by the very
+    `spend()` call that followed it, and the epoch OSCILLATED between 0 and 1
+    instead of advancing. Only `n` is reset here; everything else survives.
+    """
+    if not key:
+        return MAX_REFUSALS + 1
+    st = _read_state()
+    if st.get("key") != key:
+        st["key"] = key
+        st["n"] = 0
+    if st.get("sess") != _session_of(key):
+        st["sess"] = _session_of(key)
+        st["total"] = 0
+    st["n"] = int(st.get("n", 0)) + 1
+    st["total"] = int(st.get("total", 0)) + 1
+    if not _write_state(st):
         return MAX_REFUSALS + 1      # cannot count -> allow the stop
-    return st["n"]
+    return int(st["n"])
+
+
+def session_spent() -> int:
+    """Refusals spent in this session across ALL epochs. Reset by nothing."""
+    return int(_read_state().get("total") or 0)
+
+
+def decide(payload, live, unwatched, pids):
+    """(refuse?, per-activity count, per-session total) for ONE Stop event.
+
+    ★ IT EXISTS SO THE DECISION CAN BE DRIVEN WITHOUT A STDIN PAYLOAD. `main()`
+    reads `sys.stdin`, so every check of the gate's actual decision had to
+    either re-implement the threshold or shell out. A re-implemented threshold
+    is 2 forms that can disagree while each describes itself consistently --
+    `execute-do-not-grep`, 4 confirmed instances in this project. `main()`
+    calls this, and so does
+    `scripts/which_cy_refusal_key_survives_2026-11-23.py`, so there is exactly
+    one copy of the rule.
+    """
+    key = refusal_key(payload, live, unwatched, pids)
+    used = spend(key)
+    total = session_spent()
+    refuse = used <= MAX_REFUSALS and total <= MAX_REFUSALS_PER_SESSION
+    return refuse, used, total
 
 
 def message(live: list[dict], unwatched: list[dict], pids: list[str]) -> str:
@@ -411,14 +552,24 @@ def main() -> int:
     live, unwatched = live_runs()
     pids = runner_processes() if not (live or unwatched) else []
     if not (live or unwatched or pids):
+        note_idle()                  # the gate's own finding: nothing running
         return 0                     # nothing running: silent, as it should be
-    key = str(payload.get("session_id") or "") + "|" + \
-        str(sorted(r["dir"] for r in live + unwatched) or pids)
-    used = spend(key)
-    if used > MAX_REFUSALS:
-        print(f"cy_monitor_gate: {used - 1} refusals already for this run, which "
-              f"is the budget ({MAX_REFUSALS}). Allowing the stop so a session "
-              f"cannot be trapped. THE RUN MAY STILL BE LIVE — check it.",
+    refuse, used, total = decide(payload, live, unwatched, pids)
+    if not refuse:
+        #: ★ 2 BOUNDS, AND THEY FAIL DIFFERENTLY, so they are reported
+        #: differently rather than summed into one sentence. `used` exhausted
+        #: means THIS activity has had its budget. `total` exhausted means the
+        #: epoch rule has been advancing and the per-session ceiling is the
+        #: only thing left holding -- which is the case where the key was
+        #: WRONG, so the reader needs to know it was the ceiling that fired.
+        why = (f"{used - 1} refusals already for this activity, which is the "
+               f"budget ({MAX_REFUSALS})" if used > MAX_REFUSALS else
+               f"{total - 1} refusals already in this SESSION across all "
+               f"activities, which is the per-session ceiling "
+               f"({MAX_REFUSALS_PER_SESSION}); the per-activity counter stands "
+               f"at {used}, so the activity key has been resetting")
+        print(f"cy_monitor_gate: {why}. Allowing the stop so a session cannot "
+              f"be trapped. THE RUN MAY STILL BE LIVE — check it.",
               file=sys.stderr)
         return 0
     print(f"{message(live, unwatched, pids)}\n\n"

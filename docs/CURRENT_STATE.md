@@ -45,7 +45,7 @@ Uncommitted files:
 
 ## Tests
 
-**18522 tests collected** at 23 November 2026 18:47 GMT, HEAD `40b00160` + uncommitted working tree (`python3 -m pytest bench/tests/ --co -q`)
+**18542 tests collected** at 2026-11-23T20:26:26+00:00 GMT, HEAD `fa687fda` + uncommitted batch-13 working tree (`python3 -m pytest bench/tests/ --co -q`)
 
 This is a COLLECTION count, not a pass count, and it says nothing about whether the run was offline. Quote it only with the timestamp and commit above. The total is not stable: `bench/tests/test_immune_memory_consumption.py` parametrises over the timestamped run directories under `bench/logs/`, so it grows whenever an experiment archives, and new test files land between saves.
 

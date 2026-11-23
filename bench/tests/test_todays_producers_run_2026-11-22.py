@@ -48,6 +48,26 @@ PRODUCERS = [
     #: no file and spawns nothing, computing from 2 pinned ledger figures.
     ("how_many_boards_does_a_batch_cost_2026-11-22.py",
      "boards per landed batch, closed form against 400,000 draws"),
+    #: ADDED 2026-11-23, AND THE RATCHET WOULD HAVE REFUSED THE BATCH WITHOUT IT.
+    #: `test_an_unreached_producer_set_cannot_grow_2026-11-08.py` named it
+    #: verbatim -- "1 producer(s) are reached by NO test and are not in the
+    #: admitted set" -- so this entry is the producer being EXECUTED, not pinned.
+    #:
+    #: ★ THE LADDER COULD NOT HAVE CAUGHT THIS, AND THAT IS THE POINT. The
+    #: pre-board ladder passed clean at 2269 tests on the same staged diff while
+    #: that ratchet was red, because a whole-tree invariant guard fires on an
+    #: addition ELSEWHERE and a diff-derived selector never names it. Seat
+    #: `fable` named this exact guard as class (i) of the 3 a selector is blind
+    #: to, in round `panel_joint_b12_boardpolicy_20261123T201748Z`, hours before
+    #: it fired here. Recorded under B216 as evidence that the ladder is a
+    #: pre-filter and never a substitute.
+    #:
+    #: ADMITTED ON A MEASUREMENT, not on a preference: it spawns no pytest, and
+    #: runs in 1.44 to 2.46 s over 3 runs against a mean producer-guard cost of
+    #: 38.3484 s on batch 12's own durations table -- about 0.00046 of a 3290 s
+    #: board. It reads the duration ledger and the hook, and calls `git log`.
+    ("why_is_the_board_getting_slower_2026-11-23.py",
+     "board cost: 113 boards, 0 over 3 h, growth per day, and the day-level share"),
 ]
 
 

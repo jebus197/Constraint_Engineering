@@ -9,6 +9,27 @@ Alphabetical. If a term is not here, it should be added.
 
 Measures finding depth: formality times information density times generalisation scope. Captures the difference between spotting a typo and identifying a paradigm-level architectural flaw. Defined in Mathematical Appendix Section 7.2.
 
+### Anti-trap budget
+
+The cap on how many times the `cy` stop gate (`hooks/cy_monitor_gate.py`) may
+refuse to let a session end while a run is live, after which it allows the stop
+regardless so a session cannot be held for ever. Also called the refusal budget.
+`MAX_REFUSALS = 60` is the per-activity budget, counted against 1 activity
+key, and
+`MAX_REFUSALS_PER_SESSION = 180` is an absolute per-session ceiling; the gate
+releases when EITHER is exceeded.
+
+**It was inert for exactly the runs the gate cannot read, which is task entry
+B209.** For a run with no watched directory the key embedded the list of running
+process identifiers, and the board's real shape is 1 stable parent with
+sub-second children, so the key changed on nearly every poll and the counter
+reset to 1. Repaired 2026-11-23 by deriving the key from the session and an
+epoch that advances only on a DISJOINT observation, with the per-session ceiling
+as the backstop. Scored at the deciding layer by
+`bench/tests/test_the_cy_gate_releases_on_the_live_shape_2026-11-23.py`: the
+pre-repair gate is trapped on 4 of 5 measured shapes, the repair releases at
+event 61 on the live shape and still refuses a new session.
+
 ### B Cell
 
 Immune pipeline cell type. Stage 3 verification agent. B Cell v1 uses SymPy for mathematical claim verification. B Cell v2 adds AST (Abstract Syntax Tree) analysis and Z3 SMT (Satisfiability Modulo Theories) solver for formal verification. Produces structured verdicts.
@@ -437,6 +458,28 @@ Immune pipeline cell type. Stage 6 reconciliation. Final gate that ensures consi
 ### Runner
 
 The Python program that orchestrates a multi-model analysis session. Since Experiment 40 there is one active runner, `bench/reference_runner_v3.py`, driven by the shared launcher `bench/launch_exp42.py` and selected per experiment by a committed config under `bench/expNN_configs/`; the launcher's name is historical, not Experiment-42-specific. `bench/reference_runner.py` is the frozen Experiment 38/39 baseline. Experiments 29–37 each have their own standalone script (e.g. `run_exp36_evidence.py`), retained as records. All share infrastructure from `runner_core.py` and `experiment_11_orchestrator.py`.
+
+### Pre-board ladder
+
+Also called the diff-derived ladder.
+
+The subset of board guards selected from a commit's STAGED DIFF and run before
+the full board, so a batch that is going to be refused is refused in minutes
+rather than after the whole board. Derived by
+`scripts/which_guards_does_this_commit_risk_2026-11-22.py --paths-only`; the
+commit hook does not run it, it only verifies that a stage-0 snapshot matches
+the tree, via `scripts/the_preboard_evidence_matches_the_tree_2026-11-23.py`.
+
+**It is a PRE-FILTER and never a substitute for the board.** Measured
+2026-11-23: it already selects 3 of the 5 guards that refused commits that day,
+worth 2.4006 h, yet nothing compels it to run. And it is structurally blind to
+3 guard classes — whole-tree invariant ratchets that fire on an addition
+elsewhere, date-driven freshness gates that go red on an empty diff, and
+cross-file coupling where the touched file is an INPUT to an untouched guard's
+predicate. Demonstrated the same day: the ladder passed clean at 2269 tests
+while `test_an_unreached_producer_set_cannot_grow_2026-11-08.py` was red. 68 of
+332 board guards derive their subject set at runtime and so cannot be reached by
+path selection at all. Tracked as task entry B216.
 
 ### Rung ladder
 

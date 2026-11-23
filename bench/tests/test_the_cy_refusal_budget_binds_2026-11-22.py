@@ -119,7 +119,26 @@ class TestTheWatchedBudgetBinds:
 
 
 class TestTheUnwatchedBudgetBinds:
-    """★ KNOWN-FAILING TODAY, strictly. The regression guard for B209's repair."""
+    """★ KNOWN-FAILING, strictly -- AND THE REPAIR CANNOT MAKE THEM PASS.
+
+    THE MARKERS STAY, AND THE REASON IS NOT STUBBORNNESS. Both cases below
+    call `spend()` with key strings THEY CONSTRUCT. B209's defect was never
+    in `spend()`; it was in the key `main()` handed it, built inline. The
+    repair works by making the key NOT churn, so a test that supplies a
+    churning key manufactures the precondition the repair removes and
+    cannot observe it. The reason strings below say "an XPASS means the key
+    was repaired" -- that release condition is UNREACHABLE by a key-side
+    repair, so a reader must not take 2 xfailed as "B209 is open".
+
+    WHAT THESE 2 STILL HOLD, and it is worth holding: `spend()`'s behaviour
+    when a key genuinely changes. B209'S VERDICT IS RECORDED AT THE
+    DECIDING LAYER instead, in
+    `test_the_cy_gate_releases_on_the_live_shape_2026-11-23.py`, which
+    drives `main()`'s exit code on the measured live shape -- a stable
+    primary pid with churning sub-second children -- and separates all 4
+    candidates: composed 8 of 8, ceiling-only 7, the rejected per-key fix 7,
+    the unrepaired gate 3.
+    """
 
     @pytest.mark.xfail(strict=True, reason="B209: the refusal budget's key falls "
                        "back to a churning pid list for unwatched runs, so the "

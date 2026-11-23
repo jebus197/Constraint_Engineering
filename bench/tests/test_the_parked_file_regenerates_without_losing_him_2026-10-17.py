@@ -325,6 +325,19 @@ def test_a_newly_parked_item_is_not_buried_in_the_settled_section(tmp_path,
     assert "# Settled — kept for the record" in text, (
         "the fixture is not a regenerated file; this test would be vacuous")
     monkeypatch.setattr(triage, "PARKED", sand)
+    #: ★ THE SEAM, AND WHY IT WAS OWED. `park()` refuses while a commit
+    #: board runs (B155, deliberate). The detector excludes its OWN process
+    #: chain, so a lone board passes this -- but 2 CONCURRENT boards each
+    #: detect the other, and on 2026-11-23 exactly 1 overlapping pair ran
+    #: (46.5 min overlap) and BOTH refused naming this guard, at a measured
+    #: cost of 5713 s = 1.5869 h. The subject here is the INSERT POSITION,
+    #: not the interlock, which keeps its own 3 guards --
+    #: `test_the_triage_refuses_to_write_while_a_board_runs_2026-11-12.py`,
+    #: `test_the_board_detector_fails_toward_writing_2026-11-22.py` and
+    #: `test_blocker_triage_2026-09-10.py`, 2 of which use this same seam.
+    #: So nothing is weakened: an ambient board can no longer manufacture
+    #: a failure in a test that is not about ambient boards.
+    monkeypatch.setenv("CDSFL_BT_BOARD", "0")
     out = triage.park("A brand new question that needs him",
                       "Its detail.", stamp="2026-10-17T13:30:00+01:00")
     assert out == sand

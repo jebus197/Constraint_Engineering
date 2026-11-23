@@ -1,0 +1,237 @@
+{
+  "model": "fable",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 21788,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd && ls && ls scripts/ 2>/dev/null | head -50\", \"description\": \"List repository root and scripts directory\"}",
+      "t_offset_s": 19.749
+    },
+    {
+      "name": "Glob",
+      "input_preview": "{\"pattern\": \"bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py\"}",
+      "t_offset_s": 20.195
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls hooks/ && ls scripts/ | grep -iE 'ladder|board|why_is|what_the_commit' \", \"description\": \"List hooks and board/ladder-related scripts\"}",
+      "t_offset_s": 23.215
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo/scripts/why_is_the_board_getting_slower_2026-11-23.py\"}",
+      "t_offset_s": 24.155
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls .cdsfl_tmp/ 2>/dev/null | head; ls -la .git 2>/dev/null | head -3; echo ---; wc -l .cdsfl_tmp/precommit_durations.jsonl 2>/dev/null; echo ---; head -3 .cdsfl_tmp/precommit_durations.jsonl 2>/dev/null\", \"description\": \"Check for duration ledger and .git in sandbox\"}",
+      "t_offset_s": 27.951
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"CDSFL_BT_BOARD\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}",
+      "t_offset_s": 28.95
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls .git 2>/dev/null && echo HAS_GIT || echo NO_GIT; python3 -c \\\"import statsmodels, scipy, sympy, mpmath; print('libs ok')\\\"\", \"description\": \"Check .git presence and stats libraries\"}",
+      "t_offset_s": 39.126
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo/bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py\"}",
+      "t_offset_s": 40.348
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls .cdsfl_tmp/ | head -40; echo ===; grep -l \\\"slowest durations\\\" .cdsfl_tmp/*.log logs/* 2>/dev/null | head; echo ===; ls logs/ 2>/dev/null | head -20\", \"description\": \"Look for pytest --durations output in logs\"}",
+      "t_offset_s": 56.417
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"durations\", \"path\": \"hooks/pre-commit\", \"output_mode\": \"content\", \"-n\": true, \"-C\": 4}",
+      "t_offset_s": 57.576
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"slowest\\\" .cdsfl_tmp/*board*.log 2>/dev/null; echo ---; tail -20 .cdsfl_tmp/precommit_durations.jsonl; echo ---; head -5 .cdsfl_tmp/precommit_durations.jsonl | python3 -c \\\"import json,sys;[print(sorted(json.loads(l).keys())) for l in sys.stdin]\\\"\", \"description\": \"Check logs for durations tables and ledger fields\"}",
+      "t_offset_s": 63.776
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo/hooks/pre-commit\", \"offset\": 1200, \"limit\": 120}",
+      "t_offset_s": 79.981
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"preboard|ladder|stage-0|stage0\", \"path\": \"hooks/pre-commit\", \"output_mode\": \"content\", \"-n\": true, \"head_limit\": 40}",
+      "t_offset_s": 81.187
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' bench/tests/test_todays_producers_run_2026-11-22.py 2>/dev/null; echo ====; grep -n \\\"_cdsfl_guards=\\\" hooks/pre-commit | head; echo ====; sed -n '1,60p' scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py\", \"description\": \"Read producers guard, guards counter, falsifier tool header\"}",
+      "t_offset_s": 109.985
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n '_cdsfl_guards' hooks/pre-commit | head -5; echo '---'; sed -n '1,80p' scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py\", \"description\": \"Guards counter and falsifier tool interface\"}",
+      "t_offset_s": 114.329
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/why_is_the_board_getting_slower_2026-11-23.py 2>&1 | head -50\", \"description\": \"Re-run the board-slowness producer\", \"timeout\": 120000}",
+      "t_offset_s": 119.211
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"durations\\\" scripts/*.py bench/tests/*.py 2>/dev/null | head; echo '---'; grep -n \\\"durations\\\" scripts/compare_this_board_against_the_record_2026-11-07.py 2>/dev/null | head; echo '---'; python3 - <<'EOF'\\nimport json, datetime as dt, pathlib\\nrows=[json.loads(l) for l in pathlib.Path(\\\".cdsfl_tmp/precommit_durations.jsonl\\\").read_text().splitlines() if l.strip()]\\nwithg=",
+      "t_offset_s": 159.166
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport json, datetime as dt, pathlib\\nimport numpy as np\\nfrom scipy import stats as sstats\\nimport statsmodels.api as sm\\nrows=[json.loads(l) for l in pathlib.Path(\\\".cdsfl_tmp/precommit_durations.jsonl\\\").read_text().splitlines() if l.strip()]\\nW=[(dt.datetime.fromisoformat(r[\\\"at\\\"].replace(\\\"Z\\\",\\\"+00:00\\\")), float(r[\\\"seconds\\\"]))\\n   for r in rows if r.get(\\\"g",
+      "t_offset_s": 171.769
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in .cdsfl_tmp/batch*board*2026-11-17.log; do echo \\\"$f: $(grep -E '^[0-9]+ (passed|failed)|passed|failed,' $f | tail -1 | head -c 120)\\\"; done; echo '---'; head -5 .cdsfl_tmp/board_census.txt 2>/dev/null; wc -l .cdsfl_tmp/board_census.txt 2>/dev/null; echo '---'; tail -3 .cdsfl_tmp/board_census.txt 2>/dev/null\", \"description\": \"Extract test counts from retained board logs and ce",
+      "t_offset_s": 310.592
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /tmp && mkdir -p durhdr && cd durhdr && cat > test_t.py <<'EOF'\\ndef test_a(): assert True\\ndef test_b(): assert True\\nEOF\\npython3 -m pytest -q -p no:cacheprovider --durations=3 --durations-min=0.0 test_t.py 2>&1 | tail -8\", \"description\": \"Capture pytest slowest-durations header format\"}",
+      "t_offset_s": 385.509
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,25p' /private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo/hooks/stage0_restage.sh\", \"description\": \"Check sourced-helper precedent style\"}",
+      "t_offset_s": 387.664
+    },
+    {
+      "name": "Write",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo/hooks/board_durations_persist.sh\", \"content\": \"# CDSFL board-durations persistence helper.  POSIX sh.  Sourced by hooks/pre-commit.\\n#\\n# WHY THIS FILE EXISTS, with the measurement rather than the intention.\\n#\\n# B207 wired `--durations=25` into the board so pytest attributes real time per\\n# guard. ",
+      "t_offset_s": 407.822
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > hooks/board_durations_persist.sh <<'SHEOF'\\n# CDSFL board-durations persistence helper.  POSIX sh.  Sourced by hooks/pre-commit.\\n#\\n# WHY THIS FILE EXISTS, with the measurement rather than the intention.\\n#\\n# B207 wired `--durations=25` into the board so pytest attributes real time per\\n# guard. But the table lands in `$_CDSFL_BOARD_LOG`, which the hook deletes\\n# with `rm -f`",
+      "t_offset_s": 421.793
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo/hooks/pre-commit\", \"old_string\": \"OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\nrm -f \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null\", \"new_string\": \"OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\n# PERSIST THE --durations TABLE BEFORE THE rm BELOW DELETES IT, 2026-11-23.\\n# B207 made the boar",
+      "t_offset_s": 430.706
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"hooks/pre-commit\\\")\\nsrc = p.read_text()\\nold = 'OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\\\nrm -f \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null'\\nassert src.count(old) == 1, src.count(old)\\nnew = '''OUT=$(cat \\\"$_CDSFL_BOARD_LOG\\\" 2>/dev/null)\\n# PERSIST THE --durations TABLE BEFORE THE rm BELOW DELETES IT, 2026-11-23.\\n# B207 made the boa",
+      "t_offset_s": 439.18
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_durations_table_must_survive_the_boards_cleanup_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The board's per-guard attribution must outlive the board's own cleanup.\\n\\nDESTINATION `scripts/`. Written 2026-11-23, panel round `panel_b12_20261123T170728Z`.\\n\\nWHY. B207 wired `--durations=25` into the board, answering an earlier finding\\nthat a durations reader",
+      "t_offset_s": 468.865
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\nsrc = pathlib.Path(\\\"hooks/pre-commit\\\").read_text()\\nstart = src.index(\\\"# PERSIST THE --durations TABLE\\\")\\nend = src.index('fi\\\\nrm -f \\\"$_CDSFL_BOARD_LOG\\\"') + len(\\\"fi\\\\n\\\")\\ndefect = src[:start] + src[end:]\\nassert \\\"_cdsfl_persist_durations\\\" not in defect\\npathlib.Path(\\\"/tmp/hook_without_persist\\\").write_text(defect)\\nprint(\\\"defect copy wri",
+      "t_offset_s": 474.756
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/a_falsifier_must_disagree_with_itself_2026-11-23.py --target hooks/pre-commit --defect-file /tmp/hook_without_persist -- python3 scripts/the_durations_table_must_survive_the_boards_cleanup_2026-11-23.py 2>&1 | tail -12; echo \\\"tool exit=$?\\\"; sh -n hooks/pre-commit && echo \\\"hook still parses after restore\\\"\", \"description\": \"Drive falsifier differentially against hook",
+      "t_offset_s": 478.369
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_growth_is_per_guard_not_more_guards_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The board's current growth is per-guard cost, measured at a CONSTANT guard count.\\n\\nDESTINATION `scripts/`. Written 2026-11-23, panel round `panel_b12_20261123T170728Z`.\\n\\nWHY. `scripts/why_is_the_board_getting_slower_2026-11-23.py` established the\\ngrowth (1.6606 min/day ove",
+      "t_offset_s": 511.842
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_todays_producers_run_2026-11-22.py\\\")\\nsrc = p.read_text()\\nanchor = '''    (\\\"how_many_boards_does_a_batch_cost_2026-11-22.py\\\",\\n     \\\"boards per landed batch, closed form against 400,000 draws\\\"),\\n]'''\\nassert src.count(anchor) == 1\\nnew = '''    (\\\"how_many_boards_does_a_batch_cost_2026-11-22.py\\\",\\n     \\\"bo",
+      "t_offset_s": 525.059
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider \\\"bench/tests/test_todays_producers_run_2026-11-22.py\\\" 2>&1 | tail -4\", \"description\": \"Run the producers guard end-to-end including new entries\", \"timeout\": 300000}",
+      "t_offset_s": 527.585
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider \\\"bench/tests/test_todays_producers_run_2026-11-22.py\\\" -k \\\"per_guard or survive_the_boards\\\" 2>&1 | tail -2; echo '---pre-edit baseline---'; python3 - <<'EOF'\\nimport pathlib\\nsrc = pathlib.Path(\\\"bench/tests/test_todays_producers_run_2026-11-22.py\\\").read_text()\\nstart = src.index(\\\"    #: ADDED 2026-11-23, panel round b12.\\\")\\nend = src.ind",
+      "t_offset_s": 588.803
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport sympy as sp\\nimport mpmath as mp\\nn, T = sp.symbols('n T', positive=True)\\nz2 = sp.Rational(1) * sp.Symbol('z2', positive=True)\\n# per-pair Wilson upper at k=0: z^2/(n+z^2)  (cc2's verified form)\\np_up = z2/(n+z2)\\n# rate coordinate: pairs each span T/n seconds -> implied events-per-second bound\\nlam = sp.simplify(p_up/(T/n))\\nprint(\\\"rate bound lam(n) =\\\", l",
+      "t_offset_s": 666.477
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"wolframscript -code 'z2 = Quantile[NormalDistribution[], 0.975]^2; {Limit[n*z2/((n + z2)*T), n -> Infinity], N[Log[20]/106, 8], N[z2*14/((14 + z2)*106), 8], N[(Log[20]/106)*34.38*60, 6]}' 2>&1; echo \\\"exit=$?\\\"\", \"description\": \"Wolfram second check on rate-bound limit and rule of three\", \"timeout\": 120000}",
+      "t_offset_s": 677.195
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nfrom statsmodels.stats.proportion import proportion_confint\\nimport mpmath as mp\\nlo,hi = proportion_confint(5,7,method=\\\"wilson\\\"); print(f\\\"5/7 Wilson [{lo:.6f},{hi:.6f}]\\\")\\nlo,hi = proportion_confint(5,7,method=\\\"beta\\\");   print(f\\\"5/7 Clopper-Pearson [{lo:.6f},{hi:.6f}]\\\")\\n# counterfactual 2026-11-23: remove 2 concurrency refusals outright (seam landed),\\n# c",
+      "t_offset_s": 695.924
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln 'CDSFL_BOARD_LOG' bench/tests/ scripts/ | head; echo '---'; grep -n 'CDSFL_BOARD_LOG' bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py 2>/dev/null | head -8\", \"description\": \"Find guards anchoring on the board-log region of the hook\"}",
+      "t_offset_s": 707.664
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py bench/tests/test_the_cheap_checks_run_before_the_board_2026-11-09.py bench/tests/test_the_board_verdict_reaches_the_refusal_2026-11-17.py 2>&1 | tail -3\", \"description\": \"Run the three hook-anchoring guards against the edited hook\", \"timeout\": 300000}",
+      "t_offset_s": 711.173
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest -q -p no:cacheprovider \\\"bench/tests/test_the_boards_guard_phase_streams_2026-11-21.py::TestThePremiseIsAlive::test_the_hook_is_the_live_hook\\\" 2>&1 | grep -E \\\"^E |assert\\\" | head -6\", \"description\": \"Inspect the one failing hook-anchoring test\"}",
+      "t_offset_s": 728.795
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re, pathlib\\nt = pathlib.Path(\\\"hooks/pre-commit\\\").read_text()\\nfull = [l.strip() for l in t.splitlines() if re.fullmatch(r\\\"bench/tests/test_[A-Za-z0-9_-]+\\\\.py\\\", l.strip())]\\nloose = [l for l in t.splitlines() if \\\"bench/tests/\\\" in l and not l.strip().startswith(\\\"#\\\")]\\nprint(\\\"fullmatch guard lines:\\\", len(full))\\nprint(\\\"non-comment lines containing b",
+      "t_offset_s": 747.43
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport re, pathlib\\nt = pathlib.Path(\\\"hooks/pre-commit\\\").read_text()\\nm = re.search(r'GUARDS=\\\"(.*?)\\\"', t, re.S)\\nentries = [l.strip() for l in m.group(1).splitlines() if l.strip()]\\nprint(\\\"entries in the GUARDS assignment:\\\", len(entries))\\nprint(\\\"of which contain bench/tests/:\\\", sum(1 for e in entries if \\\"bench/tests/\\\" in e))\\nimport collections\\nfullmatch",
+      "t_offset_s": 767.134
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/why_is_the_board_getting_slower_2026-11-23.py\\\")\\nsrc = p.read_text()\\nold = '''def board_guard_count(text: str | None = None) -> int:\\n    \\\"\\\"\\\"Guards on the board, counted from the hook rather than typed.\\\"\\\"\\\"\\n    t = text if text is not None else HOOK.read_text()\\n    return sum(1 for l in t.splitlines()\\n            ",
+      "t_offset_s": 795.191
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/the_guard_counter_must_count_the_edge_entries_2026-11-23.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"The board's guard counter must count the assignment's first and last entries.\\n\\nDESTINATION `scripts/`. Written 2026-11-23, panel round `panel_b12_20261123T170728Z`.\\n\\nWHY. `board_guard_count` in `why_is_the_board_getting_slower_2026-11-23.py`\\ncounted full-line regex m",
+      "t_offset_s": 827.051
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'EOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_todays_producers_run_2026-11-22.py\\\")\\nsrc = p.read_text()\\nanchor = '''    (\\\"the_durations_table_must_survive_the_boards_cleanup_2026-11-23.py\\\",\\n     \\\"the --durations table is persisted before the board log is deleted\\\"),\\n]'''\\nassert src.count(anchor) == 1\\np.write_text(src.replace(anchor, anchor[:-1] + ''' ",
+      "t_offset_s": 832.772
+    }
+  ],
+  "n_tool_calls": 43,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 955.4,
+  "response": "All verification complete. Five delivered artefacts, three falsifiers executed, two driven differentially to DISCRIMINATES, all new producer-guard entries green (6 passed). Report follows.\n\n---\n\n# SEAT REPORT \u2014 joint round `panel_b12_20261123T170728Z`, batch 12\n\n**Sandbox caveat, once:** no `.git` is staged, so the 4 environmental failures in `test_todays_producers_run` and `test_the_hook_is_the_live_hook` (`git config` exits 1) are identical before and after my edits \u2014 verified by running the pre-edit guard from a temp copy: 4 failed both ways, failure set unchanged.\n\n---\n\n## QJ \u2014 cross-examination of seat `cc2`\n\n**On the orchestrator's first pressure point \u2014 \"0.215311 is not evidence at all.\"** cc2's mechanism is right and *defeats my blind framing*; its epistemic filing overshoots, and the overshoot is derivable. My blind reply let the figure stand as \"arithmetically correct but about the wrong population\" \u2014 cc2 showed the number itself is instrument-relative, which is stronger, and its demonstration (14\u2192149 poll-pairs under 10\u00d7 polling, opportunities fixed at 0) is the decisive one. **But \"not evidence at all\" is strictly mis-filed.** Derived with SymPy and confirmed on the Wolfram kernel (local Wolfram Engine via `wolframscript`, exit 0): re-expressed as a bound on the event **rate per unit time**, \u03bb(n) = n\u00b7z\u00b2/((n+z\u00b2)\u00b7T) is monotone *increasing* in n and saturates at z\u00b2/T \u2014 the free parameter cannot push it below a fixed, interval-invariant quantity. At n=14, T=106 s the rate bound is 0.028437/s, within 1% of the exact Poisson rule-of-three ln(20)/T = 0.028262/s (Wolfram Language: `{3.8414588/T, 0.02826163, 0.02843728, 58.298}`). So the run *does* carry evidence of a bounded kind \u2014 cc2 mis-filed it \u2014 **and simultaneously cc2's practical verdict survives intact**, twice over: (i) the invariant bound permits \u2264 **58.3 full replacements per mean-length board**, i.e. it excludes nothing at the decision scale; (ii) my blind point stands that it is evidence about the single-pytest regime, not the board regime. Composed correctly: *inadmissible in the per-pair coordinate cc2 attacked; admissible but decision-vacuous in the invariant coordinate; wrong-population either way.* cc2's warning that \"take more samples\" manufactures false confidence is exactly right *in the per-pair coordinate*; in the rate coordinate more *polls* add nothing (saturation) while more *time* genuinely does \u2014 which is why the board-length run both seats prescribed is the measurement.\n\n**On the second pressure point \u2014 \"this batch is itself 1 data point\" being wrong in the direction that favours the line.** cc2's claim survives my reading, and **here I reverse**. My blind reply computed Wilson [0, 0.794] on 0/1 and called the datum \"consistent with everything, decides nothing.\" That arithmetic implicitly treated the datum as exchangeable with the 7-of-10 baseline trials. cc2's Hawthorne argument shows it is not: the condition the advisory must survive is \"the line reports and nobody is primed,\" and this datum was generated under maximal priming, one round after the 7/10 measurement. Under non-exchangeability my interval is not wide \u2014 it is an interval for the wrong process, the same error class as Q2. So cc2's framing is the sharper one and mine was the weaker half of a shared point. One caveat, preserved as information: cc2's causal reading (\"killed by a human primed by the measurement\") is itself a plausible unmeasured mechanism \u2014 which is precisely why the ledger both seats specified is the repair: it makes future data points exchangeable by construction.\n\n**Residual genuine disagreement (small, Q3):** cc2 holds the common-cause diagnosis makes 1-of-6 \"far more informative than n=1 implies.\" Partly \u2014 but the record's own case 2 (a harness RED before any mutation, caused by a file the author was not looking at) is a *per-harness idiosyncratic* vacuity that no common-cause argument discounts. Both seats land on \"run the 5\"; I hold the residual risk is per-harness, not shared-mechanism, and the evidence for that is the project's own archived case. No disagreement is manufactured beyond this: on Q1 both seats found the same unjoined conjunction blind, and the Part 0 adoption record closes it.\n\n---\n\n# PART 1 \u2014 THE BOARD-COST POLICY\n\n**Advisory verdict, asked for explicitly: REJECT as written.** Its central number is false by conflation \u2014 re-executed here: **113 determinate boards, mean 34.38 min, longest ever 55.22 min, 0 of 113 over 3 hours** (the 3.13 h figure is the full suite, a different instrument). Its layering recommendation is three-quarters already built. What deserves adoption is not in the advisory: the founder's underlying concern is real (day share 0.621398 reproduced), and the measured levers are (1) the avoidable-refusal waste \u2014 5 of 7 refusals, 3.99 h, Wilson [0.359, 0.918] \u2014 and (2) the per-guard growth, which I decomposed and delivered the instrument for below. Fix those; do not loosen the gate.\n\n## Q1. Ladder as substitute for the board on ordinary batches?\n\n**question** Is a diff-derived ladder a sound substitute; what class of regression would it structurally miss?\n\n**verdict** No \u2014 a selection-based layer structurally misses regressions whose guard predicate reads repository-global state the staged diff never names, and the brief's own day demonstrates the class.\n\n**reasoning** The ladder's selector is the diff. Three guard classes are invisible to it by construction: (i) whole-tree invariant guards (ratchets, census guards \u2014 e.g. `test_an_unreached_producer_set_cannot_grow_2026-11-08.py` fires on an *addition elsewhere*); (ii) date-driven freshness gates that go red with an empty diff; (iii) cross-file coupling where the touched file is an *input* to an untouched guard's predicate. The concrete failure my answer refuses to permit: a batch touching only `scripts/` lands via ladder while a board-only invariant guard is red \u2014 exactly the 2026-11-23 red-at-HEAD case \u2014 and the defect conflates with 2 more batches before the next \"milestone\" board, multiplying bisection cost; that is the 3-hour-suite problem recreated one layer down. The right wiring is ordering, not substitution: **compel the ladder to run before the board** (today 3 of 7 refusals, 2.4006 h, named guards the ladder already selects \u2014 the hook only verifies a stage-0 snapshot, so an existing measured mechanism has no caller, the exact non-addition shape). Counterfactual, computed: removing the 2 concurrency refusals (seam fix already landed in the staged guard, line 340) and converting the 3 ladder-detectable refusals to 5-min ladder refusals drops the day share **0.6213 \u2192 0.4392** with zero reduction in gate strength.\n\n**commands_run** (verdict lines; full outputs above)\n```\npython3 scripts/why_is_the_board_getting_slower_2026-11-23.py\n  \u2192 113 boards, mean 34.38, longest 55.22, 0 of 113 > 3 h; day share 0.621398; 7 of 16 refused\nstatsmodels: 5/7 Wilson [0.358934, 0.917781], Clopper-Pearson [0.290421, 0.963307]\ncounterfactual: share 0.6213 -> 0.4392\n```\n\n**fix** NONE for the ladder wiring itself \u2014 it belongs in `hooks/pre-commit`'s dispatch path ahead of the board, and the compelled-run step cannot be executed in a git-less sandbox; shipping it untested would be the 11-times-measured unreached-addition class. The specification is one sentence: before the board, run the ladder selection; refuse on ladder-red without starting the board.\n\n**falsifier** Not applicable to a declined fix; the counterfactual arithmetic above is re-executable.\n\n**what_would_refute_me** A measured ladder selection rule that provably supersets every guard whose predicate reads any touched path \u2014 that would make substitution sound for diff-local batches and my \"never substitute\" too strong. No such rule exists today; the red-at-HEAD case is its standing counterexample.\n\n**disagreement** The brief frames Q1 as substitute-or-not. The measured answer is neither: the ladder's value today is as a *compelled pre-filter*, and the brief's own avoidable-refusal breakdown (its sharpest finding) already proves it \u2014 2.4 h of board time was spent discovering what 3 ladder runs would have found in ~15 min.\n\n## Q2. What drives 1.6606 min/day, and can it be fixed rather than routed around?\n\n**question** Decompose the growth; give the decomposition with its producer.\n\n**verdict** The current growth is **(b) \u2014 existing guards getting slower** \u2014 demonstrated inside a window where the guard count is constant, and the instrument that would attribute it per guard was being **emitted and deleted on every board**; both the measurement and the retention repair are delivered, executed, and differentially falsified.\n\n**reasoning** The ledger supplies a controlled experiment the brief did not use: since 2026-11-22T20:13Z the hook records a `guards` field, **constant at 331 across all 19 determinate boards**. Within that window, duration still grew at **5.4980 min/day, p = 5.833e-03, R\u00b2 = 0.3687, 95% CI [2.0779, 8.9181]** (scipy linregress and statsmodels OLS agreeing to 1.42e-14; Spearman \u03c1 = 0.4404, p = 0.059 \u2014 the rank route is marginal at n=19 and I print it rather than hide it). Guard-count growth is held at zero by the data, so hypothesis (a) is excluded *for the current regime*; the recent per-guard slope is ~3.3\u00d7 the historical blended 1.6606. Secondary route, same direction: retained 2026-11-17 logs show ~5106 tests in 2688 s versus the census's ~5190 in ~3100 s \u2014 tests +1.6% while time +15%, so per-*test* cost moved too. **The structural finding:** B207 wired `--durations=25`, but the table lands in `$_CDSFL_BOARD_LOG`, which the hook `rm -f`s after capturing `$OUT`, and no grep reads the durations section \u2014 0 persisted tables exist anywhere in `.cdsfl_tmp/` (all 6 retained logs predate B207). The attribution evidence streams once to stderr and dies. Fixable rather than routed around: with tables retained, one board names the growing guards and the archive-parametrisation hypothesis is decided per guard instead of modelled. Urgency, computed: at 5.498 min/day the board crosses 60 min in **2.2 days**; at the blended 1.6606, 7.4 days.\n\n**commands_run**\n```\npython3 scripts/the_growth_is_per_guard_not_more_guards_2026-11-23.py\n  \u2192 19 boards, guards CONSTANT at 331, slope 5.4980 min/day p=5.8330e-03 CI [2.0779, 8.9181]\n  \u2192 attribution coverage: 0 persisted durations tables for 19 boards\npython3 scripts/the_durations_table_must_survive_the_boards_cleanup_2026-11-23.py\n  \u2192 OK: helper persists the table (executed, 3 arms); hook calls it above the rm   exit=0\nsh -n hooks/pre-commit \u2192 parses\npython3 -m pytest -q bench/tests/test_todays_producers_run_2026-11-22.py -k \"...\" \u2192 6 passed\n```\n\n**fix** Three repository files, one mechanism plus one measurement: `hooks/board_durations_persist.sh` (new; POSIX helper, `stage0_restage.sh` precedent, fail-open because telemetry must never refuse a commit \u2014 a silent stop surfaces as a coverage figure, not a blocked batch); `hooks/pre-commit` (persistence call inserted between the `$OUT` capture and the `rm -f`, below `CODE=$?`); `scripts/the_growth_is_per_guard_not_more_guards_2026-11-23.py` (the producer). All wired: both scripts execute on every board via `PRODUCERS` in `bench/tests/test_todays_producers_run_2026-11-22.py`, where the second prints `FALSIFIED` and exits 1 if the hook ever stops calling the helper. No composability claim: helper+hook-call are one fix (either alone is inert); the producer is a separate measurement artefact.\n\n**falsifier** `scripts/the_durations_table_must_survive_the_boards_cleanup_2026-11-23.py` \u2014 executes the real helper bytes in /bin/sh (3 arms: persist, append-twice, table-less log appends nothing) and checks the hook's call sits above the `rm` (positional, named as such \u2014 the hook cannot execute without `.git`; same compromise as B207's own 4 anchors). Driven through the differential rule, defect copy = hook as dispatched:\n```\nDEFECT PRESENT  exit=1  FALSIFIED-token=True  -> FAIL\nDEFECT ABSENT   exit=0  FALSIFIED-token=False -> PASS\ntarget restored byte-for-byte : True\nDISCRIMINATES\n```\nHook-anchoring guards re-run post-edit: 28 passed, 1 environmental (`git config` in git-less sandbox).\n\n**what_would_refute_me** The next real board's persisted table showing the top-25 flat against an older table \u2014 that would mean the growth hides in the un-persisted tail below the cap, and the cap (120 lines, stated, not silent) needs raising. Or a within-window confounder: if the 19-board window's later boards systematically ran under heavier machine load, the 5.498 slope is contention, not code \u2014 the per-guard tables decide that too, because contention inflates uniformly while parametrisation growth inflates named guards.\n\n**disagreement** The brief's sentence \"per-test cost is already recorded rather than needing to be guessed\" is **false as stated**: it is *emitted*, then destroyed \u2014 `rm -f \"$_CDSFL_BOARD_LOG\"`, with no reader of the durations section in between. Recorded-and-kept is the property that matters, and it held for 0 of 19 boards. Second figure disagreement: the brief's \"329 guards\" and the producer's \"330\" are both a systematic \u22122 \u2014 `board_guard_count` full-line-matched the whole hook, missing the quote-adjacent first and last entries of the `GUARDS=\"...\"` assignment (true count at dispatch: 332; ledger's runtime count 331 predates batch 12's addition). Repaired in the producer with a 2-route agreement assertion; falsifier `scripts/the_guard_counter_must_count_the_edge_entries_2026-11-23.py` (synthetic 3-entry fixture \u2014 the defect shape as input data, not a retyped target) drove to **DISCRIMINATES**, target restored byte-identical. Below threshold \u2014 no conclusion moved, constancy was never in doubt \u2014 but three circulating values for one figure is how a brief's numbers drift.\n\n## Q3. Board before an experiment, after, or both?\n\n**question** Is \"before, and not both unless the experiment changed code\" right?\n\n**verdict** Before always; after **conditionally, with the condition measured, not assumed** \u2014 and the measurement already exists in this project's idiom: a tree digest taken before and after the experiment, with the post-board required iff the digests differ.\n\n**reasoning** The brief's own counter-case is correct and decides the shape: an experiment's harness may write code or configuration mid-run, so \"did the code change\" is an observable, not an assumption. The instrument is the restore-verification pattern already proven here (SHA-256 over the file set) \u2014 with one lesson from this repository's own record applied in reverse: the falsifier-tool docstring's case 3 records before/after hashes reading IDENTICAL while 13 writes occurred, *because the harness restores what it mutates*. For the post-board question that behaviour is exactly what you want to detect as **clean**: a harness that restores byte-identically has left nothing for a post-board to verify; one that leaves any tracked byte, new file, or config/hook change behind triggers the post-board mechanically. Digest scope must include `hooks/`, `configs/`, and untracked additions \u2014 experiments run in the live repo, where read-only staging does not protect the tree.\n\n**commands_run** None beyond reading the in-tree record cited; this is a decision-procedure question and the arithmetic-free predicate above is the deliverable.\n\n**fix** NONE \u2014 the digest predicate needs a real working tree and belongs beside the experiment runner; shipping it here unreached is the measured defect class. Specification: `digest := sha256 over sorted (path, sha256(content)) for all non-ignored files; post_board_required \u21d4 digest_pre \u2260 digest_post`.\n\n**falsifier** For the eventual implementation: run an experiment harness rigged to drop one byte into `configs/` \u2014 the predicate must demand a post-board; run a pure-data experiment \u2014 it must not. Not executable here; stated per the one-shot rule.\n\n**what_would_refute_me** An experiment class whose *data outputs* feed a subsequent board's guards (archive-parametrised guards reading `experimental_notes/`) \u2014 then even a byte-clean code tree changes the next board's behaviour, and the digest scope must widen to the notes the guards read, or the \"after\" board is owed on data grounds. Given Q2's finding that archive growth is the live growth suspect, this refutation is plausible \u2014 which is why the digest scope is declared, not implied.\n\n**disagreement** The brief's position needs one amendment, not refutation: \"unless the experiment changed code\" smuggles in self-report. The project's own standard \u2014 tools decide, not votes \u2014 applies to its own workflow here: the exception clause must be a digest comparison, never a recollection that nothing was touched.\n\n## Q4. Is a 25\u201330-change threshold safe?\n\n**question** Is a count the right threshold variable, or should it be a predicate over what the diff touches?\n\n**verdict** A count is the wrong variable on this project's own evidence \u2014 it is blind to *what* changed, and the day's record shows risk concentrates by touched surface, not by item count; the hook-evaluable predicate is below.\n\n**reasoning** Two measured facts against the count: (i) every-3rd-batch boarding leaves up to ~2 batches of conflated unverified changes, and the same day's record shows a guard red at HEAD drifting precisely because nothing ran it \u2014 a gate that stops refusing stops being consulted; (ii) the economics the advisory computed from a 3.13 h board are off by 5.5\u00d7 (mean 34.38 min), so the premise forcing rationing is false before the threshold is even designed. The predicate a hook can evaluate, in refusal order: **board REQUIRED iff** the staged diff touches `hooks/`, `bench/` (the measurement machinery \u2014 \u00a710 category 3 surface), any `scripts/*.py` imported by a board guard, or any path read by a whole-tree invariant guard's predicate; **ladder suffices** for diff-local changes outside those surfaces; **no gate waived ever on count alone**. Every term is computable from the staged file list plus a static import walk \u2014 no judgement call at commit time. And the threshold question largely dissolves once the Q1/Q2 levers land: day share 0.44 with refusal waste removed, falling further when the growth cause is attributed and fixed at source.\n\n**commands_run**\n```\nstatsmodels/mpmath: advisory-premise ratio 3.13 h / 34.38 min = 5.46x\ncounterfactual share 0.4392 (from Q1); growth-to-60-min 2.2\u20137.4 days (from Q2)\n```\n\n**fix** NONE delivered \u2014 the predicate belongs in the hook's dispatch path with the Q1 ordering change and shares its untestability here; the specification above is complete enough to implement where a `.git` exists.\n\n**falsifier** For the eventual implementation: stage a one-line change to `bench/` \u2192 predicate must demand a board; stage a one-line change to a leaf script imported by no guard \u2192 ladder must suffice. Stated, not executable here.\n\n**what_would_refute_me** A ledgered stretch showing board-refusal causes distributed *uniformly* across touched surfaces \u2014 then surface-targeting buys nothing over a count and the simpler count wins under simplest-sufficient. Today's 7 refusals argue the opposite (2 concurrency, 3 ladder-selected guards, 2 state guards), but n=7 is one day; the refusal ledger the hook already writes (`why` field) accumulates the deciding data at zero marginal cost.\n\n**disagreement** The brief asks whether 25\u201330 is \"safe,\" accepting the advisory's framing that board frequency is the variable to ration. The measured record says the scarce resource was never board *runs* \u2014 it was board *time lost to avoidable refusals* (71.4% of refusal time, Wilson [0.359, 0.918]) and *time growth with an unread instrument*. Rationing frequency treats the symptom and reintroduces the drift the project has already paid for once.\n\n---\n\n## TERMINATION\n\n**5 passes.** Pass 1: reproduced every Part 1 figure from the staged ledger (113/34.38/55.22/0-of-113, 0.621398, 7-of-16, slope 1.6606 all confirmed). Pass 2: found the constant-guard-count window in the ledger and the durations emit-then-delete gap; QJ derivations with SymPy/mpmath and Wolfram as second falsifier. Pass 3: delivered helper + hook call + producer + falsifier; differential drive \u2192 DISCRIMINATES; wired into the board's producer guard. Pass 4: re-read my own deliverables against anchoring guards (28 passed, 1 environmental); found the guard-count \u22122 defect across three circulating figures, fixed it, drove its falsifier \u2192 DISCRIMINATES. Pass 5: re-ran all 6 new guard entries (6 passed, 2.16 s) and re-read both edited hooks files; **no new above-threshold findings \u2014 converged under \u00a710**, with every residual observation (Spearman marginality, the census's undated test count) stated beside the figure it qualifies rather than suppressed.\n\n**Delivered, all in the repository tree:** `hooks/board_durations_persist.sh` (new), `hooks/pre-commit` (persistence call), `scripts/the_growth_is_per_guard_not_more_guards_2026-11-23.py` (new), `scripts/the_durations_table_must_survive_the_boards_cleanup_2026-11-23.py` (new), `scripts/the_guard_counter_must_count_the_edge_entries_2026-11-23.py` (new), `bench/tests/test_todays_producers_run_2026-11-22.py` (3 entries wired). Wolfram-derived values above are attributed to Wolfram Language (local Wolfram Engine).\n\n**The stance the founder asked for:** reject the advisory; its central figure conflates two instruments and its remedy rations the wrong quantity. His concern is validated by measurement, and the two levers that answer it \u2014 compelled ladder-before-board ordering, and per-guard growth attribution now actually retained \u2014 keep the gate at full strength while returning, on today's numbers, ~29% of the day's elapsed time immediately and the growth curve once the first persisted table names its cause.",
+  "t_start_epoch": 1795465275.978227,
+  "t_end_epoch": 1795466231.371441,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_5jd0moq6/repo",
+      "built": false
+    }
+  ]
+}

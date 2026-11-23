@@ -862,9 +862,138 @@ The inventory behind this list counted **121 distinct open items** across those 
 <!-- task: B210 | state: DONE | status: ENABLED | evidence: bench/tests/test_the_risked_guards_come_from_the_diff_2026-11-22.py,bench/tests/test_r1_has_a_position_on_the_runway_2026-11-01.py -->
 
 **B209. THE cy GATE'S ANTI-TRAP REFUSAL BUDGET IS INERT FOR EXACTLY THE RUNS IT CANNOT READ.** Added 2026-11-22T18:58:00+00:00. **STATUS: FOUND BY EXECUTION 2026-11-22. PRODUCER AND GUARD BUILT AND ON THE BOARD. THE REPAIR IS NOT APPLIED AND GOES TO THE PANEL, because it changes a live Stop gate's refusal behaviour. MINE. NO RULING IS REQUESTED.** **FIND.** `hooks/cy_monitor_gate.py:93` sets `MAX_REFUSALS = 60` and `main()` prints, on exhaustion, *"Allowing the stop so a session cannot be trapped. THE RUN MAY STILL BE LIVE -- check it."* So the budget is an ANTI-TRAP SAFEGUARD. Its key is `session_id + "|" + str(sorted(run dirs) or pids)` and `spend()` zeroes the counter back to 0 whenever the key changes. **With no WATCHED run the key falls back to the live pid list, and a commit board replaces its pytest child per guard file, so the key moves and the counter resets.** **PROVED BY DRIVING `spend()` RATHER THAN READING IT** (`execute-do-not-grep`): a stable directory key over 5 polls returns [1, 2, 3, 4, 5] and the budget binds; a churning pid key over 5 polls returns [1, 1, 1, 1, 1] and 60 is unreachable. Driven to 120 refusals the counter still stands at 1. **SO THE SAFEGUARD IS INERT PRECISELY WHERE A TRAP IS POSSIBLE** -- a watched run has a stable key and does not need protecting. That is the `additive-standard` shape: a mechanism that does not reach the case it exists for. **OBSERVED, NOT ONLY DERIVED:** the counter was watched reading 1 of 60, then 2, then 3, then back to 1 across this session's board, each reset coinciding with a changed child pid. **SEVERITY IS REAL BUT CONDITIONAL AND IS STATED SO:** it did not trap this session, because every refusal had work to answer it. A session with nothing left to do would be refused indefinitely. **2 CANDIDATE REPAIRS, AND (a) IS NOW MEASURED AS DEFECTIVE RATHER THAN MERELY DISFAVOURED.** (a) key on `session_id` alone when nothing is watched: driven through the guard's `CDSFL_CY_GATE_PATH` seam, that gate gives **3 failed, 2 passed**, and the 3rd failure is NOT one of the 2 strict XPASSes -- it is `test_the_fallback_to_pids_is_what_moves`, which requires the 2 cases, watched and not, to behave DIFFERENTLY. **So (a) repairs the no-watched-run case by breaking the watched case:** every run in a session would share 1 budget and the gate would stop refusing a genuinely new run after 60. (b) key on a pid stable for the run's lifetime -- the supported direction, and the support is a measurement rather than a preference. **NO COMPOSABILITY CLAIM:** (a) is refuted, not composed. **P-PASS.** Producer `scripts/the_cy_refusal_budget_never_binds_2026-11-22.py`, exit 1 on the live defect, location-independent, and asserting the `CDSFL_CY_STATE` override is in force BEFORE any call so it cannot spend the real session's budget while measuring it. Guard `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py`, ON the board: 3 passed and 2 `xfail(strict=True)`, exit 0 so it is board-safe. **THE STRICTNESS IS ITSELF PROVED:** against a repaired gate the file goes RED, so the repair cannot land with the markers left on. **A DEFECT IN MY OWN PLAN, CAUGHT BEFORE IT SHIPPED:** the first draft said "onto the GUARDS list" while 2 tests were bare RED, which would have refused EVERY commit until the repair landed. **WHAT WOULD REFUTE THIS.** Show a churning-pid key whose count climbs, or show that an idle session is released by some other mechanism this entry has not found.
-<!-- task: B209 | state: OPEN | status: TESTED | evidence: scripts/the_cy_refusal_budget_never_binds_2026-11-22.py,bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py,hooks/cy_monitor_gate.py -->
+<!-- task: B209 | state: DONE | status: COMMITTED | evidence: bench/tests/test_the_cy_gate_releases_on_the_live_shape_2026-11-23.py,bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py,bench/tests/test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py -->
+
+**★ RESOLVED 2026-11-23T20:24:13+00:00. THE COMPOSED REPAIR IS ADOPTED, MY OWN CANDIDATE WAS REFUTED TWICE, AND THE EXISTING GUARD STRUCTURALLY CANNOT SEE THE FIX.**
+
+**SCORED AT THE DECIDING LAYER**, by driving `main()`'s exit code rather than
+`spend()`'s return, over 5 scenarios derived from the observed shape. L2 is the
+measured live shape: a STABLE PRIMARY PID with CHURNING SUB-SECOND CHILDREN.
+
+| candidate | L1 | L2 live | L3 live+idle | L4 new session | L5 replacement |
+|---|---|---|---|---|---|
+| HEAD, unrepaired | 61 | TRAPPED | TRAPPED | TRAPPED | TRAPPED |
+| composed, seat `cc2` | 61 | 61 | 181 | 61, refuses again | 181 |
+| per-key, MINE | 61 | 61 | 61 | 61, NEVER refuses again | 61 |
+
+HEAD is trapped on **4 of 5**, Wilson [0.375535, 0.963776], Clopper-Pearson
+[0.283582, 0.994949]; the 1 it escapes is a stable lone pid, which is NOT the
+live shape. **MY OWN CANDIDATE FAILS CRITERION (c)**: after releasing once it
+never refuses again, disabling the gate permanently. It was refuted by 2
+instruments at different layers, the second being this one.
+
+**COMPOSABILITY WAS MEASURED, NOT ASSUMED**, per the founder's 2026-10-02
+standard. Named property fixed BEFORE any score existed: events to escape L2.
+The per-session ceiling ALONE is already admissible, 6 of 6, escaping in 181.
+The composed form escapes in **61**, ratio **2.967213** (SymPy 181/61, mpmath
+agreeing to 0.0). So composition is justified by a measurement, and the honest
+statement is that the single fix would have worked at 3x the trap duration.
+
+**BLAST RADIUS BOUNDED BY EXECUTION**: of 13 functions shared with HEAD, **11
+are behaviourally identical** with comments and docstrings stripped; only `main`
+and `spend` differ; **0 functions lost**. All 5 release indices match the closed
+form derived from the gate's OWN constants on 3 arithmetic routes.
+
+**WHY THE 2 STRICT xfails IN `test_the_cy_refusal_budget_binds_2026-11-22.py`
+STAY ON, AND MUST NOT BE READ AS "B209 IS OPEN".** They call `spend()` with keys
+THEY construct. B209's defect was in the key `main()` built inline, and the
+repair works by making the key NOT churn -- so a test supplying a churning key
+manufactures the precondition the repair removes. Their own reason string says
+*"an XPASS means the key was repaired and this marker must come off"*, and that
+release condition is UNREACHABLE by a key-side repair. The markers and
+assertions are KEPT, because what they assert about `spend()` remains true; the
+class docstring now records where B209's verdict actually lives.
+
+**REGRESSION PRE-CHECKED BEFORE INSTALLING, which saved a board.**
+`test_the_cy_gate_refuses_while_a_run_is_live_2026-11-02.py` has NO seam and
+would otherwise have met the new gate only once installed. Run against it in a
+throwaway tree first: 19 passed, control also 19 passed. Post-install the 4
+cy/triage guards give 42 passed, 2 skipped, 2 xfailed.
+
+**A DEFECT IN MY OWN NEW GUARD, FOUND BY ITS OWN USE.** `_horizon()` read
+`MAX_REFUSALS_PER_SESSION`, and the variant built to isolate the ceiling sets
+that to `10**9`, so the guard attempted **1,000,000,020 events** and was still
+running 35 min later. The horizon is now bounded by the per-activity budget
+alone at 5x, which admits the accepted design's 3x ceiling with room while
+refusing a gate needing more than 5x its own budget to let go. All 4 candidates
+now finish under 5 s and the guard still separates them: composed 8 of 8,
+ceiling-only 7, my per-key fix 7, unrepaired 3.
+
+Producers: `scripts/why_is_the_board_getting_slower_2026-11-23.py` (board cost).
+Guard: `bench/tests/test_the_cy_gate_releases_on_the_live_shape_2026-11-23.py`,
+non-vacuity proven by reading the pre-repair gate from git and requiring it to
+fail.
+
 
 **★ CORRECTION 2026-11-22T22:45:00+00:00, MINE, AND IT RETRACTS A CLAIM MADE IN THIS ENTRY'S OWN GUARD.** The guard's docstring said it asserts the PROPERTY rather than WHICH KEY IS USED, *so whichever of B209's 2 options is taken, this file judges it*. **IT DOES NOT.** All 5 of its original tests assert condition 1, that the counter climbs; conditions 2 and 3 are asserted by nothing. **2 tests were then added and reported as discriminating against candidate (a), and that report was WRONG.** Driven against a real mutant of `hooks/cy_monitor_gate.py` whose `main()` builds a constant key -- which IS candidate (a) -- the new tests **PASS**: the first period exhausts at 61 and the next opens at 1. The earlier evidence was a HAND-RUN of `spend("sess")` with a constant key, which is a different test from the one committed. **WHY IT CANNOT DISCRIMINATE, AND THIS GENERALISES TO ALL 3 CONDITIONS:** `spend(key)` is KEY-AGNOSTIC -- it resets whenever the key it is GIVEN differs from the stored one -- while every candidate changes the KEY CONSTRUCTION, which sits inline at `hooks/cy_monitor_gate.py:415`. A test choosing its own keys can never see what `main()` would choose. **So conditions 1, 2 and 3 are all properties of the key, and NONE can judge a repair until `refusal_key()` is extracted from `main()` -- which makes that extraction part of the repair, not a tidy-up.** **WHAT WAS DONE:** the 2 tests are KEPT and relabelled as `TestSpendResetsWhenItsKeyChanges`, a regression guard on `spend()`'s reset -- the only mechanism by which an exhausted budget ever recovers -- with the failed claim and its refutation recorded in the class docstring so the next reader does not re-derive it. The condition-3 class stays skip-marked with its reason. 5 passed, 2 skipped, 2 xfailed, exit 0 and board-safe.
+
+**B216. THE PRE-BOARD LADDER ALREADY SELECTS THE GUARDS THAT REFUSE, AND NOTHING COMPELS IT TO RUN.** Added 2026-11-23T20:24:52+00:00. **STATUS: MEASURED. AWAITING THE PANEL'S Q1 VERDICT BEFORE THE HOOK IS CHANGED.**
+<!-- task: B216 | state: OPEN | status: TESTED | evidence: bench/tests/test_the_preboard_evidence_matches_the_tree_2026-11-23.py,bench/tests/test_the_cheap_checks_run_before_the_board_2026-11-09.py -->
+
+**THE FINDING.** On 2026-11-23, **5 of 7 board refusals were avoidable with NO
+reduction in gate strength: 3.9875 h of the 5.5606 h spent on refusals.**
+0.714286, Wilson [0.358934, 0.917781], Clopper-Pearson [0.290421, 0.963307].
+
+- **3 of 7, 2.4006 h** -- the diff-derived ladder selects 47 guards and **3 of
+  the 5 distinct guards that refused are already in that selection.** They
+  refused anyway because `hooks/pre-commit` only VERIFIES a stage-0 snapshot;
+  nothing runs the ladder. An existing, measured mechanism no caller reaches is
+  exactly what `additive-standard` names as a non-addition.
+- **2 of 7, 1.5869 h** -- a concurrency artefact, recorded as B217.
+- **2 of 7, 1.5731 h** -- state guards the diff does not name, needing a wider
+  selection rule.
+
+The 5 distinct guards are ALL GREEN now and run in **155.41 s = 2.5902 min**
+together, against refusing boards of mean **2859.71 s = 47.66 min**, 95 per cent
+t-interval [45.82, 49.50]. Break-even refusal rate for a preflight is
+**0.054345**; the day's rate was 0.466667 and even its Wilson LOWER bound of
+0.248095 clears it.
+
+**WHY THIS IS NOT THE EXTERNAL ADVISORY'S PROPOSAL.** The advisory asked for the
+board to be reserved for milestones. This changes WHEN the gate fails, not
+WHETHER it runs: the board still runs all 329 guards on every commit. **Its
+central claim is also false** -- 0 of 113 boards exceed 3 hours, mean 34.38 min,
+longest 55.22; the 3.13 h figure is the FULL SUITE, a different instrument.
+**Its one strong point stands**: growth of 1.6606 min/day, p = 2.251202e-22,
+R^2 = 0.5753, cause NOT identified and the leading hypothesis refuted.
+Producer: `scripts/why_is_the_board_getting_slower_2026-11-23.py`.
+
+**NOT ACTED ON UNILATERALLY.** Wiring the ladder changes when the gate runs, so
+it is Q1 of the joint round `panel_joint_b12_boardpolicy_20261123T201748Z`.
+
+**B217. ~~2 CONCURRENT BOARDS EACH DETECT THE OTHER, AND A GUARD THAT WAS NOT ABOUT AMBIENT BOARDS FAILED FOR ONE.~~** **[COMPLETED 2026-11-23 - DONE]** Added 2026-11-23T20:24:52+00:00.
+<!-- task: B217 | state: DONE | status: COMMITTED | evidence: bench/tests/test_the_parked_file_regenerates_without_losing_him_2026-10-17.py,bench/tests/test_the_triage_refuses_to_write_while_a_board_runs_2026-11-12.py,bench/tests/test_help_never_acts_2026-09-11.py -->
+
+**THE MEASUREMENT.** Exactly **1 overlapping board pair** ran on 2026-11-23 --
+05:15:12-06:02:59 and 05:16:27-06:03:53, overlapping **46.5 min** -- and BOTH
+refused naming the same guard,
+`test_the_parked_file_regenerates_without_losing_him_2026-10-17.py`, at a cost
+of 5713 s = **1.5869 h**. That guard calls `blocker_triage.park()`, which
+refuses while a board runs (B155, deliberate). The detector excludes its OWN
+process chain, so a lone board passes; 2 concurrent boards each detect the
+other. `park()` is the ONLY function raising `BoardIsRunning`, and of the 3
+guards calling it, 2 already use the `CDSFL_BT_BOARD` seam -- the 2 that test
+the interlock. **Exactly 1 was unprotected, and it is the one that failed.**
+
+**THE FIX IS THE SEAM B155 MISSED HERE.** `monkeypatch.setenv("CDSFL_BT_BOARD",
+"0")` in the insert-position test. Nothing weakened: the interlock keeps 3
+dedicated guards. Also recorded: **I manufactured a false diagnosis** by running
+that guard OUTSIDE a live board and reading its failure as a defect in the board
+about to run. The board then passed it, 0 failures in 5549.
+
+**AND A FIX THAT HAD LANDED WITHOUT ITS FALSIFIER.** Both free seats of
+`panel_b12_20261123T170728Z` independently found that `inserts` and `uses_file`
+were asked SEPARATELY of the same node list in
+`bench/tests/test_help_never_acts_2026-09-11.py`, so a constant-path
+`sys.path.insert` was credited whenever any unrelated preceding statement
+mentioned `__file__`; both demonstrated it by EXECUTION, writing a file under
+`--help`. The repair landed in `fa687fda` -- but the regression test seat
+`fable` named did NOT. Verified by execution: the shipped predicate refuses the
+decoy (False) while still crediting the unmodified fixture (True), so the repair
+was right and nothing held the case that motivated it.
+`test_a_decoy_derived_name_beside_a_constant_insert_is_refused` is now added and
+goes RED against the reverted join, with the file restored byte-identical.
+
 
 Written under CDSFL note standard v1.7 (26 August 2026).
 
