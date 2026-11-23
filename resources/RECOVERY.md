@@ -1,6 +1,6 @@
 # Recovery Protocol
 
-Last updated: 22 November 2026 05:16 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 23 November 2026 02:15 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 How to rebuild full working context from the repository alone after a
 session loss, compaction event, or fresh start with a new model instance.
@@ -27,9 +27,31 @@ session loss, compaction event, or fresh start with a new model instance.
 
 ---
 
-## SESSION STATE — 2026-11-22 01:52 GMT (READ THIS FIRST)
+## SESSION STATE — 2026-11-23 01:28 GMT (READ THIS FIRST)
 
-**SESSION STATE — 2026-11-22 01:52 GMT (READ THIS FIRST).** Batch 1 of the autonomy handover is BUILT, PANEL-REVIEWED and NOT COMMITTED. HEAD is `b1d5d5db` on `sim/shakedown-2026-09-29`, 56 files dirty. Read HEAD live with `git log --oneline -1`.
+**SESSION STATE — 2026-11-23 01:28 GMT (READ THIS FIRST).** Batches 1 through 4 of the autonomy handover are ALL LANDED. HEAD is `d99c6360` on `sim/shakedown-2026-09-29`; the tree carries only the 2 files `sv` regenerates. Read HEAD live with `git log --oneline -1`.
+
+**THE SUITE FIGURES, WITH THEIR PROVENANCE.** Batch 4's landing board ran the gate's own `GUARDS` list and returned **5495 passed, 0 failed, 24 skipped, 2 xfailed in 2919.63 s (48:39)**; batch 3's returned **5491 passed, 0 failed, 22 skipped, 2 xfailed**. Both are BOARD figures, which are about a 6th of the suite -- the gate's list, not `bench/tests/` entire. **The last FULL-SUITE measurement is still the stale one entry B165 names: 17,760 passed, 32 failed, 40 skipped in 11,825.11 s at `6304f771` on 2026-11-14, from `python3 -m pytest bench/tests/ -q --netguard-strict`, measured on a tree that was NOT clean.** It is CITED, NOT RE-RUN, and the gap between a board and the suite is exactly what B165 exists to close.
+
+**THE 4 BATCHES, AND WHAT EACH COST.** Batch 1 `b1d5d5db`, batch 2 `ca0320ba`, batch 3 `7dd07521`, batch 4 `d99c6360`. **7 commit boards were spent on batches 3 and 4 alone, against a measured expectation of 1.916667 boards per landed batch**, and every refusal was CC1's own defect. The expectation is now PINNED rather than folklore: `scripts/how_many_boards_does_a_batch_cost_2026-11-22.py` gives 1.916667 by SymPy closed form against 1.915960 over 400,000 NumPy draws, propagated to **60.0 min per landed batch, interval [50.4, 74.3]**, with the stated limit that boards are not independent so the geometric form overstates the tail.
+
+**B210 — THE PRE-BOARD PREDICTOR COULD NOT SEE DOCUMENTS, AND A 48-MINUTE BOARD PAID FOR IT.** `behaviour_changing` admitted a staged path only if it was a `.py` file under `scripts/`, `hooks/` or `bench/`, so no guard naming `experimental_notes/RUNWAY_to_BR2_2026-08-18.md` could ever be selected. The board then refused on `test_the_citation_prefix_is_byte_stable`, which freezes that file's first 849 lines because 5 live citations point into them from a verbatim transcript. **The remedy was written at line 932 OF THE FILE BEING EDITED** — an earlier session had made the identical mistake — and was not read. Measured before widening: 6 non-`.py` staged files are named by 62 guards, 34 on the gate, so the deciding set went 34 to 64 for 0.24 of a board. A narrower discriminator was MEASURED AS USELESS (62 either way) and dropped rather than built.
+
+**B207 — THE DURATIONS READER IS FED, AND THE FIX NEARLY DISABLED THE GATE.** The prepared patch claimed 2 sites; enumeration found 5, including 2 mutation harnesses anchored on the board invocation. The fix exports `PYTEST_ADDOPTS` on its own line, leaving the literal byte-identical and touching 0 guards. **2 defects in that fix were caught by running the guards: an inline prefix broke a `^`-anchored regex that a substring count cannot see, and `unset` placed between the board and `CODE=$?` overwrote the exit status with 0 — a FAILING BOARD WOULD HAVE REPORTED SUCCESS.** The `unset` now sits below the capture with a comment saying why.
+
+**B209 — THE REPAIR IS CHOSEN BUT NOT ADOPTED, AND THE PANEL CHOSE IT.** The free panel on batches 2 and 3 returned 2 of 2, record at `experimental_notes/Panel_Round_Batches23_FULL_RECORD_2026-11-22.md`, mirrored 180 of 180. **cc2 rejected all 3 candidates in the brief and proposed a SET-OVERLAP epoch, scoring 6 of 6 against 4 of 6**; fable implemented the brief's candidate. CC1 reproduced cc2's table, then ran the test NEITHER SEAT RAN: driving fable's own implemented hook through cc2's disputed case, where 1 activity ends and another begins with no empty observation. The first exhausts at 61 and the second opens at **62**, leaving a live run unprotected — **so cc2's objection is confirmed against the real code, not a model of it.** cc2's hook returns 1 on the same case and climbs cleanly through the brief's own predicted falsifier. **NOT ADOPTED: it changes when a gate refuses, and cc2 documented 2 residual failure modes of its own candidate in the code — a set replaced with NO overlap, and genuinely separate activities that overlap.**
+
+**THE PANEL ALSO CORRECTED CC1 TWICE AND ITSELF TWICE.** The board makes exactly 1 pytest invocation, so the brief's account of the churn as a child replaced per guard file is wrong; the churn is nested children. CC1's own test fixture encoded a constant parent with a moving member, contradicting its prose. And cc2 corrected its own scoring harness twice against its own interest, leaving both corrections documented, noting the uncorrected run had flattered its own candidate.
+
+**CC1'S INSTRUMENTS FAILED 3 TIMES AND CROSS-ROUTING CAUGHT ALL 3.** A Clopper-Pearson second route returned an INVERTED interval, then — after an ordering assertion was added — a probability of **1.061982**, the assertion passing while the answer was invalid. Repaired by bracketing the solver on [0, 1] and asserting the full domain; both routes now agree to 1.11e-16 and reproduce the gate's pinned refusal interval. Separately, 2 tests were reported as discriminating against B209's candidate (a) and **a mutant proves they do not**: `spend()` is key-agnostic, every candidate changes the key construction inside `main()`, so no test choosing its own keys can judge a repair until `refusal_key()` is extracted. The tests are kept, relabelled, with the failed claim in their docstring.
+
+**B211 RAISED, NOT BUILT.** A pre-board check that passed before the last edit is not evidence about the tree that was boarded: batch 3's third board refused after 47 min 19 s on the spoken-copy freshness guard, which was already in the deciding set and had already passed. Proposed fix is a gate stage comparing staged CONTENT HASHES against the pre-board evidence, not mtimes, because a tool rewriting a file without changing it would defeat a timestamp.
+
+**NEXT, IN ORDER:** adopt cc2's set-overlap key with tests for its 2 named residual modes; build B211's content-hash pre-board stage; then B170, every commit for 43 days going to a non-default branch, whose merge surface was measured CLEAN at 633 commits ahead, 1 behind, 0 conflicts.
+
+## SESSION STATE — 2026-11-22 01:52 GMT [HISTORICAL — the block above supersedes it]
+
+**SESSION STATE — 2026-11-22 01:52 GMT [HISTORICAL].** Batch 1 of the autonomy handover is BUILT, PANEL-REVIEWED and NOT COMMITTED. HEAD is `b1d5d5db` on `sim/shakedown-2026-09-29`, 56 files dirty. Read HEAD live with `git log --oneline -1`.
 
 **HIS AUTONOMY HANDOVER IS NOW A MECHANISM.** On 2026-11-21 he handed the remaining work up to the bounded orchestrator run to this instance, reserving himself for 4 categories only — computationally irreducible, safety, legal/ethical, or a fundamental change in how CDSFL works as a whole — and asked that the instruction survive every compaction. `experimental_notes/THE_STANDING_GOAL.md` holds his verbatim words; `hooks/task_list_pulse.py` injects the marked block into EVERY turn as `[goal]` lines. Guard: `bench/tests/test_the_standing_goal_survives_compaction_2026-11-22.py`, 15 tests, 6 of 6 non-equivalent mutations red, the 7th proven an EQUIVALENT MUTANT over 22,801 inputs rather than recorded as a guard gap.
 

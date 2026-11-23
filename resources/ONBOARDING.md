@@ -1,6 +1,6 @@
 # CDSFL Project Onboarding
 
-Last updated: 22 November 2026 05:16 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
+Last updated: 23 November 2026 02:15 GMT — state files only; the narrative below is hand-maintained and carries its own dates. This stamp is NOT a content date.
 
 Read this document first if you are a new model instance, a new developer,
 or a reviewer picking up this project for the first time.
@@ -39,7 +39,27 @@ never the problem: it is 1214 lines, it was added on 2026-04-08, and a probe tha
 `subprocess.run` with a recorder caught it dispatching real `pip install` and `brew install`
 commands. The documents simply never routed anyone to it.
 
-## CURRENT STATE — 2026-11-12 17:52 GMT
+## CURRENT STATE — 2026-11-23 01:29 GMT
+
+**THE BOARD.** `sim/shakedown-2026-09-29`, 1,996 commits. **355 entries: 314 DONE, 26 OPEN, 10 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()`, which is the canonical counter and the only one to use. The open count has risen from 12 on 2026-11-12, and that is what working produces: 8 of the newest entries were raised BY the work that found them, so a falling DONE-to-OPEN ratio is not evidence of regression.
+
+**★ THE COST OF LANDING A BATCH IS NOW PINNED, AND IT IS DOUBLE WHAT THE OLD FIGURES IMPLIED.** The project pinned a board's mean duration and the gate's refusal rate separately and never the number a plan needs. `scripts/how_many_boards_does_a_batch_cost_2026-11-22.py` gives **1.916667 boards per landed batch** by SymPy closed form against 1.915960 over 400,000 NumPy draws, propagated from the Wilson interval to **60.0 min per landed batch, [50.4, 74.3]**. Its stated limit cuts against the model: boards are not independent, since a refusal is diagnosed before the next attempt, so the geometric form OVERSTATES the tail. It is a planning multiplier, not a distribution.
+
+**★ THE PRE-BOARD PREDICTOR IS THE CHEAPEST INSTRUMENT IN THE PROJECT AND ITS POPULATION MUST MATCH THE GATE'S.** `scripts/which_guards_does_this_commit_risk_2026-11-22.py` derives the guards a staged diff risks and runs only those, finding in minutes what a 48-minute board finds. It has had **5 named blind spots**, and the 2 that are true BY CONSTRUCTION are the ones to remember: it admitted only `.py` files under 3 directories, so no guard naming a DOCUMENT could be selected (B210, cost 1 board); and **MEMORY.md lives outside the repository, so a change to it cannot appear as a staged file at all**. Admitting documents raised the deciding set from 34 to 64 for 0.24 of a board, measured before the change was made.
+
+**★ A PASSING PRE-BOARD RUN DESCRIBES THE BYTES THAT EXISTED WHEN IT RAN, NOTHING MORE.** Entry B211. A board refused after 47 min 19 s on a guard that was already in the deciding set and had already passed: the report was regenerated, the task list was edited 13 minutes later, and only the task-list guards were re-run. **Regenerate every derived artefact LAST, after all source edits, and treat any edit following a verification as invalidating it.** The question is not which guards cover the file you touched but which guards read anything DERIVED from it.
+
+**★ NEVER VERIFY A TEXT CHANGE WITH A CHEAP PREDICATE OVER THAT TEXT. RUN THE GUARDS.** B207 needed `--durations` added without disturbing a board invocation pinned by 5 live sites, 2 of them mutation harnesses. Every anchor was checked by occurrence count, all 4 passed, and the change broke 11 tests because 1 guard matches the line at its START — a count cannot see position. The second attempt then placed `unset` between the board and `CODE=$?`, where `unset` SUCCEEDS and overwrites the exit status with 0, so **a failing board would have reported success**. Both were found by running the guards and by nothing else.
+
+**★ A GUARD CAN BE UNABLE TO JUDGE THE REPAIR IT WAS WRITTEN FOR, AND SAY OTHERWISE IN ITS OWN DOCSTRING.** B209's guard claimed it asserts the property rather than the mechanism, so any candidate repair would be judged by it. All its tests assert 1 of 3 conditions. Driven against a real mutant, 2 tests reported as discriminating do not discriminate at all: `spend()` is key-agnostic and every candidate changes the key construction inside `main()`, so **no test choosing its own keys can judge a repair until `refusal_key()` is extracted** — which makes that extraction part of the repair.
+
+**★ EVERY INTERVAL NEEDS A SECOND ROUTE, AND THE SECOND ROUTE NEEDS ITS DOMAIN ASSERTED.** A Clopper-Pearson route by exact binomial tails returned an INVERTED interval, and after an ordering assertion was added it returned a probability of 1.061982 — the assertion passing while the answer was invalid, because the solver was unconstrained. Bracket on [0, 1], assert the sign change before solving, assert `0 <= lo <= hi <= 1` after. Both failures were visible ONLY from the disagreement with statsmodels.
+
+**A FREE PANEL ROUND IS NOT COMPLETE WHEN THE SEATS REPLY.** It must be MIRRORED out of the ignored directory and must carry a FULL RECORD note built from the seats' own replies, with the context supplied by hand because context is judgement. A board refused on 4 guards for exactly that omission. Records live at `experimental_notes/evidence/panel_records_*/`, 180 of 180 mirrored.
+
+**SAVING IS NOT COMPLETE UNTIL THE CAPTURE AND THE PUSH HAPPEN.** Unchanged and still the easiest step to miss: documents, memory, commit, push, and the first 2 look finished on their own.
+
+## CURRENT STATE — 2026-11-12 17:52 GMT (SUPERSEDED by the block above)
 
 **THE BOARD.** `sim/shakedown-2026-09-29`, in sync with its origin before this save. **299 entries: 272 DONE, 12 OPEN, 10 WITHDRAWN, 5 DEFERRED**, from `scripts/task_list_markers.py` `parse_entries()`, which is the canonical counter and the only one to use.
 
