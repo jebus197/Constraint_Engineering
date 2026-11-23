@@ -39,6 +39,15 @@ PRODUCERS = [
      "the watchdog's TROUBLE regex, before and after the word boundary"),
     ("the_gate_decides_on_the_pulse_2026-11-22.py",
      "the cy gate's discriminator, both directions"),
+    #: ADDED 2026-11-23, BECAUSE THE BOARD CAUGHT IT AS REACHED BY NO TEST.
+    #: `test_an_unreached_producer_set_cannot_grow_2026-11-08.py` refused the
+    #: batch naming it, and its message is the right one: "Either have a test
+    #: execute them, or -- if one is deliberately exempt -- say so beside the
+    #: exemption. Re-pinning to silence this is how a ratchet becomes a rubber
+    #: stamp." It is executed here rather than pinned. Self-contained: it reads
+    #: no file and spawns nothing, computing from 2 pinned ledger figures.
+    ("how_many_boards_does_a_batch_cost_2026-11-22.py",
+     "boards per landed batch, closed form against 400,000 draws"),
 ]
 
 

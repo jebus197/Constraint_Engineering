@@ -1181,8 +1181,22 @@ _CDSFL_BOARD_LOG="${TMPDIR:-/tmp}/cdsfl_board_$$.log"
 : > "$_CDSFL_BOARD_LOG"
 tail -n +1 -f "$_CDSFL_BOARD_LOG" >&2 &
 _CDSFL_TAIL_PID=$!
+# B207: feed the durations reader, which parsed a table no caller emitted.
+# An INLINE env prefix is used deliberately: it leaves the pinned literal
+# below byte-identical, so the 2 guards and the 2 mutation harnesses that
+# anchor on it keep matching. Measured 2026-11-22 -- all 4 anchors still
+# count exactly 1 after this change, where editing the literal to carry
+# `--durations=25` would have required 5 coordinated edits.
+PYTEST_ADDOPTS="--durations=25"; export PYTEST_ADDOPTS
 python3 -u -m pytest -q -p no:cacheprovider $GUARDS >> "$_CDSFL_BOARD_LOG" 2>&1
 CODE=$?
+# ★ THE unset MUST STAY BELOW `CODE=$?` AND THIS IS NOT COSMETIC. Placed
+# between the board and the capture, `unset` SUCCEEDS and overwrites $?
+# with 0, so a FAILING board reports success and the gate passes
+# everything. Caught 2026-11-22 by
+# test_the_boards_guard_phase_streams_2026-11-21.py::test_the_exit_code_is_the_childs_own,
+# which went red on both the failing-board and stderr-only cases.
+unset PYTEST_ADDOPTS
 # The tail is killed before anything reads $CODE, and the parent reaps the whole
 # process group on a timeout (`start_new_session=True` in `_git`), so neither a
 # refusal nor a timeout can leave a follower running on his machine.

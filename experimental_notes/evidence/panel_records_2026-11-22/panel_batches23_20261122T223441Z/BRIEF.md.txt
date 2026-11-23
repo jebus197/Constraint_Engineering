@@ -1,0 +1,363 @@
+# PANEL BRIEF — batches 2 and 3, v4, 2026-11-22
+
+Supersedes `panel_brief_batch2_v3_2026-11-22.md`, which was REFUSED by
+`scripts/panel_brief_validate.py` on 5 required checks and was therefore never
+dispatched. Its 4 questions are carried below unchanged in substance; what was
+missing was the template's own required sections, not the questions. A 5th
+question is added for batch 3.
+
+**WHY 5 AND NOT 14.** Batches 2 and 3 hold 14 items between them. 9 are
+mechanical and are reported, not asked about: register a source-text assertion
+in a manifest, wire 2 scripts to a caller, close a ticket whose evidence
+directory exists, update 2 stale figures, raise 3 entries. The v2 brief's own
+principle governs -- a brief naming 22 repairs gets 22 shallow answers.
+
+
+## ARTEFACT STAMPS AT DISPATCH
+
+Each seat's copy is a photograph taken when its sandbox was staged. These
+are the sha256 digests and modification times of every artefact this brief
+names, AS DISPATCHED. If an artefact has changed since, a seat's reading of
+it was correct against the state below and must not be read as an error
+against a later state. Recompute with `sha256sum <path>` to compare.
+
+| artefact | sha256 (first 16) | bytes | modified (UTC) |
+|---|---|---|---|
+| `scripts/panel_brief_validate.py` | `ca73f33a69d386c0` | 57573 | 2026-11-13T03:04:45+00:00 |
+| `bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py` | `18ada600845f1927` | 13061 | 2026-11-22T08:19:14+00:00 |
+| `hooks/cy_monitor_gate.py` | `19ed3464616bb89d` | 21719 | 2026-11-22T16:45:44+00:00 |
+| `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py` | `c3efa4352214b0e1` | 12610 | 2026-11-22T22:36:45+00:00 |
+| `scripts/the_cy_refusal_budget_never_binds_2026-11-22.py` | `3edb281010da0b97` | 7463 | 2026-11-22T18:53:44+00:00 |
+| `scripts/is_the_hash_chain_majority_real_2026-11-22.py` | `3dfb3813e43ea0cc` | 7407 | 2026-11-22T15:47:05+00:00 |
+
+## CONTEXT THE PANEL NEEDS
+
+The founder handed the work up to the bounded orchestrator run to this instance
+on 2026-11-21, reserving himself for 4 categories only: computationally
+irreducible, safety, legal or ethical, and a fundamental change in how CDSFL
+works as a whole. He instructed that every batch go to a free panel and that any
+fix the panel proposes be TESTED before adoption. **A panel verdict is a
+hypothesis, not a fix.**
+
+Batch 2 landed as commit `ca0320ba`. Batch 3 is on the board as this brief is
+written. Both are reviewed AFTER landing, as batch 1 was; what must precede
+adoption is any fix the panel itself proposes.
+
+## USE THE HARNESS — form the answer by RUNNING things, not by describing them
+
+Every seat must reach its answer using whatever parts of the machinery currently
+work, and must report what it ran. Naming the instruments that bear on these
+questions:
+
+- **The two-sided gate** bears directly on Q5. The gate requires BOTH a
+  flattened decay curve (`gamma_critical >= 0.30`) AND K consecutive zero-new
+  rounds. Q5 concerns a DIFFERENT counter -- the cy gate's refusal budget -- and
+  the question worth running is whether the two-sided form is the right shape
+  for it: a budget keyed to a quantity that can reset is the single-sided
+  failure the two-sided gate exists to avoid.
+- **`gamma`** bears on Q3 and Q5 as the project's own diminishing-returns
+  measure: if a supervisor or a gate can be driven indefinitely without its
+  state advancing, gamma over that loop is undefined rather than flat, and an
+  undefined gamma is the signature of a counter that is not counting.
+- **The severity model** bears on Q3: state what severity the asymmetry would
+  carry if the concrete failure it permits can be named, and say explicitly if
+  it cannot be named, because an unnameable failure is not a finding.
+- **`rho`** bears on Q4, where the question is whether 2 proportions measured at
+  different n are distinguishable at all.
+
+A seat that returns prose about a fix without having run anything has not
+answered.
+
+---
+## Q1. IS THE RECORDING-ONLY SUPERVISOR PASS MINE TO RUN, OR HIS?
+
+**THE CALL I MADE.** The orchestrator's supervisor has a 3-valued setting. The
+middle row -- `--hil-review` on, `--act` WITHHELD -- classifies what happened and
+writes the verdict down, re-invoking nothing. I judged that mine to run, and the
+acting row (`--act`) his.
+
+**THE REASONING.** Against his 4 reserved categories the middle row scores 0 of
+4: not computationally irreducible; spends no money (simulated seats, paid
+dispatch refused at the transport layer); takes no actions; changes nothing about
+how CDSFL works. Verified by execution: with `act=False`, `drive()` invokes the
+launch exactly once, sets `acted` False, and breaks after 1 iteration whatever
+the verdict.
+
+**WHAT CUTS AGAINST IT.** A task-list sentence of 2026-11-08 says "This does NOT
+say either switch should be flipped; that remains his." I treated his 2026-11-21
+handover as superseding it in scope. That is a judgement about which instruction
+governs, and I may have it wrong.
+
+**WHAT WOULD SHOW I AM WRONG.** An argument that RECORDING a verdict is itself a
+behaviour change, or that the 2026-11-08 sentence is specific enough to survive a
+later general handover. Prediction P2 of the pre-registration fails the instant
+any action is taken, so the mechanical half is already guarded; the question is
+the judgement, not the mechanism.
+
+---
+
+## Q2. HOW SHOULD A CHECKER READ A TIMEOUT MARK -- FROM THE SOURCE OR FROM THE
+##     COLLECTED TEST?
+
+**THE DEFECT.** `test_the_nested_suite_stays_bounded_2026-10-28.py` asserts that
+the gate-cost module carries a timeout mark with a value, and reports `assert []`.
+The mark EXISTS: `@pytest.mark.timeout(BOARD_BUDGET_SECONDS + 60)`. Executed
+against the real file: 0 marks with a literal value, 1 with a computed value, a
+`BinOp`. The checker accepts only `ast.Constant`.
+
+**THE IRONY THAT MATTERS.** That checker's own docstring says it was "CONVERTED
+FROM A SOURCE-TEXT ASSERTION" to obey `execute-do-not-grep`, and claims "The mark
+is now read off the collected function". It is not: it parses source and matches
+literals.
+
+**MY PROPOSAL.** Read the mark off the COLLECTED item --
+`item.get_closest_marker("timeout").args[0]` -- so a computed bound arrives as
+the number it evaluates to.
+
+**THE ALTERNATIVE I REJECTED, AND WHY THE PANEL SHOULD TEST THAT REJECTION.**
+Teaching the AST walk to accept a `BinOp` is smaller and fixes this instance.
+I rejected it because the next form -- a name, a call, a conditional -- stays
+equally invisible. **But my proposal requires collection**, which costs more than
+a parse and may not be available where this check runs. If collection is not
+reachable there, my preferred fix is unbuildable and the narrow one is right.
+
+---
+
+## Q3. THE SUPERVISOR ASKS FOR LESS CORROBORATION ON THE PATH THAT ACTS
+
+**THE FINDING, derived by enumerating all 28 states of exit code and pulse.**
+HOLD 22, DONE 4, RESUME 2. RESUME requires exit 42 AND a pulse naming a process
+that has exited.
+
+**THE ASYMMETRY.** At exit 0, a pulse that does NOT say `ended` gives HOLD -- "the
+run exited cleanly but its watch never recorded it". At exit 42 the same missing
+`ended` gives RESUME anyway; the flag is not consulted on that path.
+
+**SO THE ONE PATH THAT TAKES AN ACTION ASKS FOR LESS CORROBORATION THAN THE PATH
+THAT DOES NOTHING.**
+
+**THE DEFENSIBLE READING** is that exit 42 is an explicit pause signal from the
+run itself, so the watch adds little. **I did not repair it**, because changing
+when the supervisor acts is the founder's category.
+
+**THE QUESTION FOR THE PANEL:** is the defensible reading right, or is this a
+real hole that should be closed before `--act` is ever considered? Name the
+concrete failure the asymmetry would permit, or say there is none.
+
+---
+
+## Q4. IS "THE HASH CHAIN NOW COVERS A MAJORITY" A FINDING, OR AN ARTEFACT OF A
+##     BIGGER DENOMINATOR?
+
+**THE MEASUREMENT.** 160 valid of 266 = 0.601504, Wilson [0.541626, 0.658492],
+Clopper-Pearson [0.539926, 0.660794], 2 routes agreeing to max abs diff 0.000e+00 (Wilson) and max abs diff
+1.110e-16 (Clopper-Pearson).
+The interval clears 0.5, so a guard pinning "indistinguishable from half" goes
+red and A1 needs restating.
+
+**THE PART I REFUSED TO CLAIM.** Against 2026-11-06's 125 of 231 = 0.541126:
+Fisher exact p = 2.030093e-01, Yates chi-square p = 2.053340e-01. The 2
+measurements are NOT distinguishable. So I wrote that coverage is above half and
+explicitly NOT that it rose.
+
+**THE QUESTION:** is that the right restatement? A reading I can see and reject
+is that the correct statement is weaker still -- that nothing has been shown to
+change at all, and the guard should be restated to pin the straddle at a larger
+n rather than to assert a majority. **Say which, and why.**
+
+---
+
+---
+
+## Q5. B209 -- WHAT SHOULD AN ANTI-TRAP REFUSAL BUDGET BE KEYED TO?
+
+**THE DEFECT, OBSERVED AND DRIVEN.** `hooks/cy_monitor_gate.py` refuses a
+session's attempt to go idle while a long run is in progress, and carries
+`MAX_REFUSALS = 60` as an ANTI-TRAP safeguard: on exhaustion it prints that it
+is allowing the stop so a session cannot be trapped. `spend()` zeroes the count
+whenever its key changes, and `main()` builds that key as the session id plus
+the sorted watched-run directories OR, when there are none, the live process
+ids. A commit board replaces its pytest child per guard file, so for an
+UNWATCHED run the key churns, the counter resets, and 60 is never reached.
+
+Driven against the real hook with its state file redirected to a temporary path:
+a steady directory key returns 1, 2, 3, 4, 5 across 5 polls; a churning pid key
+returns 1 every time, and still stands at 1 after 120 refusals.
+
+**SO THE SAFEGUARD IS INERT FOR PRECISELY THE RUNS THE GATE CANNOT READ**, which
+is the only case in which a session could be trapped. A watched run has a stable
+key and does not need the protection.
+
+**I DELIBERATELY DID NOT REPAIR IT.** It changes WHEN a gate refuses, so it goes
+to the panel first. The producer and the guard are committed; the fix is not.
+
+**FIRST, A CORRECTION TO MY OWN FRAMING, MADE BEFORE DISPATCH.** I recorded
+candidate (a) as measured defective because 2 concurrent runs would share a
+budget and the first would exhaust it for the second. **That reason assumes the
+budget is PER RUN, and the gate's own message says it exists so A SESSION cannot
+be trapped.** On a session-level purpose, sharing is correct behaviour, not a
+fault: if the session has been refused 60 times it must be allowed to stop, and
+which of several overlapping runs caused them is irrelevant. So my recorded
+objection was a category error about the REQUIREMENT, not a finding about the
+code. (a) is still defective, for a different reason given below. I state this
+rather than quietly repairing it because the brief you are reading is the
+artefact that would otherwise have carried my error into your answer.
+
+**THE 3 CONDITIONS A KEY MUST MEET.**
+1. STABLE across repeated polls of the same ongoing activity, or the counter
+   cannot climb. This is what the churning pid list breaks, and it is B209.
+2. DISTINCT enough that a budget exhausted long ago does not silence the gate
+   for ever afterwards. Note this is WEAKER than "distinct per run".
+3. COMPUTABLE WITHOUT READING THE RUN, since the unwatched case is the only one
+   that needs protecting.
+
+**THE CANDIDATES, SCORED.**
+(a) Session id alone. Meets 1 and 3; FAILS 2 -- it never resets, so the 61st
+refusal of the whole session is permanently allowed and the gate stops working
+for the rest of that session however long it lives.
+(b) Long-lived process ancestors rather than churning children. Meets 1 and 3;
+meets 2 only if the chosen ancestor is not shared by every run in the session.
+If it resolves to the session's own shell it degenerates silently into (a).
+(c) A CONTIGUOUS-ACTIVITY EPOCH -- a counter advancing only when the live-run
+set goes empty and then non-empty again. Meets 1, 2 and 3, and needs only the
+emptiness of the set, which the gate already computes to decide whether to
+refuse at all. I found this by asking what the budget is FOR rather than which
+keys were available, and it is untested.
+
+**A 4TH OPTION IS WITHDRAWN RATHER THAN OFFERED**: session id plus a coarse
+time bucket converts a TOTAL into a RATE, so refusals resume every bucket and
+the session CAN be refused for ever -- self-defeating against the stated
+purpose.
+
+**THE QUESTION, AND THE LOAD-BEARING PART IS CONDITION 2.** Which key, or a
+candidate I have not seen? Attack condition 2 specifically: is "distinct per
+contiguous busy period" the right weakening of "distinct per run"? That
+judgement is mine and nothing measures it. For (c), the falsifier I most expect
+to bite is a live-run set that momentarily EMPTIES during a single run -- a gap
+between a board's cheap checks and its pytest -- because (c) would then reset
+mid-run and reintroduce B209 in a slower form. That is testable against the
+real board's process history. State the concrete failure your choice permits.
+
+**★ 3 THINGS FOUND BY EXECUTION AFTER THIS QUESTION WAS FIRST DRAFTED. They
+change what a repair must do, so they are added rather than left for you to
+rediscover.**
+
+**(i) THE CHURN IS SIMULTANEOUSLY THE DEFECT AND THE SAFEGUARD'S ONLY RESET
+PATH.** Driven against the real hook with `CDSFL_CY_STATE` redirected to a
+temporary path: `spend("sess|K1")` x 61 reaches n = 61, then `spend("sess|K2")`
+returns n = 1. So condition 2 HOLDS TODAY -- and it holds BY MEANS OF the key
+changing, which is the behaviour that breaks condition 1. `spend`'s only reset
+is `if st.get("key") != key`; nothing else in it ever lowers the count.
+**THEREFORE A REPAIR MUST SUPPLY A NEW RESET PATH, NOT MERELY STABILISE THE
+KEY.** Candidate (a) does 1 of those 2 jobs and destroys the other, which is a
+sharper objection than the one stated above.
+
+**(ii) MY OWN REGRESSION GUARD CANNOT JUDGE THESE CANDIDATES, AND ITS DOCSTRING
+CLAIMS IT CAN.** `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py`
+says it asserts the property and not the mechanism, "so whichever of B209's 2
+options is taken, this file judges it". Traced against the 3 conditions, ALL 5
+of its tests assert condition 1. Conditions 2 and 3 are asserted by nothing.
+Measured: under candidate (a) a constant key gives [1, 2, 3, 4, 5] over its
+first 5 calls and [63, 64, 65] over its last 3 of 65, so BOTH strict `xfail`
+cases turn green, the markers come off, and the file reports a successful
+repair while the session is silenced permanently after the 61st refusal. **2
+tests are owed and are drafted: one driving K1 past the budget then presenting
+a new period (passes today, goes RED under (a)), and one for condition 3 that
+CANNOT BE WRITTEN until `refusal_key()` is extracted from `main()` -- the key
+is assembled inline at `hooks/cy_monitor_gate.py:415`, so there is nothing a
+test can call. That extraction is part of the repair, not a tidy-up.**
+
+**(iii) A SECOND CONSEQUENCE THE ENTRY DOES NOT RECORD: AN UNBOUNDED TOKEN
+COST.** Every refused stop re-injects the same context, measured at 4249
+characters or about 1062 tokens. The declared budget of 60 is what would CAP
+that cost; with the counter resetting, the refusal count is governed by the
+run's DURATION instead, so the cost has no upper bound. Observed during this
+batch's board: 7 refusals printing [1, 1, 2, 3, 1, 1, 1], peak 3, where a
+working counter reads 7. **This matters because the entry's severity note says
+the trap is conditional on an IDLE session and that a busy session "never
+notices". That is true of the trap and FALSE of the cost**, which is paid on
+every refusal, so it lands in exactly the common case the entry dismisses.
+
+**(iv) THE STATE IS A SINGLE SLOT**, `{"key": ..., "n": ...}`, so a PER-RUN
+budget is impossible against this interface by construction. The interface
+itself says the budget is session-level.
+
+**AND A SECOND DEFECT FOUND WHILE WRITING THIS BRIEF, WHICH IS NOT RHETORICAL.**
+This brief cannot DECLARE B209's figures for re-execution, because the
+validator refuses a declared figure whose producer exits non-zero, and this
+producer exits 1 BY DESIGN to signal that the defect is still live. So 2 of my
+own mechanisms are in direct conflict: a producer that reports a live defect
+through its exit code is uncitable in the one artefact that instructs the panel.
+The B209 figures above are therefore stated in prose with their producer named
+-- `scripts/the_cy_refusal_budget_never_binds_2026-11-22.py`, exit 1 on the live
+defect, 0 once repaired, 2 if the watched arm turns out broken too -- and the
+seat should re-run it rather than trust them. **Is the right repair to let the
+validator accept a declared non-zero exit when the brief states the expected
+code, or to make producers signal liveness in their OUTPUT rather than their
+exit status? Name which, and what it would break.**
+
+---
+
+## PRODUCE A FIX, AND TEST IT
+
+A finding without a fix is incomplete. **A fix without a runnable falsifier the
+seat has EXECUTED is a hypothesis, not a fix.** Report the exact command run and
+the output seen; do not paraphrase the output.
+
+**Deliver your fix as a file.** Write it INTO the sandbox repository tree at its
+real path. A fix described in prose is not delivered, and a fix written to
+scratch space is destroyed when the sandbox is torn down: rounds 5 and 6 on
+2026-09-10 returned 0 source files for exactly that reason while both seats
+reported writing and running working code.
+
+**Where more than 1 repair is in play -- which is the case in Q5 and in the
+second defect under it -- composability is a CLAIM THAT REQUIRES A MEASUREMENT.**
+The founder's definition of 2026-10-02: compose only on a DEMONSTRATED advantage
+over each fix alone, where the demonstration is a measurement and not a
+judgement, and prefer the single fix wherever it performs as well. Reporting
+merely that 2 repairs do not interfere is the weak form his definition
+explicitly excludes, and will not be accepted as an answer.
+
+## WHAT WOULD REFUTE YOU
+
+Before you conclude on any question, state what evidence would overturn your own
+answer. A verdict with no stated refutation condition is an opinion, and will be
+recorded as one. Where you believe a question is not decidable on the available
+evidence, say so and say what measurement would decide it.
+
+## OUTPUT SHAPE — what to return, field by field
+
+Return these fields for each of Q1 to Q5, so replies can be compared without a
+parser guessing:
+
+1. `question` -- Q1 to Q5.
+2. `verdict` -- your position, in 1 sentence.
+3. `reasoning` -- the derivation, naming which instrument you ran.
+4. `commands_run` -- the exact commands, and their output verbatim.
+5. `fix` -- the repository-relative path of the file you wrote, or NONE.
+6. `falsifier` -- the runnable check, and the result of EXECUTING it.
+7. `what_would_refute_me` -- the evidence that would overturn your answer.
+8. `disagreement` -- your strongest disagreement with this brief's own framing,
+   including with any figure in it. This field is mandatory and may not be
+   empty; if you agree with the framing entirely, say what the framing omits.
+
+**Do not converge.** Disagreement between seats is information and is preserved
+rather than smoothed to consensus. Anything proposed here will be TESTED before
+adoption.
+
+## TERMINATION
+
+Stop when a further pass produces no new above-threshold findings -- diminishing
+returns is this project's own criterion -- and state how many passes you ran. A
+finding is above threshold if missing it could cause a real-world failure, an
+unsafe condition, or a wrong decision by the founder. Do not generate findings
+to fill the output.
+
+<!-- figure: hash chain live share | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 160 of 266 = 0.601504 -->
+<!-- figure: hash chain Wilson | scripts/is_the_hash_chain_majority_real_2026-11-22.py | [0.541626, 0.658492] -->
+<!-- figure: hash chain Clopper-Pearson | scripts/is_the_hash_chain_majority_real_2026-11-22.py | [0.539926, 0.660794] -->
+<!-- figure: hash chain prior observation | scripts/is_the_hash_chain_majority_real_2026-11-22.py | 125 of 231 = 0.541126 -->
+<!-- figure: hash chain Fisher | scripts/is_the_hash_chain_majority_real_2026-11-22.py | p = 2.030093e-01 -->
+<!-- figure: hash chain Yates | scripts/is_the_hash_chain_majority_real_2026-11-22.py | p = 2.053340e-01 -->
+<!-- figure: hash chain Wilson route agreement | scripts/is_the_hash_chain_majority_real_2026-11-22.py | max abs diff 0.000e+00 -->
+<!-- figure: hash chain C-P route agreement | scripts/is_the_hash_chain_majority_real_2026-11-22.py | max abs diff 1.110e-16 -->

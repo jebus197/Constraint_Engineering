@@ -165,3 +165,89 @@ class TestTheKeyIsWhereTheDefectLives:
             f"stable key reached {stable[-1]} and the churning key reached "
             f"{churn[-1]}; if these ever match, either the defect is fixed or "
             f"both arms are broken -- read spend() before believing either")
+
+
+class TestSpendResetsWhenItsKeyChanges:
+    """`spend()`'s reset mechanism, which is NOT a test of B209's candidates.
+
+    ★ THESE WERE WRITTEN AS A CONDITION-2 DISCRIMINATOR AND THEY ARE NOT ONE.
+    THE CORRECTION IS RECORDED HERE RATHER THAN QUIETLY MADE. The claim was
+    that they go RED under candidate (a), keying the refusal counter on the
+    session id alone. **Driven against a real mutant of `hooks/cy_monitor_gate.py`
+    whose `main()` builds a constant key, this class PASSES: the first period
+    exhausts at 61 and the next opens at 1.** The earlier "verification" drove
+    `spend("sess")` with a constant key BY HAND, which is a different test from
+    the one written here.
+
+    ★ WHY IT CANNOT DISCRIMINATE, AND THE REASON GENERALISES TO ALL 3
+    CONDITIONS. `spend(key)` is KEY-AGNOSTIC: it resets whenever the key it is
+    GIVEN differs from the stored one. Every candidate repair changes the KEY
+    CONSTRUCTION, which lives inline in `main()` at
+    `hooks/cy_monitor_gate.py:415`. A test that chooses its own keys can never
+    see what `main()` would have chosen. **So conditions 1, 2 and 3 are all
+    properties of the key, and NONE of them can judge a candidate until
+    `refusal_key()` is extracted from `main()` -- which is therefore part of
+    the repair and not a tidy-up.**
+
+    ★ WHAT THESE 2 TESTS ARE STILL WORTH, which is why they are kept rather
+    than deleted: they pin `spend()`'s reset as the mechanism that makes
+    condition 2 satisfiable at all. If a future repair removes the reset -- as
+    candidate (a) does, by handing `spend()` a key that never changes -- these
+    stay green while the SYSTEM breaks, and that is exactly the gap
+    `TestCondition3` is reserved for. They are a regression guard on
+    `spend()`, not a judge of the repair.
+    """
+
+    def test_a_different_key_opens_a_fresh_count(self, gate):
+        """Driven: K1 to exhaustion, then a different key starts at 1."""
+        for _ in range(gate.MAX_REFUSALS + 1):
+            spent = gate.spend("sess|['bench/logs/run_one']")
+        assert spent > gate.MAX_REFUSALS, (
+            f"the first period did not reach the budget ({spent} against "
+            f"{gate.MAX_REFUSALS}), so this test cannot show anything about "
+            f"what happens AFTER exhaustion -- fix the arm, not the assertion")
+        later = gate.spend("sess|['bench/logs/run_two']")
+        assert later == 1, (
+            f"a different key opened at {later} rather than 1, so `spend()`'s "
+            f"reset -- `if st.get('key') != key` -- no longer fires. That reset "
+            f"is the ONLY mechanism by which an exhausted budget ever recovers, "
+            f"so losing it silences the gate permanently for a session. Read "
+            f"spend() before weakening this.")
+
+    def test_the_reset_is_a_reset_and_not_a_clamp(self, gate):
+        """ANTI-VACUITY: discriminate a RESET from a CLAMP at the budget."""
+        for _ in range(gate.MAX_REFUSALS + 1):
+            gate.spend("sess|['a']")
+        first = gate.spend("sess|['b']")
+        for _ in range(gate.MAX_REFUSALS + 1):
+            gate.spend("sess|['b']")
+        second = gate.spend("sess|['c']")
+        assert first == second == 1, (
+            f"period 2 opened at {first} and period 3 at {second}; a reset "
+            f"gives 1 both times, a clamp gives the budget both times, and "
+            f"anything else means the state carries something across periods "
+            f"that neither model explains")
+
+
+@pytest.mark.skip(reason="B209 condition 3: requires `refusal_key()` to be "
+                         "extracted from main(), which is PART of the repair. "
+                         "The key is built inline at cy_monitor_gate.py:415, "
+                         "so there is nothing to call. UNSKIP with the repair; "
+                         "do not delete -- a dropped test is a lost condition.")
+class TestCondition3TheKeyMustBeComputableWithNoWatchedRun:
+    """The unwatched case is the ONLY one needing the protection at all.
+
+    So a candidate key that secretly requires reading the run defeats the
+    purpose. This cannot be asserted until the key construction is callable.
+    """
+
+    def test_a_key_exists_when_the_watched_set_is_empty(self, gate):
+        key = gate.refusal_key({"session_id": "s"}, [], [], ["111", "222"])
+        assert key, "no key derivable with an empty watched set"
+
+    def test_the_key_does_not_vary_with_child_process_churn(self, gate):
+        a = gate.refusal_key({"session_id": "s"}, [], [], ["111"])
+        b = gate.refusal_key({"session_id": "s"}, [], [], ["111", "222"])
+        assert a == b, (
+            f"the key moved from {a!r} to {b!r} when only a CHILD process "
+            f"appeared. That is B209 itself, and any repair must hold this.")

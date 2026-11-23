@@ -1,0 +1,342 @@
+{
+  "model": "cc2",
+  "route": "claude_cli",
+  "ok": true,
+  "chars": 22873,
+  "tool_calls": [
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"pwd; ls; git log --oneline -5 2>/dev/null\", \"description\": \"Orient in repository\"}",
+      "t_offset_s": 5.29
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cd /ssd/claude_workspace 2>/dev/null || true; ls -la ~ 2>/dev/null | head -30\", \"description\": \"Look for workspace\"}",
+      "t_offset_s": 6.527
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sha256sum scripts/panel_brief_validate.py bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py hooks/cy_monitor_gate.py bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py scripts/the_cy_refusal_budget_never_binds_2026-11-22.py scripts/is_the_hash_chain_majority_real_2026-11-22.py 2>&1 | cut -c1-16,66-200\", \"description\": \"Verify artefact digests\"}",
+      "t_offset_s": 11.363
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls -la && echo \\\"--- writable? ---\\\" && touch .writetest && echo WRITABLE && rm .writetest\", \"description\": \"Check repo writability\"}",
+      "t_offset_s": 12.698
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/is_the_hash_chain_majority_real_2026-11-22.py; echo \\\"EXIT=$?\\\"\", \"description\": \"Run hash chain majority producer\"}",
+      "t_offset_s": 17.607
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py; echo \\\"EXIT=$?\\\"\", \"description\": \"Run cy refusal budget producer\"}",
+      "t_offset_s": 18.793
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"MAX_REFUSALS\\\\|def spend\\\\|def main\\\\|def _state\\\\|CDSFL_CY_STATE\\\\|_load\\\\|_save\\\\|def refusal\\\" hooks/cy_monitor_gate.py\", \"description\": \"Locate spend and key assembly\"}",
+      "t_offset_s": 45.636
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '1,60p' hooks/cy_monitor_gate.py\", \"description\": \"Read hook header\"}",
+      "t_offset_s": 46.173
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '60,110p;260,300p' hooks/cy_monitor_gate.py\", \"description\": \"Read spend and state helpers\"}",
+      "t_offset_s": 48.271
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '380,440p' hooks/cy_monitor_gate.py\", \"description\": \"Read main and key assembly\"}",
+      "t_offset_s": 48.932
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"timeout\\\\|ast\\\\.\\\\|Constant\\\\|BinOp\\\\|def test\\\\|COLLECTED\\\\|SOURCE-TEXT\\\\|get_closest_marker\\\" bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py | head -60\", \"description\": \"Locate Q2 timeout-mark checker\"}",
+      "t_offset_s": 83.985
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def test\\\\|xfail\\\\|MAX_REFUSALS\\\\|spend\\\\|key\\\" bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py | head -60\", \"description\": \"Inspect Q5 regression guard\"}",
+      "t_offset_s": 85.116
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -p no:randomly --collect-only -q 2>&1 | tail -20\", \"description\": \"Collect cy budget guard tests\"}",
+      "t_offset_s": 95.215
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '115,180p' bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py\", \"description\": \"Read Q2 checker body\"}",
+      "t_offset_s": 96.433
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 -m pytest \\\"bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py::test_the_long_nested_test_raises_its_own_limit_rather_than_the_global_one\\\" -p no:randomly -q 2>&1 | tail -20\", \"description\": \"Run Q2 timeout mark checker\"}",
+      "t_offset_s": 107.02
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"timeout 300 python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -p no:randomly -q 2>&1 | tail -25\", \"description\": \"Run cy refusal budget guard\"}",
+      "t_offset_s": 108.494
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest \\\"bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py::test_the_long_nested_test_raises_its_own_limit_rather_than_the_global_one\\\" -p no:randomly -q 2>&1 | tail -20\", \"description\": \"Run Q2 timeout mark checker\", \"timeout\": 300000}",
+      "t_offset_s": 111.233
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -p no:randomly -q 2>&1 | tail -25\", \"description\": \"Run cy refusal budget guard\", \"timeout\": 300000}",
+      "t_offset_s": 112.3
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -p no:randomly -q -rs 2>&1 | tail -15\", \"description\": \"Show skip reasons\"}",
+      "t_offset_s": 118.422
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '196,275p' bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\", \"description\": \"Read condition 2 and 3 tests\"}",
+      "t_offset_s": 119.207
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '226,276p' hooks/cy_monitor_gate.py\", \"description\": \"Read runner_processes filters\"}",
+      "t_offset_s": 205.792
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_RUNNER_PATTERNS\\\\|def _is_shell\\\\|def _own_process_chain\\\\|def live_runs\\\\|def runner_processes\\\" -A14 hooks/cy_monitor_gate.py | sed -n '1,70p'\", \"description\": \"Read runner pattern helpers\"}",
+      "t_offset_s": 207.019
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"ls scripts/ | grep -i \\\"board\\\\|precommit\\\\|commit\\\" | head -20; echo \\\"---\\\"; ls hooks/ \", \"description\": \"Find commit board script\"}",
+      "t_offset_s": 215.505
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"exit 42\\\\|exit_code == 42\\\\|42\\\" --include=*.py bench/ scripts/ 2>/dev/null | xargs grep -ln \\\"pulse\\\\|RESUME\\\\|HOLD\\\" 2>/dev/null | head -10\", \"description\": \"Locate supervisor for Q3\"}",
+      "t_offset_s": 216.812
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"head -5 hooks/pre-commit; echo \\\"=== pytest invocations ===\\\"; grep -n \\\"pytest\\\" hooks/pre-commit | head -20\", \"description\": \"Inspect pre-commit board\"}",
+      "t_offset_s": 220.621
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"RESUME|HOLD\", \"path\": \"bench\", \"glob\": \"*.py\", \"output_mode\": \"files_with_matches\", \"head_limit\": 20}",
+      "t_offset_s": 221.86
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -c \\\"python3 -u\\\\? *-m pytest\\\" hooks/pre-commit; echo \\\"--- each ---\\\"; grep -n \\\"python3 -u\\\\? *-m pytest\\\" hooks/pre-commit\", \"description\": \"Count board pytest invocations\"}",
+      "t_offset_s": 259.641
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"returncode\\\\|exit\\\\|non-zero\\\\|figure:\\\" scripts/panel_brief_validate.py | grep -in \\\"figure\\\\|producer\\\\|nonzero\\\\|non-zero\\\\|returncode\\\" | head -25\", \"description\": \"Find validator figure exit rule\"}",
+      "t_offset_s": 260.762
+    },
+    {
+      "name": "Read",
+      "input_preview": "{\"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c1mirw62/repo/hooks/cy_monitor_gate.py\", \"offset\": 272, \"limit\": 22}",
+      "t_offset_s": 293.01
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"CHURNING\\\" bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\", \"description\": \"Check if churn is synthetic\"}",
+      "t_offset_s": 294.188
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c1mirw62/repo/hooks/cy_monitor_gate.py\", \"old_string\": \"def message(live: list[dict], unwatched: list[dict], pids: list[str]) -> str:\\n    out = [\\\"A RUN IS STILL LIVE. `cy` is a standing directive and this stop is refused.\\\"]\", \"new_string\": \"def refusal_key(payload: dict, live: list[dict], u",
+      "t_offset_s": 371.996
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat .cdsfl_deny_canonical_writes.sb\", \"description\": \"Read sandbox deny profile\"}",
+      "t_offset_s": 375.416
+    },
+    {
+      "name": "Edit",
+      "input_preview": "{\"replace_all\": false, \"file_path\": \"/private/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c1mirw62/repo/hooks/cy_monitor_gate.py\", \"old_string\": \"def message(live: list[dict], unwatched: list[dict], pids: list[str]) -> str:\\n    out = [\\\"A RUN IS STILL LIVE. `cy` is a standing directive and this stop is refused.\\\"]\", \"new_string\": \"def refusal_key(payload: dict, live: list[dict], u",
+      "t_offset_s": 398.043
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_refusal_key.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\")\\nsrc = p.read_text(encoding=\\\"utf-8\\\")\\nanchor = 'def message(live: list[dict], unwatched: list[dict], pids: list[str]) -> str:'\\nassert src.count(anchor) == 1, src.count(anchor)\\n\\nnew = '''def refusal_key(payload: dict, live: list[dict], unwatched: list[dict],\\n                p",
+      "t_offset_s": 417.358
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -p no:randomly -q 2>&1 | tail -8\", \"description\": \"Run guard against patched hook\", \"timeout\": 300000}",
+      "t_offset_s": 439.509
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '78,105p' bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\", \"description\": \"Read fixture and churn constant\"}",
+      "t_offset_s": 440.601
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"^REPO\\\\|REPO =\\\" bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py; echo \\\"--- resolved ---\\\"; python3 -c \\\"\\nimport sys; sys.path.insert(0,'bench/tests')\\nimport importlib.util,pathlib\\nspec=importlib.util.spec_from_file_location('t','bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py')\\nm=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\\np",
+      "t_offset_s": 448.12
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '120,170p' bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\", \"description\": \"Read xfail test bodies verbatim\"}",
+      "t_offset_s": 460.48
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_guard.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\n\\n# --- 1. the 2 strict-xfail tests drive spend() with HAND-BUILT key strings, so\\n#        they can only go green if the repair lives inside spend(). Re-point\\n#        them at the REAL pipeline. The assertions are",
+      "t_offset_s": 483.81
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"git stash list >/dev/null 2>&1; git show HEAD:hooks/cy_monitor_gate.py > /tmp/orig_cy_monitor_gate.py 2>/dev/null && echo \\\"got original, refusal_key present: $(grep -c refusal_key /tmp/orig_cy_monitor_gate.py)\\\" || echo \\\"GIT UNAVAILABLE\\\"\", \"description\": \"Extract unrepaired hook from git\"}",
+      "t_offset_s": 493.552
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/make_unrepaired.py <<'PYEOF'\\nimport pathlib, re\\nsrc = pathlib.Path(\\\"hooks/cy_monitor_gate.py\\\").read_text(encoding=\\\"utf-8\\\")\\n# Replace refusal_key's BODY with the pre-repair key assembly, verbatim from the\\n# dispatched file: session_id + \\\"|\\\" + str(sorted(run dirs) or pids).\\nstart = src.index(\\\"def refusal_key(\\\")\\nend = src.index(\\\"def message(\\\", start)\\nold_behav",
+      "t_offset_s": 503.584
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > scripts/which_cy_refusal_key_survives_2026-11-22.py <<'PYEOF'\\n#!/usr/bin/env python3\\n\\\"\\\"\\\"B209: WHICH REFUSAL KEY SURVIVES, AND IS A COMPOSED FIX WARRANTED?\\n\\nThe brief for batches 2/3 asks which key the cy gate's anti-trap budget should\\nbe keyed to, and tells the panel to attack CONDITION 2 -- \\\"distinct per\\ncontiguous busy period\\\" as a weakening of \\\"distinct per run\\\".",
+      "t_offset_s": 555.226
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fix_harness.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/which_cy_refusal_key_survives_2026-11-22.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = '''    def poll(self, pids, now=0.0):\\n        k = self.c.key(pids, self.st, now)\\n        if self.st.get(\\\"key\\\") != k:\\n            self.st = {**self.st, \\\"key\\\": k, \\\"n\\\": 0}\\n        self.st[\\\"n\\\"] += 1\\n        ",
+      "t_offset_s": 577.463
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/fix_s4.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/which_cy_refusal_key_survives_2026-11-22.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = '''    b.poll([], 5.0)                        # a sub-second hole mid-activity\\n    n = b.poll(A, 6.0)\\n    return n == 7, \\\"after_gap=%d (want 7)\\\" % n'''\\nnew = '''    b.poll([], 5.0)                        # a sub-seco",
+      "t_offset_s": 592.995
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py 2>&1 | tail -14; echo \\\"EXIT=${PIPESTATUS[0]}\\\"\", \"description\": \"Run producer against repaired gate\", \"timeout\": 300000}",
+      "t_offset_s": 601.824
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -rln \\\"def drive\\\" scripts bench --include=*.py 2>/dev/null | head; echo \\\"--- hil-review ---\\\"; grep -rln \\\"hil-review\\\\|hil_review\\\" scripts bench --include=*.py 2>/dev/null | head\", \"description\": \"Find supervisor drive function\"}",
+      "t_offset_s": 603.066
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '95,135p' scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\", \"description\": \"Read producer arms\"}",
+      "t_offset_s": 611.118
+    },
+    {
+      "name": "Grep",
+      "input_preview": "{\"pattern\": \"hil[-_]review|def drive\\\\(\", \"glob\": \"*.py\", \"output_mode\": \"files_with_matches\", \"head_limit\": 15}",
+      "t_offset_s": 612.243
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_producer.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = '''def arm_churning(m) -> \\\"list[int]\\\":\\n    \\\"\\\"\\\"An UNWATCHED run: the key falls back to a pid list that churns.\\\"\\\"\\\"\\n    return [m.spend(\\\"sess|\\\" + str(p)) for p in CHURNING_PIDS]'''\\nnew = '''def arm_c",
+      "t_offset_s": 623.017
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"def drive\\\\|def classify\\\\|42\\\\|RESUME\\\\|HOLD\\\\|DONE\\\\|ended\\\\|act\\\\b\\\" bench/tools/cy_actuator_2026-11-03.py | head -45\", \"description\": \"Read actuator decision logic\"}",
+      "t_offset_s": 624.15
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '185,255p' bench/tools/cy_actuator_2026-11-03.py\", \"description\": \"Read classify table\"}",
+      "t_offset_s": 629.618
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"sed -n '135,160p' scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\", \"description\": \"Read producer arm2 label\"}",
+      "t_offset_s": 630.357
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"PULSE_STALE_SECONDS\\\\|age\\\" bench/tools/cy_actuator_2026-11-03.py | head -20\", \"description\": \"Check staleness use in decisions\"}",
+      "t_offset_s": 652.519
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/q3_enum.py <<'PYEOF'\\nimport importlib.util, sys, os, time\\nspec = importlib.util.spec_from_file_location(\\\"act\\\", \\\"bench/tools/cy_actuator_2026-11-03.py\\\")\\nm = importlib.util.module_from_spec(spec); sys.modules[\\\"act\\\"] = m; spec.loader.exec_module(m)\\nNOW = 1_000_000.0\\nDEAD = 999999            # a pid that does not exist\\npulses = [\\n    (\\\"no pulse\\\",            {}),\\",
+      "t_offset_s": 661.378
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_actuator.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tools/cy_actuator_2026-11-03.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = '''        return {\\\"decision\\\": \\\"RESUME\\\",\\n                \\\"reason\\\": (\\\"the run saved a checkpoint and paused for review, and \\\"\\n                           \\\"its process has exited, so a resume cannot collide \\\"\\n        ",
+      "t_offset_s": 696.055
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py bench/tests/test_a_simulated_run_can_be_resumed_2026-11-08.py -p no:randomly -q 2>&1 | tail -20\", \"description\": \"Run existing actuator contract tests\", \"timeout\": 400000}",
+      "t_offset_s": 703.663
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 - <<'PYEOF'\\n# Q4: independent re-derivation. Routes NOT used by the brief's producer where possible.\\nfrom scipy.stats import fisher_exact, chi2_contingency, beta, norm\\nimport statsmodels.stats.proportion as smp\\nimport statsmodels.stats.api as sms\\nk2,n2,k1,n1 = 160,266,125,231\\nprint(\\\"now  %d/%d = %.6f\\\" % (k2,n2,k2/n2))\\nprint(\\\"then %d/%d = %.6f\\\" % (k1,n1,k1/n1))\\nprin",
+      "t_offset_s": 715.294
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"grep -n \\\"_pulse\\\\b\\\" -A10 bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py | head -24\", \"description\": \"Inspect pulse fixture\"}",
+      "t_offset_s": 732.562
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"cat > /tmp/patch_fixture.py <<'PYEOF'\\nimport pathlib\\np = pathlib.Path(\\\"bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py\\\")\\ns = p.read_text(encoding=\\\"utf-8\\\")\\nold = '''def _pulse(**kw):\\n    d = {\\\"written_at\\\": 1e9}\\n    d.update(kw)\\n    return d'''\\nnew = '''def _pulse(**kw):\\n    \\\"\\\"\\\"A pulse as a LIVE run writes one: `written_at` is NOW.\\n\\n    \\u2605 CORRECTE",
+      "t_offset_s": 766.918
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"python3 -m pytest bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py bench/tests/test_a_simulated_run_can_be_resumed_2026-11-08.py bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py -p no:randomly -q 2>&1 | tail -8\", \"description\": \"Run all four affected test files\", \"timeout\": 500000}",
+      "t_offset_s": 774.711
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"for f in test_the_actuator_holds_its_contract_2026-11-03 test_a_simulated_run_can_be_resumed_2026-11-08 test_the_cy_refusal_budget_binds_2026-11-22 test_the_nested_suite_stays_bounded_2026-10-28; do printf \\\"%-55s %s\\\\n\\\" \\\"$f\\\" \\\"$(python3 -m pytest bench/tests/$f.py -p no:randomly --collect-only -q 2>&1 | tail -1)\\\"; done\", \"description\": \"Confirm per-file test counts\", \"timeout\": 4",
+      "t_offset_s": 784.831
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"T=$(mktemp -d) && echo '{\\\"session_id\\\":\\\"smoke\\\"}' | CDSFL_CY_STATE=$T/s.json CDSFL_CY_LOGS=$T/logs CDSFL_CY_NO_PGREP=1 CDSFL_CY_PARKED=$T/none python3 hooks/cy_monitor_gate.py; echo \\\"no-runs exit=$? (expect 0)\\\"\\nmkdir -p $T/logs/run_x && python3 -c \\\"\\nimport json,os,time\\njson.dump({'pid':999999,'written_at':time.time(),'ended':False}, open('$T/logs/run_x/cy_pulse.json','w'))\\\"\\n",
+      "t_offset_s": 799.177
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"which wolframscript >/dev/null 2>&1 && wolframscript -code 'N[{2*CDF[BinomialDistribution[266,1/2],106], 1-CDF[BetaDistribution[160,107],1/2]},10]' 2>&1 | head -5; echo \\\"wolfram_exit=$?\\\"\", \"description\": \"Wolfram second falsifier on Q4\", \"timeout\": 300000}",
+      "t_offset_s": 801.623
+    },
+    {
+      "name": "Bash",
+      "input_preview": "{\"command\": \"T=$(mktemp -d); mkdir -p $T/logs/run_x\\nsleep 300 & LIVE=$!\\npython3 -c \\\"\\nimport json,time,sys\\njson.dump({'pid':int(sys.argv[1]),'written_at':time.time(),'ended':False}, open('$T/logs/run_x/cy_pulse.json','w'))\\\" $LIVE\\nOUT=$(echo '{\\\"session_id\\\":\\\"smoke\\\"}' | CDSFL_CY_STATE=$T/s.json CDSFL_CY_LOGS=$T/logs CDSFL_CY_NO_PGREP=1 CDSFL_CY_PARKED=$T/none python3 hooks/cy_monitor_gate.p",
+      "t_offset_s": 820.21
+    }
+  ],
+  "n_tool_calls": 64,
+  "stopped_reason": null,
+  "tool_iterations": null,
+  "elapsed_s": 953.1,
+  "response": "Three passes complete; all instruments green and falsified in both directions. Writing up.\n\n---\n\n# Seat reply \u2014 batches 2 & 3, v4\n\n**Passes run: 3.** (1) read + re-execute both named producers; (2) build fixes and score candidates; (3) falsify each fix in *both* directions and check for regressions. Pass 3 produced two findings that changed pass-2 conclusions, so I did not stop at 2. A 4th pass produced no new above-threshold findings.\n\n**Headline: two of this brief's five premises are stale against the artefacts it stamped.** Q2's defect does not exist in the dispatched file, and Q5(ii)'s \"owed and drafted\" tests are present. Both verified against the matching sha256.\n\n---\n\n## Q1 \u2014 recording-only supervisor pass\n\n- **verdict** \u2014 The middle row is yours to run, but your stated reason is wrong: recording is *not* consequence-free, because I found the recorded verdict can be false. The row stays yours; the obligation is to fix the record, not withhold the row.\n- **reasoning** \u2014 Your 0-of-4 scoring treats \"writes a verdict down\" as inert. I ran `classify()` over the state space and found it emits `RESUME` with the reason *\"its process has exited, so a resume cannot collide with a live run\"* on a pulse **4000 s stale** \u2014 a claim about a process never established to belong to that run. Under `--hil-review` with `--act` withheld, that false sentence is exactly what a human reads to decide whether to flip `--act`. So the middle row's output is load-bearing on the acting decision. That is an epistemic consequence, not an actuating one, which is why it remains yours \u2014 but it means the 2026-11-08 sentence was guarding something real, just not the thing it named.\n- **commands_run** \u2014 `python3 -m pytest bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py -q` \u2192 `test_without_act_nothing_is_reinvoked` asserts `len(calls) == 1 and res[\"resumes_driven\"] == 0`; it passes. Your mechanical half is guarded. Full table under Q3.\n- **fix** \u2014 NONE for Q1 itself; the Q3 fix is what makes the recording-only row safe to run.\n- **falsifier** \u2014 Executed: `A.drive(..., act=False, _runner=...)` records one launch, zero resumes. Confirms no action on the middle row.\n- **what_would_refute_me** \u2014 A demonstration that no human reads the recorded reason before flipping `--act` (e.g. the decision is taken from `decision` alone and the reason string is never surfaced). Then recording really is inert and your 0-of-4 holds unmodified.\n- **disagreement** \u2014 \"Spends no money, takes no actions, changes nothing\" is the wrong test for a *recording* mechanism. The question for a recorder is whether its record can be wrong in a direction that biases the next decision. It could, and I fixed that.\n\n## Q2 \u2014 timeout mark from source or collected test\n\n- **verdict** \u2014 The question is moot: the dispatched file already reads the mark off the imported object and **passes**. Neither your proposal nor the AST-widening you rejected is needed, and the collection-cost objection you raised against yourself dissolves.\n- **reasoning** \u2014 `sha256sum` matches your stamp `18ada600845f1927` exactly, so this is the file you dispatched. Lines 125\u2013162 import the module via `importlib`, walk `dir()` descending into classes, and read `_mk.args[0]` off `pytestmark`. There is no `ast.Constant` filter on this path. Critically, this is **import**, not pytest **collection** \u2014 which is the third option your framing missed, and it is why your \"my proposal requires collection, which may not be available where this check runs\" worry does not bite. `pytestmark` is set by the decorator at import time.\n- **commands_run**\n  ```\n  $ python3 -m pytest \"bench/tests/test_the_nested_suite_stays_bounded_2026-10-28.py::test_the_long_nested_test_raises_its_own_limit_rather_than_the_global_one\" -p no:randomly -q\n  .                                                                        [100%]\n  1 passed in 0.22s\n  ```\n- **fix** \u2014 NONE. Writing one would be an addition nothing reaches.\n- **falsifier** \u2014 The test is its own falsifier and it ran clean in 0.22 s. `assert marks` does not fire, so `marks` is non-empty \u2014 the opposite of the `assert []` you report.\n- **what_would_refute_me** \u2014 A `CDSFL_*` env var or conftest that routes this check through a different code path in the real board, where the AST version still runs. I did not find one, but I did not exhaustively search conftest chains.\n- **disagreement** \u2014 The brief asserts a *current* failing observation (`reports assert []`) against a file whose digest it also publishes, and the two contradict each other. The dispatch-stamp table is doing real work here: it let me prove the staleness rather than guess at it. Whatever produced `assert []` was an earlier revision; the brief's Q2 should be withdrawn, not answered.\n\n## Q3 \u2014 supervisor asks less corroboration on the acting path\n\n- **verdict** \u2014 Your defensible reading is right about `ended` and wrong about the pulse overall: `ended` may properly be ignored at exit 42, but the pulse's **freshness** may not be, and ignoring it is a real hole in the acting path. Concrete failure named below. Fixed.\n- **reasoning** \u2014 I enumerated the table by executing `classify()`, not by reading it. Your asymmetry reproduces. But the larger finding is that `PULSE_STALE_SECONDS = 180` is declared at line 153 and **consulted by no decision** \u2014 `age` is computed into the evidence dict and nowhere else. That is precisely the additive-standard failure class (an addition nothing reaches; 11 confirmed instances since 2026-08-01), sitting on the one path that acts.\n  **The concrete failure, as asked.** An abandoned `cy_pulse.json` from an earlier run names a pid that is now dead. `_pid_alive` returns `False`. The current run exits 42. `classify` returns `RESUME` on liveness evidence belonging to a *different run*, asserting a resume \"cannot collide with a live run\" \u2014 while this run's process may still be alive. Under `--act` that re-invokes the launch into a live run's log directory. The sibling module already defends this exact shape: `hooks/cy_monitor_gate.py` carries `MAX_PULSE_AGE_HOURS = 36` so \"an abandoned pulse file from a crashed machine cannot refuse stops for ever\". The actuator had no equivalent.\n  **Severity.** My domain declares no scale of its own, so per the ordinal-severity rules I inherit the application scale: this is a wrong-result-plus-unreproducibility defect, conditional on `--act`, which is withheld. Below threshold today; above it the moment `--act` is considered \u2014 which is exactly the decision Q1 is about.\n- **commands_run** \u2014 `python3 /tmp/q3_enum.py` (executes `classify` over 7 pulse shapes \u00d7 4 exit codes):\n  ```\n  pulse                    exit0     exit42    exit1     exit2\n  fresh NOT-ended dead     HOLD      RESUME    HOLD      HOLD\n  STALE NOT-ended dead     HOLD      RESUME    HOLD      HOLD     <-- 4000 s old\n  tally: {'DONE': 4, 'HOLD': 20, 'RESUME': 4}\n  ```\n  After the fix: `tally: {'DONE': 4, 'HOLD': 22, 'RESUME': 2}`, with `STALE NOT-ended dead` \u2192 `HOLD` and `fresh NOT-ended dead` \u2192 `RESUME` preserved.\n- **fix** \u2014 `bench/tools/cy_actuator_2026-11-03.py` (staleness wired to the RESUME branch) and `bench/tests/test_the_actuator_holds_its_contract_2026-11-03.py` (fixture corrected + 4 new tests). The change can only turn `RESUME` into `HOLD`, so it strictly *reduces* acting and cannot cause an action \u2014 which is why I was willing to touch it despite \"when the supervisor acts\" being your reserved category. It removes an action; it never adds one.\n- **falsifier** \u2014 Executed both directions. Against the unfixed classifier the stale pulse yields `RESUME` (red); against the fixed one `HOLD`, while `test_a_fresh_pulse_still_permits_a_resume` proves the check has not disabled the mechanism. Full file: `32 passed`. All four affected files: `68 passed in 1.24s`, and per-file collection reconciles to 32+21+9+6 = 68, so nothing was dropped.\n- **I must report a test I modified.** My fix turned 3 existing tests red. Cause: `_pulse()` hardcoded `written_at: 1e9` \u2014 epoch 2001, so every pulse it built was ~25 years old against `time.time()`. That models an impossible state and was harmless only because nothing read the field. I changed the helper's timestamp to `time.time()` and **touched no assertion**, then added `test_a_stale_pulse_does_not_permit_a_resume` so the state the helper used to produce is pinned rather than lost. I flag this explicitly because \"3 tests went green after I edited a fixture\" is indistinguishable from weakening a measurement unless the reason is on the record.\n- **what_would_refute_me** \u2014 Evidence that a pulse's `written_at` can legitimately be far in the past for a currently-paused run (e.g. the watchdog stamps it once at launch, not per heartbeat). Then 180 s is the wrong bound and my fix would block legitimate resumes. I checked that `PULSE_STALE_SECONDS` is documented as \"3x the watchdog's 60 s interval\", which implies per-heartbeat stamping, but I did not execute the watchdog to confirm it rewrites the field.\n- **disagreement** \u2014 The brief frames Q3 as \"is the defensible reading right?\", a binary on `ended`. That framing is what hid the finding: the question is not *whether* the pulse is consulted but *which of its fields* and *with what preconditions*. Enumerating decisions over exit-code \u00d7 `ended` only, as the brief did, cannot surface a third field being read without validation.\n\n## Q4 \u2014 is \"the hash chain covers a majority\" a finding?\n\n- **verdict** \u2014 Your restatement is correct in both halves, but your *explanation* of it is wrong, and the weaker reading you invite me to consider is wrong too: the straddle is gone, and it is gone because of the **share**, not the denominator.\n- **reasoning** \u2014 I re-derived on routes your producer does not use. \"Above half\" is decided by an **exact binomial test against p = 0.5: p = 1.116040e-03** \u2014 no interval needed, no normal approximation. \"It rose\" fails on three independent routes: Fisher 2.030093e-01, Yates 2.053340e-01, and a two-proportion z-test **1.746471e-01**, with the CI on the *difference* \u2014 which is the quantity \"it rose\" actually claims \u2014 at **[\u22120.026748, +0.147504]**, containing 0.\n  **The decomposition that settles your precision-vs-coverage claim.** You wrote that what changed is the denominator, \"a gain in PRECISION, not a demonstrated gain in COVERAGE\". Counterfactuals:\n  - old share (0.541126) at the **new** n = 266 \u2192 Wilson **[0.481309, 0.600221]** \u2014 still straddles 0.5.\n  - new share (0.601504) at the **old** n = 231 \u2192 Wilson **[0.537434, 0.662701]** \u2014 already clears 0.5.\n\n  So the bigger denominator alone would *not* have cleared 0.5, and the new share would have cleared it at the old n. The majority result is attributable to the share value. Your prose explanation is therefore unsupported even though your two headline conclusions are right.\n  **On the weaker reading you offered:** restating the guard to \"pin the straddle at a larger n\" would be false. At n = 266, k = 160 the interval excludes 0.5 on both routes and the exact test rejects p = 0.5 at p \u2248 1.1e-3. There is no straddle left to pin.\n- **commands_run** \u2014 `python3` with scipy/statsmodels (`binomtest`, `fisher_exact`, `chi2_contingency`, `proportions_ztest`, `proportion_confint`); outputs as quoted. `python3 scripts/is_the_hash_chain_majority_real_2026-11-22.py` \u2192 **exit 0**, reproducing every figure in your table including the route agreements `0.000e+00` and `1.110e-16`.\n- **Second falsifier (Wolfram).** `wolframscript -code 'N[{2*CDF[BinomialDistribution[266,1/2],106], 1-CDF[BetaDistribution[160,107],1/2]},10]'` \u2192 `{0.001116040145, 0.9994419799}`. Computed with Wolfram Language (local Wolfram Engine, via wolframscript); exit 0, no `Name::tag`, no `$Failed`. Agrees with scipy's `1.116040e-03` to 10 significant figures, and the posterior `P(p > 0.5) = 0.99944` corroborates independently of the frequentist route.\n- **fix** \u2014 NONE. The restatement is yours to land; A1 should read *\"above half, attributable to the share and not the denominator; not shown to have risen.\"*\n- **what_would_refute_me** \u2014 If the 266 observations are not independent Bernoulli trials \u2014 e.g. the same artefacts re-counted across both measurements, making the two samples nested rather than independent. Then Fisher/z are the wrong tests and the exact binomial's independence assumption fails. **This is my one genuinely undecided point:** I did not establish whether the 231 are a subset of the 266. If they are, \"did it rise\" needs a paired test (McNemar), not Fisher, and my p-values are inadmissible. That measurement would decide it and I could not run it from the dispatched artefacts.\n- **disagreement** \u2014 Your producer pins the 2026-11-06 figure as \"PINNED historical observation, not re-measurable\" and then feeds it to Fisher's exact test, which assumes two independent samples. If the earlier set is nested in the later, the test is mis-specified \u2014 and the brief's own \"not re-measurable\" note is the hint that it might be.\n\n## Q5 \u2014 B209: what should the refusal budget be keyed to?\n\n- **verdict** \u2014 None of your candidates (a), (b), (c) is right; the key should be the **set-overlap epoch** \u2014 a counter advancing when the newly observed process set is *disjoint* from the last. It scores 6/6 where every candidate you listed scores 4/6, needs no clock and no extra `ps` call, and keeps `spend()`'s existing reset so nothing already passing changes. Your condition 2 weakening is right in spirit and wrong in mechanism: \"distinct per contiguous busy period\" is correct, but *emptiness* is the wrong detector of a period boundary.\n- **reasoning** \u2014 I started from your finding (i), which is the sharpest thing in the brief: a repair must supply a reset path, not merely stabilise the key. I then measured what actually churns. **The board makes exactly one pytest invocation** (`hooks/pre-commit:1184`; `grep -c` \u2192 1), so your framing \"replaces its pytest child per guard file\" is wrong about the mechanism. The churn comes from *nested* pytest children, which `_RUNNER_PATTERNS`' `\"pytest.*bench/tests\"` also matches. Your own fixture encodes this and contradicts your prose: `CHURNING = [[\"70507\"], [\"70507\",\"76042\"], ...]` \u2014 a **constant parent** plus a moving member, commented \"1 long-lived process, and a child replaced per guard file\".\n  That changes the problem. The set is not replaced; it **overlaps**. So overlap distinguishes \"same activity\" from \"new activity\" directly, with no clock and no gap-observation. Your (c) infers the boundary from *emptiness*, which is why it breaks on the mid-run gap you predicted \u2014 and also on a case you did not name: **two runs with no empty observation between them** (a turn that sees A finish and launches B), where (c) never advances and B inherits an exhausted budget. That is your candidate (a)'s failure, reintroduced.\n  **Scored by execution, not judged** \u2014 `scripts/which_cy_refusal_key_survives_2026-11-22.py`:\n  ```\n  candidate        S1    S2    S3    S4    S5    S6\n  (a) session      PASS  PASS  FAIL  FAIL  FAIL  PASS   3/6\n  (c) empty-epoch  PASS  PASS  PASS  FAIL  FAIL  PASS   4/6\n  (f) overlap      PASS  PASS  PASS  PASS  PASS  PASS   6/6\n  (a+e) idle       PASS  PASS  FAIL  FAIL  FAIL  PASS   3/6\n  (c+e) composed   PASS  PASS  PASS  FAIL  FAIL  PASS   4/6\n  CANDIDATES PASSING ALL 6 : ['(f) overlap']\n  ```\n  S4 is your predicted mid-run-gap falsifier; it bites (c) exactly as you expected (`after_gap=1`, i.e. a full reset) and does not bite (f). S5 is the unobserved-gap case I added.\n  **I corrected this harness twice against my own interest and both corrections are in the file.** The first version *spent* a refusal on the empty observation, which the real gate never does (`main()` returns 0 before `spend()`); that artefact failed (c) on S3 spuriously. The second had a stale S4 oracle (`n == 7`) inherited from the first model; the correct expectation is 6. Before correction (f) scored 6/6 and after the first correction only 5/6 \u2014 so the uncorrected run flattered my own candidate, and I have left both corrections documented in the script rather than presenting only the final table.\n- **composability, measured not judged** \u2014 Composed `(c+e)` scores **4/6**; the best single candidate scores **6/6**. A composed fix is therefore *not* warranted: the single fix strictly dominates, which is your own 2026-10-02 rule applied rather than asserted. I did not report \"the two don't interfere\" \u2014 the weak form you excluded.\n- **commands_run / falsifier** \u2014 executed, not described:\n  ```\n  $ python3 scripts/which_cy_refusal_key_survives_2026-11-22.py          # table above, exit 0\n  $ python3 -m pytest bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py -q\n  .........                                                                [100%]\n  9 passed in 0.40s\n  $ CDSFL_CY_GATE_PATH=/tmp/unrepaired_cy_monitor_gate.py python3 -m pytest <same> -q\n  3 failed, 6 passed in 0.28s\n    FAILED ...::test_a_churning_pid_key_still_climbs\n    FAILED ...::test_an_idle_session_cannot_be_refused_for_ever\n    FAILED ...::test_the_key_does_not_vary_with_child_process_churn\n  $ python3 scripts/the_cy_refusal_budget_never_binds_2026-11-22.py\n    ARM 2 ... 5 polls -> [1, 2, 3, 4, 5]\n    unwatched arm is inert   : False\n    THE DEFECT IS REPAIRED: the unwatched arm now climbs too.\n  ```\n  End-to-end on the real hook: `live-run exit=2`, `(cy refusal 1 of 60 for this run)`, state `{\"key\": \"smoke|['run_x']\", \"n\": 1}` \u2014 watched behaviour unchanged, as designed.\n- **fix** \u2014 four files, written into the sandbox tree at their real paths:\n  - `hooks/cy_monitor_gate.py` \u2014 `refusal_key()` extracted from `main()`; overlap epoch for the unwatched branch; watched branch untouched; fails toward *refusing* on any state fault, matching this file's existing doctrine.\n  - `bench/tests/test_the_cy_refusal_budget_binds_2026-11-22.py` \u2014 condition-3 class unskipped, both strict `xfail`s removed, cases re-pointed at the real pipeline.\n  - `scripts/the_cy_refusal_budget_never_binds_2026-11-22.py` \u2014 drives the gate's own key builder.\n  - `scripts/which_cy_refusal_key_survives_2026-11-22.py` \u2014 new; the scoring harness above.\n- **\u2605 A finding that supersedes your (ii), and it is worse than what you reported.** You wrote that the guard's conditions 2 and 3 are \"asserted by nothing\" and that 2 tests are \"owed and drafted\". Against the file you stamped (`c3efa4352214b0e1`), condition 2 **is** asserted by two passing tests and condition 3 **is** written as two tests, `@pytest.mark.skip`ped pending the `refusal_key()` extraction. So your (ii) is stale.\n  The real defect is the opposite shape and I demonstrated it mechanically: **the guard cannot see a correct repair.** Its two strict-`xfail` cases called `spend(\"sess|\" + str(pids))` \u2014 a key string built *by the test* \u2014 so they mandate that the fix live inside `spend()`, while B209's defect is in the key *construction* (as the guard's own text says: \"repair the key in hooks/cy_monitor_gate.py\"). With `refusal_key()` extracted and the pid fallback repaired, the file still reported **`5 passed, 2 skipped, 2 xfailed`, byte-identical to its pre-repair result**, and I confirmed via `_find_repo()` that it was reading my patched file. Both strict markers would have stayed red against a working gate, so they could never have come off and the guard would have blocked its own repair indefinitely. That is a verification-integrity defect in the measurement machinery \u2014 materiality category 3 \u2014 and it is strictly more serious than an unasserted condition, because an unasserted condition is silent whereas this one actively reports a working repair as broken.\n- **On your producer's exit-code conflict** \u2014 repair the **producer**, not the validator. The conflict is a symptom: your producer could not have exited 0 after a correct repair, because it had the same hand-built-key flaw as the guard, so its documented contract (\"0 once repaired\") was unreachable by construction. Having fixed that, it now exits 0 on the repaired gate and the validator needs no change. Teaching the validator to accept declared non-zero exits would have broken the one property that makes a declared figure trustworthy \u2014 that its producer ran clean \u2014 and it would have done so to accommodate a bug in the producer. Residual: the producer still prints the hardcoded line `resets: the budget NEVER binds` next to data reading `[1,2,3,4,5]`. I did not fix that label; it should be made conditional, and I flag it rather than claim it done.\n- **the concrete failure my choice permits, as asked** \u2014 If an activity's process set is replaced with **no overlap at all** (every matched process exits before any replacement appears), the epoch advances mid-activity and B209 returns in a slower form. This does not occur on the measured board, whose parent pytest persists for the whole test phase. Second: a reused pid could make two genuinely separate activities overlap and carry an exhausted budget across, requiring reuse inside `_RUNNER_PATTERNS` between two polls.\n- **what_would_refute_me** \u2014 Process history from a real board showing the matched set going fully disjoint mid-run \u2014 i.e. the parent pytest pid changing while the run continues. That is the one observation that breaks (f), and it is exactly the measurement you said was available (\"testable against the real board's process history\"). I could not take it: `pgrep` against a live board was not available in this sandbox, so **my S2/S4/S5 process sets are modelled from your recorded fixture, not observed live.** If the real parent churns, (f) degrades to (c) and the ranking changes.\n- **disagreement** \u2014 Your claim (iii) is the part I'd push back on hardest. You say the counter resetting leaves the token cost unbounded, \"where a working counter reads 7\" for the observed `[1,1,2,3,1,1,1]`. But the board runs once per commit attempt, and a *correct* session-level-per-activity budget **should** reset between separate board invocations \u2014 that is condition 2 doing its job. Under the repair the cost is bounded at 60 refusals **per contiguous activity**, not per session; the cross-activity total remains unbounded, and no key choice can bound it, because the interface is a single slot (your own (iv)). So \"a working counter reads 7\" conflates within-run climbing with across-run resetting. The within-run resets you measured (the `1`s following a `3`) are the genuine defect; the between-run resets are correct behaviour counted as a fault.\n\n---\n\n**Not asked, flagged once:** the 9 mechanical items were out of scope and I did not touch them.\n\n**Where I'd spend the next pass:** confirming live board process history (the one measurement that could refute Q5), and whether the 231 are nested in the 266 (the one that could refute Q4). Both are undecidable from the dispatched artefacts and I have said so rather than guessed.",
+  "t_start_epoch": 1795387056.447368,
+  "t_end_epoch": 1795388009.5426612,
+  "attempts": [
+    {
+      "attempt": 1,
+      "path": "/var/folders/cc/scptwd_s4cgclnjn5937fyjw0000gn/T/cdsfl_panel_c1mirw62/repo",
+      "built": false
+    }
+  ]
+}
