@@ -946,6 +946,28 @@ if [ -f scripts/was_this_batch_reviewed_2026-11-22.py ]; then
     fi
 fi
 
+# ★ B211. REPORTED, NEVER REFUSED, and the shape is copied from the panel line
+# above for exactly that reason: every failure path falls open with `|| true`
+# and the checker itself exits 0 on every path including STALE.
+#
+# WHAT IT ANSWERS: whether the pre-board run that was used as evidence actually
+# describes the index being committed. On 2026-11-22 a board refused after
+# 2839.77 s = 47 min 19 s on a guard that was ALREADY in the deciding set and
+# had ALREADY passed -- a sentence was reworded after the run and the evidence
+# silently stopped describing the tree. The same ordering failure occurred 4
+# times in that 1 session, including inside the batch that raised it, which is
+# why it is a checker and not a rule.
+#
+# IT IS NOT ESCALATED TO A REFUSAL, deliberately. A semantic false positive is
+# how a rule ends up switched off (feedback_a_false_positive_can_be_why_a_rule_is_unenforced).
+# The evidence for escalating would be a record of this line being ignored.
+if [ -f scripts/the_preboard_evidence_matches_the_tree_2026-11-23.py ]; then
+    _CDSFL_PBE=$(python3 scripts/the_preboard_evidence_matches_the_tree_2026-11-23.py --quiet 2>/dev/null | head -1 || true)
+    if [ -n "$_CDSFL_PBE" ]; then
+        echo "pre-commit: $_CDSFL_PBE" >&2
+    fi
+fi
+
 # ★ N4, 2026-11-09. HOISTED ABOVE THE BOARD. This block used to run AFTER
 # the 235-guard board, so a commit refused by a 1-second lint first paid for a
 # board whose mean cost is 1615.30 s over 10 recorded runs. All the cheap
